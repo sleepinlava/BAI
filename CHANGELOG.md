@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.5.7] - 2026-07-25
+## [1.5.7.1] - 2026-07-25
 
 ### Added
 
@@ -38,6 +38,10 @@
 
 ### Fixed
 
+- Documentation CI gate: removed toctree references to intentionally
+  git-ignored local drafts (engineering audits, `plugin_report_figure_spec`,
+  `paper_execution_plan`) and excluded them via `exclude_patterns`, so local
+  and CI checkouts produce identical warning-free Sphinx builds.
 - CI mypy gate: resolved four type errors that had kept the `master` CI red
   since the contract-gate merge — a generator/`ItemsView` assignment in
   `tools.py`, a `Mapping` vs `Dict` argument in `executor.py`
