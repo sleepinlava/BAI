@@ -56,7 +56,7 @@
 ## 权限
 
 - `read_only`：`list_types`、`inspect`、`abi_validate_result`、`export_agent_context`、`doctor_agent`
-- `planning_write`：`plan`、`dry_run`、`report`、`export_nextflow`
+- `planning_write`：`plan`、`dry_run`、`report`、`export_nextflow`、`export_snakemake`
 - `execution`：`run`
 
 执行需要 `confirm_execution=true`。描述符默认不导出 `abi_run`。
@@ -68,6 +68,7 @@
 ```text
 outdir/
   execution_plan.json
+  compiled_plan.json
   provenance/
     commands.tsv
     resolved_inputs.tsv
@@ -98,7 +99,7 @@ ABI 使用来自 `abi.diagnostics` 的 19 个稳定错误码，枚举每一种�
 | `missing_database` | 生物信息学数据库不可用 |
 | `tool_not_found` | 外部工具可执行文件不在 PATH 中 |
 | `permission_required` | 执行需要显式用户确认 |
-| `runtime_not_supported` | 请求的引擎不是 local/nextflow |
+| `runtime_not_supported` | 请求的引擎不是 local/nextflow/snakemake/hpc |
 | `nonzero_exit` | 外部命令返回非零退出码 |
 | `parse_failed` | 工具输出无法解析为表格 |
 | `empty_result` | 管线未产生任何输出 |
@@ -110,7 +111,7 @@ ABI 使用来自 `abi.diagnostics` 的 19 个稳定错误码，枚举每一种�
 | `invalid_platform` | 平台标识不被该插件支持 |
 | `missing_sample_id` | 样本 ID 在预期集合中缺失 |
 
-这组固定错误码定义在 `abi.diagnostics.ERROR_CODES` 中，每个错误响应携带稳定的 `error_code` + 可操作的 `diagnostic_hints`。
+这组固定错误码定义在 `abi.diagnostics.ERROR_CODES` 中，每个错误响应携带稳定的 `error_code` + 可操作的 `diagnostic_hints`。每条 hint 还携带一个结构化的 `recovery` 块（`action`、`api_call`、`params`），由覆盖全部 19 个错误码的数据表驱动：`action` 取值为 `retry`、`resume`、`fix_input`、`install_resource`、`request_authorization` 或 `do_not_retry`；`do_not_retry` 类别（畸形样本表、契约违规、内部错误等）绝不可自动重试。
 
 ## 插件合约
 
@@ -120,8 +121,9 @@ ABI 使用来自 `abi.diagnostics` 的 19 个稳定错误码，枚举每一种�
 - `tool_registry.yaml`
 - `standard_tables.yaml`
 - `tool_contracts/*.yaml`
+- `limitations.yaml`（强制且非空；由 contract lint 检查）
 
-`abi.testing.assert_plugin_contract()` 验证运行时 Python 接口和机器可读的插件资产。
+`abi.testing.assert_plugin_contract()` 验证运行时 Python 接口和机器可读的插件资产。校验同时强制执行输出契约覆盖率：`pipeline_dag.yaml` 中每个调用外部工具的节点必须声明 `contract:` 块；无产出的聚合节点必须显式声明 `contract: {exempt: true, reason: ...}`。
 
 ## 步骤合约与可复现性
 

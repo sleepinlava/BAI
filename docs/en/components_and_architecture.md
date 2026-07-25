@@ -20,7 +20,7 @@ Core lifecycle: query -> plan -> check -> dry-run -> run -> inspect -> report
 Analysis plugin + declarative DAG + tool registry
         |
         v
-Local / Conda / Docker / Nextflow / HPC / cloud worker
+Local / Conda / Docker / Nextflow / Snakemake / HPC / cloud worker
         |
         v
 Execution plan + provenance + standard tables + reports + figures
@@ -38,14 +38,14 @@ Every transport calls the same core interface. A CLI request and an MCP request 
 | Analysis plugins | Own biological choices, workflow configuration, parsing, and interpretation | `src/abi/plugins/` |
 | Declarative workflow definitions | Define DAG nodes, tools, schemas, tables, and report metadata | `plugins/<analysis_type>/` |
 | Tool and resource layer | Resolve executables, Conda environments, databases, indexes, and models | `src/abi/tools.py`, `src/abi/resources.py`, `environments.yaml` |
-| Runtime adapters | Execute locally or translate work to Nextflow and HPC backends | `src/abi/runtimes/`, `src/abi/exporters/` |
+| Runtime adapters | Execute locally or translate work to Nextflow, Snakemake, and HPC backends | `src/abi/runtimes/`, `src/abi/exporters/` |
 | Result and figure layer | Validate artifacts, normalize TSV tables, build reports, and render figures | `src/abi/results.py`, `src/abi/report/`, `src/abi/sciplot/` |
 
 ## How a request is processed
 
 1. **Discover.** `abi list-types` and `abi query` read installed plugin metadata without building or running a workflow.
 2. **Resolve.** ABI combines the plugin, configuration, sample sheet, runtime options, and resource overrides.
-3. **Plan.** The declarative DAG becomes an `ExecutionPlan` containing ordered steps, commands, inputs, outputs, dependencies, and contracts.
+3. **Plan.** The declarative DAG becomes an `ExecutionPlan` containing ordered steps, commands, inputs, outputs, dependencies, and contracts. The plan is also compiled into a validated, backend-neutral `CompiledPlan`; both are persisted as `execution_plan.json` and `compiled_plan.json`, and plan-invariant violations fail planning with a structured `invalid_config` error.
 4. **Check.** ABI validates input paths, executables, resources, and runtime assumptions without executing analysis tools.
 5. **Dry-run.** ABI writes the plan, provenance skeleton, standard tables, and report preview.
 6. **Authorize.** Execution requires an explicit `--confirm-execution` or equivalent transport field.
@@ -89,6 +89,7 @@ The declarative DAG is the source of truth for dependencies and step output cont
 | Local CLI | Exploration, development, and single-host runs | `abi` |
 | Docker | Isolated plugin runtimes and repeatable deployment | `docker/Dockerfile.*` |
 | Nextflow or HPC | Scheduler-backed and resumable compute | `abi export-nextflow`, `abi run --engine hpc` |
+| Snakemake | Marker-file-based, conda-aware resumable compute | `abi export-snakemake`, `abi run --engine snakemake` |
 | MCP | Interactive agent platforms using stdio tools | `abi-mcp` |
 | HTTP Job Service | Queued, asynchronous, or remotely managed work | `abi job-service`, `abi job ...` |
 | Headless dispatch | Subprocess workers and transport adapters | `abi dispatch` |

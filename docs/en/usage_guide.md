@@ -61,6 +61,7 @@ The first command should report a three-step plan. The second should create:
 ```text
 results/first-dry-run/
 ├── execution_plan.json
+├── compiled_plan.json
 ├── provenance/
 ├── tables/
 └── report/
@@ -69,6 +70,7 @@ results/first-dry-run/
 Open these files first:
 
 - `execution_plan.json` — the commands, inputs, outputs, and step order ABI selected;
+- `compiled_plan.json` — the validated, backend-neutral compiled view of the same plan;
 - `provenance/commands.tsv` — the command record;
 - `provenance/config.resolved.yaml` — the effective configuration;
 - `report/report.html` — the report layout your real result will use.

@@ -1,0 +1,11 @@
+evidence	group	count	denominator	percent
+Circular / terminal overlap	True-positive prediction (n=12)	11	12	91.66666666666667
+PlasmidFinder	True-positive prediction (n=12)	6	12	50.0
+MOB replicon	True-positive prediction (n=12)	9	12	75.0
+Relaxase	True-positive prediction (n=12)	6	12	50.0
+oriT	True-positive prediction (n=12)	3	12	25.0
+Circular / terminal overlap	False-positive prediction (n=145)	43	145	29.655172413793103
+PlasmidFinder	False-positive prediction (n=145)	3	145	2.0689655172413794
+MOB replicon	False-positive prediction (n=145)	5	145	3.4482758620689653
+Relaxase	False-positive prediction (n=145)	8	145	5.517241379310345
+oriT	False-positive prediction (n=145)	5	145	3.4482758620689653

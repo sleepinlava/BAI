@@ -194,6 +194,29 @@ def test_download_databases_checks_env_abs_paths():
     assert "check_cmd genomad" not in content
 
 
+def test_scapp_k55_recovery_preserves_evidence_and_enables_openmp():
+    """The cloud recovery must use the requested cores without overwriting evidence."""
+    script = SCRIPTS_DIR / "cloud" / "recover_scapp_k55_memory_and_validate.sh"
+    content = script.read_text(encoding="utf-8")
+
+    assert "export OMP_NUM_THREADS=${THREADS}" in content
+    assert "export OMP_THREAD_LIMIT=${THREADS}" in content
+    assert "printf 'omp_num_threads\\t%s\\n'" in content
+    assert "printf 'omp_thread_limit\\t%s\\n'" in content
+    assert '"${SPADES_ENV}/bin/metaspades.py" --restart-from k55' in content
+    assert "-k 21,33,55,77,99,127" in content
+    assert "MEMORY_GB=${MEMORY_GB:-750}" in content
+
+    for evidence_path in (
+        "RECOVERY_EXIT",
+        "RECOVERY_LOG",
+        "RECOVERY_PROVENANCE",
+        "K55_SNAPSHOT",
+    ):
+        assert f"[[ ! -e ${{{evidence_path}}} ]]" in content
+    assert "sha256sum -c SHA256SUMS >/dev/null" in content
+
+
 def test_rnaseq_benchmark_has_ncbi_efetch_fallback():
     """setup_rnaseq_benchmark.py must have a tertiary NCBI efetch fallback for
     the GTF (the Ensembl fallback URL previously hardcoded a ".111." version

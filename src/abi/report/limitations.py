@@ -28,7 +28,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Mapping, Sequence
 
-__all__ = ["format_limitations_html", "format_limitations_markdown", "load_limitations"]
+__all__ = [
+    "FALLBACK_LIMITATION",
+    "format_limitations_html",
+    "format_limitations_markdown",
+    "load_limitations",
+]
+
+#: Sentence rendered in place of the limitations list when a workflow
+#: declares no limitations.  Reports must never silently omit the section.
+FALLBACK_LIMITATION = "No plugin-specific limitations were declared for this workflow."
 
 
 def load_limitations(
@@ -71,13 +80,16 @@ def format_limitations_markdown(
 ) -> str:
     """Format a list of limitation strings as a Markdown section.
 
-    Returns an empty string if *limitations* is empty.
+    The section is always rendered: when *limitations* is empty an explicit
+    fallback sentence (``FALLBACK_LIMITATION``) is emitted instead of
+    silently omitting the section.
     """
-    if not limitations:
-        return ""
     lines = [f"## {title}", ""]
-    for i, lim in enumerate(limitations, 1):
-        lines.append(f"{i}. {lim}")
+    if limitations:
+        for i, lim in enumerate(limitations, 1):
+            lines.append(f"{i}. {lim}")
+    else:
+        lines.append(FALLBACK_LIMITATION)
     lines.append("")
     return "\n".join(lines)
 
@@ -89,14 +101,18 @@ def format_limitations_html(
 ) -> str:
     """Format a list of limitation strings as an HTML section.
 
-    Returns an empty string if *limitations* is empty.
+    The section is always rendered: when *limitations* is empty an explicit
+    fallback sentence (``FALLBACK_LIMITATION``) is emitted instead of
+    silently omitting the section.
     """
-    if not limitations:
-        return ""
     from html import escape
 
-    lines = [f"<h2>{escape(title)}</h2>", "<ol>"]
-    for lim in limitations:
-        lines.append(f"<li>{escape(str(lim))}</li>")
-    lines.append("</ol>")
+    lines = [f"<h2>{escape(title)}</h2>"]
+    if limitations:
+        lines.append("<ol>")
+        for lim in limitations:
+            lines.append(f"<li>{escape(str(lim))}</li>")
+        lines.append("</ol>")
+    else:
+        lines.append(f"<p>{escape(FALLBACK_LIMITATION)}</p>")
     return "\n".join(lines)

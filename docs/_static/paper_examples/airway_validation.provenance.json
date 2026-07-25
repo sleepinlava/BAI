@@ -1,0 +1,25 @@
+{
+  "figure_id": "airway_validation",
+  "created_at": "2026-07-20T16:08:12.548549+00:00",
+  "abi_version": "unknown",
+  "skill": "abi_sciplot",
+  "skill_version": "0.1.0",
+  "renderer": "matplotlib",
+  "renderer_version": "3.11.0",
+  "python_version": "3.12.3",
+  "input_table": "docs/paper_examples/airway_figure.tsv",
+  "input_data_role": "Validated Airway GSE52778 comparison endpoints",
+  "input_sha256": "c1bb53c23c5aeff0b1db9ff8ce80652b2ef492844e0e10a1f0cc4d76b98a69f9",
+  "workflow_name": "rnaseq_expression",
+  "theme": "abi_nature",
+  "palette": "colorblind_safe_8",
+  "statistical_test": null,
+  "multiple_testing_correction": null,
+  "packages": {
+    "matplotlib": "3.11.0",
+    "pandas": "3.0.3",
+    "numpy": "1.26.4",
+    "seaborn": "0.13.2",
+    "pydantic": "2.13.4"
+  }
+}

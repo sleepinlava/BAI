@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from abi.report.limitations import (
+    FALLBACK_LIMITATION,
     format_limitations_html,
     format_limitations_markdown,
     load_limitations,
@@ -59,9 +60,10 @@ def test_load_limitations_limitations_key_not_a_list(tmp_path: Path) -> None:
 
 
 def test_format_limitations_markdown_empty() -> None:
-    """L74: empty limitations → '' for markdown."""
+    """Empty limitations → fallback sentence, never a silently omitted section."""
     result = format_limitations_markdown([])
-    assert result == ""
+    assert FALLBACK_LIMITATION in result
+    assert "## Known Limitations" in result
 
 
 def test_format_limitations_markdown_with_items() -> None:
@@ -75,9 +77,10 @@ def test_format_limitations_markdown_with_items() -> None:
 
 
 def test_format_limitations_html_empty() -> None:
-    """L92: empty limitations → '' for HTML."""
+    """Empty limitations → fallback sentence, never a silently omitted section."""
     result = format_limitations_html([])
-    assert result == ""
+    assert FALLBACK_LIMITATION in result
+    assert "<h2>Known Limitations</h2>" in result
 
 
 def test_format_limitations_html_with_items() -> None:

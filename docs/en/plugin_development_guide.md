@@ -62,12 +62,18 @@ plugins/my_analysis/
   sample_sheet_template.tsv
   tool_registry.yaml
   standard_tables.yaml
+  limitations.yaml      ← mandatory, non-empty
   tool_contracts/
     tool_a.yaml
   skills/               ← SKILL.md files bundled with the package
     tool_a/SKILL.md
   _engine/             ← optional: complex engine code (see metagenomic_plasmid)
 ```
+
+Every plugin must ship a non-empty `limitations.yaml`; contract lint fails with
+`missing_limitations`, `invalid_limitations`, or `empty_limitations` otherwise,
+and generated reports always render a limitations section (with an explicit
+fallback when the list is empty).
 
 For complex plugins with substantial internal logic, use a self-contained
 package with a private `_engine/` subdirectory. See `plugins/metagenomic_plasmid/`
@@ -262,6 +268,13 @@ Complex plugins can embed per-step contracts in the execution plan. For the
 DAG-driven metagenomic plasmid plugin, each node in `pipeline_dag.yaml`
 declares its `outputs` and optional `assertions`; the planner copies those
 fields into `PlanStep.params["_contract"]` for runtime enforcement.
+
+Contract coverage is mandatory: every node that runs an external tool must
+declare per-output `contract` checks, and a node with no outputs (pure
+aggregation or marker steps) must set `contract: {exempt: true, reason: ...}`.
+The gate is enforced by `abi contract-lint` (`missing_output_contract`,
+`exempt_missing_reason`, `exempt_mixed_with_checks`) and by plugin validation;
+`scripts/audit_contract_coverage.py` reports per-plugin coverage.
 
 Supported output checks include:
 

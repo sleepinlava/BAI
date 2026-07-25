@@ -61,6 +61,7 @@ abi dry-run \
 ```text
 results/first-dry-run/
 ├── execution_plan.json
+├── compiled_plan.json
 ├── provenance/
 ├── tables/
 └── report/
@@ -69,6 +70,7 @@ results/first-dry-run/
 建议先打开这些文件：
 
 - `execution_plan.json`：ABI 选择的命令、输入、输出和步骤顺序；
+- `compiled_plan.json`：同一计划经过校验、与后端无关的编译视图；
 - `provenance/commands.tsv`：命令记录；
 - `provenance/config.resolved.yaml`：最终生效的配置；
 - `report/report.html`：真实结果将使用的报告布局。

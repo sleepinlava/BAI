@@ -52,10 +52,12 @@ nodes:
       trimmed_read1:
         type: file
         format: fastq.gz
+        contract: {min_size: "0B"}
         path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_trimmed_R1.fastq.gz"
       trimmed_read2:
         type: file
         format: fastq.gz
+        contract: {min_size: "0B"}
         path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_trimmed_R2.fastq.gz"
       output_dir:
         type: directory
@@ -145,6 +147,7 @@ nodes:
       otu_table:
         type: file
         format: tsv
+        contract: {min_size: "0B"}
         path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_otu.tsv"
       output_dir:
         type: directory
@@ -271,10 +274,12 @@ nodes:
       alpha_tsv:
         type: file
         format: tsv
+        contract: {min_size: "0B"}
         path: "{outdir}/06_diversity/alpha_diversity.tsv"
       beta_tsv:
         type: file
         format: tsv
+        contract: {min_size: "0B"}
         path: "{outdir}/06_diversity/beta_diversity.tsv"
       output_dir:
         type: directory

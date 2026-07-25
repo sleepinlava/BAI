@@ -1,0 +1,38 @@
+figure_id: scapp_paper_method_abundance_length
+figure_type: scatterplot
+data:
+  table: docs/zh/figures/data/scapp_paper_method_v2_20260724/evidence_by_plasmid.tsv
+  format: tsv
+  required_columns:
+  - plasmid_id
+  - log10_abundance_coverage
+  - log10_length_bp
+  - reference_matched
+  - prediction_status
+mapping:
+  x: log10_abundance_coverage
+  y: log10_length_bp
+  hue: prediction_status
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 140
+  height_mm: 92
+  dpi: 300
+labels:
+  title: ABI plasmid predictions by abundance and length
+  x_label: log10 CoverM coverage
+  y_label: log10 length (bp)
+  legend_title: Paper-method prediction status
+export:
+  output_dir: docs/zh/figures/rendered
+  basename: scapp_paper_method_abundance_length
+  formats:
+  - png
+  - pdf
+  - svg
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: Per-prediction abundance, length and TP/FP status; SCAPP supplementary-method
+    reconstruction for SRR11038083; official 14,739-record PLSDB archive; not paper-exact
+    because the paper-specific deduplication list is absent

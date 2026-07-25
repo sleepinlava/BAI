@@ -115,6 +115,7 @@ The standard lifecycle is ``query -> plan -> check -> dry-run -> run -> inspect
    hpc_development
    metagenomic_plasmid
    rnaseq_expression_workflow
+   airway_wgs_running_example
 
 Develop ABI
 -----------
@@ -132,6 +133,8 @@ a regression test, and run checks proportional to the affected release surface.
    plugin_report_figure_spec
    testing
    workflow_validation
+   paper_evaluation
+   paper_outline
    production_manual_acceptance_checklist
 
 Operate and release
@@ -165,12 +168,15 @@ Component summary
    * - Plugins
      - Analysis-specific tools, DAG branches, parsers, assertions, interpretation
    * - Runtimes
-     - Local, Conda, Docker, Nextflow, HPC, and cloud execution
+     - Local, Conda, Docker, Nextflow, Snakemake, HPC, and cloud execution
    * - Results
      - Execution plan, provenance, standard TSV tables, reports, and figures
 
 All agent-facing commands support ``--output-json``. Use ``abi list-types
 --output-json`` for the authoritative plugin list in the current environment.
+Representative declarative plugins include ``metagenomic_plasmid``,
+``easymetagenome``, and ``viral_viwrap``; availability still depends on the
+installed runtime and resources.
 
 Indices and tables
 ------------------

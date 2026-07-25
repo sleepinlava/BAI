@@ -1,0 +1,26 @@
+figure_id: wgs_validation
+figure_type: barplot
+data:
+  table: docs/paper_examples/wgs_figure.tsv
+  format: tsv
+  required_columns: [endpoint, agreement_percent, definition]
+mapping:
+  x: endpoint
+  y: agreement_percent
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 120
+  height_mm: 78
+  dpi: 300
+labels:
+  title: ST93 MRSA execution and endpoint recovery
+  x_label: Validation endpoint
+  y_label: Completion or agreement (%)
+export:
+  output_dir: docs/_static/paper_examples
+  basename: wgs_validation
+  formats: [png, pdf, svg]
+provenance:
+  workflow_name: wgs_bacteria
+  input_data_role: Validated PRJNA286158 execution and biological endpoints

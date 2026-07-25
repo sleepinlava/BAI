@@ -2,9 +2,11 @@
 
 ## Project Structure & Module Organization
 
-Core Python code lives in `src/abi/`. Keep transport-neutral behavior in the core; CLI, MCP, HTTP, and provider integrations should remain thin adapters. Built-in workflow implementations are split between Python entry points in `src/abi/plugins/` and declarative definitions in `plugins/<analysis_type>/` (`pipeline_dag.yaml`, tool registries, schemas, and report metadata). Tests are organized under `tests/unit/`, `tests/integration/`, and `tests/smoke/`; SciPlot also has focused tests in `src/abi/sciplot/tests/`. Use `examples/` for runnable configuration samples, `docs/en/` and `docs/zh/` for documentation, `envs/` for Conda environments, `environments.yaml` for tool→env assignments (18 envs, 98 tools), and `scripts/` for maintenance utilities.
+Core Python code lives in `src/abi/`. Keep transport-neutral behavior in the core; CLI, MCP, HTTP, and provider integrations should remain thin adapters. Built-in workflow implementations are split between Python entry points in `src/abi/plugins/` and declarative definitions in `plugins/<analysis_type>/` (`pipeline_dag.yaml`, tool registries, schemas, report metadata, and a mandatory `limitations.yaml`). Tests are organized under `tests/unit/`, `tests/integration/`, and `tests/smoke/`; SciPlot also has focused tests in `src/abi/sciplot/tests/`. Use `examples/` for runnable configuration samples, `docs/en/` and `docs/zh/` for documentation, `envs/` for Conda environments, `environments.yaml` for tool→env assignments (18 envs, 98 tools), and `scripts/` for maintenance utilities.
 
-Current codebase (2026-07-12): 215 Python source files (~53.5k lines), plasmid engine (11,823 lines), 44-file sciplot module (3,912 lines), 153 test files (2,296 passed), 83% coverage.
+Execution engines are `local`, `nextflow`, `snakemake`, and `hpc`; the Snakemake backend lives in `src/abi/exporters/snakemake.py` and `src/abi/runtimes/snakemake.py`. Every external-tool node in `pipeline_dag.yaml` must declare a `contract:` (or an explicit `contract: {exempt: true, reason: ...}` for output-less aggregation nodes); the coverage gate is enforced by strict `abi contract-lint` and plugin validation, and `scripts/audit_contract_coverage.py` audits it. Every plugin must also ship a non-empty `limitations.yaml` (lint errors `missing_limitations`/`invalid_limitations`/`empty_limitations`); reports always render a limitations section, falling back to a placeholder when the list is empty.
+
+Current codebase (2026-07-25): 228 Python source files (~57.4k lines), plasmid engine (11,968 lines), 49-file sciplot module (8,033 lines), 165 test files (2,536 collected), 80% coverage.
 
 ## Build, Test, and Development Commands
 

@@ -29,6 +29,7 @@ The recommended progression from discovery to execution is:
 Additional utility methods:
 
     export_nextflow()     — export the plan as a Nextflow DSL2 workflow
+    export_snakemake()    — export the plan as a Snakemake Snakefile
     export_agent_context()— compact machine-readable guidance for agent callers
     doctor_agent()        — human-readable operating guide for an analysis type
     dispatch()            — function-calling style tool router (used by MCP/OpenAI)
@@ -71,7 +72,7 @@ from abi.agent.envelopes import (
     success_envelope,
 )
 from abi.diagnostics import classify_exception
-from abi.exporters import NextflowExporter
+from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.interfaces import ABIResultValidationPlugin
 from abi.internal import run_plugin_preflight
 from abi.json_utils import load_json_object
@@ -83,6 +84,7 @@ from abi.schemas import ABIError
 from abi.skill_installer import install_bundled_skills
 from abi.tool_descriptors import TOOL_ALIASES
 from abi.workflow import WorkflowCoordinator
+from abi.workflow.compiled_plan import compile_plan
 
 
 def _validate_plugin_result_dir(
@@ -159,8 +161,10 @@ class ABIAgentInterface:
 
         Role in lifecycle: **Step 2 — Plan.**
         Resolves the plugin configuration, builds a full execution plan (ordered
-        steps with tool contracts), and persists it as ``execution_plan.json`` in
-        the output directory. No external tools are executed.
+        steps with tool contracts), compiles it into the backend-neutral
+        ``CompiledPlan`` (validating plan invariants), and persists both
+        ``execution_plan.json`` and ``compiled_plan.json`` in the output
+        directory. No external tools are executed.
 
         Key parameters:
             analysis_type: plugin ID returned by ``list_types()``.
@@ -171,8 +175,8 @@ class ABIAgentInterface:
             check_files:   whether to verify input file existence during planning.
 
         Returns:
-            success envelope with ``plan_path``, ``steps`` (count), and the
-            full ``plan`` dictionary.
+            success envelope with ``plan_path``, ``compiled_plan_path``,
+            ``steps`` (count), and the full ``plan`` dictionary.
 
         # 构建并持久化 ABI 执行计划, 不会运行外部工具。
         # 这是生命周期第二步: 解析配置 -> 构建步骤 -> 写入 execution_plan.json。
@@ -393,11 +397,11 @@ class ABIAgentInterface:
             1. If ``confirm_execution`` is False -> return ``confirmation_required``
                immediately (no side effects).
             2. Resolve plugin config and build the execution plan.
-            3. Select local subprocess, Nextflow DSL2, or native HPC runtime.
+            3. Select local subprocess, Nextflow DSL2, Snakemake, or native HPC runtime.
             4. Execute plan steps, capture return code, and collect outputs.
 
         Key parameters:
-            engine:             ``"local"``, ``"nextflow"``, or ``"hpc"``.
+            engine:             ``"local"``, ``"nextflow"``, ``"snakemake"``, or ``"hpc"``.
             confirm_execution:  must be ``True`` to proceed past the safety gate.
             smoke:              if True with engine=local, tools run in mock mode
                                 (useful for integration tests).
@@ -493,6 +497,58 @@ class ABIAgentInterface:
         return self._call(
             "export_nextflow",
             self._export_nextflow,
+            analysis_type=analysis_type,
+            output=output,
+            config_path=config_path,
+            sample_sheet=sample_sheet,
+            profile=profile,
+            mode=mode,
+            threads=threads,
+            outdir=outdir,
+            log_dir=log_dir,
+            smoke=smoke,
+            mamba_root=mamba_root,
+            check_files=check_files,
+        )
+
+    def export_snakemake(
+        self,
+        *,
+        analysis_type: str,
+        output: Union[str, Path],
+        config_path: Optional[Union[str, Path]] = None,
+        sample_sheet: Optional[Union[str, Path]] = None,
+        profile: str = "dry_run",
+        mode: Optional[str] = None,
+        threads: Optional[int] = None,
+        outdir: Optional[str] = None,
+        log_dir: Optional[str] = None,
+        smoke: bool = False,
+        mamba_root: Optional[Union[str, Path]] = None,
+        check_files: bool = True,
+    ) -> str:
+        """Export an ABI execution plan to a Snakemake Snakefile without running it.
+
+        Utility method (not in the strict ``run()`` path).
+        Builds the plan (same as ``plan()``) but serializes it as a Snakemake
+        ``Snakefile`` instead of executing it. Useful for portability and
+        environments where Snakemake is the preferred orchestrator.
+
+        Key parameters:
+            output:     path where the ``Snakefile`` will be written.
+            smoke:      if True, inject smoke-test parameters into the workflow.
+            mamba_root: conda/mamba prefix path for tool environments.
+
+        Returns:
+            success envelope with ``snakefile`` (path), ``steps`` (count),
+            and ``written_files``.
+
+        # 将执行计划导出为 Snakemake Snakefile, 不执行。
+        # 适用于需要 Snakemake 编排的环境。
+        """
+        return self._call(
+            "export_snakemake",
+            self._export_snakemake,
             analysis_type=analysis_type,
             output=output,
             config_path=config_path,
@@ -838,9 +894,19 @@ class ABIAgentInterface:
     ) -> Dict[str, Any]:
         """Build config + plan, then persist ``execution_plan.json`` to disk.
 
+        The plan is first compiled into the backend-neutral ``CompiledPlan``
+        (``compiled_plan.compile_plan``), which validates plan invariants
+        (duplicate step IDs, undefined dependencies, cycles, path containment).
+        A violation raises and aborts planning before any artifact is written;
+        ``_call`` surfaces it as a structured error envelope.  The compiled
+        view is persisted as ``compiled_plan.json`` next to
+        ``execution_plan.json``.
+
         The plugin reference is discarded after plan construction because the
         serialized plan is the canonical artifact that downstream steps consume.
         # 构建配置 + 计划, 然后将 execution_plan.json 写入磁盘。
+        # 持久化前先将计划编译为 CompiledPlan 并校验不变量, 失败即中止;
+        # 编译视图另存为 compiled_plan.json。
         # 构建完成后丢弃插件引用, 因为序列化计划是下游步骤消费的规范产物。
         """
         plugin, cfg, plan = self._build_plan(
@@ -860,19 +926,29 @@ class ABIAgentInterface:
         del plugin  # plugin reference is not needed after plan is serialized
         outdir_path = Path(str(cfg["outdir"]))
         outdir_path.mkdir(parents=True, exist_ok=True)
+        # Compile + validate before persisting anything.  Raises
+        # PlanIntegrityError / ToolResolutionError / UnsupportedExecutionError
+        # on invariant violations, aborting the plan command.
+        compiled = compile_plan(plan, outdir=outdir_path)
         plan_path = outdir_path / "execution_plan.json"
         plan_data = _plan_dict(plan, analysis_type)
         plan_path.write_text(
             json.dumps(plan_data, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
+        compiled_path = outdir_path / "compiled_plan.json"
+        compiled_path.write_text(
+            json.dumps(compiled.to_dict(), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
         steps = getattr(plan, "steps", [])
         return {
             "analysis_type": analysis_type,
             "plan_path": plan_path,
+            "compiled_plan_path": compiled_path,
             "steps": len(steps),
             "summary": _build_plan_summary(plan, analysis_type),
-            "written_files": [plan_path],
+            "written_files": [plan_path, compiled_path],
             "plan": plan_data,
         }
 
@@ -1084,7 +1160,7 @@ class ABIAgentInterface:
         resource_root: Optional[str] = None,
         resource_overrides_list: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
-        """Execute the plan on a real runtime (local, Nextflow, or native HPC).
+        """Execute the plan on a real runtime (local, Nextflow, Snakemake, or native HPC).
 
         The ``confirm_execution`` safety gate is checked first: if False, a
         ``status="confirmation_required"`` dict is returned immediately so
@@ -1094,9 +1170,10 @@ class ABIAgentInterface:
         # 立即返回 confirmation_required 字典, 无任何副作用。
         """
         runtime_engine = engine.lower().strip()
-        if runtime_engine not in {"local", "nextflow", "hpc"}:
+        if runtime_engine not in {"local", "nextflow", "snakemake", "hpc"}:
             raise ABIError(
-                f"Unsupported runtime engine: {engine}. Expected local, nextflow, or hpc."
+                f"Unsupported runtime engine: {engine}. "
+                "Expected local, nextflow, snakemake, or hpc."
             )
         # Safety gate: require explicit user confirmation before execution.
         # 安全闸门: 执行前需要显式用户确认。
@@ -1225,6 +1302,56 @@ class ABIAgentInterface:
             "steps": len(getattr(plan, "steps", [])),
             "smoke": smoke,
             "written_files": [workflow_path],
+        }
+
+    def _export_snakemake(
+        self,
+        *,
+        analysis_type: str,
+        output: Union[str, Path],
+        config_path: Optional[Union[str, Path]],
+        sample_sheet: Optional[Union[str, Path]],
+        profile: str,
+        mode: Optional[str],
+        threads: Optional[int],
+        outdir: Optional[str],
+        log_dir: Optional[str],
+        smoke: bool,
+        mamba_root: Optional[Union[str, Path]],
+        check_files: bool,
+    ) -> Dict[str, Any]:
+        """Build plan and serialize it as a Snakemake Snakefile.
+
+        Uses ``SnakemakeExporter`` to translate the ABI execution plan into a
+        portable ``Snakefile`` with conda env directives.
+        # 构建计划并序列化为 Snakemake Snakefile。
+        # 使用 SnakemakeExporter 将 ABI 执行计划转换为可移植的 Snakefile。
+        """
+        plugin, cfg, plan = self._build_plan(
+            analysis_type=analysis_type,
+            config_path=config_path,
+            sample_sheet=sample_sheet,
+            profile=profile,
+            mode=mode,
+            threads=threads,
+            outdir=outdir,
+            log_dir=log_dir,
+            check_files=check_files,
+        )
+        snakefile_path = SnakemakeExporter().write(
+            plan,
+            cfg,
+            plugin.registry(),
+            output,
+            smoke=smoke,
+            mamba_root=_optional_path(mamba_root),
+        )
+        return {
+            "analysis_type": analysis_type,
+            "snakefile": snakefile_path,
+            "steps": len(getattr(plan, "steps", [])),
+            "smoke": smoke,
+            "written_files": [snakefile_path],
         }
 
     def _export_agent_context(self, *, analysis_type: str) -> Dict[str, Any]:

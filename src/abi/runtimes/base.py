@@ -13,6 +13,8 @@ class RuntimeOptions:
     smoke: bool = False
     check_runtime: bool = True
     nextflow_bin: Path | None = None
+    # Snakemake backend / Snakemake 后端（无二进制时回退 ABI_SNAKEMAKE_BIN 与 PATH）
+    snakemake_bin: Path | None = None
     work_dir: Path | None = None
     workflow: Path | None = None
     nxf_home: Path | None = None

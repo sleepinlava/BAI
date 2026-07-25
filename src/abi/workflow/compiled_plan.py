@@ -4,13 +4,17 @@ Design doc ref: §4.4 Compiled Execution Plan, C08.
 
 Converts a planner-resolved ``ExecutionPlan`` into an immutable ``CompiledPlan``
 with resolved resources, environments, execution kinds, and validated invariants.
-Runs in shadow mode initially: compile and validate every built-in plugin without
-changing runtime behavior.
+
+This runs on the live runtime plan path: ``ABIAgentInterface._plan`` compiles
+every plan and persists the result as ``compiled_plan.json`` alongside
+``execution_plan.json``.  Invariant violations raise and abort planning before
+any artifact is written; the agent boundary surfaces them as a structured
+error envelope.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Set
@@ -45,6 +49,10 @@ class CompilationWarning:
     step_id: str
     message: str
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize for JSON round-tripping."""
+        return {"step_id": self.step_id, "message": self.message}
+
 
 @dataclass(frozen=True)
 class CompiledStep:
@@ -77,6 +85,24 @@ class CompiledStep:
 
     # ── Validation ──
     validated_paths: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the compiled step for JSON persistence."""
+        return {
+            "step_id": self.step_id,
+            "tool_id": self.tool_id,
+            "category": self.category,
+            "sample_id": self.sample_id,
+            "execution_kind": self.execution_kind.value,
+            "dependencies": list(self.dependencies),
+            "resources": asdict(self.resources),
+            "env_name": self.env_name,
+            "container_image": self.container_image,
+            "inputs": self.inputs,
+            "outputs": self.outputs,
+            "params": self.params,
+            "validated_paths": list(self.validated_paths),
+        }
 
 
 @dataclass(frozen=True)
@@ -122,6 +148,21 @@ class CompiledPlan:
     @property
     def internal_driver_steps(self) -> List[CompiledStep]:
         return [s for s in self.steps if s.execution_kind == ExecutionKind.INTERNAL_DRIVER]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the compiled plan for persistence as ``compiled_plan.json``."""
+        return {
+            "schema_version": "abi.compiled_plan.v1",
+            "project_name": self.project_name,
+            "analysis_type": self.analysis_type,
+            "mode": self.mode,
+            "threads": self.threads,
+            "outdir": str(self.outdir),
+            "steps": [step.to_dict() for step in self.steps],
+            "enabled_steps": list(self.enabled_steps),
+            "selected_tools": list(self.selected_tools),
+            "warnings": [warning.to_dict() for warning in self.warnings],
+        }
 
 
 # ── Compilation ──────────────────────────────────────────────────────────────

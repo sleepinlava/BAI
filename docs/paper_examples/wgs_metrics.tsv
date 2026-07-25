@@ -1,0 +1,12 @@
+metric	estimate	numerator	denominator	unit	status	note
+steps_completed_fraction	1.0	30	30	fraction	claim_eligible	Formal result validation passed
+ST93_concordance	1.0	6	6	fraction	claim_eligible	All six isolates were typed as ST93
+mecA_concordance	1.0	6	6	fraction	claim_eligible	Each mecA call had 100% amino-acid coverage and identity
+amr_standard_table_rows	145	145		rows	claim_eligible	Tool evidence rows; not unique resistance determinants
+paper_spandx_pairwise_snp_min	7	7		snps	claim_eligible	SPANDx v2.6 paper track on the full 82-sample paper context; published minimum is 7
+paper_spandx_pairwise_snp_max	60	60		snps	claim_eligible	SPANDx v2.6 paper track on the full 82-sample paper context; published maximum is 60
+paper_spandx_pairwise_snp_median	47			snps	claim_eligible	Median across the 15 six-isolate pairs; published mean is 44
+paper_spandx_pairwise_range_match	1.0	15	15	fraction	claim_eligible	All 15 six-isolate pairwise distances fall inside the published 7-60 range; paper_exact_candidate
+abi_bcftools_pairwise_snp_min	10	10		snps	claim_eligible	ABI-adjacent BWA mem plus bcftools haploid joint calling; not the paper method
+abi_bcftools_pairwise_snp_max	73	73		snps	claim_eligible	ABI-adjacent track exceeds the published 7-60 range and must not be reported as paper reproduction
+core_snp_outbreak_conclusion	recovered			NA	claim_eligible	Recovered at the distance level by the external paper SPANDx track (pairwise 7-60 restored); the ABI wgs_bacteria plugin itself still ships no core-SNP module

@@ -1,0 +1,26 @@
+figure_id: scapp_descriptive_evidence
+figure_type: barplot
+data:
+  table: docs/paper_examples/scapp_figure.tsv
+  format: tsv
+  required_columns: [evidence_stage, plasmid_count, definition]
+mapping:
+  x: evidence_stage
+  y: plasmid_count
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 145
+  height_mm: 82
+  dpi: 300
+labels:
+  title: SCAPP plasmid workflow outputs and auxiliary evidence
+  x_label: Output or evidence class
+  y_label: Plasmid calls or candidates (count)
+export:
+  output_dir: docs/_static/paper_examples
+  basename: scapp_descriptive_evidence
+  formats: [png, pdf, svg]
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: Descriptive completed-run outputs; not independent accuracy metrics

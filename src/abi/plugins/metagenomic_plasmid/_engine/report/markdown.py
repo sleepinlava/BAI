@@ -5,11 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from abi.plugins.metagenomic_plasmid._engine.report import load_plugin_limitations
 from abi.plugins.metagenomic_plasmid._engine.schemas import ExecutionPlan
 from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
     read_standard_table,
     summarize_standard_tables,
 )
+from abi.report.limitations import FALLBACK_LIMITATION
 
 
 def write_markdown_report(
@@ -118,6 +120,14 @@ def write_markdown_report(
             "- Network correlations do not prove host assignment or causality.",
         ]
     )
+    # Mandatory limitation disclosure from plugins/metagenomic_plasmid/limitations.yaml;
+    # an explicit fallback sentence is rendered when nothing is declared.
+    limitations = load_plugin_limitations()
+    lines.extend(["", "## Known Limitations", ""])
+    if limitations:
+        lines.extend(f"{i}. {lim}" for i, lim in enumerate(limitations, 1))
+    else:
+        lines.append(FALLBACK_LIMITATION)
     md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     methods.write_text(

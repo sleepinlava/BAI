@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def _module():
     path = Path(__file__).parents[2] / "scripts" / "build_scapp_machine_evidence.py"
@@ -36,6 +38,7 @@ def test_build_evidence_freezes_metrics_scope_and_artifact_hashes(tmp_path: Path
                     "true_positive_predictions_after_duplicate_penalty": 3,
                     "duplicate_false_positive_predictions": 1,
                     "no_match_false_positive_predictions": 2,
+                    "recalled_truth_references": 3,
                     "false_negative_truth_references": 1,
                     "total_truth_references": 4,
                     "total_predictions": 6,
@@ -58,17 +61,26 @@ def test_build_evidence_freezes_metrics_scope_and_artifact_hashes(tmp_path: Path
         "truth_reference_coverage.tsv",
         "truth_contig_reference_pairs.tsv",
         "prediction_reference_pairs.tsv",
-        "prediction_status.tsv",
-        "truth_status.tsv",
         "figure_metrics.tsv",
         "figure_directional_recovery.tsv",
         "evidence_match_table.tsv",
     ):
         (tmp_path / name).write_text("field\nvalue\n", encoding="utf-8")
+    (tmp_path / "prediction_status.tsv").write_text(
+        "status\n"
+        "true_positive\ntrue_positive\ntrue_positive\n"
+        "false_positive_duplicate_match_signature\n"
+        "false_positive_no_match\nfalse_positive_no_match\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "truth_status.tsv").write_text(
+        "recalled\ntrue\ntrue\ntrue\nfalse\n", encoding="utf-8"
+    )
 
-    evidence = module.build_evidence(tmp_path)
+    evidence = module.build_evidence(tmp_path, evidence_id="scapp_test_paper_method_v2")
 
     assert evidence["schema_version"] == "abi.scapp.paper_method_evidence.v1"
+    assert evidence["evidence_id"] == "scapp_test_paper_method_v2"
     assert evidence["evaluation_scope"] == "paper-method reconstruction; not paper-exact"
     assert evidence["confusion_counts"] == {
         "true_positive_predictions": 3,
@@ -80,3 +92,9 @@ def test_build_evidence_freezes_metrics_scope_and_artifact_hashes(tmp_path: Path
     assert evidence["metrics"] == {"precision": 0.5, "recall": 0.75, "f1": 0.6}
     assert evidence["database_scope"]["archive_records"] == 14739
     assert evidence["artifacts"]["score_summary"]["sha256"]
+
+    (tmp_path / "truth_status.tsv").write_text(
+        "recalled\ntrue\ntrue\ntrue\ntrue\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="score summary is inconsistent"):
+        module.build_evidence(tmp_path)

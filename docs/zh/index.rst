@@ -112,6 +112,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    hpc_development
    metagenomic_plasmid
    rnaseq_expression_workflow
+   airway_wgs_running_example
 
 开发 ABI
 ------------------------------
@@ -128,7 +129,11 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    plugin_report_figure_spec
    testing
    workflow_validation
+   current_conclusions_next_steps
+   paper_evaluation
+   paper_outline
    real_data_validation_datasets
+   abi_real_data_validation_status_20260724
    production_manual_acceptance_checklist
 
 运维与发布
@@ -160,7 +165,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    * - 插件层
      - 分析特有工具、DAG 分支、解析器、断言和结果解释
    * - 运行时
-     - 本地、Conda、Docker、Nextflow、HPC 和云端执行
+     - 本地、Conda、Docker、Nextflow、Snakemake、HPC 和云端执行
    * - 结果层
      - 执行计划、溯源、标准 TSV、报告和科研图形
 

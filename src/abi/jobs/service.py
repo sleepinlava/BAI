@@ -1002,9 +1002,10 @@ def _backend_for(command: str, arguments: Mapping[str, Any]) -> str:
     if not _is_execution_command(command):
         return "service"
     backend = str(arguments.get("backend") or arguments.get("engine") or "local").lower().strip()
-    if backend not in {"local", "nextflow", "hpc", "cloud"}:
+    if backend not in {"local", "nextflow", "snakemake", "hpc", "cloud"}:
         raise JobServiceError(
-            f"Unsupported ABI job backend: {backend}. Expected local, nextflow, hpc, or cloud."
+            f"Unsupported ABI job backend: {backend}. "
+            "Expected local, nextflow, snakemake, hpc, or cloud."
         )
     return backend
 
@@ -1059,10 +1060,10 @@ def _engine_for_backend(backend: str, arguments: Mapping[str, Any]) -> str:
     """Map a user-facing backend name to the internal engine name.
 
     ``hpc`` and ``cloud`` both use Nextflow under the hood.  ``local``
-    maps to itself.
+    and ``snakemake`` map to themselves.
 
     将面向用户的后端名称映射为内部引擎名称。``hpc`` 和 ``cloud`` 底层均使用
-    Nextflow，``local`` 映射为自身。
+    Nextflow，``local`` 和 ``snakemake`` 映射为自身。
     """
     if backend in {"hpc", "cloud"}:
         return "nextflow"
@@ -1115,6 +1116,9 @@ def _canonical_command(command: str) -> str:
         "export_nextflow": "abi_export_nextflow",
         "export-nextflow": "abi_export_nextflow",
         "abi_export_nextflow": "abi_export_nextflow",
+        "export_snakemake": "abi_export_snakemake",
+        "export-snakemake": "abi_export_snakemake",
+        "abi_export_snakemake": "abi_export_snakemake",
         "export_agent_context": "abi_export_agent_context",
         "export-agent-context": "abi_export_agent_context",
         "abi_export_agent_context": "abi_export_agent_context",

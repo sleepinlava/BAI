@@ -29,8 +29,13 @@ def test_agent_interface_plan_writes_plan_with_uniform_result(tmp_path):
     assert payload["command"] == "plan"
     assert payload["result"]["analysis_type"] == "metatranscriptomics"
     assert payload["result"]["steps"] == 3
-    assert payload["result"]["written_files"] == [str(outdir / "execution_plan.json")]
+    assert payload["result"]["written_files"] == [
+        str(outdir / "execution_plan.json"),
+        str(outdir / "compiled_plan.json"),
+    ]
+    assert payload["result"]["compiled_plan_path"] == str(outdir / "compiled_plan.json")
     assert (outdir / "execution_plan.json").exists()
+    assert (outdir / "compiled_plan.json").exists()
 
 
 def test_agent_interface_run_requires_confirmation():

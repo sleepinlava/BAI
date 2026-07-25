@@ -340,7 +340,9 @@ agent_debug = ABIAgentInterface(verbose_errors=True)
 
 遇到错误时，按以下顺序检查：
 
-1. JSON 信封中的 `error_code` 和 `diagnostic_hints`
+1. JSON 信封中的 `error_code` 和 `diagnostic_hints` — 每条 hint 携带结构化的
+   `recovery` 块（`action`、`api_call`、`params`）；可直接据此行动，
+   绝不可自动重试 `action` 为 `do_not_retry` 的提示
 2. `result_dir/provenance/commands.tsv` — 查找 `failed` 行
 3. `result_dir/provenance/resolved_inputs.tsv` — 检查缺失/占位输入
 4. `result_dir/provenance/step_logs/<step_id>.stderr.log` — 原始工具错误输出

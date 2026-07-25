@@ -1,0 +1,25 @@
+{
+  "figure_id": "scapp_paper_method_evidence_rates",
+  "created_at": "2026-07-23T23:40:31.290839+00:00",
+  "abi_version": "unknown",
+  "skill": "abi_sciplot",
+  "skill_version": "0.1.0",
+  "renderer": "matplotlib",
+  "renderer_version": "3.11.0",
+  "python_version": "3.12.3",
+  "input_table": "docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_evidence_rates.tsv",
+  "input_data_role": "Auxiliary evidence stratified by TP/FP prediction status; SCAPP supplementary-method reconstruction for SRR11038083; official 14,739-record PLSDB archive; not paper-exact because the paper-specific deduplication list is absent",
+  "input_sha256": "ad7352935157e412a5e89da6c430893d2fed12ef44319fe537eaf8f88f22e956",
+  "workflow_name": "metagenomic_plasmid",
+  "theme": "abi_nature",
+  "palette": "colorblind_safe_8",
+  "statistical_test": null,
+  "multiple_testing_correction": null,
+  "packages": {
+    "matplotlib": "3.11.0",
+    "pandas": "3.0.3",
+    "numpy": "1.26.4",
+    "seaborn": "0.13.2",
+    "pydantic": "2.13.4"
+  }
+}

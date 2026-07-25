@@ -1,0 +1,12 @@
+# Known limitations for the easymetagenome plugin.
+# DRAFT — placeholder content pending review by the workflow authors.
+# These are rendered into every report to prevent over-interpretation.
+
+limitations:
+  - "Read-based taxonomic profiling (Kraken2/Bracken) estimates relative abundance only; it does not measure absolute microbial load or cell viability. (Ref: Gloor et al., Front Microbiol 2017, https://doi.org/10.3389/fmicb.2017.02224; Wood et al., Genome Biol 2019, https://doi.org/10.1186/s13059-019-1891-0)"
+  - "Classification sensitivity depends on reference database completeness and version; organisms absent from the database cannot be detected, and closely related genomes may be misassigned. (Ref: Wood et al., Genome Biol 2019, https://doi.org/10.1186/s13059-019-1891-0)"
+  - "Bracken abundance re-estimation assumes a uniform read-length distribution and can be biased for genomes sharing many k-mers or containing large repeats. (Ref: Lu et al., PeerJ Comput Sci 2017, https://doi.org/10.7717/peerj-cs.104)"
+  - "Host removal with KneadData depends on the host reference database; divergent or unassembled host regions may survive filtering and contaminate downstream profiles. (Ref: KneadData official documentation, https://github.com/biobakery/kneaddata)"
+  - "HUMAnN4 functional profiles cover only genes and pathways represented in the UniRef/ChocoPhlAn databases; uncharacterized gene families are invisible to this analysis. (Ref: Beghini et al., eLife 2021, https://doi.org/10.7554/eLife.65088)"
+  - "Stratified functional assignments link pathways to taxa only through database annotations; low-coverage organisms yield noisy or missing stratifications. (Ref: Beghini et al., eLife 2021, https://doi.org/10.7554/eLife.65088)"
+  - "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs."

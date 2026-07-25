@@ -62,7 +62,8 @@ CLI to include the full `error_type` field for debugging.
 
 - `read_only`: `list_types`, `inspect`, `abi_validate_result`,
   `export_agent_context`, `doctor_agent`
-- `planning_write`: `plan`, `dry_run`, `report`, `export_nextflow`
+- `planning_write`: `plan`, `dry_run`, `report`, `export_nextflow`,
+  `export_snakemake`
 - `execution`: `run`
 
 Execution requires `confirm_execution=true`. Descriptors do not export
@@ -75,6 +76,7 @@ Planning and dry-run outputs should converge on this structure:
 ```text
 outdir/
   execution_plan.json
+  compiled_plan.json
   provenance/
     commands.tsv
     resolved_inputs.tsv
@@ -109,7 +111,7 @@ recognized failure mode:
 | `missing_database` | a bioinformatics database is unavailable |
 | `tool_not_found` | an external tool executable is not on PATH |
 | `permission_required` | execution requires explicit user confirmation |
-| `runtime_not_supported` | the requested engine is not local/nextflow |
+| `runtime_not_supported` | the requested engine is not local/nextflow/snakemake/hpc |
 | `nonzero_exit` | an external command returned non-zero |
 | `parse_failed` | tool output could not be parsed into tables |
 | `empty_result` | the pipeline produced no output |
@@ -122,7 +124,12 @@ recognized failure mode:
 | `missing_sample_id` | a sample ID is missing from the expected set |
 
 The frozen set is defined in `abi.diagnostics.ERROR_CODES` and each error
-response carries a stable `error_code` + actionable `diagnostic_hints`.
+response carries a stable `error_code` + actionable `diagnostic_hints`. Each
+hint also carries a structured `recovery` block (`action`, `api_call`,
+`params`) from a data-driven table covering all 19 codes: `action` is one of
+`retry`, `resume`, `fix_input`, `install_resource`, `request_authorization`,
+or `do_not_retry`, and `do_not_retry` classes (malformed sample sheets,
+contract violations, internal errors) must never be auto-retried.
 
 ## Plugin Contracts
 
@@ -132,9 +139,13 @@ Each plugin must provide:
 - `tool_registry.yaml`
 - `standard_tables.yaml`
 - `tool_contracts/*.yaml`
+- `limitations.yaml` (mandatory, non-empty; enforced by contract lint)
 
 `abi.testing.assert_plugin_contract()` validates runtime Python interfaces and
-machine-readable plugin assets.
+machine-readable plugin assets. Validation also enforces output-contract
+coverage: every external-tool node in `pipeline_dag.yaml` must declare a
+`contract:` block, or an explicit `contract: {exempt: true, reason: ...}` for
+output-less aggregation nodes.
 
 ## Plan Summary
 

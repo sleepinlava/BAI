@@ -1,0 +1,9 @@
+metric	estimate	numerator	denominator	unit	status	note
+steps_completed_fraction	1.0	10	10	fraction	interim_descriptive	Formal workflow execution completed
+primary_calls	167	167		plasmid_calls	interim_descriptive	Primary detection evidence
+consensus_plasmids	157	157		plasmids	interim_descriptive	Consensus plasmid candidates
+terminal_repeat_evidence	54	54	157	plasmids	interim_descriptive	DTR or ITR evidence
+mobilizable_calls	20	20	157	plasmids	interim_descriptive	MOB-suite database inference
+paper_method_precision	0.07643312101910828	12	157	fraction	claim_eligible	Paper-method reconstruction; not paper-exact; v2 frozen evidence 2026-07-23
+paper_method_recall	0.7272727272727273	64	88	fraction	claim_eligible	Paper-method reconstruction; not paper-exact; v2 frozen evidence 2026-07-23
+paper_method_f1	0.138328530259366			fraction	claim_eligible	Harmonic mean of paper-method precision 12/157 and recall 64/88; not paper-exact

@@ -1,0 +1,25 @@
+{
+  "figure_id": "scapp_paper_method_mobility_composition",
+  "created_at": "2026-07-23T23:40:37.845967+00:00",
+  "abi_version": "unknown",
+  "skill": "abi_sciplot",
+  "skill_version": "0.1.0",
+  "renderer": "matplotlib",
+  "renderer_version": "3.11.0",
+  "python_version": "3.12.3",
+  "input_table": "docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_mobility_composition.tsv",
+  "input_data_role": "MOB-typer composition stratified by TP/FP status; SCAPP supplementary-method reconstruction for SRR11038083; official 14,739-record PLSDB archive; not paper-exact because the paper-specific deduplication list is absent",
+  "input_sha256": "2a0e9e41287d938b2c5c5f9ac34af54d59b610639c0eccb237f47e5735dcb212",
+  "workflow_name": "metagenomic_plasmid",
+  "theme": "abi_nature",
+  "palette": "colorblind_safe_8",
+  "statistical_test": null,
+  "multiple_testing_correction": null,
+  "packages": {
+    "matplotlib": "3.11.0",
+    "pandas": "3.0.3",
+    "numpy": "1.26.4",
+    "seaborn": "0.13.2",
+    "pydantic": "2.13.4"
+  }
+}

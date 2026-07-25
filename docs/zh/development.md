@@ -45,8 +45,8 @@ src/abi/
   tables.py           StandardTableManager
   tool_descriptors.py 统一工具描述符单点真相（3 格式家族、7+ LLM 提供商）
   jobs/               HTTP Job Service（服务端、客户端，force-kill 支持）
-  runtimes/           local、Nextflow、HPC 运行时
-  exporters/          Nextflow DSL2 导出器
+  runtimes/           local、Nextflow、Snakemake、HPC 运行时
+  exporters/          Nextflow DSL2 与 Snakemake 导出器
   mcp/                可选 MCP stdio 服务器（通过 ``abi-mcp`` 暴露）
   skills/             Agent 技能文件 → 通过 ``abi install-skills`` 安装
   cli.py              Typer CLI（abi、abi-mcp、autoplasm、abi-sciplot 入口点）

@@ -1,0 +1,20 @@
+{
+  "method": "SCAPP supplementary methods S5 two-stage truth reconstruction: identity-filtered contig coverage gate followed by reference coverage gate.",
+  "thresholds": {
+    "identity_strictly_greater_than_percent": 85.0,
+    "contig_coverage_strictly_greater_than_fraction": 0.85,
+    "reference_coverage_strictly_greater_than_fraction": 0.9
+  },
+  "inputs": {
+    "blast_tsv": "contigs_to_plsdb.tsv",
+    "blast_tsv_sha256": "c8b19b8f464b70158878a612f52c4ba595a2fcec37762175fe69a7d019a78ea1",
+    "reference_fasta": "/root/autodl-tmp/abi-real-data/references/scapp/plsdb_2018_12_05/plsdb_2018_12_05.fasta",
+    "reference_fasta_sha256": "46c74eaa6f953896422cb5465a88008e0f72af2f36fa5bfcdc2521638c4d461e"
+  },
+  "counts": {
+    "identity_filtered_contig_reference_pairs": 19484,
+    "matching_contig_reference_pairs": 3052,
+    "references_with_identity_filtered_hits": 4240,
+    "selected_truth_references": 88
+  }
+}

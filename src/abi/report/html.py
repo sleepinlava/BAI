@@ -20,6 +20,8 @@ from html import escape
 from pathlib import Path
 from typing import Any, List, Mapping, Optional, Sequence
 
+from abi.report.limitations import FALLBACK_LIMITATION
+
 __all__ = ["write_html_report"]
 
 
@@ -165,22 +167,22 @@ def write_html_report(
         )
 
     # ── Limitations ──
+    # The section is always rendered: an empty declaration produces an
+    # explicit fallback sentence instead of silently omitting the section.
+    html_parts.extend(
+        [
+            "<section>",
+            "<h2>Known Limitations</h2>",
+        ]
+    )
     if limitations_yaml:
-        html_parts.extend(
-            [
-                "<section>",
-                "<h2>Known Limitations</h2>",
-                "<ol>",
-            ]
-        )
+        html_parts.append("<ol>")
         for lim in limitations_yaml:
             html_parts.append(f"<li>{escape(str(lim))}</li>")
-        html_parts.extend(
-            [
-                "</ol>",
-                "</section>",
-            ]
-        )
+        html_parts.append("</ol>")
+    else:
+        html_parts.append(f"<p>{escape(FALLBACK_LIMITATION)}</p>")
+    html_parts.append("</section>")
 
     # ── Citations ──
     if citations:

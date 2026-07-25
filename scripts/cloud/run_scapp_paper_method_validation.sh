@@ -10,6 +10,7 @@ SCAPP_SUPPLEMENT=${SCAPP_SUPPLEMENT:-/root/autodl-tmp/abi-real-data/references/s
 PLSDB_DUPLICATE_SCAN=${PLSDB_DUPLICATE_SCAN:-/root/autodl-tmp/abi-real-data/references/scapp/plsdb_2018_12_05/exact_duplicate_groups.tsv}
 PREDICTIONS_FASTA=${PREDICTIONS_FASTA:-/root/autodl-tmp/abi-real-data/results/plasmid_scapp_core_retry7/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta}
 OUTPUT_DIR=${OUTPUT_DIR:-${TASK_ROOT}/paper_method_v1}
+EVIDENCE_ID=${EVIDENCE_ID:-scapp_srr11038083_plsdb_2018_12_05_${OUTPUT_DIR##*/}}
 THREADS=${THREADS:-16}
 BLAST_ENV=${BLAST_ENV:-/root/autodl-tmp/.mamba/envs/autoplasm-assembly}
 PYTHON=${PYTHON:-/root/miniconda3/bin/python}
@@ -98,9 +99,11 @@ mkdir -p "${stage}/blastdb/plsdb" "${stage}/blastdb/truth" "${stage}/logs"
     printf 'blastn_version\t%s\n' "$("${BLASTN}" -version | head -1)"
     printf 'threads\t%s\n' "${THREADS}"
     printf 'blast_max_target_seqs\t20000\n'
+    printf 'evidence_id\t%s\n' "${EVIDENCE_ID}"
 } >"${stage}/run_provenance.tsv"
 "${PYTHON}" "${ABI_REPO}/scripts/build_scapp_machine_evidence.py" \
-    --output-dir "${stage}" >"${stage}/logs/build_machine_evidence.log" 2>&1
+    --output-dir "${stage}" --evidence-id "${EVIDENCE_ID}" \
+    >"${stage}/logs/build_machine_evidence.log" 2>&1
 # BLAST databases are deterministic caches derived from frozen FASTA inputs.
 # Remove them before publication; retain the HSP tables and their checksums.
 rm -rf -- "${stage}/blastdb"

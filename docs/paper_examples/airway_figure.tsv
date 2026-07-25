@@ -1,0 +1,3 @@
+endpoint	agreement_percent	definition
+Effect direction	90.8	Matched-gene log2FC sign agreement with the frozen GEO Cuffdiff table
+Sentinel genes	100.0	Preregistered sentinel genes with concordant Dex-response direction

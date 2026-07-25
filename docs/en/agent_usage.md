@@ -352,7 +352,9 @@ Every `ABIAgentInterface` method returns a JSON string with one of three statuse
 
 On error, inspect in order:
 
-1. `error_code` and `diagnostic_hints` in the JSON envelope
+1. `error_code` and `diagnostic_hints` in the JSON envelope — each hint carries
+   a structured `recovery` block (`action`, `api_call`, `params`); act on it
+   directly, and never auto-retry hints whose action is `do_not_retry`
 2. `result_dir/provenance/commands.tsv` — find `failed` rows
 3. `result_dir/provenance/resolved_inputs.tsv` — check for missing/placeholder inputs
 4. `result_dir/provenance/step_logs/<step_id>.stderr.log` — raw tool error output

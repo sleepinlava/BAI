@@ -92,5 +92,10 @@ def test_scoring_uses_strict_identity_and_bidirectional_coverage_thresholds(
     )
 
     assert summary["counts"]["true_positive_predictions_after_duplicate_penalty"] == 0
+    assert summary["counts"]["recalled_truth_references"] == 0
+    assert summary["counts"]["false_negative_truth_references"] == 1
+    assert summary["metrics"]["recall"] == 0
     assert all(row["status"] == "false_positive_no_match" for row in predictions)
     assert references[0]["recalled"] == "false"
+    assert references[0]["matching_prediction_count"] == 0
+    assert references[0]["matching_prediction_ids"] == ""

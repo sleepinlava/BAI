@@ -92,6 +92,7 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract: {contains: ["08_ViWrap_summary_outdir"], min_files: 1}
         path: "{outdir}/raw"
     assertions:
       - "output_files.output_dir exists"

@@ -1,0 +1,12 @@
+# Known limitations for the viral_viwrap plugin.
+# DRAFT — placeholder content pending review by the workflow authors.
+# These are rendered into every report to prevent over-interpretation.
+
+limitations:
+  - "Virus identification depends on input assembly quality; fragmented, short, or low-coverage contigs are frequently missed or left unclassified. (Ref: Zhou et al., iMeta 2023, https://doi.org/10.1002/imt2.118)"
+  - "Viral taxonomic assignment relies on reference viral databases; most environmental viruses lack close references and remain unclassified or coarsely assigned. (Ref: Zhou et al., iMeta 2023, https://doi.org/10.1002/imt2.118)"
+  - "vRhyme viral binning can produce chimeric or incomplete vMAGs; bin quality should be cross-checked against CheckV completeness and contamination estimates. (Ref: Kieft et al., Nucleic Acids Res 2022, https://doi.org/10.1093/nar/gkac341; Nayfach et al., Nat Biotechnol 2021, https://doi.org/10.1038/s41587-020-00774-7)"
+  - "Host prediction (e.g., iPHoP) is database-dependent and correlative; predictions without close reference genomes are low-confidence and require experimental validation. (Ref: Roux et al., PLoS Biol 2023, https://doi.org/10.1371/journal.pbio.3002083)"
+  - "Normalized viral abundance from read mapping is sensitive to mapping parameters and contig representativeness; it does not measure absolute viral particle counts or infectivity. (Ref: Zhou et al., iMeta 2023, https://doi.org/10.1002/imt2.118)"
+  - "ViWrap runs as a managed external black box (v1.3.1); its internal tool versions and reference database releases determine the results and are recorded in provenance but not re-validated by ABI. (Ref: ViWrap official documentation, https://github.com/AnantharamanLab/ViWrap)"
+  - "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs."

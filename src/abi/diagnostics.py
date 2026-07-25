@@ -14,10 +14,19 @@ every ABI error response carries:
         field                 — config/schema field name (when known)
         message               — human-readable summary of what went wrong
         suggested_next_action — concrete step the agent should take next
+        recovery              — structured, machine-actionable recovery action:
+            action   — one of ``retry``, ``resume``, ``fix_input``,
+                       ``install_resource``, ``request_authorization``,
+                       ``do_not_retry``
+            api_call — the ABI lifecycle verb to invoke (e.g. ``"abi_run"``)
+            params   — parameters to pass with that call (may be empty)
 
 An agent that receives an error envelope can:
 1. Switch on ``error_code`` to determine the failure category.
-2. Read ``suggested_next_action`` for the recommended recovery step.
+2. Read ``suggested_next_action`` for the recommended recovery step, or act
+   on the structured ``recovery`` block directly — ``do_not_retry`` classes
+   (e.g. malformed sample sheets) are marked explicitly so agents never
+   auto-retry them.
 3. Inspect ``artifact`` to identify the problematic file.
 4. Retry with corrected inputs — all without round-tripping to a human.
 
@@ -67,7 +76,7 @@ converted to a structured, self-describing error response.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -75,7 +84,9 @@ from abi.errors import ConfigError
 
 __all__ = [
     "ERROR_CODES",
+    "RECOVERY_ACTIONS",
     "DiagnosticHint",
+    "RecoveryAction",
     "classify_exception",
 ]
 
@@ -107,6 +118,90 @@ ERROR_CODES = {
 }
 
 
+# Machine-actionable recovery action kinds carried by ``RecoveryAction.action``.
+# 恢复动作类型的冻结集合, 由 RecoveryAction.action 携带。
+RECOVERY_ACTIONS = frozenset(
+    {
+        "retry",
+        "resume",
+        "fix_input",
+        "install_resource",
+        "request_authorization",
+        "do_not_retry",
+    }
+)
+
+
+# Data-driven mapping from error code to its structured recovery action:
+#     code -> (action, api_call, params)
+# ``do_not_retry`` classes (malformed sample sheets, contract violations,
+# internal errors, ...) must never be auto-retried; their ``api_call`` names
+# the verb to invoke only *after* the root cause has been fixed.
+# 错误码到结构化恢复动作的数据驱动映射:
+#     code -> (action, api_call, params)
+# do_not_retry 类别 (畸形样本表、契约违规、内部错误等) 绝不自动重试;
+# 其 api_call 仅在根因修复后调用。
+_RECOVERY_BY_CODE: Dict[str, tuple[str, str, Dict[str, Any]]] = {
+    # fix_input — the caller supplied an invalid reference/parameter.
+    "unknown_analysis_type": ("fix_input", "abi_list_types", {}),
+    "runtime_not_supported": ("fix_input", "abi_run", {"engine": "local"}),
+    "missing_input": ("fix_input", "abi_plan", {}),
+    "artifact_missing": ("fix_input", "abi_plan", {}),
+    # install_resource — an external tool/resource/database must be provisioned.
+    "missing_resource": ("install_resource", "abi_check", {}),
+    "missing_database": ("install_resource", "abi_check", {}),
+    "tool_not_found": ("install_resource", "abi_check", {}),
+    # request_authorization — the run() safety gate needs explicit approval.
+    "permission_required": ("request_authorization", "abi_run", {"confirm_execution": True}),
+    # resume — rerun the same command; completed steps are skipped.
+    "nonzero_exit": ("resume", "abi_run", {}),
+    # do_not_retry — blind auto-retry can never succeed; fix the root cause first.
+    "invalid_config": ("do_not_retry", "abi_plan", {}),
+    "invalid_sample_sheet": ("do_not_retry", "abi_plan", {}),
+    "missing_sample_id": ("do_not_retry", "abi_plan", {}),
+    "duplicate_sample_id": ("do_not_retry", "abi_plan", {}),
+    "incomplete_pairs": ("do_not_retry", "abi_plan", {}),
+    "invalid_platform": ("do_not_retry", "abi_plan", {}),
+    "parse_failed": ("do_not_retry", "abi_inspect", {}),
+    "empty_result": ("do_not_retry", "abi_inspect", {}),
+    "contract_violation": ("do_not_retry", "abi_inspect", {}),
+    "internal_error": ("do_not_retry", "abi_inspect", {}),
+}
+
+
+@dataclass(frozen=True)
+class RecoveryAction:
+    """A structured, machine-actionable recovery step for a failure class.
+
+    Unlike ``suggested_next_action`` (natural language for humans/LLMs), this
+    block is meant to be executed programmatically: an agent can switch on
+    ``action``, invoke ``api_call`` with ``params``, and — for
+    ``do_not_retry`` classes — know it must never blindly auto-retry.
+
+    Fields / 字段说明:
+        action:   one of ``RECOVERY_ACTIONS`` (``retry``, ``resume``,
+                  ``fix_input``, ``install_resource``,
+                  ``request_authorization``, ``do_not_retry``).
+        api_call: ABI lifecycle verb to invoke (e.g. ``"abi_run"``,
+                  ``"abi_inspect"``). For ``do_not_retry`` classes this is
+                  the verb to call only *after* the root cause is fixed.
+        params:   parameters to pass with the call (may be empty).
+
+    # 结构化、机器可执行的恢复动作, 供 agent 程序化执行。
+    """
+
+    action: str
+    api_call: str
+    params: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict; ``params`` is always present (possibly empty).
+
+        # 序列化为字典; params 始终出现 (可为空)。
+        """
+        return {"action": self.action, "api_call": self.api_call, "params": dict(self.params)}
+
+
 @dataclass(frozen=True)
 class DiagnosticHint:
     """A single actionable recovery hint produced by error classification.
@@ -121,6 +216,9 @@ class DiagnosticHint:
         artifact:              path to the problematic file (when extractable from
                                the exception message).
         field:                 config/schema field name (reserved for future use).
+        recovery:              optional structured ``RecoveryAction`` for
+                               programmatic recovery; populated by
+                               ``classify_exception`` for every known error code.
 
     # 单个可操作的恢复提示, 由错误分类生成。
     # 不可变 (frozen=True), 可安全缓存和复用。
@@ -132,6 +230,7 @@ class DiagnosticHint:
     suggested_next_action: str
     artifact: Optional[str] = None
     field: Optional[str] = None
+    recovery: Optional[RecoveryAction] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dict, omitting None-valued optional fields.
@@ -212,6 +311,19 @@ def classify_exception(exc: Exception, *, command: str) -> tuple[str, List[Dict[
                 "then correct or regenerate the failing input/output artifact."
             ),
             artifact=_extract_path(message),
+        )
+    if error_type in {"PlanIntegrityError", "ToolResolutionError", "UnsupportedExecutionError"}:
+        # Compiled-plan invariant validation aborted plan compilation — the
+        # plugin declaration or config produced an invalid plan.
+        # 编译计划的不变量校验中止了计划编译 — 插件声明或配置产生了非法计划。
+        return _diagnosis(
+            "invalid_config",
+            "The execution plan failed compiled-plan invariant validation.",
+            (
+                "Fix the plugin declaration or config so the plan invariants hold "
+                "(unique step IDs, defined acyclic dependencies, contained output "
+                "paths, registered tools), then rerun plan."
+            ),
         )
     if error_type == "ABIJSONError" or "invalid json" in lowered:
         # JSON deserialization failed — artifact is likely corrupted or malformed.
@@ -366,8 +478,17 @@ def _diagnosis(
     """Construct a single DiagnosticHint and return it with its error code.
 
     This is a convenience factory so every classification branch is a one-liner.
+    The structured ``recovery`` block is attached from ``_RECOVERY_BY_CODE``;
+    codes missing from the table yield a hint without one (the field is
+    optional for backward compatibility).
     # 便捷工厂函数, 使每个分类分支只需一行代码。
+    # 结构化 recovery 块从 _RECOVERY_BY_CODE 表挂载; 表中缺失的 code 不带该字段。
     """
+    recovery: Optional[RecoveryAction] = None
+    mapped = _RECOVERY_BY_CODE.get(code)
+    if mapped is not None:
+        action, api_call, params = mapped
+        recovery = RecoveryAction(action=action, api_call=api_call, params=dict(params))
     hint = DiagnosticHint(
         severity="error",
         code=code,
@@ -375,6 +496,7 @@ def _diagnosis(
         field=field,
         message=message,
         suggested_next_action=suggested_next_action,
+        recovery=recovery,
     )
     return code, [hint.to_dict()]
 
