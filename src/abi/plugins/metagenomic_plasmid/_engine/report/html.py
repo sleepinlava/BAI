@@ -6,11 +6,13 @@ from html import escape
 from pathlib import Path
 from typing import Mapping, Sequence
 
+from abi.plugins.metagenomic_plasmid._engine.report import load_plugin_limitations
 from abi.plugins.metagenomic_plasmid._engine.schemas import ExecutionPlan
 from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
     read_standard_table,
     summarize_standard_tables,
 )
+from abi.report.limitations import FALLBACK_LIMITATION
 
 
 def write_html_report(
@@ -43,6 +45,7 @@ def write_html_report(
     hybrid_beta = _hybrid_beta_html(plan)
     warnings_html = _consensus_warnings_html(consensus)
     assembly_qc_html = _assembly_qc_html(assembly_summary)
+    limitations_html = _limitations_html(load_plugin_limitations())
     html.write_text(
         f"""<!doctype html>
 <html lang="en">
@@ -85,12 +88,26 @@ evidence; PlasmidFinder and MOB-suite are supporting evidence. Supporting-tool
 absence is not evidence of non-plasmid origin. Host predictions are evidence labels,
 not definitive host assignments. Plasmid clusters are not taxonomic species, and
 network correlations are not causal evidence.</p>
+{limitations_html}
 </body>
 </html>
 """,
         encoding="utf-8",
     )
     return html
+
+
+def _limitations_html(limitations: Sequence[str]) -> str:
+    """Render the mandatory Known Limitations section.
+
+    Entries come from ``plugins/metagenomic_plasmid/limitations.yaml``; when
+    nothing is declared an explicit fallback sentence is rendered instead of
+    silently omitting the section.
+    """
+    if not limitations:
+        return f"<h2>Known Limitations</h2><p>{escape(FALLBACK_LIMITATION)}</p>"
+    items = "".join(f"<li>{escape(str(lim))}</li>" for lim in limitations)
+    return f"<h2>Known Limitations</h2><ol>{items}</ol>"
 
 
 def _table_summary_html(table_summary: Mapping[str, Mapping[str, object]]) -> str:

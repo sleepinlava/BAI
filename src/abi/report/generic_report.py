@@ -30,6 +30,8 @@ from html import escape
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from abi.report.limitations import FALLBACK_LIMITATION
+
 __all__ = ["write_generic_report", "write_full_report", "write_plugin_report"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ def write_generic_report(
     *,
     table_summary: Mapping[str, Mapping[str, Any]],
     title: str = "ABI Report",
+    limitations: Optional[List[str]] = None,
 ) -> Dict[str, Path]:
     """Write a human-readable + machine-readable pipeline report.
 
@@ -48,6 +51,9 @@ def write_generic_report(
     - plan: The pipeline plan object (duck-typed: needs .to_dict() or be dict) / 管道计划
     - result_dir: Where to create the report/ subdirectory / 报告输出目录
     - table_summary: Dict from StandardTableManager.summarize() / 表格汇总
+    - limitations: Optional list of declared limitation strings; when empty or
+      omitted an explicit fallback sentence is rendered instead of omitting
+      the section. / 局限性声明列表，缺省时渲染兜底句而非省略章节
 
     # What is produced / 生成内容
     - report/report.md: Markdown with project metadata and a table summary. / Markdown 格式
@@ -72,6 +78,16 @@ def write_generic_report(
     markdown = report_dir / "report.md"
     html = report_dir / "report.html"
 
+    limitations_list = [str(item) for item in (limitations or [])]
+    limitations_md = [f"{i}. {lim}" for i, lim in enumerate(limitations_list, 1)] or [
+        FALLBACK_LIMITATION
+    ]
+    limitations_html = (
+        "<ol>" + "".join(f"<li>{escape(lim)}</li>" for lim in limitations_list) + "</ol>"
+        if limitations_list
+        else f"<p>{escape(FALLBACK_LIMITATION)}</p>"
+    )
+
     # ── Markdown report / Markdown 格式 ──
     # Build line by line via join() for clarity (f-strings would be unwieldy
     # with this many lines). / 逐行构建，比 f-string 更清晰。
@@ -93,6 +109,11 @@ def write_generic_report(
                     f"| `{table}.tsv` | {meta.get('rows', 0)} | `{meta.get('path', '')}` |"
                     for table, meta in sorted(table_summary.items())
                 ],
+                "",
+                "## Known Limitations",
+                "",
+                # Mandatory disclosure: fallback sentence when nothing declared
+                *limitations_md,
                 "",
                 # Disclaimer: dry-run = structural validation only / 免责声明
                 "Dry-run artifacts prove planning, command rendering, provenance, and table "
@@ -133,6 +154,8 @@ def write_generic_report(
                 "<tbody>",
                 *html_rows,
                 "</tbody></table>",
+                "<h2>Known Limitations</h2>",
+                limitations_html,
                 "<p>Dry-run artifacts prove planning, command rendering, provenance, and "
                 "table contracts only.</p>",
                 "</body>",
@@ -153,6 +176,7 @@ def write_generic_report(
                 "analysis_type": analysis_type,
                 "selected_tools": selected_tools,
                 "standard_tables": dict(table_summary),
+                "limitations": limitations_list,
             },
             indent=2,
             ensure_ascii=False,  # Allow Unicode in project names / 允许中文项目名
@@ -210,7 +234,13 @@ def write_full_report(
     paths: Dict[str, Path] = {}
 
     # ── Generic report (Markdown + HTML + JSON) ──
-    generic = write_generic_report(plan, result_dir, table_summary=table_summary, title=title)
+    generic = write_generic_report(
+        plan,
+        result_dir,
+        table_summary=table_summary,
+        title=title,
+        limitations=limitations,
+    )
     paths.update(generic)
 
     # ── Full HTML report (overwrites the simpler one) ──

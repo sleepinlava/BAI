@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional, Sequence
 
 from abi._shared import _read_tsv
+from abi.report.limitations import FALLBACK_LIMITATION
 
 __all__ = ["write_methods"]
 
@@ -162,16 +163,20 @@ def write_methods(
         lines.append("")
 
     # ── Limitations / 限制说明 ──
+    # The section is always rendered: an empty declaration produces an
+    # explicit fallback sentence instead of silently omitting the section.
+    lines.extend(
+        [
+            "## Known Limitations",
+            "",
+        ]
+    )
     if limitations:
-        lines.extend(
-            [
-                "## Known Limitations",
-                "",
-            ]
-        )
         for i, lim in enumerate(limitations, 1):
             lines.append(f"{i}. {lim}")
-        lines.append("")
+    else:
+        lines.append(FALLBACK_LIMITATION)
+    lines.append("")
 
     # ── Provenance summary / 溯源摘要 ──
     lines.extend(
