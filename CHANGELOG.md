@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.5.7] - 2026-07-25
 
 ### Added
 
@@ -35,6 +35,27 @@
   the plan-invariant view (`compile_plan()`) before persisting, writes a sibling
   `compiled_plan.json` next to `execution_plan.json`, and fails planning with a
   structured `invalid_config` error when invariants are violated.
+
+### Fixed
+
+- CI mypy gate: resolved four type errors that had kept the `master` CI red
+  since the contract-gate merge — a generator/`ItemsView` assignment in
+  `tools.py`, a `Mapping` vs `Dict` argument in `executor.py`
+  (`_resolve_actual_outputs` now accepts `Mapping[str, Any]`), and two
+  matplotlib typing issues in the SciPlot barplot tests.
+
+### Documentation
+
+- Included the three 2026-06-22 engineering audit reports in both language
+  toctrees, added `paper_execution_plan` to the Chinese index, and fixed broken
+  cross-references; the bilingual Sphinx build is now warning-free and the
+  diagnostic budget in `docs/build_docs.sh` is lowered to 0/0.
+- Refreshed the documentation frontend: dark-mode-aware landing page with
+  reduced-motion support, and polished content styles (smooth scrolling,
+  focus visibility, figure/card styling, table row hover, copy button).
+- Updated all repository URLs after the GitHub rename to `sleepinlava/BAI`
+  (docs, READMEs, `pyproject.toml` project URLs, agent-integration plugin
+  manifests, and badge endpoints).
 
 ## [1.5.6] - 2026-07-15
 
