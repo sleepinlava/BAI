@@ -18,8 +18,8 @@ LANDING="$SCRIPT_DIR/index.html"
 
 # Existing autodoc diagnostics remain visible and are capped so documentation
 # debt cannot grow silently. Lower these budgets whenever warnings are fixed.
-EN_DIAGNOSTIC_BUDGET=6
-ZH_DIAGNOSTIC_BUDGET=17
+EN_DIAGNOSTIC_BUDGET=0
+ZH_DIAGNOSTIC_BUDGET=0
 
 build_lang() {
     local lang="$1"

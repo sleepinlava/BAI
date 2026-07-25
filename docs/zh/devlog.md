@@ -1,6 +1,6 @@
 # ABI 开发日志
 
-> **注意**：完整英文开发日志请见 [`docs/en/devlog.md`](../en/devlog.md)（~1200 行）。
+> **注意**：完整英文开发日志请见 [`docs/en/devlog.md`](https://sleepinlava.github.io/BAI/en/devlog.html)（~1200 行）。
 > 本文档为中文摘要索引，列出关键版本和里程碑条目。
 
 ## 2026-07-07 — v1.5.3: 发布质量门禁与 DAG 修复
@@ -77,4 +77,4 @@
 
 ---
 
-更多历史详情请参阅[完整英文开发日志](../en/devlog.md)。
+更多历史详情请参阅[完整英文开发日志](https://sleepinlava.github.io/BAI/en/devlog.html)。

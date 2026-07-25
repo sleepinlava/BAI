@@ -11,11 +11,11 @@ goal, then move from read-only discovery to a reviewed execution plan.
 .. image:: https://img.shields.io/pypi/pyversions/abi-agent?style=flat-square
    :target: https://pypi.org/project/abi-agent/
    :alt: Python
-.. image:: https://img.shields.io/github/actions/workflow/status/sleepinlava/abi/ci.yml?branch=master&style=flat-square
-   :target: https://github.com/sleepinlava/abi/actions/workflows/ci.yml
+.. image:: https://img.shields.io/github/actions/workflow/status/sleepinlava/BAI/ci.yml?branch=master&style=flat-square
+   :target: https://github.com/sleepinlava/BAI/actions/workflows/ci.yml
    :alt: CI
 .. image:: https://img.shields.io/badge/docs-Furo-blue?style=flat-square
-   :target: https://sleepinlava.github.io/abi/
+   :target: https://sleepinlava.github.io/BAI/
    :alt: Docs
 
 Start here
@@ -136,6 +136,20 @@ a regression test, and run checks proportional to the affected release surface.
    paper_evaluation
    paper_outline
    production_manual_acceptance_checklist
+
+Engineering audits
+------------------
+
+Point-in-time audit baselines (2026-06-22) retained for traceability; their
+findings have been remediated or converted into environment-gated checks.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Engineering Audits
+
+   comprehensive-testing-audit
+   full-engineering-gap-audit
+   tool-engineering-gap-audit
 
 Operate and release
 -------------------

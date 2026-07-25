@@ -53,14 +53,14 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 ## 📊 项目状态 / Status
 
 易变化的测试数、覆盖率、插件和运行时环境状态不在此处手工复制。请以
-[CI](https://github.com/sleepinlava/abi/actions/workflows/ci.yml)、`pyproject.toml`、
+[CI](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)、`pyproject.toml`、
 `environments.yaml` 和 `abi list-types` 的当前输出为准。ABI 支持 Python 3.10–3.13。
 
 ---
 
 ## 🔗 外部链接 / External Links
 
-- 本仓库: `https://github.com/sleepinlava/abi`
+- 本仓库: `https://github.com/sleepinlava/BAI`
 - Conda 环境: `envs/` 目录
 - 示例: `examples/`
 - 脚本: `scripts/`

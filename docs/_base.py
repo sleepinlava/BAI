@@ -69,7 +69,7 @@ shared_html_theme_options = {
 
     # ── Source repository ──────────────────────────────────────────────
     "top_of_page_button": "edit",
-    "source_repository": "https://github.com/sleepinlava/abi/",
+    "source_repository": "https://github.com/sleepinlava/BAI/",
     "source_branch": "master",
     "source_directory": "docs/",
 
@@ -80,7 +80,7 @@ shared_html_theme_options = {
     "footer_icons": [
         {
             "name": "GitHub",
-            "url": "https://github.com/sleepinlava/abi",
+            "url": "https://github.com/sleepinlava/BAI",
             "html": (
                 '<svg stroke="currentColor" fill="currentColor" '
                 'stroke-width="0" viewBox="0 0 16 16">'

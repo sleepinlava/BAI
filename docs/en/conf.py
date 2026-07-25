@@ -24,5 +24,5 @@ html_theme_options = copy.deepcopy(shared_html_theme_options)  # noqa: F405
 html_theme_options["announcement"] = (
     f"<strong>ABI v{release}</strong> &middot; "  # noqa: F405
     "<a href='../zh/'>中文</a> &middot; "
-    "<a href='https://github.com/sleepinlava/abi/releases'>changelog</a>"
+    "<a href='https://github.com/sleepinlava/BAI/releases'>changelog</a>"
 )
