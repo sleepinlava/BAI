@@ -17,6 +17,13 @@ THREADS=${THREADS:-16}
 MEMORY_GB=${MEMORY_GB:-750}
 MIN_AVAILABLE_GB=${MIN_AVAILABLE_GB:-800}
 
+# Some managed cloud shells export OMP_NUM_THREADS=0. GNU OpenMP treats that
+# value as unusable and SPAdes silently adjusts max_threads to one. Bind the
+# OpenMP runtime to the requested SPAdes thread count for all parallel stages.
+export OMP_NUM_THREADS=${THREADS}
+export OMP_THREAD_LIMIT=${THREADS}
+export MKL_NUM_THREADS=${THREADS}
+
 fail() {
     printf '%s\n' "$*" >&2
     exit 2
@@ -29,6 +36,9 @@ grep -q 'unable to allocate OS memory' "${INITIAL_LOG}" \
 [[ -d ${ASSEMBLY_DIR}/K21 && -d ${ASSEMBLY_DIR}/K33 ]] \
     || fail "Required K21/K33 restart state is missing"
 [[ ! -e ${RECOVERY_EXIT} ]] || fail "Recovery exit marker already exists: ${RECOVERY_EXIT}"
+[[ ! -e ${RECOVERY_LOG} ]] || fail "Recovery log already exists: ${RECOVERY_LOG}"
+[[ ! -e ${RECOVERY_PROVENANCE} ]] \
+    || fail "Recovery provenance already exists: ${RECOVERY_PROVENANCE}"
 [[ ! -e ${K55_SNAPSHOT} ]] || fail "Recovery snapshot already exists: ${K55_SNAPSHOT}"
 [[ ! -e ${TASK_ROOT}/paper_method_v1 ]] \
     || fail "Immutable validation output already exists: ${TASK_ROOT}/paper_method_v1"
@@ -47,6 +57,9 @@ available_gb=$((available_kb / 1024 / 1024))
     printf 'restart_from\tk55\n'
     printf 'kmer_list\t21,33,55,77,99,127\n'
     printf 'threads\t%s\n' "${THREADS}"
+    printf 'omp_num_threads\t%s\n' "${OMP_NUM_THREADS}"
+    printf 'omp_thread_limit\t%s\n' "${OMP_THREAD_LIMIT}"
+    printf 'mkl_num_threads\t%s\n' "${MKL_NUM_THREADS}"
     printf 'memory_limit_gb\t%s\n' "${MEMORY_GB}"
     printf 'available_memory_gib_before_start\t%s\n' "${available_gb}"
     printf 'spades_version\t%s\n' "$("${SPADES_ENV}/bin/metaspades.py" --version 2>&1 | head -1)"

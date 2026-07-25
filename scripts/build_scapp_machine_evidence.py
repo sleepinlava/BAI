@@ -7,10 +7,13 @@ import argparse
 import csv
 import hashlib
 import json
+import math
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "abi.scapp.paper_method_evidence.v1"
+DEFAULT_EVIDENCE_ID = "scapp_srr11038083_plsdb_2018_12_05_paper_method_v1"
 
 
 def _sha256(path: Path) -> str:
@@ -37,7 +40,52 @@ def _read_provenance(path: Path) -> dict[str, str]:
     return {key: value for key, value in rows}
 
 
-def build_evidence(output_dir: Path) -> dict[str, Any]:
+def _column_counts(path: Path, column: str) -> Counter[str]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        if reader.fieldnames is None or column not in reader.fieldnames:
+            raise ValueError(f"Missing {column!r} column in {path}")
+        return Counter(row[column] for row in reader)
+
+
+def _validate_score_consistency(required: dict[str, Path], score: dict[str, Any]) -> None:
+    counts = score["counts"]
+    prediction_counts = _column_counts(required["prediction_status"], "status")
+    truth_counts = _column_counts(required["truth_status"], "recalled")
+    observed = {
+        "total_predictions": sum(prediction_counts.values()),
+        "true_positive_predictions_after_duplicate_penalty": prediction_counts["true_positive"],
+        "duplicate_false_positive_predictions": prediction_counts[
+            "false_positive_duplicate_match_signature"
+        ],
+        "no_match_false_positive_predictions": prediction_counts["false_positive_no_match"],
+        "total_truth_references": sum(truth_counts.values()),
+        "recalled_truth_references": truth_counts["true"],
+        "false_negative_truth_references": truth_counts["false"],
+    }
+    expected = {key: int(counts[key]) for key in observed}
+    if observed != expected:
+        raise ValueError(
+            "SCAPP score summary is inconsistent with prediction/truth status tables: "
+            f"observed={observed}, expected={expected}"
+        )
+
+    precision = (
+        observed["true_positive_predictions_after_duplicate_penalty"]
+        / observed["total_predictions"]
+    )
+    recall = observed["recalled_truth_references"] / observed["total_truth_references"]
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    recomputed = {"precision": precision, "recall": recall, "f1": f1}
+    for metric, value in recomputed.items():
+        if not math.isclose(float(score["metrics"][metric]), value, rel_tol=1e-12, abs_tol=1e-12):
+            raise ValueError(
+                f"SCAPP {metric} is inconsistent with status tables: "
+                f"observed={value}, summary={score['metrics'][metric]}"
+            )
+
+
+def build_evidence(output_dir: Path, *, evidence_id: str = DEFAULT_EVIDENCE_ID) -> dict[str, Any]:
     root = output_dir.resolve()
     required = {
         "truth_summary": root / "truth_summary.json",
@@ -58,6 +106,7 @@ def build_evidence(output_dir: Path) -> dict[str, Any]:
 
     truth = _read_json(required["truth_summary"])
     score = _read_json(required["score_summary"])
+    _validate_score_consistency(required, score)
     provenance = _read_provenance(required["run_provenance"])
     counts = score["counts"]
     metrics = score["metrics"]
@@ -73,7 +122,7 @@ def build_evidence(output_dir: Path) -> dict[str, Any]:
     }
     return {
         "schema_version": SCHEMA_VERSION,
-        "evidence_id": "scapp_srr11038083_plsdb_2018_12_05_paper_method_v1",
+        "evidence_id": evidence_id,
         "status": "complete",
         "analysis_type": "metagenomic_plasmid",
         "sample_accession": "SRR11038083",
@@ -125,8 +174,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--output-json", type=Path)
+    parser.add_argument("--evidence-id", default=DEFAULT_EVIDENCE_ID)
     args = parser.parse_args()
-    evidence = build_evidence(args.output_dir)
+    evidence = build_evidence(args.output_dir, evidence_id=args.evidence_id)
     destination = args.output_json or args.output_dir / "machine_readable_evidence.json"
     destination.write_text(
         json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"

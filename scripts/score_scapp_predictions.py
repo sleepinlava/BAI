@@ -216,8 +216,8 @@ def score_predictions(
             "reference_id": reference_id,
             "reference_length": reference_lengths[reference_id],
             "recalled": str(reference_id in recalled_by).lower(),
-            "matching_prediction_count": len(recalled_by[reference_id]),
-            "matching_prediction_ids": ",".join(sorted(recalled_by[reference_id])),
+            "matching_prediction_count": len(recalled_by.get(reference_id, [])),
+            "matching_prediction_ids": ",".join(sorted(recalled_by.get(reference_id, []))),
         }
         for reference_id in sorted(reference_lengths)
     ]
