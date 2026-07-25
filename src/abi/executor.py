@@ -1490,7 +1490,7 @@ def _build_assertion_context(step: Any, resolved_outputs: Dict[str, Any]) -> Dic
 
 def _resolve_actual_outputs(
     planned_outputs: Dict[str, Any],
-    output_spec: Dict[str, Any],
+    output_spec: Mapping[str, Any],
     sample_id: str,
 ) -> Dict[str, Any]:
     """Resolve actual output file paths after tool execution.

@@ -1059,6 +1059,7 @@ class GenericCommandSkill(ToolSkill):
         missing: List[str] = []
         resource_placeholders: List[str] = []
         input_definitions = self.metadata.get("inputs", [])
+        input_items: Iterable[tuple[Any, Any]]
         if isinstance(input_definitions, Mapping):
             input_items = input_definitions.items()
         else:

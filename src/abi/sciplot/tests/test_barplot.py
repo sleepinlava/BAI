@@ -8,6 +8,7 @@ import pytest
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 from abi.sciplot.renderers.plots.barplot import plot_barplot
 from abi.sciplot.schema.figure_spec import DataSpec, ExportSpec, FigureSpec, MappingSpec
@@ -44,8 +45,11 @@ def test_barplot_renders_hue_as_side_by_side_groups(tmp_path) -> None:
         plot_barplot(_spec(tmp_path), data, axis, _palette(), ThemeSpec(theme_name="test"))
         assert len(axis.patches) == 4
         assert [tick.get_text() for tick in axis.get_xticklabels()] == ["Circular", "Replicon"]
-        assert [text.get_text() for text in axis.get_legend().get_texts()] == ["TP", "FP"]
-        assert sorted(patch.get_height() for patch in axis.patches) == [10, 25, 50, 75]
+        legend = axis.get_legend()
+        assert legend is not None
+        assert [text.get_text() for text in legend.get_texts()] == ["TP", "FP"]
+        heights = [patch.get_height() for patch in axis.patches if isinstance(patch, Rectangle)]
+        assert sorted(heights) == [10, 25, 50, 75]
     finally:
         plt.close(figure)
 
