@@ -1,0 +1,5 @@
+evidence_stage	plasmid_count	definition
+Primary calls	167	Raw primary plasmid calls
+Consensus candidates	157	Consensus plasmid candidates after integration
+Terminal-repeat support	54	Candidates with DTR or ITR evidence
+Mobilizable calls	20	Candidates classified as mobilizable by MOB-suite

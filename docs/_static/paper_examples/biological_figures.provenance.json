@@ -1,0 +1,45 @@
+{
+  "schema_version": "abi.paper_case_study_figures.v1",
+  "benchmark_outcomes_used": false,
+  "generator": "scripts/create_real_data_case_study_figures.py",
+  "generator_sha256": "94c42e57cf91a2ed5fb28369f493c3e0a4314381543af915251a027a17eb9bf5",
+  "figures": [
+    {
+      "figure_id": "airway_biological_validation",
+      "source": "docs/paper_examples/airway_metrics.tsv",
+      "source_sha256": "23ba08cfbf883be9e45b83621a14f9e5af904ebf35ddfbde5b0bdea7c12ecacb",
+      "data": "docs/paper_examples/airway_significant_set_overlap.tsv",
+      "outputs": [
+        "docs/_static/paper_examples/airway_biological_validation.png",
+        "docs/_static/paper_examples/airway_biological_validation.pdf",
+        "docs/_static/paper_examples/airway_biological_validation.svg"
+      ],
+      "claim": "method-sensitive significant-set overlap with strong effect-direction evidence"
+    },
+    {
+      "figure_id": "wgs_biological_validation",
+      "source": "docs/paper_examples/wgs_metrics.tsv",
+      "source_sha256": "68df93f8a7d198c5d7c68c5ece0b16446a5da68c3e81518d55c98a91779f57f5",
+      "data": "docs/paper_examples/wgs_isolate_evidence.tsv",
+      "pairwise_data": "docs/paper_examples/wgs_snp_pairwise_distances.tsv",
+      "outputs": [
+        "docs/_static/paper_examples/wgs_biological_validation.png",
+        "docs/_static/paper_examples/wgs_biological_validation.pdf",
+        "docs/_static/paper_examples/wgs_biological_validation.svg"
+      ],
+      "claim": "ST93/mecA recovery plus paper-track core-SNP range reproduction"
+    },
+    {
+      "figure_id": "scapp_biological_evidence",
+      "source": "docs/zh/figures/data/scapp_evidence_20260720/evidence_by_plasmid.tsv",
+      "source_sha256": "860467681579e0904145621795917d856968749d65f97f2ed78b5d841bda0528",
+      "data": "docs/paper_examples/scapp_biological_evidence.tsv",
+      "outputs": [
+        "docs/_static/paper_examples/scapp_biological_evidence.png",
+        "docs/_static/paper_examples/scapp_biological_evidence.pdf",
+        "docs/_static/paper_examples/scapp_biological_evidence.svg"
+      ],
+      "claim": "descriptive length-abundance and auxiliary mobility evidence; not accuracy"
+    }
+  ]
+}

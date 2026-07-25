@@ -1,0 +1,26 @@
+figure_id: airway_validation
+figure_type: barplot
+data:
+  table: docs/paper_examples/airway_figure.tsv
+  format: tsv
+  required_columns: [endpoint, agreement_percent, definition]
+mapping:
+  x: endpoint
+  y: agreement_percent
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 110
+  height_mm: 78
+  dpi: 300
+labels:
+  title: Airway Dex-response agreement
+  x_label: Preregistered validation endpoint
+  y_label: Agreement (%)
+export:
+  output_dir: docs/_static/paper_examples
+  basename: airway_validation
+  formats: [png, pdf, svg]
+provenance:
+  workflow_name: rnaseq_expression
+  input_data_role: Validated Airway GSE52778 comparison endpoints

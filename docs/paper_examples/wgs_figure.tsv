@@ -1,0 +1,5 @@
+endpoint	agreement_percent	definition
+Workflow steps	100.0	Completed planned steps (30/30)
+ST93 typing	100.0	Isolates called ST93 (6/6)
+mecA recovery	100.0	Isolates with full-length, 100%-identity mecA evidence (6/6)
+Core-SNP range recovery	100.0	Six-isolate pairwise SNP distances inside the published 7-60 range (15/15 pairs, paper SPANDx v2.6 track)
