@@ -221,6 +221,9 @@ nodes:
       long_reads:
         type: file
         format: fastq
+        contract:
+          exempt: true
+          reason: Passthrough of user-provided long reads; no new file is produced
   basecalling_dorado:
     tool_id: dorado
     category: basecalling
@@ -245,6 +248,11 @@ nodes:
         type: file
         format: fastq
         path: '{outdir}/{category_dir}/{sample_id}/{sample_id}.dorado.fastq'
+        contract:
+          file_exists: true
+          extensions:
+          - .fastq
+          min_size: 1KB
   long_read_bam_to_fastq:
     tool_id: samtools_fastq
     category: basecalling
@@ -272,6 +280,11 @@ nodes:
         type: file
         format: fastq
         path: '{outdir}/{category_dir}/{sample_id}/{sample_id}.bam.fastq'
+        contract:
+          file_exists: true
+          extensions:
+          - .fastq
+          min_size: 1KB
   qc_fastp:
     tool_id: fastp
     category: qc
@@ -429,6 +442,11 @@ nodes:
         type: file
         format: html
         path: '{outdir}/{category_dir}/multiqc_illumina_report.html'
+        contract:
+          file_exists: true
+          extensions:
+          - .html
+          min_size: 1KB
     enable_condition:
       field: qc.run_multiqc
       operator: value
@@ -456,6 +474,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   qc_filtlong:
     tool_id: filtlong
     category: qc
@@ -516,6 +536,11 @@ nodes:
         type: file
         format: html
         path: '{outdir}/{category_dir}/multiqc_ont_report.html'
+        contract:
+          file_exists: true
+          extensions:
+          - .html
+          min_size: 1KB
     enable_condition:
       field: qc.run_multiqc
       operator: value
@@ -579,6 +604,11 @@ nodes:
         type: file
         format: html
         path: '{outdir}/{category_dir}/multiqc_hifi_report.html'
+        contract:
+          file_exists: true
+          extensions:
+          - .html
+          min_size: 1KB
     enable_condition:
       field: qc.run_multiqc
       operator: value
@@ -909,6 +939,9 @@ nodes:
       assembly:
         type: file
         format: fasta
+        contract:
+          exempt: true
+          reason: Passthrough of user-provided assembly FASTA; no new file is produced
   polishing_medaka:
     tool_id: medaka
     category: polishing
@@ -941,6 +974,12 @@ nodes:
         type: file
         format: fasta
         path: '{outdir}/{category_dir}/{sample_id}/consensus.fasta'
+        contract:
+          file_exists: true
+          extensions:
+          - .fasta
+          min_size: 500B
+          min_contigs: 1
       output_dir:
         type: directory
   assembly_qc_quast:
@@ -978,6 +1017,11 @@ nodes:
         type: file
         format: tsv
         path: '{outdir}/{category_dir}/{sample_id}/report.tsv'
+        contract:
+          file_exists: true
+          extensions:
+          - .tsv
+          min_size: 0B
     assertions:
     - output_files.quast_report exists
   contig_coverage_bowtie2:
@@ -1200,6 +1244,9 @@ nodes:
       plasme_predictions:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: plasmid_detection.tools
       operator: list_contains
@@ -1233,6 +1280,9 @@ nodes:
       plasx_predictions:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: plasmid_detection.tools
       operator: list_contains
@@ -1265,6 +1315,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: plasmid_detection.tools
       operator: list_contains
@@ -1396,6 +1448,8 @@ nodes:
     outputs:
       plasmid_bins:
         type: directory
+        contract:
+          min_files: 1
   plasmid_binning_gplas2:
     tool_id: gplas2
     category: plasmid_binning
@@ -1428,6 +1482,9 @@ nodes:
       plasmid_bins:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   plasmid_binning_mob_recon:
     tool_id: mob_suite
     category: plasmid_binning
@@ -1460,6 +1517,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   typing_plasmidfinder:
     tool_id: plasmidfinder
     category: typing
@@ -1490,6 +1549,9 @@ nodes:
       typing_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   typing_mob_typer:
     tool_id: mob_typer
     category: typing
@@ -1523,6 +1585,9 @@ nodes:
       typing_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   typing_copla:
     tool_id: copla
     category: typing
@@ -1552,6 +1617,9 @@ nodes:
       typing_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: typing.optional_tools
       operator: list_contains
@@ -1606,6 +1674,9 @@ nodes:
       taxonomy_profile:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   host_prediction_kraken2:
     tool_id: kraken2
     category: host_prediction
@@ -1639,6 +1710,9 @@ nodes:
       kraken_report:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: host_prediction.tools
       operator: list_contains
@@ -1669,6 +1743,9 @@ nodes:
       host_predictions:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   annotation_prodigal:
     tool_id: prodigal
     category: annotation
@@ -1692,12 +1769,21 @@ nodes:
       gene_calls:
         type: file
         format: gff
+        contract:
+          file_exists: true
+          min_size: 0B
       protein_seqs:
         type: file
         format: faa
+        contract:
+          file_exists: true
+          min_size: 0B
       nucleotide_seqs:
         type: file
         format: ffn
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: annotation.tools
       operator: list_contains
@@ -1737,6 +1823,9 @@ nodes:
       annotations:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   annotation_amrfinderplus:
     tool_id: amrfinderplus
     category: annotation
@@ -1767,6 +1856,9 @@ nodes:
       arg_vf_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   annotation_abricate:
     tool_id: abricate
     category: annotation
@@ -1796,6 +1888,9 @@ nodes:
       screening_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: annotation.tools
       operator: list_contains
@@ -1823,6 +1918,9 @@ nodes:
       is_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: annotation.tools
       operator: list_contains
@@ -1849,6 +1947,8 @@ nodes:
     outputs:
       integron_results:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: annotation.tools
       operator: list_contains
@@ -1881,6 +1981,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: annotation.tools
       operator: list_contains
@@ -1914,6 +2016,8 @@ nodes:
     outputs:
       mag_bins:
         type: directory
+        contract:
+          min_files: 1
   mag_checkm2:
     tool_id: checkm2
     category: mag_host_genomes
@@ -1938,6 +2042,9 @@ nodes:
       quality_report:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: mag_host_genomes.tools
       operator: list_contains
@@ -1969,6 +2076,9 @@ nodes:
       taxonomy:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: mag_host_genomes.tools
       operator: list_contains
@@ -2011,6 +2121,9 @@ nodes:
       coabundance_links:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     standard_tables:
     - host_plasmid_links
   host_plasmid_link_sequence:
@@ -2051,6 +2164,9 @@ nodes:
       sequence_similarity_links:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   host_plasmid_link_crispr:
     tool_id: minced
     category: host_plasmid_linking
@@ -2079,6 +2195,9 @@ nodes:
       crispr_links:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: host_plasmid_linking.optional_methods
       operator: list_contains
@@ -2117,6 +2236,9 @@ nodes:
       longread_bridge_links:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
   abundance_bowtie2:
     tool_id: bowtie2
     category: abundance
@@ -2246,6 +2368,11 @@ nodes:
         type: file
         format: tsv
         path: '{outdir}/{category_dir}/{sample_id}/{sample_id}.coverm.tsv'
+        contract:
+          file_exists: true
+          extensions:
+          - .tsv
+          min_size: 0B
     standard_tables:
     - abundance
   abundance_bowtie2_short:
@@ -2267,7 +2394,7 @@ nodes:
       abundance_label: {type: string, default: .short}
       threads: {type: integer, default: 1}
     outputs:
-      alignment: {type: file, format: sam, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.sam'}
+      alignment: {type: file, format: sam, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.sam', contract: {file_exists: true, extensions: [.sam], min_size: 100B}}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/short'}
   abundance_samtools_short:
     tool_id: samtools
@@ -2283,7 +2410,7 @@ nodes:
       abundance_label: {type: string, default: .short}
       threads: {type: integer, default: 1}
     outputs:
-      bam: {type: file, format: bam, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.bam'}
+      bam: {type: file, format: bam, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.bam', contract: {file_exists: true, extensions: [.bam], min_size: 100B}}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/short'}
   abundance_coverm_short:
     tool_id: coverm
@@ -2299,7 +2426,7 @@ nodes:
       abundance_label: {type: string, default: .short}
       threads: {type: integer, default: 1}
     outputs:
-      abundance: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.coverm.tsv'}
+      abundance: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.coverm.tsv', contract: {file_exists: true, extensions: [.tsv], min_size: 0B}}
       tpm_table: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.tpm.tsv'}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/short'}
     standard_tables: [abundance]
@@ -2319,7 +2446,7 @@ nodes:
       abundance_label: {type: string, default: .long}
       threads: {type: integer, default: 1}
     outputs:
-      alignment: {type: file, format: sam, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.sam'}
+      alignment: {type: file, format: sam, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.sam', contract: {file_exists: true, extensions: [.sam], min_size: 100B}}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/long'}
   abundance_samtools_long:
     tool_id: samtools
@@ -2335,7 +2462,7 @@ nodes:
       abundance_label: {type: string, default: .long}
       threads: {type: integer, default: 1}
     outputs:
-      bam: {type: file, format: bam, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.bam'}
+      bam: {type: file, format: bam, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.bam', contract: {file_exists: true, extensions: [.bam], min_size: 100B}}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/long'}
   abundance_coverm_long:
     tool_id: coverm
@@ -2351,7 +2478,7 @@ nodes:
       abundance_label: {type: string, default: .long}
       threads: {type: integer, default: 1}
     outputs:
-      abundance: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.coverm.tsv'}
+      abundance: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.coverm.tsv', contract: {file_exists: true, extensions: [.tsv], min_size: 0B}}
       tpm_table: {type: file, format: tsv, path: '{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.tpm.tsv'}
       output_dir: {type: directory, path: '{outdir}/{category_dir}/{sample_id}/long'}
     standard_tables: [abundance]
@@ -2385,6 +2512,9 @@ nodes:
       diversity_metrics:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     standard_tables:
     - sample_diversity
   multisample_differential_abundance:
@@ -2423,6 +2553,9 @@ nodes:
       differential_abundance_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     standard_tables:
     - differential_abundance
   multisample_differential_deseq2:
@@ -2459,6 +2592,11 @@ nodes:
         type: file
         format: tsv
         path: '{outdir}/{category_dir}/differential_plasmids.tsv'
+        contract:
+          file_exists: true
+          extensions:
+          - .tsv
+          min_size: 0B
     standard_tables:
     - differential_plasmids
   multisample_network_prepare:
@@ -2483,6 +2621,11 @@ nodes:
         type: file
         format: tsv
         path: '{outdir}/{category_dir}/fastspar_input.tsv'
+        contract:
+          file_exists: true
+          extensions:
+          - .tsv
+          min_size: 0B
   multisample_network_fastspar:
     tool_id: fastspar
     category: network
@@ -2508,6 +2651,9 @@ nodes:
       correlation:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
       covariance:
         type: file
         format: tsv
@@ -2541,6 +2687,11 @@ nodes:
         type: file
         format: fasta
         path: '{outdir}/{category_dir}/plasmid_catalog_input.fasta'
+        contract:
+          file_exists: true
+          extensions:
+          - .fasta
+          min_size: 100B
   comparative_mmseqs2:
     tool_id: mmseqs2
     category: comparative_genomics
@@ -2572,6 +2723,11 @@ nodes:
         type: file
         format: tsv
         path: '{outdir}/{category_dir}/plasmid_catalog_cluster.tsv'
+        contract:
+          file_exists: true
+          extensions:
+          - .tsv
+          min_size: 0B
       representatives:
         type: file
         format: fasta
@@ -2606,6 +2762,9 @@ nodes:
       blast_results:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: comparative_genomics.optional_tools
       operator: list_contains
@@ -2637,6 +2796,9 @@ nodes:
       coords:
         type: file
         format: tsv
+        contract:
+          file_exists: true
+          min_size: 0B
     enable_condition:
       field: comparative_genomics.optional_tools
       operator: list_contains
@@ -2663,6 +2825,9 @@ nodes:
       clinker_html:
         type: file
         format: html
+        contract:
+          file_exists: true
+          min_size: 1KB
     enable_condition:
       field: comparative_genomics.optional_tools
       operator: list_contains
@@ -2690,6 +2855,9 @@ nodes:
       gene_maps:
         type: file
         format: html
+        contract:
+          file_exists: true
+          min_size: 1KB
     enable_condition:
       field: visualization.optional_tools
       operator: list_contains
@@ -2723,6 +2891,9 @@ nodes:
       circular_maps:
         type: file
         format: png
+        contract:
+          file_exists: true
+          min_size: 100B
     enable_condition:
       field: visualization.tools
       operator: list_contains
@@ -2755,6 +2926,9 @@ nodes:
       network_html:
         type: file
         format: html
+        contract:
+          file_exists: true
+          min_size: 1KB
     enable_condition:
       field: network.run_network
       operator: value
@@ -2838,6 +3012,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   plasmid_binning_recycler:
     tool_id: recycler
     category: plasmid_binning
@@ -2873,6 +3049,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   typing_conjscan:
     tool_id: conjscan
     category: typing
@@ -2898,6 +3076,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: typing.optional_tools
       operator: list_contains
@@ -2927,6 +3107,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: typing.optional_tools
       operator: list_contains
@@ -2959,6 +3141,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: annotation.optional_tools
       operator: list_contains
@@ -2988,6 +3172,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: annotation.optional_tools
       operator: list_contains
@@ -3024,6 +3210,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   mag_semibin:
     tool_id: semibin
     category: mag_host_genomes
@@ -3056,6 +3244,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   mag_das_tool:
     tool_id: das_tool
     category: mag_host_genomes
@@ -3085,6 +3275,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
   visualization_dna_features:
     tool_id: dna_features_viewer
     category: visualization
@@ -3107,6 +3299,8 @@ nodes:
     outputs:
       output_dir:
         type: directory
+        contract:
+          min_files: 1
     enable_condition:
       field: visualization.tools
       operator: list_contains
@@ -3165,12 +3359,21 @@ nodes:
       report_md:
         type: file
         format: markdown
+        contract:
+          file_exists: true
+          min_size: 1KB
       report_html:
         type: file
         format: html
+        contract:
+          file_exists: true
+          min_size: 1KB
       methods_md:
         type: file
         format: markdown
+        contract:
+          file_exists: true
+          min_size: 1KB
 platform_resolution:
   illumina:
     assembly:

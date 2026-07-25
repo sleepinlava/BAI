@@ -50,7 +50,7 @@ nodes:
       read1: {type: file, format: fastq.gz, source: sample_sheet}
       read2: {type: file, format: fastq.gz, source: sample_sheet}
     outputs:
-      stats: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.seqkit.tsv"}
+      stats: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.seqkit.tsv", contract: {file_exists: true, extensions: [.tsv], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
     assertions: ["output_files.stats exists"]
   fastp_qc:
@@ -64,10 +64,10 @@ nodes:
       read1: {type: file, format: fastq.gz, source: sample_sheet}
       read2: {type: file, format: fastq.gz, source: sample_sheet}
     outputs:
-      clean_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1.fastq.gz"}
-      clean_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_2.fastq.gz"}
-      json: {type: file, format: json, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.json"}
-      html: {type: file, format: html, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.html"}
+      clean_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
+      clean_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
+      json: {type: file, format: json, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.json", contract: {file_exists: true, extensions: [.json], min_size: "10B", required_keys: [summary, filtering_result]}}
+      html: {type: file, format: html, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.html", contract: {file_exists: true, extensions: [.html], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
     assertions: ["output_files.clean_read1 exists", "output_files.clean_read2 exists", "output_files.json exists"]
   kneaddata_host_removal:
@@ -82,8 +82,8 @@ nodes:
       clean_read2: {type: file, source: fastp_qc.clean_read2}
       host_db: {type: directory}
     outputs:
-      dehost_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_1.fastq.gz"}
-      dehost_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_2.fastq.gz"}
+      dehost_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
+      dehost_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
     assertions: ["output_files.dehost_read1 exists", "output_files.dehost_read2 exists"]
   kraken2_classify:
@@ -98,8 +98,8 @@ nodes:
       dehost_read2: {type: file, source: kneaddata_host_removal.dehost_read2}
       kraken2_db: {type: directory}
     outputs:
-      report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.kraken2.report"}
-      classifications: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.kraken2.output"}
+      report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.kraken2.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
+      classifications: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.kraken2.output", contract: {file_exists: true, extensions: [.output], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
     assertions: ["output_files.report exists"]
   bracken_phylum:
@@ -115,9 +115,9 @@ nodes:
       kraken2_db: {type: directory}
       read_length: {type: integer}
     outputs:
-      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/P/{sample_id}.P.brk"}
+      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/P/{sample_id}.P.brk", contract: {file_exists: true, extensions: [.brk], min_size: "10B"}}
       phylum_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/P/{sample_id}.P.brk"}
-      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/P/{sample_id}.P.report"}
+      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/P/{sample_id}.P.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}/P"}
     assertions: ["output_files.bracken_table exists"]
   bracken_genus:
@@ -133,9 +133,9 @@ nodes:
       kraken2_db: {type: directory}
       read_length: {type: integer}
     outputs:
-      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/G/{sample_id}.G.brk"}
+      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/G/{sample_id}.G.brk", contract: {file_exists: true, extensions: [.brk], min_size: "10B"}}
       genus_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/G/{sample_id}.G.brk"}
-      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/G/{sample_id}.G.report"}
+      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/G/{sample_id}.G.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}/G"}
     assertions: ["output_files.bracken_table exists"]
   bracken_species:
@@ -151,9 +151,9 @@ nodes:
       kraken2_db: {type: directory}
       read_length: {type: integer}
     outputs:
-      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.brk"}
+      bracken_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.brk", contract: {file_exists: true, extensions: [.brk], min_size: "10B"}}
       species_table: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.brk"}
-      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.report"}
+      bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}/S"}
     assertions: ["output_files.bracken_table exists"]
   fastp_summary:
@@ -348,7 +348,7 @@ nodes:
     inputs:
       input_table: {type: file, source: humann_regroup_ko.regrouped_table}
     outputs:
-      split_dir: {type: directory, path: "{outdir}/{category_dir}/ko/split"}
+      split_dir: {type: directory, path: "{outdir}/{category_dir}/ko/split", contract: {min_files: 1}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/ko/split"}
   humann_join_pathabundance:
     tool_id: humann_join_tables
@@ -386,7 +386,7 @@ nodes:
     inputs:
       input_table: {type: file, source: humann_renorm_pathabundance.normalized_table}
     outputs:
-      split_dir: {type: directory, path: "{outdir}/{category_dir}/pathways/split"}
+      split_dir: {type: directory, path: "{outdir}/{category_dir}/pathways/split", contract: {min_files: 1}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/pathways/split"}
   functional_report:
     tool_id: internal

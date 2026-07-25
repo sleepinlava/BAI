@@ -44,10 +44,12 @@ nodes:
       clean_read1:
         type: file
         format: fastq.gz
+        contract: {min_size: "1KB"}
         path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz"
       clean_read2:
         type: file
         format: fastq.gz
+        contract: {min_size: "1KB"}
         path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz"
       output_dir:
         type: directory

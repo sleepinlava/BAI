@@ -195,13 +195,16 @@ if name == 'seqkit':
     print('file\\tnum_seqs')
     print('fixture\\t1')
 elif name == 'fastp':
-    for flag in ('-o', '-O', '-h'):
-        path = value(flag); path.parent.mkdir(parents=True, exist_ok=True); path.write_text('ok\\n')
+    for flag in ('-o', '-O'):
+        path = value(flag); path.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(path, 'wt') as handle: handle.write('@r1\\nACGT\\n+\\nIIII\\n')
+    html = value('-h'); html.parent.mkdir(parents=True, exist_ok=True)
+    html.write_text('<html>fixture</html>\\n')
     report = value('-j'); report.parent.mkdir(parents=True, exist_ok=True)
     data = {'summary': {
         'before_filtering': {'total_reads': 2},
         'after_filtering': {'total_reads': 2, 'q30_rate': 1.0},
-    }}
+    }, 'filtering_result': {'passed_filter_reads': 2}}
     report.write_text(json.dumps(data))
 elif name == 'kneaddata':
     out = value('-o'); out.mkdir(parents=True, exist_ok=True)
@@ -216,7 +219,7 @@ elif name == 'kraken2':
 elif name == 'bracken':
     table = value('-o'); table.parent.mkdir(parents=True, exist_ok=True)
     table.write_text('name\\ttaxonomy_id\\tnew_est_reads\\nBacteria\\t2\\t10\\n')
-    value('-w').write_text('report\\n')
+    value('-w').write_text('name\\ttaxonomy_id\\nBacteria\\t2\\n')
 """,
         encoding="utf-8",
     )
@@ -398,7 +401,7 @@ elif name == 'fastp':
     report.write_text(json.dumps({'summary': {
         'before_filtering': {'total_reads': 2},
         'after_filtering': {'total_reads': 2, 'q30_rate': 1.0},
-    }}))
+    }, 'filtering_result': {'passed_filter_reads': 2}}))
     value('-h').write_text('<html>fixture</html>\\n')
 elif name == 'kneaddata':
     out = value('-o'); out.mkdir(parents=True, exist_ok=True)
