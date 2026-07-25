@@ -125,7 +125,10 @@ def error_envelope(
         error_code:       stable machine-readable code from ``ERROR_CODES``
                           (e.g. ``"missing_input"``, ``"tool_not_found"``).
         diagnostic_hints: list of ``DiagnosticHint`` dicts with severity, code,
-                          message, and ``suggested_next_action``.
+                          message, ``suggested_next_action``, and — when
+                          populated by ``classify_exception`` — a structured
+                          ``recovery`` block (``action``/``api_call``/``params``)
+                          that agents can execute programmatically.
         extra:            optional additional context (e.g. available plugin
                           IDs when ``unknown_analysis_type`` is raised).
         verbose:          if True, include ``error_type`` for debugging.
