@@ -293,6 +293,11 @@ def validate_output_contract(
     4. **required_keys** — JSON output files must contain declared top-level keys.
     5. **schema** — JSON output sub-fields must match type and range constraints.
 
+    An output whose contract mapping declares ``exempt: true`` (with a
+    mandatory ``reason`` — enforced by ``abi.contracts.lint``) skips all
+    runtime checks; the exemption mechanism exists for internal /
+    aggregation nodes whose outputs have no file-based contract.
+
     Args:
         step_id: The step identifier (for error messages).
         outputs: The step's ``outputs`` dict (``{key: value}``).
@@ -313,6 +318,13 @@ def validate_output_contract(
             continue
         contract = spec.get("contract")
         if not isinstance(contract, Mapping):
+            continue
+
+        # Explicitly exempt outputs skip all runtime checks (including the
+        # otherwise-unconditional file_exists check below).  ``exempt: true``
+        # must carry a ``reason`` and no check keys — that shape is enforced
+        # statically by abi.contracts.lint.lint_output_contracts.
+        if contract.get("exempt"):
             continue
 
         value = outputs.get(key)

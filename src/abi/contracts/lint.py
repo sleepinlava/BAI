@@ -11,6 +11,11 @@ Checks performed:
   4. Duplicate tool_id or step_id in contracts.
   5. Assertion expression syntax validation (compile-check each expression
      in the restricted eval namespace).
+  6. Mandatory ``limitations.yaml`` declaration (when a plugin root is given:
+     missing, unparseable, or empty declarations are errors).
+  7. Output-contract coverage (opt-in via ``enforce_output_contract_coverage``):
+     every external tool node must declare at least one non-exempt output
+     contract, and ``exempt: true`` contracts must be well-formed.
 
 Design / 设计
 --------------
@@ -35,6 +40,8 @@ __all__ = [
     "LintFinding",
     "lint_assertion_syntax",
     "lint_dag",
+    "lint_limitations",
+    "lint_output_contracts",
     "lint_tool_contracts",
     "run_contract_lint",
     "validate_pipeline_template_params",
@@ -630,6 +637,169 @@ def lint_resource_blocks(
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Limitations declaration checks (mandatory limitation disclosure)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def lint_limitations(plugin_root: Path) -> List[LintFinding]:
+    """Require a non-empty ``limitations.yaml`` declaration for the plugin.
+
+    Every plugin must ship a ``limitations.yaml`` with a top-level
+    ``limitations`` list of at least one non-blank entry so that the
+    mandatory limitation disclosure rendered into reports cannot be empty.
+    A missing, unparseable, or empty declaration is an error — consistent
+    with "malformed plugins fail at discovery".
+    """
+    root = Path(plugin_root)
+    path = root / "limitations.yaml"
+    if not path.exists():
+        return [
+            LintFinding(
+                severity="error",
+                check="missing_limitations",
+                detail="Plugin is missing limitations.yaml — every plugin must declare "
+                "its known limitations for mandatory report disclosure",
+                location=str(path),
+            )
+        ]
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return [
+            LintFinding(
+                severity="error",
+                check="invalid_limitations",
+                detail=f"limitations.yaml is not parseable YAML: {exc}",
+                location=str(path),
+            )
+        ]
+    items = data.get("limitations") if isinstance(data, Mapping) else None
+    if not isinstance(items, list) or not any(str(item).strip() for item in items):
+        return [
+            LintFinding(
+                severity="error",
+                check="empty_limitations",
+                detail="limitations.yaml must contain a non-empty 'limitations' list of strings",
+                location=str(path),
+            )
+        ]
+    return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Output-contract coverage checks (CI gate for "every step has a contract")
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Check keys enforced at runtime by
+# ``abi.contracts.step_contract.validate_output_contract`` — keep in sync.
+_OUTPUT_CONTRACT_CHECK_KEYS = frozenset(
+    {
+        "file_exists",
+        "min_size",
+        "extensions",
+        "contains",
+        "min_files",
+        "min_contigs",
+        "required_keys",
+        "schema",
+    }
+)
+
+
+def _is_internal_node(node: Mapping[str, Any]) -> bool:
+    """Return True when the executor runs this node in-process (no external tool).
+
+    Mirrors the classification in ``scripts/audit_contract_coverage.py``:
+    ``tool_id: internal``, an ``internal_handler:`` key, or an inline
+    ``params._internal_handler`` mapping.
+    """
+    if str(node.get("tool_id", "")) == "internal":
+        return True
+    if node.get("internal_handler"):
+        return True
+    params = node.get("params")
+    return isinstance(params, Mapping) and isinstance(params.get("_internal_handler"), Mapping)
+
+
+def lint_output_contracts(dag_spec: Mapping[str, Any]) -> List[LintFinding]:
+    """Check output-contract coverage and ``exempt`` usage in a pipeline DAG.
+
+    Two rules, both error-level:
+
+    1. **missing_output_contract** — every *external* tool node (see
+       :func:`_is_internal_node`) must declare at least one output with an
+       enforced (non-exempt) ``contract`` mapping.
+    2. **exempt_missing_reason** / **exempt_mixed_with_checks** — a contract
+       mapping with ``exempt: true`` must carry a non-empty ``reason`` string
+       and must not combine the exemption with any runtime check key (an
+       exempt output skips all runtime checks, so mixed keys would be dead
+       configuration).  This applies to internal and external nodes alike.
+
+    Internal/aggregation nodes are deliberately NOT required to carry
+    ``exempt`` markers here — whether an internal node declares an exemption
+    is a declaration-pass decision; this gate only polices external nodes
+    and malformed ``exempt`` usage.
+    """
+    findings: List[LintFinding] = []
+    for node in _normalize_dag_nodes(dag_spec):
+        nid = str(node.get("id", ""))
+        outputs = node.get("outputs", {})
+        if not isinstance(outputs, Mapping):
+            outputs = {}
+
+        has_enforced_contract = False
+        for output_name, output_spec in outputs.items():
+            if not isinstance(output_spec, Mapping):
+                continue
+            contract = output_spec.get("contract")
+            if not isinstance(contract, Mapping):
+                continue
+            if not contract.get("exempt"):
+                has_enforced_contract = True
+                continue
+            reason = contract.get("reason")
+            if not isinstance(reason, str) or not reason.strip():
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="exempt_missing_reason",
+                        detail=(
+                            f"Output {output_name!r} declares 'exempt: true' without "
+                            "a non-empty 'reason' string"
+                        ),
+                        location=nid,
+                    )
+                )
+            mixed = sorted(_OUTPUT_CONTRACT_CHECK_KEYS & set(contract))
+            if mixed:
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="exempt_mixed_with_checks",
+                        detail=(
+                            f"Output {output_name!r} mixes 'exempt: true' with check "
+                            f"keys {mixed} — exempt outputs skip all runtime checks"
+                        ),
+                        location=nid,
+                    )
+                )
+
+        if not _is_internal_node(node) and not has_enforced_contract:
+            findings.append(
+                LintFinding(
+                    severity="error",
+                    check="missing_output_contract",
+                    detail=(
+                        f"External tool node {nid!r} has no output with an enforced "
+                        "(non-exempt) contract mapping"
+                    ),
+                    location=nid,
+                )
+            )
+    return findings
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Orchestrator
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -639,6 +809,8 @@ def run_contract_lint(
     contracts: Dict[str, Dict[str, Any]] | None = None,
     registry_tool_ids: Set[str] | None = None,
     registry_tools: Mapping[str, Mapping[str, Any]] | None = None,
+    plugin_root: Path | None = None,
+    enforce_output_contract_coverage: bool = False,
 ) -> Dict[str, Any]:
     """Run all contract lint checks and return a structured result.
 
@@ -647,6 +819,13 @@ def run_contract_lint(
         contracts: Optional parsed tool contracts (tool_id → contract).
         registry_tool_ids: Optional set of tool IDs from the registry.
         registry_tools: Optional runtime registry metadata keyed by tool ID.
+        plugin_root: Optional plugin filesystem root.  When given, the
+            mandatory ``limitations.yaml`` declaration is also checked.
+        enforce_output_contract_coverage: When True, additionally require
+            every external tool node to declare a non-exempt output contract
+            and validate ``exempt`` usage (:func:`lint_output_contracts`).
+            Off by default so programmatic callers with partial DAGs stay
+            lenient; the ``abi contract-lint`` CLI enables it.
 
     Returns:
         A dict with keys ``findings`` (list of LintFinding as dicts),
@@ -670,6 +849,14 @@ def run_contract_lint(
             )
         )
         all_findings.extend(lint_resource_blocks(contracts))
+
+    # Mandatory limitations declaration
+    if plugin_root is not None:
+        all_findings.extend(lint_limitations(plugin_root))
+
+    # Output-contract coverage gate (CI / CLI opt-in)
+    if enforce_output_contract_coverage:
+        all_findings.extend(lint_output_contracts(dag_spec))
 
     error_count = sum(1 for f in all_findings if f.severity == "error")
     warning_count = sum(1 for f in all_findings if f.severity == "warning")
