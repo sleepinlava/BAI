@@ -542,9 +542,93 @@ truth 双方均 `>90%` coverage 且 identity `>80%`；真实样本中匹配同�
 重复，官方 SIM 图的连通分量也不能复现论文所述去重后 13,469 条。作者公开仓库没有发布
 该去重清单或评价代码。因此后续结果称为 **paper-method reconstruction**，不称
 paper-exact；provenance 会同时记录 14,739 与论文 13,469 的数据库范围差异。当前 K127
-watcher 已驻留，完成后才会发布新的独立 P/R/F1 和替换图表。
+恢复 watcher 已驻留，完成后才会发布新的独立 P/R/F1 和替换图表。
+
+2026-07-21 的恢复审计进一步冻结了三类运行证据。首次默认-k 运行在 K55 距离估计阶段
+达到约 107 GB RSS 后以 exit 68 失败，日志包含明确的 OS memory allocation failure；不能
+把它解释为数据或算法结果。第一次 750 GB 恢复在 K55 graph construction 阶段被云容器
+重建外部中断，没有产生 SPAdes exit marker；中断检测时间、容器启动时间、最后阶段以及
+原 log/provenance SHA-256 已写入独立 TSV。第二次恢复发现云环境继承
+`OMP_NUM_THREADS=0`，虽然配置声明 16 threads，`spades-core` 实际只有 1 个线程；该尝试在
+108 秒时受控停止并保留 exit 255、log、provenance 和加速修正证据。
+
+当前第三次恢复由 `scripts/cloud/recover_scapp_k55_memory_and_validate.sh` 从 K55 继续，显式
+冻结 `OMP_NUM_THREADS=16`、`OMP_THREAD_LIMIT=16`、`MKL_NUM_THREADS=16`、SPAdes
+`--threads 16 --memory 750` 和 k-mer 列表 `21,33,55,77,99,127`。运行时验收确认日志中的
+OpenMP 上限为 16，而不是 1；K55 extension-index 阶段观测到约 903% CPU。脚本还拒绝覆盖
+既有 exit/log/provenance，成功后才原子发布带 `SHA256SUMS` 的 K55 快照并启动
+`paper_method_v1`。云端大盘的短时最低余量约 49 GiB，随后随 K55 临时分片回收恢复到
+约 70 GiB；84 GB Bakta 数据库已确认是 v6 full，不存在可删除的 Bakta v5。本阶段不会为
+释放空间而删除 Kraken2、GTDB-Tk、HUMAnN 等正式数据库，也不会把 attempt1/attempt2
+基础设施证据算作最终 benchmark 分数。
+
+K77 并行分片一度使数据盘只剩约 40 GiB。为避免 ENOSPC，同时遵循“质粒验证优先”，
+云端仅清理了已完成 RNA-seq retry4 中 24 个可再生成的 clean FASTQ 与 STAR BAM，共
+40,637,715,826 bytes；RNA 原始 reads、fastp JSON/HTML、STAR 日志、featureCounts、count
+matrix、DESeq2 表、报告和 provenance 均保留，七个关键结果文件另有 SHA-256 清单。机器
+可读的待删文件列表、清理范围、完成时间和 retained-evidence hashes 位于对应 RNA 日志
+目录。清理后 retry4 结果从 39 GB 缩至 395 MB，数据盘恢复到约 103 GB 可用；活动中的
+K77 进程没有打开任何被删文件，计算未被中断。
 
 在主组装运行期间，两项低优先级真实格式预检已完成：评分器在157条真实预测和旧小型 truth
 上完整生成 prediction/reference/status/JSON；重建器在真实 retry7 contigs 与 PLSDB 前100条
 序列上处理80个 HSP、输出47个 pair，其中仅2个通过 contig gate。临时预检目录随后已删除，
 不占用数据盘，也不把预检分数混入最终结果。
+
+### 9.7 SCAPP 论文方法 v2 最终证据与最终图表（2026-07-24）
+
+2026-07-23 启动的不可覆盖完整重建 `paper_method_v2` 已在云端成功完成并通过全部完整性
+门禁：`paper_method_v2.exit_code == 0`、`VALIDATION_COMPLETE == complete`、
+`sha256sum -c SHA256SUMS` 全部通过；v1 原目录与哈希保持不变，未被覆盖。provenance 中
+scorer、truth builder 和 evidence builder 的 SHA-256 与本地修复版逐一一致，metaSPAdes
+参数为 K127 / 16 threads / 750 GB（attempt3 成功路径）。
+
+从冻结 TSV 独立重算（不依赖任何 JSON 汇总）：
+
+- `prediction_status.tsv`：12 条 `true_positive`、145 条 `false_positive_no_match`、
+  0 条 duplicate-signature FP；
+- `truth_status.tsv`：88 条 truth references 中 64 条 recalled、24 条 FN；
+- `prediction_reference_pairs.tsv` 中 matched pair 覆盖 12 条唯一 predictions 和 64 条
+  唯一 truth references，与上述两表交叉一致；
+- 由此得到 Precision = 12/157 = 7.6433%、Recall = 64/88 = 72.7273%、
+  F1 = 13.8329%，与 `score_summary.json`、`machine_readable_evidence.json` 和派生
+  figure TSV 四者完全一致。机器证据一致性门禁通过，`evidence_id` 为
+  `scapp_srr11038083_plsdb_2018_12_05_paper_method_v2`，`evaluation_scope` 为
+  **paper-method reconstruction; not paper-exact**。
+
+v1 的 `Recall=100%`、`FN=0` 已确认为汇总代码缺陷（`defaultdict` 读取副作用把 64 膨胀为
+88），v1 目录保留为失败证据，但不得再被任何最终图表或论文声明引用。
+
+TP/FP 两组的辅助生物学证据分层（`paper_method_v2_analysis`，分类模式
+`paper_method_prediction_status`）显示严格 reference mismatch 不等于生物学假阳性：
+
+| 辅助证据 | TP 组（n=12） | FP 组（n=145） |
+| --- | ---: | ---: |
+| Circular / terminal overlap | 91.7%（11） | 29.7%（43） |
+| PlasmidFinder | 50.0%（6） | 2.1%（3） |
+| MOB replicon | 75.0%（9） | 3.4%（5） |
+| Relaxase | 50.0%（6） | 5.5%（8） |
+| oriT | 25.0%（3） | 3.4%（5） |
+| Mobilizable（MOB-typer） | 8 | 12 |
+
+TP 组中位长度 3,047.5 bp、中位 CoverM coverage 114.2；FP 组中位长度 1,459 bp、中位
+coverage 10.3。未匹配预测中仍有 43 条 circular、12 条 mobilizable，可能包含 PLSDB
+2018 未收录的新质粒或短质粒，应按两层结论表述：严格 reference concordance
+（7.64% / 72.73% / 13.83%）与辅助生物学证据并存。
+
+五张最终图 `scapp_paper_method_metrics`、`scapp_paper_method_directional_recovery`、
+`scapp_paper_method_evidence_rates`、`scapp_paper_method_abundance_length`、
+`scapp_paper_method_mobility_composition` 均由 v2 冻结表生成，通过
+`abi-sciplot validate` 和 `--strict` 渲染（零错误零警告），输出 PNG/PDF/SVG、
+FigureLint 报告和 provenance 于 `docs/zh/figures/rendered/`，并已逐张人工视觉复核
+（标签、图例、百分比归一化、无截断、不含 v1 的 100% Recall）。小型证据（机器证据
+JSON、score/truth 摘要、逐条审计 TSV、figure TSV、SHA256SUMS、VALIDATION_COMPLETE）
+已下载至 `docs/zh/figures/data/scapp_paper_method_v2_20260724/`，下载后 SHA-256 与云端
+manifest 逐一复核一致；分层分析输出位于其 `analysis/` 子目录。大型 BLAST TSV 与 FASTA
+保留在云端数据盘，不提交 Git。
+
+根目录 `metrics.tsv` 中 SCAPP 的 `paper_method_precision/recall/f1` 三行已由
+`pending_independent_truth` 转为 `claim_eligible` 并填入上述最终值；
+`docs/paper_examples/scapp_status.tsv` 同步更新，`limitations.tsv` 中
+`SCAPP-TRUTH-PENDING` 由 `SCAPP-FP-INTERPRETATION` 取代（严格 concordance precision
+不得解释为生物学假阳性率）。
