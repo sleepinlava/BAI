@@ -80,6 +80,12 @@ def assert_plugin_contract(plugin: object) -> None:
                 dag_spec,
                 contracts=contracts,
                 registry_tool_ids=registry_ids,
+                plugin_root=plugin_root,
+                # The contract-declaration pass has landed: every external
+                # node in the built-in plugins now carries a non-exempt
+                # output contract, so normal plugin validation enforces the
+                # coverage gate just like the ``abi contract-lint`` CLI.
+                enforce_output_contract_coverage=True,
             )
             lint_errors = [
                 finding for finding in lint_result["findings"] if finding["severity"] == "error"

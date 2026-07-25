@@ -90,7 +90,7 @@ from abi._shared import _common_overrides
 from abi.agent import ABIAgentInterface
 from abi.agent.context import render_doctor_agent
 from abi.agent_integrations import doctor_agent_integration, install_agent_integration
-from abi.exporters import NextflowExporter
+from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.json_utils import load_json_object, loads_json
 from abi.openai_contracts import export_openai_tools  # backward compat
 from abi.plugins import get_plugin, list_plugins
@@ -456,7 +456,9 @@ def check_command(
     config: Optional[Path] = typer.Option(None, "--config", help="Plugin config YAML."),
     sample_sheet: Optional[Path] = typer.Option(None, "--sample-sheet", help="Sample sheet TSV."),
     profile: str = typer.Option("dry_run", "--profile", help="Plugin configuration profile."),
-    engine: str = typer.Option("local", "--engine", help="Target engine: local, nextflow, or hpc."),
+    engine: str = typer.Option(
+        "local", "--engine", help="Target engine: local, nextflow, snakemake, or hpc."
+    ),
     check_runtime: bool = typer.Option(
         True, "--check-runtime/--no-check-runtime", help="Check installed executables."
     ),
@@ -875,11 +877,99 @@ def export_nextflow_command(
         _fail(exc)
 
 
+@app.command("export-snakemake")
+def export_snakemake_command(
+    analysis_type: str = typer.Option(..., "--type", help="ABI analysis type."),
+    output: Path = typer.Option(..., "--output", help="Output Snakefile path."),
+    config: Optional[Path] = typer.Option(None, "--config", help="Plugin config YAML."),
+    sample_sheet: Optional[Path] = typer.Option(None, "--sample-sheet", help="Sample sheet TSV."),
+    profile: str = typer.Option("dry_run", "--profile", help="Profile for adapter plugins."),
+    mode: Optional[str] = typer.Option(None, "--mode", help="Execution mode."),
+    threads: Optional[int] = typer.Option(None, "--threads", help="Thread count."),
+    outdir: Optional[str] = typer.Option(None, "--outdir", help="Output directory."),
+    log_dir: Optional[str] = typer.Option(None, "--log-dir", help="Log directory."),
+    smoke: bool = typer.Option(False, "--smoke", help="Export a runnable smoke workflow."),
+    mamba_root: Optional[Path] = typer.Option(None, "--mamba-root", help="Local mamba root."),
+    check_files: bool = typer.Option(True, "--check-files/--no-check-files"),
+    output_json: bool = typer.Option(
+        False,
+        "--output-json",
+        help="Emit the agent JSON envelope.",
+    ),
+) -> None:
+    """Export an ABI execution plan as a Snakemake Snakefile.
+
+    Builds the execution plan, then uses ``SnakemakeExporter`` to generate a
+    Snakefile. The resulting file can be run independently with ``snakemake
+    --cores N --use-conda``, enabling portable and HPC execution.
+
+    ``--smoke`` generates a workflow that uses mock tools for quick validation.
+
+    将 ABI 执行计划导出为 Snakemake Snakefile。
+    构建执行计划，然后使用 ``SnakemakeExporter`` 生成 Snakefile。
+    生成的文件可以用 ``snakemake --cores N --use-conda`` 独立运行。
+    """
+    if output_json:
+        _emit_agent_json(
+            ABIAgentInterface().export_snakemake(
+                analysis_type=analysis_type,
+                output=output,
+                config_path=config,
+                sample_sheet=sample_sheet,
+                profile=profile,
+                mode=mode,
+                threads=threads,
+                outdir=outdir,
+                log_dir=log_dir,
+                smoke=smoke,
+                mamba_root=mamba_root,
+                check_files=check_files,
+            )
+        )
+        return
+    try:
+        plugin = get_plugin(analysis_type)
+        cfg = plugin.load_config(
+            config,
+            profile=profile,
+            overrides=_common_overrides(
+                mode=mode,
+                threads=threads,
+                outdir=outdir,
+                log_dir=log_dir,
+                sample_sheet=sample_sheet,
+            ),
+        )
+        plan = plugin.build_plan(cfg, check_files=check_files)
+        snakefile_path = SnakemakeExporter().write(
+            plan,
+            cfg,
+            plugin.registry(),
+            output,
+            smoke=smoke,
+            mamba_root=mamba_root,
+        )
+        typer.echo(
+            json.dumps(
+                {
+                    "snakefile": str(snakefile_path),
+                    "analysis_type": analysis_type,
+                    "steps": len(plan.steps),
+                    "smoke": smoke,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+    except Exception as exc:
+        _fail(exc)
+
+
 @app.command("run")
 def run_command(
     analysis_type: str = typer.Option(..., "--type", help="ABI analysis type."),
     engine: str = typer.Option(
-        "local", "--engine", help="Runtime engine: local, nextflow, or hpc."
+        "local", "--engine", help="Runtime engine: local, nextflow, snakemake, or hpc."
     ),
     config: Optional[Path] = typer.Option(None, "--config", help="Plugin config YAML."),
     sample_sheet: Optional[Path] = typer.Option(None, "--sample-sheet", help="Sample sheet TSV."),
@@ -994,7 +1084,7 @@ def run_command(
     callers present a confirmation prompt.
 
     **Execution flow**: Loads the plugin config, builds the plan, selects a
-    runtime (local, Nextflow, or native HPC based on ``--engine``),
+    runtime (local, Nextflow, Snakemake, or native HPC based on ``--engine``),
     and executes. ``--smoke`` uses mock tool wrappers for smoke testing.
 
     通过选定的运行时后端运行 ABI 执行计划。
@@ -1003,8 +1093,8 @@ def run_command(
     命令返回 ``confirmation_required`` 信封并以代码 2 退出。这防止意外执行，
     并允许 agent 调用者展示确认提示。
 
-    执行流程：加载插件配置，构建计划，按 ``--engine`` 选择本地、Nextflow 或
-    原生 HPC 运行时，然后执行。
+    执行流程：加载插件配置，构建计划，按 ``--engine`` 选择本地、Nextflow、
+    Snakemake 或原生 HPC 运行时，然后执行。
     """
     resource_overrides_list = [r for r in (resource or []) if "=" in r]
     run_kwargs = dict(
@@ -1800,7 +1890,7 @@ def job_submit_command(
     backend: Optional[str] = typer.Option(
         None,
         "--backend",
-        help="Execution backend: local, nextflow, hpc, or cloud.",
+        help="Execution backend: local, nextflow, snakemake, hpc, or cloud.",
     ),
     analysis_type: Optional[str] = typer.Option(
         None,
@@ -2438,6 +2528,8 @@ def contract_lint_command(
             contracts=contracts,
             registry_tool_ids=registry_ids,
             registry_tools=registry_tools,
+            plugin_root=root,
+            enforce_output_contract_coverage=True,
         )
 
         typer.echo(json.dumps(result, indent=2, ensure_ascii=False))

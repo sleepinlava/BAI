@@ -39,8 +39,9 @@ explicitly approve execution so that:
 
 **Why planning tools do NOT require confirmation / 为何计划工具不需要确认**
 
-``abi_plan``, ``abi_dry_run``, ``abi_report``, and ``abi_export_nextflow``
-are all ``PLANNING_WRITE``. They write files to disk but do not launch
+``abi_plan``, ``abi_dry_run``, ``abi_report``, ``abi_export_nextflow``, and
+``abi_export_snakemake`` are all ``PLANNING_WRITE``. They write files to disk
+but do not launch
 subprocesses or consume significant resources. They are also idempotent:
 running them twice produces the same output. Requiring confirmation for
 every plan iteration would slow down agent workflows without adding safety.
@@ -122,6 +123,7 @@ TOOL_PERMISSIONS: Dict[str, PermissionLevel] = {
     "abi_dry_run": PermissionLevel.PLANNING_WRITE,
     "abi_report": PermissionLevel.PLANNING_WRITE,
     "abi_export_nextflow": PermissionLevel.PLANNING_WRITE,
+    "abi_export_snakemake": PermissionLevel.PLANNING_WRITE,
     "abi_install_skills": PermissionLevel.PLANNING_WRITE,
     # ── EXECUTION: pipeline execution (requires confirmation) / 流水线执行（需要确认） ──
     "abi_run": PermissionLevel.EXECUTION,

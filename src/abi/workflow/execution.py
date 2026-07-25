@@ -7,7 +7,14 @@ from pathlib import Path
 from typing import Any, Mapping, MutableMapping, Sequence
 
 from abi.interfaces import ABIPublishedOutputsPlugin
-from abi.runtimes import HpcRuntime, LocalRuntime, NextflowRuntime, RuntimeOptions, RuntimeResult
+from abi.runtimes import (
+    HpcRuntime,
+    LocalRuntime,
+    NextflowRuntime,
+    RuntimeOptions,
+    RuntimeResult,
+    SnakemakeRuntime,
+)
 from abi.schemas import ABIError
 
 
@@ -97,9 +104,11 @@ class WorkflowCoordinator:
             return LocalRuntime(prepared.plugin, options=prepared.options)
         if engine == "nextflow":
             return NextflowRuntime(prepared.plugin, options=prepared.options)
+        if engine == "snakemake":
+            return SnakemakeRuntime(prepared.plugin, options=prepared.options)
         if engine == "hpc":
             return HpcRuntime(prepared.plugin, options=prepared.options)
         raise ABIError(
             f"Unsupported runtime engine: {prepared.options.engine}. "
-            "Expected local, nextflow, or hpc."
+            "Expected local, nextflow, snakemake, or hpc."
         )
