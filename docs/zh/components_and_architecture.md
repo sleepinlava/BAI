@@ -20,7 +20,7 @@ ABIAgentInterface
 分析插件 + 声明式 DAG + 工具注册表
         |
         v
-本地 / Conda / Docker / Nextflow / HPC / 云端 worker
+本地 / Conda / Docker / Nextflow / Snakemake / HPC / 云端 worker
         |
         v
 执行计划 + 溯源 + 标准表格 + 报告 + 科研图形
@@ -38,14 +38,14 @@ ABIAgentInterface
 | 分析插件 | 负责生物学选择、工作流配置、解析和结果解释 | `src/abi/plugins/` |
 | 声明式工作流定义 | 定义 DAG 节点、工具、Schema、表格和报告元数据 | `plugins/<analysis_type>/` |
 | 工具与资源层 | 解析可执行程序、Conda 环境、数据库、索引和模型 | `src/abi/tools.py`、`src/abi/resources.py`、`environments.yaml` |
-| 运行时适配器 | 本地执行，或把任务转换到 Nextflow 和 HPC 后端 | `src/abi/runtimes/`、`src/abi/exporters/` |
+| 运行时适配器 | 本地执行，或把任务转换到 Nextflow、Snakemake 和 HPC 后端 | `src/abi/runtimes/`、`src/abi/exporters/` |
 | 结果与图形层 | 验证产物、标准化 TSV、生成报告和科研图形 | `src/abi/results.py`、`src/abi/report/`、`src/abi/sciplot/` |
 
 ## 一次请求如何执行
 
 1. **发现。** `abi list-types` 和 `abi query` 读取插件元数据，不构建或运行工作流。
 2. **解析。** ABI 合并插件、配置、样本表、运行时参数和资源覆盖项。
-3. **规划。** 声明式 DAG 生成 `ExecutionPlan`，其中包含有序步骤、命令、输入、输出、依赖和契约。
+3. **规划。** 声明式 DAG 生成 `ExecutionPlan`，其中包含有序步骤、命令、输入、输出、依赖和契约。计划同时被编译为经过不变量校验、与后端无关的 `CompiledPlan`；两者分别持久化为 `execution_plan.json` 和 `compiled_plan.json`，违反计划不变量时规划以结构化的 `invalid_config` 错误失败。
 4. **检查。** ABI 以只读方式检查输入路径、可执行程序、资源和运行时假设。
 5. **试运行。** dry-run 写入计划、溯源骨架、标准表格和报告预览。
 6. **授权。** 执行需要明确传入 `--confirm-execution` 或对应的传输字段。
@@ -89,6 +89,7 @@ Agent 发现有类型约束的操作并接收结构化响应，不需要导入 A
 | 本地 CLI | 探索、开发和单机运行 | `abi` |
 | Docker | 隔离插件运行环境和可重复部署 | `docker/Dockerfile.*` |
 | Nextflow 或 HPC | 调度器支持和可恢复计算 | `abi export-nextflow`、`abi run --engine hpc` |
+| Snakemake | 基于标记文件、绑定 Conda 环境的可恢复计算 | `abi export-snakemake`、`abi run --engine snakemake` |
 | MCP | 使用 stdio 工具的交互式 Agent 平台 | `abi-mcp` |
 | HTTP Job Service | 排队、异步或远程管理的任务 | `abi job-service`、`abi job ...` |
 | 无头 dispatch | 子进程 worker 和传输适配器 | `abi dispatch` |

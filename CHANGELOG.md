@@ -1,5 +1,41 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Mandatory limitations disclosure: every plugin must ship a non-empty
+  `limitations.yaml` (new lint errors `missing_limitations`, `invalid_limitations`,
+  `empty_limitations`), and every report (Markdown/HTML/JSON, including the
+  metagenomic plasmid engine's own reports) renders a limitations section with an
+  explicit fallback when the list is empty; `report_summary.json` now carries a
+  `limitations` field.
+- Snakemake execution backend: `engine="snakemake"` is a first-class engine
+  alongside `local`, `nextflow`, and `hpc`, with a Snakefile exporter
+  (`src/abi/exporters/snakemake.py`), a marker-file-based runtime
+  (`src/abi/runtimes/snakemake.py`), the `abi_export_snakemake` verb
+  (PLANNING_WRITE), CLI `abi export-snakemake` / `--engine snakemake`, and
+  provenance written on success and failure.
+- Output-contract coverage gate: every external-tool node in all seven plugins'
+  `pipeline_dag.yaml` declares a `contract:` (142/145 nodes; two exempt
+  passthrough nodes in metagenomic_plasmid, one internal output-less node), with
+  an explicit `contract: {exempt: true, reason: ...}` mechanism, new lint checks
+  (`missing_output_contract`, `exempt_missing_reason`, `exempt_mixed_with_checks`)
+  enforced by strict `abi contract-lint` and plugin validation, and the audit
+  script `scripts/audit_contract_coverage.py`.
+- Structured recovery actions in diagnostics: `DiagnosticHint` carries a
+  machine-actionable `recovery` field (action enum `retry` / `resume` /
+  `fix_input` / `install_resource` / `request_authorization` / `do_not_retry`,
+  plus `api_call` and `params`) driven by a data table covering all 19 error
+  codes and serialized into error envelopes.
+
+### Changed
+
+- `CompiledPlan` is now wired into the runtime: planning compiles and validates
+  the plan-invariant view (`compile_plan()`) before persisting, writes a sibling
+  `compiled_plan.json` next to `execution_plan.json`, and fails planning with a
+  structured `invalid_config` error when invariants are violated.
+
 ## [1.5.6] - 2026-07-15
 
 ### Added

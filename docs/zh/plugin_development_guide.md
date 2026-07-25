@@ -62,12 +62,17 @@ plugins/my_analysis/
   sample_sheet_template.tsv
   tool_registry.yaml
   standard_tables.yaml
+  limitations.yaml      ← 强制且非空
   tool_contracts/
     tool_a.yaml
   skills/               ← 随包捆绑的 SKILL.md 文件
     tool_a/SKILL.md
   _engine/             ← 可选：复杂引擎代码（参见 metagenomic_plasmid）
 ```
+
+每个插件必须提供非空的 `limitations.yaml`；否则 contract lint 以
+`missing_limitations`、`invalid_limitations` 或 `empty_limitations` 失败。
+生成的报告始终包含 limitations 章节（列表为空时使用明确的兜底文本）。
 
 对于具有大量内部逻辑的复杂插件，使用带有私有 `_engine/` 子目录的自包含包。参见 `plugins/metagenomic_plasmid/` 获取规范示例。
 
@@ -252,6 +257,8 @@ tools:
 ## 步骤输出合约
 
 复杂插件可以在执行计划中嵌入逐步骤合约。对于 DAG 驱动的 metagenomic plasmid 插件，`pipeline_dag.yaml` 中的每个节点声明其 `outputs` 和可选的 `assertions`；规划器将这些字段复制到 `PlanStep.params["_contract"]` 中以供运行时执行。
+
+契约覆盖率是强制的：每个调用外部工具的节点必须为输出声明 `contract` 检查；无产出的节点（纯聚合或标记步骤）必须显式设置 `contract: {exempt: true, reason: ...}`。该门槛由 `abi contract-lint`（`missing_output_contract`、`exempt_missing_reason`、`exempt_mixed_with_checks`）和插件校验强制执行；`scripts/audit_contract_coverage.py` 可输出各插件的覆盖率报告。
 
 支持的输出检查包括：
 

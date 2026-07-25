@@ -45,8 +45,8 @@ src/abi/
   tables.py           StandardTableManager
   tool_descriptors.py Unified tool descriptor SSOT (3 format families, 7+ LLM providers)
   jobs/               HTTP Job Service (service, client, force-kill support)
-  runtimes/           local, Nextflow, HPC runtimes
-  exporters/          Nextflow DSL2 exporter
+  runtimes/           local, Nextflow, Snakemake, HPC runtimes
+  exporters/          Nextflow DSL2 and Snakemake exporters
   mcp/                Optional MCP stdio server (exposed via ``abi-mcp``)
   skills/             Agent skill files → installed via ``abi install-skills``
   cli.py              Typer CLI (abi, abi-mcp, autoplasm, abi-sciplot entry points)

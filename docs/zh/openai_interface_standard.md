@@ -22,6 +22,7 @@ DeepSeek、智谱 (GLM)、Kimi (Moonshot)、通义 (Qwen)、MiniMax。
 - `abi_inspect`
 - `abi_report`
 - `abi_export_nextflow`
+- `abi_export_snakemake`
 - `abi_export_agent_context`
 - `abi_doctor_agent`
 - `abi_validate_result`
