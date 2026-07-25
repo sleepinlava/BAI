@@ -147,4 +147,12 @@ exclude_patterns = [
     "_build",
     "en",
     "zh",
+    # Local-only drafts — intentionally git-ignored ("not for repo"), so they
+    # are absent from CI checkouts.  Exclude them from the build to keep
+    # local and CI builds identical.
+    "comprehensive-testing-audit.md",
+    "full-engineering-gap-audit.md",
+    "tool-engineering-gap-audit.md",
+    "plugin_report_figure_spec.md",
+    "paper_execution_plan.md",
 ]

@@ -130,26 +130,11 @@ a regression test, and run checks proportional to the affected release surface.
    development_workflow
    development
    plugin_development_guide
-   plugin_report_figure_spec
    testing
    workflow_validation
    paper_evaluation
    paper_outline
    production_manual_acceptance_checklist
-
-Engineering audits
-------------------
-
-Point-in-time audit baselines (2026-06-22) retained for traceability; their
-findings have been remediated or converted into environment-gated checks.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Engineering Audits
-
-   comprehensive-testing-audit
-   full-engineering-gap-audit
-   tool-engineering-gap-audit
 
 Operate and release
 -------------------
@@ -164,7 +149,6 @@ representative biological acceptance criteria, and a strict runtime lock.
    runtime_locks
    release
    devlog
-   paper_execution_plan
 
 Component summary
 -----------------

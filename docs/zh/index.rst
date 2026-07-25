@@ -126,7 +126,6 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    development_workflow
    development
    plugin_development_guide
-   plugin_report_figure_spec
    testing
    workflow_validation
    current_conclusions_next_steps
@@ -135,19 +134,6 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    real_data_validation_datasets
    abi_real_data_validation_status_20260724
    production_manual_acceptance_checklist
-
-工程审计
-------------------------------
-
-2026-06-22 的时间点审计基线，保留用于可追溯性；其发现已修复或转为按环境门控的检查。
-
-.. toctree::
-   :maxdepth: 1
-   :caption: 工程审计
-
-   comprehensive-testing-audit
-   full-engineering-gap-audit
-   tool-engineering-gap-audit
 
 运维与发布
 ------------------------------
@@ -161,7 +147,6 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    runtime_locks
    release
    devlog
-   paper_execution_plan
 
 组件摘要
 ------------------------------
