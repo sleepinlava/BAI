@@ -1,0 +1,38 @@
+figure_id: scapp_paper_method_evidence_rates
+figure_type: barplot
+data:
+  table: docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_evidence_rates.tsv
+  format: tsv
+  required_columns:
+  - evidence
+  - group
+  - count
+  - denominator
+  - percent
+mapping:
+  x: evidence
+  y: percent
+  hue: group
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 155
+  height_mm: 92
+  dpi: 300
+labels:
+  title: Auxiliary plasmid evidence by paper-method prediction status
+  x_label: Auxiliary plasmid evidence
+  y_label: Predictions positive (%)
+  legend_title: Prediction status
+export:
+  output_dir: docs/zh/figures/rendered
+  basename: scapp_paper_method_evidence_rates
+  formats:
+  - png
+  - pdf
+  - svg
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: Auxiliary evidence stratified by TP/FP prediction status; SCAPP
+    supplementary-method reconstruction for SRR11038083; official 14,739-record PLSDB
+    archive; not paper-exact because the paper-specific deduplication list is absent

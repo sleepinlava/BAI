@@ -1,0 +1,34 @@
+figure_id: scapp_paper_method_directional_recovery
+figure_type: stacked_barplot
+data:
+  table: docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_directional_recovery.tsv
+  format: tsv
+  required_columns:
+  - direction
+  - Matched
+  - Unmatched
+mapping:
+  x: direction
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 140
+  height_mm: 88
+  dpi: 300
+labels:
+  title: Directional recovery under SCAPP paper-method reconstruction
+  x_label: Evaluation direction
+  y_label: Sequences (%)
+  legend_title: Classification
+export:
+  output_dir: docs/zh/figures/rendered
+  basename: scapp_paper_method_directional_recovery
+  formats:
+  - png
+  - pdf
+  - svg
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: Truth recall and prediction precision composition; SCAPP supplementary-method
+    reconstruction for SRR11038083; official 14,739-record PLSDB archive; not paper-exact
+    because the paper-specific deduplication list is absent

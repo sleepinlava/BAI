@@ -1,0 +1,4 @@
+metric	percent	numerator	denominator	definition
+Precision (12/157)	7.643312101910828	12	157	True-positive ABI predictions after duplicate-signature penalty
+Recall (64/88)	72.72727272727273	64	88	Truth references recalled by at least one ABI prediction
+F1	13.8328530259366			Harmonic mean of paper-method precision and recall

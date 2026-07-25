@@ -1,0 +1,36 @@
+figure_id: scapp_paper_method_metrics
+figure_type: barplot
+data:
+  table: docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_metrics.tsv
+  format: tsv
+  required_columns:
+  - metric
+  - percent
+  - numerator
+  - denominator
+  - definition
+mapping:
+  x: metric
+  y: percent
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 130
+  height_mm: 85
+  dpi: 300
+labels:
+  title: ABI plasmid prediction metrics against reconstructed SCAPP truth
+  x_label: Metric (paper-method reconstruction)
+  y_label: Percent (%)
+export:
+  output_dir: docs/zh/figures/rendered
+  basename: scapp_paper_method_metrics
+  formats:
+  - png
+  - pdf
+  - svg
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: Precision, recall and F1; SCAPP supplementary-method reconstruction
+    for SRR11038083; official 14,739-record PLSDB archive; not paper-exact because
+    the paper-specific deduplication list is absent

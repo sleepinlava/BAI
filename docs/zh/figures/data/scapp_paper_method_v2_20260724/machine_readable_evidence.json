@@ -1,0 +1,107 @@
+{
+  "schema_version": "abi.scapp.paper_method_evidence.v1",
+  "evidence_id": "scapp_srr11038083_plsdb_2018_12_05_paper_method_v2",
+  "status": "complete",
+  "analysis_type": "metagenomic_plasmid",
+  "sample_accession": "SRR11038083",
+  "evaluation_scope": "paper-method reconstruction; not paper-exact",
+  "reference_method": {
+    "name": "SCAPP supplementary methods S5",
+    "truth_thresholds": {
+      "identity_strictly_greater_than_percent": 85.0,
+      "contig_coverage_strictly_greater_than_fraction": 0.85,
+      "reference_coverage_strictly_greater_than_fraction": 0.9
+    },
+    "scoring_thresholds": {
+      "identity_strictly_greater_than_percent": 80.0,
+      "bidirectional_coverage_strictly_greater_than_fraction": 0.9
+    },
+    "duplicate_policy": "One true-positive prediction per identical non-empty set of matched truth references; additional predictions with that signature are false positives."
+  },
+  "confusion_counts": {
+    "true_positive_predictions": 12,
+    "false_positive_predictions": 145,
+    "false_negative_truth_references": 24,
+    "truth_references": 88,
+    "predictions": 157
+  },
+  "metrics": {
+    "precision": 0.07643312101910828,
+    "recall": 0.7272727272727273,
+    "f1": 0.138328530259366
+  },
+  "truth_reconstruction_counts": {
+    "identity_filtered_contig_reference_pairs": 19484,
+    "matching_contig_reference_pairs": 3052,
+    "references_with_identity_filtered_hits": 4240,
+    "selected_truth_references": 88
+  },
+  "database_scope": {
+    "archive_records": 14739,
+    "paper_reported_deduplicated_records": 13469,
+    "note": "Official 2018-12-05 archive contains 14739 records; the paper-specific 13469-record deduplication list was not published."
+  },
+  "limitations": [
+    "The paper-specific 13,469-record PLSDB deduplication list and evaluation code were not published; the official 14,739-record archive is used.",
+    "Duplicate predictions are penalized by identical non-empty matched-reference signatures, the closest reproducible implementation of the published prose.",
+    "Metrics describe agreement with the reconstructed reference set, not proof of biological truth for every unmatched prediction."
+  ],
+  "code_and_input_hashes": {
+    "abi_git_commit": "3244629d0c0f262c00af9b8308f6cddacaffae31",
+    "abi_git_dirty": "true",
+    "truth_builder_sha256": "cc97fdd932e699d167b0eaf175a69b20c95fa36947e155672fb6dfd6a429b650",
+    "prediction_scorer_sha256": "388f0c693d9e23062e063e15e4b33412d4d68c67b7b089b449daa9a76417f19f",
+    "evidence_builder_sha256": "78343f3dfc54a783b8212a6700a2b849a4e295f28798926a938861783b8d0e17",
+    "assembly_contigs_sha256": "741966cc7f5ea442da169c30399691db8f37470322a86413857007d3a6ef3218",
+    "plsdb_fasta_sha256": "46c74eaa6f953896422cb5465a88008e0f72af2f36fa5bfcdc2521638c4d461e",
+    "predictions_fasta_sha256": "8927e76a650745d1c649c8e4763cede28217e4cf4f7ad006ce825e7d7dd5d4c6",
+    "scapp_supplement_sha256": "aed4604eddba0d017e304695c350f7d958a909c5b5e6c1cb246aaa47289fce05",
+    "plsdb_exact_duplicate_scan_sha256": "2d9630846ca779de8d094c20c538122a3f9d9a0ed2069c14f172e953fe8853d6"
+  },
+  "artifacts": {
+    "evidence_match_table": {
+      "path": "evidence_match_table.tsv",
+      "sha256": "795ee60b4b3062ceb809ffc7b8421a8a81971f01710cd7dd13e0813143e6c260"
+    },
+    "figure_directional_recovery": {
+      "path": "figure_directional_recovery.tsv",
+      "sha256": "7d3b702b92a86fd59f374d414d4b38e1694f3fec47572de69e199b330fe0cc1d"
+    },
+    "figure_metrics": {
+      "path": "figure_metrics.tsv",
+      "sha256": "dfb0d397173746660ff579c3f67a2e1c0e2507b89ffa1e41b6935bccdf56d4e5"
+    },
+    "prediction_reference_pairs": {
+      "path": "prediction_reference_pairs.tsv",
+      "sha256": "dca1c763966157c2c628ce270dca9727af895cb818d083105c72ecae3fff24ed"
+    },
+    "prediction_status": {
+      "path": "prediction_status.tsv",
+      "sha256": "6635ea84bfd453a423a9a32ffdc97efa1b0856b79af7b4974c769108bc44842e"
+    },
+    "run_provenance": {
+      "path": "run_provenance.tsv",
+      "sha256": "7809e9e72355fc9b5dd08cb74e64de2de701a2387e4594d40e179083c9b936bd"
+    },
+    "score_summary": {
+      "path": "score_summary.json",
+      "sha256": "1e4f4c398fed7ce14b6adc0d7656bd848d9531ec9eefa092398dccb62cff7133"
+    },
+    "truth_contig_reference_pairs": {
+      "path": "truth_contig_reference_pairs.tsv",
+      "sha256": "17894e06e54339420f693ab7343a427623e240fd1380e92c992e06d5144102cb"
+    },
+    "truth_reference_coverage": {
+      "path": "truth_reference_coverage.tsv",
+      "sha256": "50feb1a2a0ede9212af73f08023c4b6bf63f739e722a534834f57e279fc92599"
+    },
+    "truth_status": {
+      "path": "truth_status.tsv",
+      "sha256": "5c1d12e0be1f4814999bc943a09e4a58d1dfdcd97a4820fbd51f1ecf6651a96a"
+    },
+    "truth_summary": {
+      "path": "truth_summary.json",
+      "sha256": "63e586a323f5bbc0b09dcfe6e36e842c08d8349e719b349b1ec4f0c4323544bb"
+    }
+  }
+}

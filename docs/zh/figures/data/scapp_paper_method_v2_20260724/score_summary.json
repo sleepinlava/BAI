@@ -1,0 +1,33 @@
+{
+  "thresholds": {
+    "identity_strictly_greater_than_percent": 80.0,
+    "bidirectional_coverage_strictly_greater_than_fraction": 0.9
+  },
+  "duplicate_policy": "One true-positive prediction per identical non-empty set of matched truth references; additional predictions with that signature are false positives.",
+  "counts": {
+    "total_predictions": 157,
+    "raw_predictions_with_match": 12,
+    "true_positive_predictions_after_duplicate_penalty": 12,
+    "duplicate_false_positive_predictions": 0,
+    "no_match_false_positive_predictions": 145,
+    "total_truth_references": 88,
+    "recalled_truth_references": 64,
+    "false_negative_truth_references": 24
+  },
+  "metrics": {
+    "precision": 0.07643312101910828,
+    "recall": 0.7272727272727273,
+    "f1": 0.138328530259366,
+    "precision_percent": 7.643312101910828,
+    "recall_percent": 72.72727272727273,
+    "f1_percent": 13.8328530259366
+  },
+  "inputs": {
+    "blast_tsv": "predictions_to_truth.tsv",
+    "blast_tsv_sha256": "6c221d814f91a78ea8fe02332dea795fef0de283ce0e6306e47ac1c6119d9c78",
+    "predictions_fasta": "/root/autodl-tmp/abi-real-data/results/plasmid_scapp_core_retry7/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta",
+    "predictions_fasta_sha256": "8927e76a650745d1c649c8e4763cede28217e4cf4f7ad006ce825e7d7dd5d4c6",
+    "truth_fasta": "scapp_truth_paper_method.fasta",
+    "truth_fasta_sha256": "c609ba241634f7d0fa8489c2fb3716ba30fea022ae6fcb4b721326a70300d665"
+  }
+}

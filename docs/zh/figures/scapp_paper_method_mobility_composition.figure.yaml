@@ -1,0 +1,34 @@
+figure_id: scapp_paper_method_mobility_composition
+figure_type: stacked_barplot
+data:
+  table: docs/zh/figures/data/scapp_paper_method_v2_20260724/figure_mobility_composition.tsv
+  format: tsv
+  required_columns:
+  - group
+  - Mobilizable
+  - Non-mobilizable
+mapping:
+  x: group
+style:
+  theme: abi_nature
+  palette: colorblind_safe_8
+  width_mm: 140
+  height_mm: 90
+  dpi: 300
+labels:
+  title: Predicted mobility by paper-method prediction status
+  x_label: Prediction status
+  y_label: Predictions (%)
+  legend_title: MOB-typer classification
+export:
+  output_dir: docs/zh/figures/rendered
+  basename: scapp_paper_method_mobility_composition
+  formats:
+  - png
+  - pdf
+  - svg
+provenance:
+  workflow_name: metagenomic_plasmid
+  input_data_role: MOB-typer composition stratified by TP/FP status; SCAPP supplementary-method
+    reconstruction for SRR11038083; official 14,739-record PLSDB archive; not paper-exact
+    because the paper-specific deduplication list is absent
