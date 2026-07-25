@@ -6,11 +6,11 @@ ABI 为所有受支持的分析提供同一套安全流程：先了解工作流�
 
 [![PyPI](https://img.shields.io/pypi/v/abi-agent?style=flat-square&color=blue)](https://pypi.org/project/abi-agent/)
 [![Python](https://img.shields.io/pypi/pyversions/abi-agent?style=flat-square)](https://pypi.org/project/abi-agent/)
-[![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/abi/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/abi/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/abi/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/abi/)
-[![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/abi)
-[![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/abi/blob/master/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/BAI/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/BAI/)
+[![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/BAI)
+[![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/BAI/blob/master/LICENSE)
 
 > :gb: [English](README.md)
 
@@ -72,7 +72,7 @@ pip install "abi-agent[report]"    # 科研图形和增强报告
 如需运行仓库自带示例并使用源码开发：
 
 ```bash
-git clone https://github.com/sleepinlava/abi.git
+git clone https://github.com/sleepinlava/BAI.git
 cd abi
 python -m venv .venv
 . .venv/bin/activate
@@ -324,7 +324,7 @@ python -m build
 - [RNA-seq 工作流](docs/zh/rnaseq_expression_workflow.md)
 - [宏基因组质粒工作流](docs/zh/metagenomic_plasmid.md)
 - [发布指南](docs/zh/release.md)
-- [在线文档](https://sleepinlava.github.io/abi/)
+- [在线文档](https://sleepinlava.github.io/BAI/)
 
 ## 许可证
 

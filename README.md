@@ -6,11 +6,11 @@ ABI gives every supported analysis the same safe lifecycle: inspect the workflow
 
 [![PyPI](https://img.shields.io/pypi/v/abi-agent?style=flat-square&color=blue)](https://pypi.org/project/abi-agent/)
 [![Python](https://img.shields.io/pypi/pyversions/abi-agent?style=flat-square)](https://pypi.org/project/abi-agent/)
-[![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/abi/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/abi/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/abi/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/abi/)
-[![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/abi)
-[![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/abi/blob/master/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/BAI/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/BAI/)
+[![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/BAI)
+[![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/BAI/blob/master/LICENSE)
 
 > :cn: [中文版](README.zh.md)
 
@@ -72,7 +72,7 @@ pip install "abi-agent[report]"    # Scientific figures and richer reports
 To run the bundled example and work with the source repository:
 
 ```bash
-git clone https://github.com/sleepinlava/abi.git
+git clone https://github.com/sleepinlava/BAI.git
 cd abi
 python -m venv .venv
 . .venv/bin/activate
@@ -324,7 +324,7 @@ Start with the [development guide](docs/en/development.md), [plugin development 
 - [RNA-seq workflow](docs/en/rnaseq_expression_workflow.md)
 - [Metagenomic plasmid workflow](docs/en/metagenomic_plasmid.md)
 - [Release guide](docs/en/release.md)
-- [Full hosted documentation](https://sleepinlava.github.io/abi/)
+- [Full hosted documentation](https://sleepinlava.github.io/BAI/)
 
 ## License
 
