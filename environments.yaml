@@ -339,7 +339,7 @@ tool_assignments:
     semibin: autoplasm-plasmid-binning
     plasmaag: autoplasm-plasmid-binning
     gplas2: autoplasm-plasmid-binning
-    scapp: autoplasm-plasmid-binning
+    scapp: scapp
     recycler: autoplasm-plasmid-binning
     kraken2: stats
     metaphlan: stats

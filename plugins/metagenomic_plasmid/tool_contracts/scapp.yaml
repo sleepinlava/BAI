@@ -13,7 +13,15 @@ inputs:
     required: true
   assembly_graph:
     type: file
-    format: gfa
+    format: fastg
+    required: true
+  read1:
+    type: file
+    format: fastq.gz
+    required: true
+  read2:
+    type: file
+    format: fastq.gz
     required: true
   threads:
     type: integer
@@ -23,8 +31,7 @@ outputs:
     type: directory
 execution:
   executable: scapp
-  command_template: scapp --contigs {assembly} --graphs {assembly_graph} --output
-    {output_dir} --threads {threads}
+  command_template: scapp -g {assembly_graph} -o {output_dir} -k 77 -p {threads} -r1 {read1} -r2 {read2}
   network: false
   writes_output: true
 failure_handling:
