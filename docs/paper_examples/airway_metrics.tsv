@@ -1,11 +1,12 @@
 metric	estimate	numerator	denominator	unit	status	note
 steps_completed_fraction	1.0	26	26	fraction	claim_eligible	Formal result validation passed
-genes_tested	17612	17612		genes	claim_eligible	DESeq2-tested genes
-matched_genes_for_effect_comparison	13725	13725		genes	claim_eligible	Genes matched to the GEO Cuffdiff table
-abi_mapped_significant_genes	4814	4814		genes	claim_eligible	ABI significant genes among mapped comparison genes
+genes_tested	16019	16019		genes	claim_eligible	DESeq2-tested genes
+abi_total_significant_genes	4549	4549		genes	claim_eligible	Total ABI significant genes (padj<0.05) before GEO mapping
+matched_genes_for_effect_comparison	13148	13148		genes	claim_eligible	Genes matched to the GEO Cuffdiff table via Ensembl-to-symbol mapping from GRCh37.75 GTF
+abi_mapped_significant_genes	4013	4013		genes	claim_eligible	ABI significant genes among mapped comparison genes
 geo_mapped_significant_genes	304	304		genes	claim_eligible	GEO significant genes among mapped comparison genes
-log2fc_spearman_rho	0.927	13725		correlation	claim_eligible	Dex-versus-untreated effect ranking
-effect_direction_concordance	0.908		13725	fraction	claim_eligible	Sign concordance among matched genes
+log2fc_spearman_rho	0.9613	13148		correlation	claim_eligible	Dex-versus-untreated effect ranking
+effect_direction_concordance	0.9103		13148	fraction	claim_eligible	Sign concordance among matched genes
 sentinel_gene_direction_concordance	1.0	7	7	fraction	claim_eligible	All preregistered sentinel genes agreed in direction
-significant_gene_overlap	302	302		genes	claim_eligible	Intersection of mapped significant sets
-significant_set_jaccard	0.0627	302		fraction	claim_eligible	Reported with the method/reference mismatch limitation
+significant_gene_overlap	304	304		genes	claim_eligible	Intersection of mapped significant sets
+significant_set_jaccard	0.0758	304		fraction	claim_eligible	Reported with the method/reference mismatch limitation
