@@ -792,6 +792,13 @@ nodes:
         contract:
           min_size: 500B
           min_contigs: 1
+      assembly_graph:
+        type: file
+        format: fastg
+        path: '{outdir}/{category_dir}/{sample_id}/assembly_graph.fastg'
+        contract:
+          file_exists: true
+          min_size: 0B
       output_dir:
         type: directory
   assembly_metaflye:
@@ -1321,6 +1328,52 @@ nodes:
       field: plasmid_detection.tools
       operator: list_contains
       value: platon
+  plasmid_detect_scapp:
+    tool_id: scapp
+    category: plasmid_detection
+    scope: per_sample
+    name: SCAPP assembly-graph plasmid detection (optional)
+    platforms:
+    - illumina
+    optional: true
+    enable_condition:
+      field: plasmid_detection.tools
+      operator: list_contains
+      value: scapp
+    depends_on:
+    - assembly_metaspades
+    - host_removal_bowtie2
+    fallback_depends:
+    - qc_fastp
+    inputs:
+      assembly_graph:
+        type: file
+        format: fastg
+        source: assembly_metaspades.assembly_graph
+      read1:
+        type: file
+        format: fastq.gz
+        source: host_removal_bowtie2.clean_read1
+        fallback: qc_fastp.clean_read1
+      read2:
+        type: file
+        format: fastq.gz
+        source: host_removal_bowtie2.clean_read2
+        fallback: qc_fastp.clean_read2
+      max_k:
+        type: integer
+        default: 55
+      threads:
+        type: integer
+        default: 1
+    outputs:
+      scapp_predictions:
+        type: file
+        format: fasta
+        path: '{outdir}/{category_dir}/{sample_id}/scapp/assembly_graph.confident_cycs.fasta'
+        contract:
+          file_exists: true
+          min_size: 0B
   plasmid_consensus:
     tool_id: internal
     category: plasmid_consensus
@@ -1342,6 +1395,7 @@ nodes:
     - plasmid_detect_plasme
     - plasmid_detect_plasx
     - plasmid_detect_platon
+    - plasmid_detect_scapp
     fallback_depends:
     - plasmid_detect_genomad
     inputs:
@@ -1362,6 +1416,11 @@ nodes:
       platon_predictions:
         type: directory
         source: plasmid_detect_platon.output_dir
+        required: false
+      scapp_predictions:
+        type: file
+        format: fasta
+        source: plasmid_detect_scapp.scapp_predictions
         required: false
       consensus_method:
         type: string
@@ -2979,41 +3038,6 @@ nodes:
           min_contigs: 1
       output_dir:
         type: directory
-  plasmid_binning_scapp:
-    tool_id: scapp
-    category: plasmid_binning
-    scope: per_sample
-    name: SCAPP plasmid reconstruction from assembly graph
-    platforms:
-    - illumina
-    - ont
-    - pacbio_hifi
-    - hybrid
-    optional: true
-    enable_condition:
-      field: plasmid_binning.tools
-      operator: list_contains
-      value: scapp
-    depends_on:
-    - plasmid_consensus
-    inputs:
-      assembly:
-        type: file
-        format: fasta
-        source: '{active_assembly_node}.assembly'
-      assembly_graph:
-        type: file
-        format: gfa
-        source: '{active_assembly_node}.assembly_graph'
-        required: false
-      threads:
-        type: integer
-        default: 1
-    outputs:
-      output_dir:
-        type: directory
-        contract:
-          min_files: 1
   plasmid_binning_recycler:
     tool_id: recycler
     category: plasmid_binning

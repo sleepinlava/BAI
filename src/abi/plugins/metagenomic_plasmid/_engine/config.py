@@ -222,6 +222,14 @@ def validate_config(config: Mapping[str, Any]) -> None:
     tools = plasmid_detection.get("tools")
     if not isinstance(tools, list) or not tools:
         raise ConfigError("plasmid_detection.tools must be a non-empty list")
+    assembly = config.get("assembly") or {}
+    if "scapp" in tools and (
+        not isinstance(assembly, Mapping) or assembly.get("short_read_assembler") != "metaspades"
+    ):
+        raise ConfigError(
+            "SCAPP requires assembly.short_read_assembler=metaspades "
+            "because it consumes the metaSPAdes FASTG assembly graph"
+        )
 
     strategy = plasmid_detection.get("strategy", "single_tool")
     if strategy not in VALID_PLASMID_STRATEGIES:

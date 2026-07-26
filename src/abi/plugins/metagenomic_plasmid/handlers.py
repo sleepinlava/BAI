@@ -31,6 +31,8 @@ def plasmid_consensus_handler(
     For assembly-mode pipelines where detection tools agree the input is plasmid,
     the consensus output is the original assembly. In the assembly passthrough case,
     the genomad plasmid contigs (or the original assembly) are copied to the output path.
+    When genomad output is absent but SCAPP confident cycles are available, the SCAPP
+    FASTA is copied instead.
     """
     del config, context
     output_path = Path(step.outputs.get("plasmid_contigs", ""))
@@ -57,6 +59,23 @@ def plasmid_consensus_handler(
             return InternalHandlerResult(
                 message=f"Consensus contigs from genomad: {f} -> {output_path}"
             )
+
+    # Fallback: SCAPP confident cycles already are plasmid contigs
+    scapp_predictions = step.inputs.get("scapp_predictions", "")
+    scapp_path = Path(scapp_predictions) if scapp_predictions else None
+    if scapp_path and scapp_path.is_file() and scapp_path.stat().st_size > 0:
+        from ._engine.pipeline import _read_fasta_records
+
+        if not any(_read_fasta_records(scapp_path)):
+            return InternalHandlerResult(
+                status="skipped",
+                message="SCAPP produced no FASTA records — consensus skipped",
+            )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(scapp_path, output_path)
+        return InternalHandlerResult(
+            message=f"Consensus contigs from scapp: {scapp_path} -> {output_path}"
+        )
 
     return InternalHandlerResult(
         status="skipped",

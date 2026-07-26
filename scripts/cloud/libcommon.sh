@@ -126,10 +126,11 @@ ABI_PLUGINS=(
   viral_viwrap
 )
 
-# ── Conda env list (all 18 envs from environments.yaml) ───────────────────
+# ── Conda env list (all 19 envs from environments.yaml) ───────────────────
 ABI_ENV_NAMES=(
   autoplasm-base autoplasm-qc autoplasm-assembly autoplasm-annotation
   autoplasm-abundance autoplasm-plasmid-detect autoplasm-plasmid-binning
+  autoplasm-scapp
   autoplasm-integronfinder stats autoplasm-visualization autoplasm-nextflow
   abi-qc abi-stats rnaseq amplicon wgs easymeta-p0 easymeta-humann
 )

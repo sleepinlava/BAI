@@ -1,0 +1,15 @@
+name: autoplasm-scapp
+channel_priority: strict
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- python=3.8
+- blast>=2.10.1
+- bwa
+- samtools
+- pip
+- pip:
+  - plasclass @ https://github.com/Shamir-Lab/PlasClass/archive/refs/heads/master.tar.gz
+  - scapp @ https://github.com/Shamir-Lab/SCAPP/archive/refs/heads/master.tar.gz

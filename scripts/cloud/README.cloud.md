@@ -10,7 +10,7 @@ them independently, resume after a failure, and verify the result.
 # 1. Clone the repo (or copy it to the cloud host)
 git clone <repo-url> abi && cd abi
 
-# 2. Install all 18 conda environments + ABI Python package + R/DESeq2
+# 2. Install all 19 conda environments + ABI Python package + R/DESeq2
 bash scripts/cloud/01_envs.sh
 
 # 3. Download all auto-fetchable databases (~200 GB; see disk requirements)
@@ -24,7 +24,7 @@ bash scripts/cloud/03_verify.sh
 
 | Component | Size |
 |-----------|------|
-| Conda environments (18) | ~15–20 GB |
+| Conda environments (19) | ~15–20 GB |
 | Databases (Tier-1, all plugins) | ~180–220 GB |
 | **Total** | **~200–240 GB** |
 
@@ -56,7 +56,7 @@ contains RNA references. Do not use the two variables interchangeably.
 ### `01_envs.sh` — Conda environments
 
 Installs micromamba (if no mamba/conda found), regenerates `envs/*.yml` from
-`environments.yaml`, creates all 18 environments, installs the ABI package
+`environments.yaml`, creates all 19 environments, installs the ABI package
 (`pip install -e ".[dev,report,mcp]"`), and sets up the `rnaseq` env + DESeq2.
 
 ```bash
@@ -139,7 +139,7 @@ re-download of a single database, remove its directory under
 
 ```bash
 git clone <仓库地址> abi && cd abi
-bash scripts/cloud/01_envs.sh        # 安装 18 个 conda 环境 + ABI + R/DESeq2
+bash scripts/cloud/01_envs.sh        # 安装 19 个 conda 环境 + ABI + R/DESeq2
 bash scripts/cloud/02_databases.sh   # 下载全量数据库（约 200 GB）
 bash scripts/cloud/03_verify.sh      # 校验
 ```

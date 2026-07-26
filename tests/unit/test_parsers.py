@@ -393,6 +393,34 @@ def test_platon_parser_contributes_supporting_predictions(tmp_path):
     assert rows[0]["evidence_level"] == "supporting"
 
 
+def test_scapp_parser_reads_confident_cycles_fasta(tmp_path):
+    output_dir = tmp_path / "scapp"
+    nested = output_dir / "scapp"
+    nested.mkdir(parents=True)
+    (nested / "assembly_graph.confident_cycs.fasta").write_text(
+        ">cycle_1 length=12000\nACGTACGT\n>cycle_2 extra description\nACGT\n",
+        encoding="utf-8",
+    )
+
+    assert supports_standard_parsing("scapp")
+    rows = parse_standard_outputs("scapp", output_dir, "S1")["plasmid_predictions"]
+
+    assert len(rows) == 2
+    assert rows[0]["contig_id"] == "cycle_1"
+    assert rows[0]["tool"] == "scapp"
+    assert rows[0]["evidence_level"] == "primary"
+    assert rows[0]["contig_length"] == "8"
+    assert rows[0]["circularity"] == "circular"
+    assert rows[1]["contig_id"] == "cycle_2"
+    assert rows[1]["sample_id"] == "S1"
+
+
+def test_scapp_parser_handles_missing_output(tmp_path):
+    assert parse_standard_outputs("scapp", tmp_path / "missing", "S1") == {
+        "plasmid_predictions": []
+    }
+
+
 def test_single_tool_consensus_keeps_primary_detector_authoritative(tmp_path):
     tables = tmp_path / "tables"
     append_standard_rows(

@@ -857,6 +857,31 @@ def parse_platon(output_dir: Path, sample_id: str) -> StandardRows:
     return {"plasmid_predictions": rows}
 
 
+def parse_scapp(output_dir: Path, sample_id: str) -> StandardRows:
+    rows = []
+    for path in _candidate_files(output_dir, ("*.confident_cycs.fasta", "*.confident_cycs.fa")):
+        for contig_id, length in _read_fasta_records(path):
+            rows.append(
+                {
+                    "sample_id": sample_id,
+                    "contig_id": contig_id,
+                    "tool": "scapp",
+                    "evidence_level": "primary",
+                    "score": "1.0",
+                    "confidence": _confidence("1.0"),
+                    "contig_length": str(length),
+                    "circularity": "circular",
+                    "evidence": "confident_cycle",
+                    "warnings": (
+                        "SCAPP confident cycles are graph-based plasmid calls; "
+                        "low-confidence cycles are not reported."
+                    ),
+                    "source_file": str(path),
+                }
+            )
+    return {"plasmid_predictions": rows}
+
+
 def parse_copla(output_dir: Path, sample_id: str) -> StandardRows:
     rows = []
     for path in _candidate_files(output_dir, ("*.tsv", "*.txt", "*.csv")):
@@ -1308,7 +1333,7 @@ PARSERS: Dict[str, Parser] = {
     "concoct": _bind_binning_parser("concoct"),
     "semibin": _bind_binning_parser("semibin"),
     "das_tool": _bind_binning_parser("das_tool"),
-    "scapp": _bind_binning_parser("scapp"),
+    "scapp": parse_scapp,
     "recycler": _bind_binning_parser("recycler"),
     "checkm2": _bind_parser(parse_mag_quality, "checkm2"),
     "gtdbtk": _bind_parser(parse_mag_quality, "gtdbtk"),
@@ -1636,18 +1661,24 @@ def _read_gff_features(path: Path) -> List[Dict[str, str]]:
 
 
 def _read_fasta_lengths(path: Path) -> List[int]:
-    lengths = []
+    return [length for _, length in _read_fasta_records(path) if length]
+
+
+def _read_fasta_records(path: Path) -> List[tuple[str, int]]:
+    records: List[tuple[str, int]] = []
+    contig_id = ""
     current = 0
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith(">"):
-            if current:
-                lengths.append(current)
+            if contig_id:
+                records.append((contig_id, current))
+            contig_id = line[1:].split()[0]
             current = 0
         elif line.strip():
             current += len(line.strip())
-    if current:
-        lengths.append(current)
-    return lengths
+    if contig_id:
+        records.append((contig_id, current))
+    return records
 
 
 def _assembly_fasta_summary_rows(path: Path, sample_id: str, tool: str) -> List[Dict[str, Any]]:

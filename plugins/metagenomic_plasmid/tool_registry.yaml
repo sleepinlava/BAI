@@ -521,16 +521,20 @@ tools:
   - database
 - id: scapp
   name: SCAPP
-  category: plasmid_binning
+  category: plasmid_detection
   executable: scapp
   default_enabled: false
   required: false
-  command_template: scapp --contigs {assembly} --graphs {assembly_graph} --output
-    {output_dir} --threads {threads}
+  command_template: scapp -g {assembly_graph} -o {output_dir}/scapp -k {max_k} -r1
+    {read1} -r2 {read2} -p {threads}
   inputs:
-  - assembly
   - assembly_graph
-  limitations: Requires assembly graph in GFA format.
+  - read1
+  - read2
+  - max_k
+  limitations: Requires the SPAdes assembly graph in FASTG format and paired-end
+    Illumina reads; long-read-only platforms are not supported. Runs in the
+    dedicated autoplasm-scapp Python 3.8 environment.
 - id: recycler
   name: Recycler
   category: plasmid_binning

@@ -6,6 +6,7 @@ import csv
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
 import yaml
 
 from abi.contracts.lint import validate_pipeline_template_params
@@ -22,11 +23,15 @@ from abi.plugins.metagenomic_plasmid._engine.resources import (
     check_resources,
     default_resource_specs,
 )
+from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
 from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
     TABLE_SCHEMAS,
     ensure_standard_tables,
 )
-from abi.plugins.metagenomic_plasmid.handlers import plasmid_structure_handler
+from abi.plugins.metagenomic_plasmid.handlers import (
+    plasmid_consensus_handler,
+    plasmid_structure_handler,
+)
 from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
 
 
@@ -50,6 +55,48 @@ def _context(samples: list[SampleInput]) -> SampleContext:
         enable_sample_analysis=len(samples) > 1,
         enable_differential_abundance=len(groups) >= 2,
     )
+
+
+def test_scapp_requires_metaspades_and_only_plans_for_illumina(tmp_path):
+    with pytest.raises(ConfigError, match="short_read_assembler=metaspades"):
+        _config(
+            tmp_path,
+            {
+                "assembly": {"short_read_assembler": "megahit"},
+                "plasmid_detection": {"tools": ["scapp"]},
+            },
+        )
+
+    config = _config(
+        tmp_path,
+        {
+            "assembly": {"short_read_assembler": "metaspades"},
+            "plasmid_detection": {"tools": ["scapp"]},
+        },
+    )
+    illumina = SampleInput(
+        sample_id="S1", platform="illumina", read1="R1.fastq.gz", read2="R2.fastq.gz"
+    )
+    hybrid = SampleInput(
+        sample_id="S2",
+        platform="hybrid",
+        read1="R1.fastq.gz",
+        read2="R2.fastq.gz",
+        long_reads="long.fastq.gz",
+    )
+
+    illumina_tools = {
+        step.tool_id
+        for step in build_plan_from_dag(config, _context([illumina]), check_files=False).steps
+    }
+    hybrid_tools = {
+        step.tool_id
+        for step in build_plan_from_dag(config, _context([hybrid]), check_files=False).steps
+    }
+
+    assert "metaspades" in illumina_tools
+    assert "scapp" in illumina_tools
+    assert "scapp" not in hybrid_tools
 
 
 def test_default_illumina_route_matches_optimized_main_path(tmp_path):
@@ -630,3 +677,24 @@ def test_generic_internal_handler_writes_plasmid_structure_rows(tmp_path):
             "source_file": str(fasta),
         }
     ]
+
+
+def test_plasmid_consensus_skips_empty_scapp_predictions(tmp_path):
+    scapp_predictions = tmp_path / "assembly_graph.confident_cycs.fasta"
+    scapp_predictions.write_text("", encoding="utf-8")
+    output = tmp_path / "plasmid_contigs.fasta"
+    step = SimpleNamespace(
+        inputs={"genomad_summary": "", "scapp_predictions": str(scapp_predictions)},
+        outputs={"plasmid_contigs": str(output)},
+    )
+    context = InternalHandlerContext(
+        outdir=tmp_path,
+        provenance_dir=tmp_path / "provenance",
+        tables_dir=tmp_path / "tables",
+    )
+
+    result = plasmid_consensus_handler(step, {}, context)
+
+    assert result.status == "skipped"
+    assert "No plasmid contigs found" in result.message
+    assert not output.exists()

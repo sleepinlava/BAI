@@ -1534,6 +1534,7 @@ def _resolve_actual_outputs(
         "bam": [".bam"],
         "sam": [".sam"],
         "gfa": [".gfa"],
+        "fastg": [".fastg"],
         "gff": [".gff"],
         "gff3": [".gff3"],
         "png": [".png"],

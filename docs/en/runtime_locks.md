@@ -1,17 +1,17 @@
 # Release-ready runtime locks
 
-`abi lock-runtime` snapshots the current Conda environments, registered tools,
-databases, and host runtime. A normal invocation is an audit snapshot and may
-contain gaps. Use `--strict` only for a release candidate.
+`abi lock-runtime` records the Conda environments, registered tools, databases, and host runtime
+that make up an installation. Without `--strict`, the result is an audit snapshot and may contain
+gaps. A release candidate needs strict mode.
 
-The canonical cloud resource layout has one top-level root:
+Cloud installations use one top-level resource root:
 
 ```text
 /root/autodl-tmp/resources/
 ├── autoplasm/              # plasmid, metagenome, amplicon, and EasyMeta data
 ├── star_index/             # RNA-seq STAR index
 ├── NC_000913.3.gtf         # RNA-seq annotation
-└── viwrap/                 # ViWrap databases
+└── viwrap/                 # reserved for the not-yet-certified ViWrap bundle
 ```
 
 Create a production candidate with the full database profile:
@@ -61,3 +61,8 @@ The helper currently certifies the six provisioned cloud workflows and excludes
 `viral_viwrap`. ViWrap requires its own multi-environment installation and
 database bundle; include it only after those resources have been provisioned and
 validated explicitly with `--type viral_viwrap`.
+
+The bootstrap inventory in `scripts/cloud/libcommon.sh` tracks all 19
+environments declared by `environments.yaml`, including `autoplasm-scapp`.
+Strict validation remains authoritative and must reject any future inventory
+drift.

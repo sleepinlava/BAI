@@ -2,12 +2,18 @@
 
 ## Validation Status
 
-**2026-07-09** — Assembly-mode RefSeq validation passed:
+**Dated case study (2026-07-09)** — Assembly-mode RefSeq validation passed:
 - 3 RefSeq plasmids, 39/39 DAG steps passed
 - NC_002127.1 (3.3kb, genomad=0.99 high / platon=3.7 low), NC_011977.1 (7.6kb ColE9-J, both tools called plasmid), NC_002483.1 (99kb F plasmid, genomad=0.995 high / platon=22.1 low)
 - Tools: genomad + platon, strategy: majority_vote
 - 3/9 sciplot figures rendered (assembly_metrics, plasmid_length_distribution, plasmid_score_vs_length)
 - Known limitations: annotation/typing tools were disabled in this run; 6 figures skipped due to missing annotation/typing/host data
+
+This evidence covers the 39-step route selected by that configuration, not
+every branch of the current 90-node DAG. Later real-data and SCAPP evidence is
+tracked separately; do not merge software-contract success with biological
+acceptance. The current plugin inventory is 64 registered tool IDs and 90 DAG
+nodes.
 
 The `metagenomic_plasmid` plugin is ABI's platform-aware plasmid workflow for
 Illumina, ONT, PacBio HiFi, hybrid, and assembly-only projects. Its canonical
@@ -58,10 +64,11 @@ implicitly.
 
 The default path is intentionally narrow:
 
-- geNomad is the primary plasmid detector. Platon, PLASMe, and PlasX are
-  optional consensus evidence. The default weighted vote gives geNomad 0.60
-  weight and the three supporting detectors 0.40 in total, so supporting tools
-  cannot create a positive plasmid call without geNomad.
+- geNomad is the default selected plasmid detector. Platon, PLASMe, PlasX, and
+  the graph-based SCAPP route are optional evidence and are disabled unless the
+  configuration selects them. Weighted-vote weights are read from
+  `plasmid_detection.tool_weights`; weights for unselected tools do not execute
+  those tools.
 - PlasmidFinder and MOB-typer are the default typing tools.
 - AMRFinderPlus is the default AMR path. ABRicate and RGI are optional.
 - ISEScan and IntegronFinder are enabled by default; eggNOG-mapper is optional.

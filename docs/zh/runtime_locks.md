@@ -1,16 +1,16 @@
 # 可发布的运行时锁
 
-`abi lock-runtime` 会记录当前 Conda 环境、已注册工具、数据库和主机运行时。
-普通调用是允许包含缺口的审计快照；只有发布候选才应使用 `--strict`。
+`abi lock-runtime` 记录一套安装所使用的 Conda 环境、已注册工具、数据库和主机运行时。
+不带 `--strict` 的结果只是审计快照，可以包含缺口；发布候选必须使用严格模式。
 
-云端统一采用一个顶层资源根：
+云端安装统一使用一个顶层资源根：
 
 ```text
 /root/autodl-tmp/resources/
 ├── autoplasm/              # 质粒、宏基因组、Amplicon 和 EasyMeta 数据
 ├── star_index/             # RNA-seq STAR 索引
 ├── NC_000913.3.gtf         # RNA-seq 注释
-└── viwrap/                 # ViWrap 数据库
+└── viwrap/                 # 为尚未认证的 ViWrap 数据包预留
 ```
 
 使用完整数据库 profile 生成生产候选：
@@ -54,3 +54,7 @@ SHA-256，最后原子发布到
 该助手当前认证云端已经部署的六类流程，不包含 `viral_viwrap`。ViWrap 需要独立的
 多环境安装和数据库包；完成这些资源的部署与验证后，才能通过显式
 `--type viral_viwrap` 将其纳入正式锁。
+
+`scripts/cloud/libcommon.sh` 中的引导清单现已覆盖 `environments.yaml`
+声明的全部 19 个环境，包括 `autoplasm-scapp`。严格校验仍是权威门禁，未来出现
+清单漂移时必须拒绝发布。

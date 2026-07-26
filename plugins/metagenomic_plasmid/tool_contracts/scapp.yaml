@@ -1,37 +1,46 @@
 abi_version: '0.1'
 tool_id: scapp
 name: SCAPP
-category: plasmid_binning
-purpose: Plasmid reconstruction from assembly graph using SCAPP.
+category: plasmid_detection
+purpose: Plasmid detection from the SPAdes assembly graph using SCAPP confident cycles.
 when_to_use:
 - assembly_graph_available
+- paired_end_reads_available
 - plasmid_reconstruction_required
 inputs:
-  assembly:
-    type: file
-    format: fasta
-    required: true
   assembly_graph:
     type: file
-    format: gfa
+    format: fastg
     required: true
+  read1:
+    type: file
+    format: fastq.gz
+    required: true
+  read2:
+    type: file
+    format: fastq.gz
+    required: true
+  max_k:
+    type: integer
+    minimum: 1
   threads:
     type: integer
     minimum: 1
 outputs:
-  output_dir:
-    type: directory
+  scapp_predictions:
+    type: file
+    format: fasta
 execution:
   executable: scapp
-  command_template: scapp --contigs {assembly} --graphs {assembly_graph} --output
-    {output_dir} --threads {threads}
+  command_template: scapp -g {assembly_graph} -o {output_dir}/scapp -k {max_k} -r1
+    {read1} -r2 {read2} -p {threads}
   network: false
   writes_output: true
 failure_handling:
   missing_input:
-    hint: Check assembly FASTA and GFA graph paths.
+    hint: Check the SPAdes FASTG assembly graph and paired-end read paths.
   tool_not_found:
-    hint: Install SCAPP in the autoplasm-plasmid-binning environment.
+    hint: Install SCAPP in the autoplasm-scapp environment.
   nonzero_exit:
     hint: Inspect SCAPP stderr log in provenance/step_logs.
 resources:

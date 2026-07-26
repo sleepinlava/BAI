@@ -2,12 +2,16 @@
 
 ## 验证状态
 
-**2026-07-09** — Assembly 模式 RefSeq 验证通过：
+**有日期的案例（2026-07-09）** — Assembly 模式 RefSeq 验证通过：
 - 3 个 RefSeq 质粒全流程 39/39 步骤通过
 - NC_002127.1（3.3kb，genomad=0.99 high / platon=3.7 low）、NC_011977.1（7.6kb ColE9-J，两个工具均判为质粒）、NC_002483.1（99kb F 质粒，genomad=0.995 high / platon=22.1 low）
 - 工具：genomad + platon，策略：majority_vote
 - 3/9 张 sciplot 图形渲染成功（assembly_metrics、plasmid_length_distribution、plasmid_score_vs_length）
 - 已知限制：annotation/typing 工具在本次运行中被禁用；6 张图形因缺少注释/分型/宿主数据而跳过
+
+该证据只覆盖当时配置选择的 39 步路径，不代表当前 90 节点 DAG 的每个分支都已
+验证。后续真实数据与 SCAPP 证据单独追踪；不能把软件契约通过与生物学验收混为
+一项结论。当前插件清单为 64 个已注册工具 ID 和 90 个 DAG 节点。
 
 `metagenomic_plasmid` 是 ABI 面向 Illumina、ONT、PacBio HiFi、二代+三代
 混合数据和 assembly-only 项目的平台感知质粒工作流。规范拓扑位于
@@ -56,9 +60,9 @@ Illumina + ONT/HiFi → fastp + NanoPlot/Filtlong
 
 默认主路径保持收敛：
 
-- geNomad 是主质粒检测工具；Platon、PLASMe、PlasX 只提供可选 consensus 证据。
-  默认加权投票中 geNomad 权重为 0.60，三个辅助检测器合计为 0.40，因此辅助工具不能在
-  geNomad 无支持时单独产生阳性质粒判定。
+- geNomad 是默认选中的质粒检测工具；Platon、PLASMe、PlasX 和基于图的 SCAPP
+  路径都是可选证据，只有配置显式选择后才启用。加权投票从
+  `plasmid_detection.tool_weights` 读取权重；未选择工具的权重不会触发执行。
 - PlasmidFinder 和 MOB-typer 是默认分型工具。
 - AMRFinderPlus 是默认 AMR 路径；ABRicate 和 RGI 为可选补充。
 - ISEScan 和 IntegronFinder 默认启用；eggNOG-mapper 为可选项。
