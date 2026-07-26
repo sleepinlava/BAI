@@ -1,6 +1,6 @@
 # ABI 论文当前结论与下一步工作说明
 
-更新时间：2026-07-24
+更新时间：2026-07-26
 
 本文档记录当前已经完成的论文定位、证据整理、benchmark 处理原则、真实数据例子和后续执行门禁。它用于团队内部继续推进写作与计算；凡是尚未完成验证的内容，在本文档中均不写成已经成立的论文结论。
 
@@ -59,24 +59,27 @@ WGS 使用 PRJNA286158 的六株 ST93 MRSA paired-end isolate。当前 ABI WGS �
 - `mecA`：6/6 检出，且每条 call 为 100% amino-acid coverage 和 identity。
 - AMR 标准表：145 行工具证据。
 
-文献 core-SNP 端点已由严格双轨对比恢复（见第 5 节）：
+文献 core-SNP 六株 pairwise 距离端点已由严格双轨对比恢复（见第 5 节）：
 
-- `paper_spandx` 轨（原版 SPANDx v2.6、完整 82 株论文上下文矩阵）：六株 pairwise SNP 距离 min=7、median=47、max=60，落在文献 7-60（mean 44）区间内，`paper_exact_candidate`。
+- `paper_spandx` 轨（原版 SPANDx v2.6、完整 82 株论文上下文矩阵）：六株 pairwise SNP 距离 min=7、median=47、max=60，落在文献 7-60（mean 44）区间内；这是 paper-method distance endpoint recovery，不是完整 paper-exact outbreak 结论复现。
 - `abi_bcftools` 轨（BWA mem + bcftools haploid joint calling）：10-73（median 55），标记 `abi_reproduction_not_paper_method`，仅作并列对照。
 
-限制：145 行是工具 call 行数，不等于 145 个不同耐药基因。core-SNP 恢复归功于外部原文工具链轨，ABI `wgs_bacteria` 插件自身仍无 core-SNP 模块；`abi_bcftools` 轨数值不得写成原文复现。
+限制：145 行是工具 call 行数，不等于 145 个不同耐药基因。core-SNP 距离端点恢复归功于外部原文工具链轨，ABI `wgs_bacteria` 插件自身仍无 core-SNP 模块；`abi_bcftools` 轨数值不得写成原文复现。文献中的“不是近期 clonal outbreak”结论还依赖系统发育树位置和更大 NT/background 队列中的距离分布，不能只由六株 pairwise 范围单独推出。
 
 ### SCAPP flagship case study
 
-SCAPP 已放到旗舰 case study 位置。当前可报告的是执行和描述性生物学证据：
+SCAPP 已放到旗舰 case study 位置。当前可报告执行、描述性生物学证据，以及通过门禁的 paper-method reconstruction accuracy：
 
 - SRR11038083 运行完成：10/10 steps。
 - primary calls：167。
 - consensus plasmids：157。
 - terminal-repeat evidence：54/157。
 - mobilizable calls：20/157。
+- strict reference-concordance precision：12/157 = 0.0764。
+- recall：64/88 = 0.7273。
+- F1：0.1383。
 
-限制：headline precision、recall 和 F1 仍然受独立 truth 门禁约束，不能使用早期 provisional 结果。独立 K127 two-stage truth reconstruction 完成前，`metrics.tsv` 中相关行保持 `pending_independent_truth`。
+限制：这些 headline metrics 已可报告，但必须称为 **paper-method reconstruction**，不能称为 paper-exact reproduction。早期 provisional 结果仍然无效；当前 v2 证据使用官方 14,739-record PLSDB archive，因为论文专用 13,469-record 去重清单没有公开。precision 是严格参考一致性指标，不等同于生物学 false-positive rate。
 
 ## 4. 已生成资产
 
@@ -100,7 +103,7 @@ SCAPP 已放到旗舰 case study 位置。当前可报告的是执行和描述�
 
 最终结果：
 
-- `paper_spandx` 轨：JKD6159 `CP002114.2` 参考，SPANDx v2.6 default 加 `-m yes`，输入为六株 PRJNA286158 研究样本 + 20 株 PRJEB3144 NT context（按论文 Table S1 白名单过滤）+ 55 株 PRJNA232112 既有 ST93 背景，ENA reads 全部经 MD5 校验；Ortho SNP matrix 含 82 样本。六株 pairwise SNP 距离 min=7、median=47、max=60，恢复文献 7-60（mean 44），标记 `paper_exact_candidate`。移动遗传元件未排除，与原文一致。
+- `paper_spandx` 轨：JKD6159 `CP002114.2` 参考，SPANDx v2.6 default 加 `-m yes`，输入为六株 PRJNA286158 研究样本 + 20 株 PRJEB3144 NT context（按论文 Table S1 白名单过滤）+ 55 株 PRJNA232112 既有 ST93 背景，ENA reads 全部经 MD5 校验；Ortho SNP matrix 含 82 样本。六株 pairwise SNP 距离 min=7、median=47、max=60，恢复文献 7-60（mean 44），标记为 paper-method distance endpoint recovered。移动遗传元件未排除，与原文一致。
 - `abi_bcftools` 轨：六株 PRJNA286158 cleaned read pairs，BWA mem + samtools + bcftools haploid joint biallelic SNP calling（depth >= 10、QUAL >= 30），221 个高质量变异位点，callable fraction >= 98.77%。pairwise 10-73（median 55），标记 `abi_reproduction_not_paper_method`，与 paper 轨并列对照，不得写成原文复现。
 - 已发布到仓库的机器可读资产：`docs/paper_examples/wgs_snp_pairwise_distances.tsv`（双轨 30 对距离）、`docs/paper_examples/wgs_snp_track_comparison.tsv`（轨道级对比）；WGS 图已扩展为端点恢复网格 + 双轨 SNP heatmap。云端完整资产（summary、provenance、SHA256SUMS）保留在 `wgs_st93_strict_snp_20260724_attempt3` 输出目录。
 
@@ -127,7 +130,7 @@ SCAPP 已放到旗舰 case study 位置。当前可报告的是执行和描述�
 
 ## 6. 下一步执行顺序
 
-WGS SNP 严格复现链路（原步骤 1、3-11）已全部完成：本地质量检查、SPANDx-only preflight、三项目上下文 reads 下载与 ENA MD5 校验、双轨 10k read pairs preflight、完整 strict comparison run（`wgs_st93_strict_snp_20260724_attempt3`，零失败）、发布资产回拷与 SHA256SUMS 校验、`docs/paper_examples/`、`metrics.tsv`、中英 running example 和 WGS 图更新、图形重新生成与目视检查，以及 focused pytest、ruff、mypy、`bash docs/build_docs.sh`、`git diff --check`、TSV rectangularity 全部门禁。paper 轨恢复 7-60，SNP 距离指标已按门禁写为 claim-eligible。
+WGS SNP 严格复现链路（原步骤 1、3-11）已全部完成：本地质量检查、SPANDx-only preflight、三项目上下文 reads 下载与 ENA MD5 校验、双轨 10k read pairs preflight、完整 strict comparison run（`wgs_st93_strict_snp_20260724_attempt3`，零失败）、发布资产回拷与 SHA256SUMS 校验、`docs/paper_examples/`、`metrics.tsv`、中英 running example 和 WGS 图更新、图形重新生成与目视检查，以及 focused pytest、ruff、mypy、`bash docs/build_docs.sh`、`git diff --check`、TSV rectangularity 全部门禁。paper 轨恢复 7-60，SNP 距离指标已按门禁写为 claim-eligible；完整 outbreak 结论仍只作为文献 comparator，不作为 ABI 插件自身结论。
 
 剩余事项按以下顺序推进：
 
@@ -141,9 +144,9 @@ WGS SNP 严格复现链路（原步骤 1、3-11）已全部完成：本地质量
 
 - Introduction 使用当前六段式版本，不再把 ABI 描述为插件或 YAML+DAG 系统。
 - Methods 分为 ABI contract lifecycle、local-model benchmark protocol、real-data biological validation 三部分。
-- Results 先报告真实数据 running example，再报告 SCAPP flagship case study；Agent benchmark 只在新 clean run 完成后填数。
+- Results 先报告真实数据 running example，再报告 SCAPP flagship case study；SCAPP headline metrics 以 paper-method reconstruction 报告；Agent benchmark 只在新 clean run 完成后填数。
 - Discussion 明确隐私型本地模型评测的价值，也明确本地模型结论的边界。
-- Limitations 必须包括：历史 benchmark 排除、Airway 当前只支持方向/排名/sentinel gene 层面的跨方法一致性而非 p-value/FDR 逐项复现、WGS core-SNP 恢复归功于外部原版 SPANDx 轨而非 ABI 插件能力、SCAPP headline metrics 受独立 truth 门禁、Airway/WGS/SCAPP 都不是群体级泛化准确率估计。
+- Limitations 必须包括：历史 benchmark 排除、Airway 当前只支持方向/排名/sentinel gene 层面的跨方法一致性而非 p-value/FDR 逐项复现、WGS core-SNP 距离端点恢复归功于外部原版 SPANDx 轨而非 ABI 插件能力且不等同于完整 outbreak 结论复现、SCAPP headline metrics 是 paper-method reconstruction 而非 paper-exact reproduction、Airway/WGS/SCAPP 都不是群体级泛化准确率估计。
 
 ## 8. 当前不可写成结论的内容
 
@@ -152,8 +155,8 @@ WGS SNP 严格复现链路（原步骤 1、3-11）已全部完成：本地质量
 - 任何历史 ABI-Bench 分数。
 - 任何尚未完成 clean rerun 的本地模型胜率、准确率或效率提升。
 - 把 WGS core-SNP 结果写成 ABI 插件自身能力：7-60 的恢复来自外部原版 SPANDx v2.6 轨；`abi_bcftools` 轨的 10-73 也不得写成原文复现。
-- SCAPP paper-method precision、recall 和 F1。
-- 将 SCAPP 当前 terminal-repeat 或 mobility evidence 解释为独立准确率。
+- SCAPP paper-exact precision、recall 和 F1。
+- 将 SCAPP strict reference precision 解释为生物学 false-positive rate，或将 terminal-repeat/mobility evidence 解释为独立准确率。
 - 将 ABI 的贡献写成新的生物学学习算法。
 
-当前最稳妥的叙事是：ABI 已经建立了可审计的契约执行与证据发布框架，并在 Airway、WGS 和 SCAPP 的真实公开数据上完成了不同层级的生物学端点验证；WGS 文献 core-SNP 端点已由外部原版工具链轨在 pairwise 距离层面恢复（7-60，paper_exact_candidate）；Agent benchmark 与 SCAPP headline accuracy 仍需按门禁补齐后再进入定量主张。
+当前最稳妥的叙事是：ABI 已经建立了可审计的契约执行与证据发布框架，并在 Airway、WGS 和 SCAPP 的真实公开数据上完成了不同层级的生物学端点验证；WGS 文献 core-SNP 六株 pairwise 距离端点已由外部原版工具链轨恢复（7-60），但不是完整 outbreak 结论复现；SCAPP headline accuracy 已可作为 paper-method reconstruction 报告；Agent benchmark 仍需 clean rerun 后再进入定量主张。

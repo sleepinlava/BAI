@@ -179,7 +179,11 @@ def create_wgs_figure() -> dict[str, Any]:
             [
                 {"study_isolate": isolate, "endpoint": "ST93", "state": "recovered"},
                 {"study_isolate": isolate, "endpoint": "mecA", "state": "recovered"},
-                {"study_isolate": isolate, "endpoint": "core-SNP", "state": "recovered"},
+                {
+                    "study_isolate": isolate,
+                    "endpoint": "core-SNP",
+                    "state": "pairwise_context_recovered_external_track",
+                },
             ]
         )
     data_path = DATA_DIR / "wgs_isolate_evidence.tsv"
@@ -196,8 +200,10 @@ def create_wgs_figure() -> dict[str, Any]:
         for column_index, value in enumerate(values):
             ax_grid.text(column_index, row_index, "✓", ha="center", va="center", color="white")
     ax_grid.set_xticks(range(6), labels)
-    ax_grid.set_yticks(range(3), ["ST93 MLST", "Full-length mecA", "Core-SNP range 7-60"])
-    ax_grid.set_title("Preregistered endpoint recovery", fontsize=11, pad=8)
+    ax_grid.set_yticks(
+        range(3), ["ST93 MLST", "Full-length mecA", "External core-SNP range 7-60"]
+    )
+    ax_grid.set_title("Study endpoint and comparator recovery", fontsize=11, pad=8)
     ax_grid.set_xlabel("Study isolate (I1-I6 = SRR2057030-35)")
     for spine in ax_grid.spines.values():
         spine.set_visible(False)
@@ -234,9 +240,9 @@ def create_wgs_figure() -> dict[str, Any]:
     fig.text(
         0.5,
         0.02,
-        "Published six-isolate range: 7-60 SNPs (mean 44). Paper track recovers 7-60 "
-        "(paper_exact_candidate); the ABI-adjacent bcftools track yields 10-73 and is not "
-        "the paper method.",
+        "Published six-isolate range: 7-60 SNPs (mean 44). Paper track recovers the "
+        "pairwise-distance endpoint; full outbreak conclusions also require tree/context "
+        "evidence. The ABI-adjacent bcftools track yields 10-73 and is not the paper method.",
         ha="center",
         va="bottom",
         fontsize=8.5,
@@ -251,7 +257,7 @@ def create_wgs_figure() -> dict[str, Any]:
         "data": _display_path(data_path),
         "pairwise_data": _display_path(pairwise_path),
         "outputs": outputs,
-        "claim": "ST93/mecA recovery plus paper-track core-SNP range reproduction",
+        "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery",
     }
 
 
@@ -319,7 +325,7 @@ def create_scapp_figure(source_path: Path) -> dict[str, Any]:
     ax.text(
         0.01,
         0.01,
-        "Descriptive evidence only; independent paper-method precision/recall/F1 remain gated.",
+        "Descriptive panel; paper-method P/R/F1 reported separately (not paper-exact).",
         transform=ax.transAxes,
         fontsize=8,
         color=INK,

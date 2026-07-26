@@ -86,8 +86,9 @@ declarative plans to runtime checks, standard outputs, provenance, and explicit 
 (Sections 3–4). (3) It introduces a preregistered evaluation for locally deployable model
 families that separates interface effects from information volume and reports only new,
 preflight-eligible runs (Section 5). (4) It validates the approach on the Airway and ST93 MRSA
-running examples and uses the SCAPP plasmidome as a flagship case study with an independent-truth
-gate for headline precision, recall, and F1 (Sections 6–7).
+running examples and uses the SCAPP plasmidome as a flagship case study with gated
+paper-method precision, recall, and F1, while not presenting them as paper-exact reproduction
+(Sections 6–7).
 
 ## System architecture
 

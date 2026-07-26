@@ -69,15 +69,17 @@ recovery of the published ST93 identity and full-length `mecA` evidence.
 | MLST | 6/6 ST93 | Study-specific sequence-type concordance |
 | `mecA` | 6/6 | Each call had 100% amino-acid coverage and identity |
 | AMR table | 145 rows | Tool evidence rows, not 145 distinct resistance genes |
-| Core-SNP pairwise range (paper track) | 7-60 (median 47) | Original SPANDx v2.6 on the full 82-sample paper context restores the published 7-60 (mean 44); paper_exact_candidate |
+| Core-SNP pairwise range (paper track) | 7-60 (median 47) | Original SPANDx v2.6 on the full 82-sample paper context restores the published six-isolate pairwise-distance endpoint 7-60 (mean 44); not a full outbreak-conclusion reproduction |
 | Core-SNP pairwise range (ABI-adjacent track) | 10-73 (median 55) | BWA mem + bcftools haploid joint calling; not the paper method, reported side by side |
 
 ![WGS biological validation](../_static/paper_examples/wgs_biological_validation.png)
 
-The core-SNP endpoint is recovered at the pairwise-distance level by an external track running
+The core-SNP distance endpoint is recovered at the pairwise-distance level by an external track running
 the paper's own SPANDx v2.6 toolchain against JKD6159 CP002114, with the paper context cohorts
 (PRJEB3144, PRJNA232112) included. The ABI `wgs_bacteria` plugin itself still ships no core-SNP
-module, so the recovery is credited to the strict comparison harness, not to the plugin.
+module, so the recovery is credited to the strict comparison harness, not to the plugin. The
+paper's no-recent-clonal-outbreak conclusion also depends on tree placement and the broader
+NT/background isolate distribution; it is not established by the six-isolate pairwise range alone.
 
 ## Machine-readable evidence
 
@@ -101,9 +103,9 @@ module, so the recovery is credited to the strict comparison harness, not to the
 
 SCAPP uses SRR11038083 to exercise ABI's most evidence-rich plugin. The completed run contains 167
 primary calls, 157 consensus plasmids, and 54 candidates with terminal-repeat evidence; the
-supplementary mobility analysis calls 20 candidates mobilizable. These values demonstrate a
-complete, inspectable plasmid analysis and support evidence stratification. They are not an
-independent accuracy estimate.
+supplementary mobility analysis calls 20 candidates mobilizable. The independent paper-method
+reconstruction has passed its gate and reports strict reference-concordance precision =
+12/157 = 0.0764, recall = 64/88 = 0.7273, and F1 = 0.1383.
 
 ![SCAPP per-plasmid biological evidence](../_static/paper_examples/scapp_biological_evidence.png)
 
@@ -111,21 +113,24 @@ The scatter uses length, CoverM abundance, terminal-overlap status, mobility cla
 support for all 157 consensus candidates. It does not use the invalid historical
 reference-matched grouping and is not an accuracy curve.
 
-Headline precision, recall, and F1 remain withheld. The earlier single-stage PLSDB screen omitted
-the paper's contig-level gate and is excluded from `metrics.tsv`. The flagship accuracy panel may
-be released only after the independent K127 assembly, both coverage gates, duplicate-prediction
-rule, machine-evidence manifest, and figure provenance pass. Because the paper-specific
-13,469-record PLSDB deduplication list is unavailable, even the final result must be described as a
-**paper-method reconstruction**, not paper-exact reproduction.
+Headline precision, recall, and F1 can now be reported as a paper-method reconstruction, but not
+as paper-exact reproduction. The earlier single-stage PLSDB screen omitted the paper's
+contig-level gate and is excluded from `metrics.tsv`; the current v2 evidence uses an independent
+K127 assembly, both coverage gates, duplicate-prediction penalty, machine-evidence manifest, and
+figure provenance. Because the paper-specific 13,469-record PLSDB deduplication list is
+unavailable, this reconstruction uses the official 14,739-record PLSDB archive; precision means
+strict reference concordance and is not equivalent to a biological false-positive rate.
 
 The machine-readable status is recorded in [SCAPP status](../paper_examples/scapp_status.tsv).
 
 ## Limitations of this example
 
 The two-workflow example establishes cross-plugin feasibility and recovery of study-specific
-endpoints; it is not a population-level accuracy benchmark. Airway uses a different reference and
-statistical toolchain from the original paper. The WGS core-SNP endpoint is recovered only through
-an external paper-toolchain track (pairwise 7-60), while the ABI plugin itself still has no
-core-SNP module and the ABI-adjacent bcftools track (10-73) must not be read as a paper
-reproduction. SCAPP's independent headline metrics remain gated.
-These boundaries are first-class outputs rather than qualifications added after the analysis.
+endpoints; it is not a population-level accuracy benchmark. For Airway, the key mismatch is the
+alignment/counting/gene-aggregation/statistical workflow, not GRCh37.75 versus hg19 as a primary
+biological difference. The WGS core-SNP distance endpoint is recovered only through an external
+paper-toolchain track (pairwise 7-60), while the ABI plugin itself still has no core-SNP module
+and the ABI-adjacent bcftools track (10-73) must not be read as a paper reproduction. SCAPP's
+headline metrics are reportable only as a paper-method reconstruction, not paper-exact, and strict
+reference precision must not be interpreted as a biological false-positive rate. These boundaries
+are first-class outputs rather than qualifications added after the analysis.

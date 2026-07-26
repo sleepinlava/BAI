@@ -62,15 +62,16 @@ WGS 例子使用 PRJNA286158 的六株 paired-end *Staphylococcus aureus* isolat
 | MLST | 6/6 ST93 | 本研究样本内的 sequence-type 一致性 |
 | `mecA` | 6/6 | 每条 call 均为 100% amino-acid coverage/identity |
 | AMR 表 | 145 行 | 工具证据行，不能解释为 145 个不同耐药基因 |
-| core-SNP pairwise 范围（paper track） | 7-60（中位数 47） | 原版 SPANDx v2.6 在完整 82 株论文上下文上恢复文献 7-60（均值 44）；paper_exact_candidate |
+| core-SNP pairwise 范围（paper track） | 7-60（中位数 47） | 原版 SPANDx v2.6 在完整 82 株论文上下文上恢复文献六株 pairwise 距离端点 7-60（均值 44）；不是完整 outbreak 结论复现 |
 | core-SNP pairwise 范围（ABI 相邻轨） | 10-73（中位数 55） | BWA mem + bcftools haploid 联合 calling；非原文方法，仅并列对照 |
 
 ![WGS 生物学验证](../_static/paper_examples/wgs_biological_validation.png)
 
-core-SNP 端点在 pairwise 距离层面由一条外部轨恢复：该轨使用论文原版 SPANDx v2.6 工具链、
+core-SNP 距离端点在 pairwise 距离层面由一条外部轨恢复：该轨使用论文原版 SPANDx v2.6 工具链、
 以 JKD6159 CP002114 为参考，并纳入论文上下文队列（PRJEB3144、PRJNA232112）。ABI 的
 `wgs_bacteria` 插件本身仍然没有 core-SNP 模块，因此该恢复归功于严格对比 harness，
-而不是插件能力。
+而不是插件能力。文献的“不是近期 clonal outbreak”结论还依赖系统发育树位置和更大 NT/background
+队列中的距离分布，不能只由六株 pairwise 距离范围单独推出。
 
 ## 机器可读证据
 
@@ -94,7 +95,8 @@ core-SNP 端点在 pairwise 距离层面由一条外部轨恢复：该轨使用�
 
 SCAPP 使用 SRR11038083 检验 ABI 证据最丰富的插件。已完成运行包含 167 条 primary calls、157 条
 consensus plasmids、54 条具有 terminal-repeat evidence 的候选；补充 mobility 分析将 20 条候选
-标为 mobilizable。这些数值证明流程完成、结果可检查并支持证据分层，但不是独立准确率估计。
+标为 mobilizable。独立 paper-method reconstruction 已通过门禁，可报告 strict reference concordance
+precision = 12/157 = 0.0764、recall = 64/88 = 0.7273、F1 = 0.1383。
 
 ![SCAPP 逐质粒生物学证据](../_static/paper_examples/scapp_biological_evidence.png)
 
@@ -102,17 +104,21 @@ consensus plasmids、54 条具有 terminal-repeat evidence 的候选；补充 mo
 状态、mobility class 与 AMR support；它不使用已失效的历史 reference-matched 分组，也不是
 准确率曲线。
 
-headline precision、recall 和 F1 继续保留为空。早期单阶段 PLSDB screen 遗漏了论文的 contig-level
-gate，因此已从 `metrics.tsv` 排除。只有独立 K127 assembly、两级 coverage gate、重复预测惩罚、
-机器证据 manifest 和图形 provenance 全部通过后，才发布旗舰准确率面板。由于论文专用的
-13,469-record PLSDB 去重清单没有公开，即使最终完成也必须称为 **paper-method reconstruction**，
-不能称为 paper-exact reproduction。
+headline precision、recall 和 F1 现在可作为 paper-method reconstruction 报告，但不能称为
+paper-exact reproduction。早期单阶段 PLSDB screen 遗漏了论文的 contig-level gate，已从
+`metrics.tsv` 排除；当前可用的是独立 K127 assembly、两级 coverage gate、重复预测惩罚、
+机器证据 manifest 和图形 provenance 全部通过后的 v2 证据。由于论文专用的 13,469-record
+PLSDB 去重清单没有公开，本结果使用官方 14,739-record PLSDB archive 重建 truth；precision
+表示严格参考一致性，不等价于生物学 false-positive rate。
 
 机器可读状态见 [SCAPP status](../paper_examples/scapp_status.tsv)。
 
 ## 本例限制
 
-双工作流例子证明跨插件可行性和研究特异端点恢复，不是群体级准确率 benchmark。Airway 与原文使用
-不同 reference 和统计工具链；WGS 的 core-SNP 端点仅通过外部原文工具链轨在 pairwise 距离层面
+双工作流例子证明跨插件可行性和研究特异端点恢复，不是群体级准确率 benchmark。Airway 与原文的
+关键差异来自 alignment/counting/gene aggregation/statistical model，而不是把 GRCh37.75 与 hg19
+写成主要生物学差异；WGS 的 core-SNP 距离端点仅通过外部原文工具链轨在 pairwise 距离层面
 恢复（7-60），ABI 插件本身仍无 core-SNP 模块，ABI 相邻 bcftools 轨（10-73）不得读作原文复现；
-SCAPP 独立 headline metrics 仍受门禁。这些边界是 ABI 的一等输出，而不是分析完成后补写的免责说明。
+SCAPP headline metrics 可报告为 paper-method reconstruction，但不是 paper-exact，且 strict
+reference precision 不应解释为生物学假阳性率。这些边界是 ABI 的一等输出，而不是分析完成后补写的
+免责说明。

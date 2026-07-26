@@ -1,3 +1,3 @@
 track	method	status	sample_count	study_pairwise_min	study_pairwise_median	study_pairwise_max	published_min	published_mean	published_max	range_matches_published
-paper_spandx	SPANDx v2.6 default, explicit -m yes -t Illumina -p PE	paper_exact_candidate	82	7	47	60	7	44	60	True
+paper_spandx	SPANDx v2.6 default, explicit -m yes -t Illumina -p PE	paper_method_distance_endpoint_recovered	82	7	47	60	7	44	60	True
 abi_bcftools	BWA mem + samtools + bcftools haploid joint biallelic SNP calling	abi_reproduction_not_paper_method	6	10	55	73	7	44	60	False

@@ -2,7 +2,7 @@
   "schema_version": "abi.paper_case_study_figures.v1",
   "benchmark_outcomes_used": false,
   "generator": "scripts/create_real_data_case_study_figures.py",
-  "generator_sha256": "94c42e57cf91a2ed5fb28369f493c3e0a4314381543af915251a027a17eb9bf5",
+  "generator_sha256": "7618af2b23b08c50207389534c86b6dbee0b1497eea1b46cc78fdd577b3b4878",
   "figures": [
     {
       "figure_id": "airway_biological_validation",
@@ -19,7 +19,7 @@
     {
       "figure_id": "wgs_biological_validation",
       "source": "docs/paper_examples/wgs_metrics.tsv",
-      "source_sha256": "68df93f8a7d198c5d7c68c5ece0b16446a5da68c3e81518d55c98a91779f57f5",
+      "source_sha256": "e09aef7404ade5f1581822dee28e7e9fcaca93aab3cd455a5c621f50dc101d9b",
       "data": "docs/paper_examples/wgs_isolate_evidence.tsv",
       "pairwise_data": "docs/paper_examples/wgs_snp_pairwise_distances.tsv",
       "outputs": [
@@ -27,7 +27,7 @@
         "docs/_static/paper_examples/wgs_biological_validation.pdf",
         "docs/_static/paper_examples/wgs_biological_validation.svg"
       ],
-      "claim": "ST93/mecA recovery plus paper-track core-SNP range reproduction"
+      "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery"
     },
     {
       "figure_id": "scapp_biological_evidence",

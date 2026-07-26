@@ -1,0 +1,5 @@
+date_utc: 2026-07-25T12:26:17Z
+purpose: ABI rnaseq_expression vs Bioconductor airway package same-method parity
+reference: airway 1.32.0 (Bioc 3.23, TUNA mirror), STAR(Ensembl 75)+summarizeOverlaps Union fragments
+abi_results: rnaseq_airway_dex_untreated_retry4 (fastp+STAR GRCh37.75+featureCounts v2.1.1 -p [read-level]+DESeq2 1.50.2)
+r_env: /root/autodl-tmp/.mamba/envs/rnaseq, DESeq2 1.50.2

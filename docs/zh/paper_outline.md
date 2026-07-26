@@ -63,7 +63,8 @@ schema、DAG、工具和资源契约、输出断言、标准表及报告元数�
 运行时检查、标准输出、溯源和明确的主张边界（第 3–4 节）。(3) 提出面向本地可部署模型家族的
 预注册评测，区分接口效应与信息量效应，并只报告全新且通过 preflight 的运行（第 5 节）。
 (4) 在 Airway 与 ST93 MRSA 配对例子上验证跨插件执行和生物学端点恢复，并以 SCAPP plasmidome
-作为旗舰 case study；其 headline precision、recall 和 F1 受独立 truth 门禁约束（第 6–7 节）。
+作为旗舰 case study；其 headline precision、recall 和 F1 以通过门禁的 paper-method reconstruction
+报告，但不称为 paper-exact reproduction（第 6–7 节）。
 
 ## 系统架构
 
@@ -81,8 +82,8 @@ attestation，并完成 G1/G2/G3/G4 对照。外推的统计单位是模型家�
 
 - 只有全新 ABI-Bench 运行通过 clean-run preflight 后才报告；历史 pilot 分数不进入论文指标表。
 - Airway 与 ST93 MRSA 作为跨插件执行与生物学端点恢复的配对 running example。
-- SCAPP 作为旗舰 case study。可报告已完成执行和辅助质粒证据，但在独立 K127 两级 truth 重建完成
-  前不报告 paper-method precision、recall 和 F1。
+- SCAPP 作为旗舰 case study。可报告已完成执行、辅助质粒证据，以及通过门禁的 paper-method
+  precision、recall 和 F1；明确该结果不是 paper-exact reproduction。
 
 ## 可复现性附录
 

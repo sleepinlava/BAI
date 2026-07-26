@@ -25,7 +25,7 @@ def test_wgs_snp_validation_is_immutable_and_truth_bounded() -> None:
     assert "ERR192209" in content
     assert "skipped_not_in_table_s1" in content
     assert "ThreadPoolExecutor" in content
-    assert "REQUIRE_PAPER_EXACT_INPUTS" in content
+    assert "REQUIRE_PAPER_METHOD_INPUTS" in content
     assert "configure_spandx()" in content
     assert "SPANDx_LOCATION=" in content
     assert 'PERL5LIB="${PERL5LIB:-}"' in content
@@ -58,7 +58,7 @@ def test_wgs_snp_validation_is_immutable_and_truth_bounded() -> None:
     assert "MIN(FMT/DP)>=${MIN_DEPTH}" in content
     assert '"paper_reproduction_status": "abi_reproduction_not_paper_method"' in content
     assert "-m yes -t Illumina -p PE" in content
-    assert '"paper_exact_candidate"' in content
+    assert '"paper_method_distance_endpoint_recovered"' in content
     assert "paper_method_partial_context" in content
     assert "strict_snp_comparison.tsv" in content
     assert "literature_endpoint.tsv" in content

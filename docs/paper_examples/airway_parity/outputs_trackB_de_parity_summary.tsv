@@ -1,0 +1,10 @@
+metric	value
+genes_compared	17612
+tested_both	17606
+log2fc_pearson	0.977961252997114
+log2fc_spearman	0.966483756555859
+direction_concordance	0.958991252981938
+abi_sig_fdr05	5526
+airway_sig_fdr05	3979
+sig_intersection	3741
+sig_jaccard	0.649028452463567

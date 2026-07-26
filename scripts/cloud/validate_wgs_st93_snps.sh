@@ -7,8 +7,8 @@ set -euo pipefail
 #   2. abi_bcftools: ABI-adjacent BWA/samtools/bcftools reconstruction on the
 #      six PRJNA286158 study isolates.
 #
-# The script deliberately separates paper reproduction from ABI reproduction.
-# A six-isolate-only or non-SPANDx run must not be reported as paper-exact.
+# The script deliberately separates the paper-method distance endpoint from ABI reproduction.
+# A six-isolate-only or non-SPANDx run must not be reported as paper-method recovery.
 
 READ_ROOT=${READ_ROOT:-/root/autodl-tmp/abi-real-data/results/wgs_st93_mrsa_retry/01_qc}
 PAPER_READ_ROOT=${PAPER_READ_ROOT:-/root/autodl-tmp/abi-real-data/raw/wgs_st93_mrsa_paper}
@@ -29,13 +29,13 @@ MIN_VARIANT_QUAL=${MIN_VARIANT_QUAL:-30}
 DOWNLOAD_PAPER_CONTEXT=${DOWNLOAD_PAPER_CONTEXT:-0}
 # Table S1 of PMCID PMC5359412 defines the 20 NT context isolates used by the
 # paper out of the 498 runs hosted under PRJEB3144; only these may enter the
-# paper-exact input set.
+# paper-method input set.
 PRJEB3144_TABLE_S1_RUNS=${PRJEB3144_TABLE_S1_RUNS:-"ERR182515 ERR182523 ERR182439 ERR182441 ERR182454 ERR182457 ERR192153 ERR192154 ERR192158 ERR192175 ERR192176 ERR192181 ERR192183 ERR192185 ERR192188 ERR192192 ERR192197 ERR192199 ERR192204 ERR192209"}
 DOWNLOAD_WORKERS=${DOWNLOAD_WORKERS:-4}
 INSTALL_SPANDX=${INSTALL_SPANDX:-0}
 RUN_PAPER_SPANDX=${RUN_PAPER_SPANDX:-1}
 RUN_ABI_BCFTOOLS=${RUN_ABI_BCFTOOLS:-1}
-REQUIRE_PAPER_EXACT_INPUTS=${REQUIRE_PAPER_EXACT_INPUTS:-1}
+REQUIRE_PAPER_METHOD_INPUTS=${REQUIRE_PAPER_METHOD_INPUTS:-${REQUIRE_PAPER_EXACT_INPUTS:-1}}
 
 study_runs=(SRR2057030 SRR2057031 SRR2057032 SRR2057033 SRR2057034 SRR2057035)
 paper_context_projects=(PRJNA286158 PRJEB3144 PRJNA232112)
@@ -398,7 +398,7 @@ run_paper_spandx() {
 track	status	reason
 paper_spandx	blocked	SPANDx v2.6 is unavailable; set INSTALL_SPANDX=1 or SPANDX_ROOT to a validated v2.6 installation
 EOF
-        [[ ${REQUIRE_PAPER_EXACT_INPUTS} == 1 ]] && fail "SPANDx v2.6 unavailable for strict paper reproduction"
+        [[ ${REQUIRE_PAPER_METHOD_INPUTS} == 1 ]] && fail "SPANDx v2.6 unavailable for strict paper-method distance endpoint recovery"
         return 0
     fi
     if ! spandx_toolchain_ready; then
@@ -406,7 +406,7 @@ EOF
 track	status	reason
 paper_spandx	blocked	SPANDx v2.6 legacy bundled toolchain is not runnable; commonly this means libncurses.so.5 is missing for the bundled samtools, or GenomeAnalysisTK.jar/java is unavailable
 EOF
-        [[ ${REQUIRE_PAPER_EXACT_INPUTS} == 1 ]] && fail "SPANDx v2.6 legacy bundled toolchain is not runnable"
+        [[ ${REQUIRE_PAPER_METHOD_INPUTS} == 1 ]] && fail "SPANDx v2.6 legacy bundled toolchain is not runnable"
         return 0
     fi
 
@@ -445,8 +445,8 @@ EOF
             linked=$((linked + 1))
         done
     fi
-    if [[ ${REQUIRE_PAPER_EXACT_INPUTS} == 1 && ${linked} -lt 26 ]]; then
-        fail "Strict paper reproduction requires paper context reads; found ${linked}. Set DOWNLOAD_PAPER_CONTEXT=1 or REQUIRE_PAPER_EXACT_INPUTS=0 for partial run."
+    if [[ ${REQUIRE_PAPER_METHOD_INPUTS} == 1 && ${linked} -lt 26 ]]; then
+        fail "Paper-method distance endpoint recovery requires paper context reads; found ${linked}. Set DOWNLOAD_PAPER_CONTEXT=1 or REQUIRE_PAPER_METHOD_INPUTS=0 for partial run."
     fi
 
     if ! (
@@ -457,7 +457,7 @@ EOF
 track	status	reason
 paper_spandx	blocked	SPANDx v2.6 exited non-zero; inspect spandx.stdout.log and spandx.stderr.log for the stage that failed
 EOF
-        [[ ${REQUIRE_PAPER_EXACT_INPUTS} == 1 ]] && fail "SPANDx v2.6 run failed under strict paper reproduction"
+            [[ ${REQUIRE_PAPER_METHOD_INPUTS} == 1 ]] && fail "SPANDx v2.6 run failed under strict paper-method distance endpoint recovery"
         return 0
     fi
 
@@ -483,7 +483,7 @@ EOF
 track	status	reason
 paper_spandx	blocked	${rc_failures} qsub-shim jobs exited non-zero; inspect ${shim_state}/*.rc and *.log
 EOF
-            [[ ${REQUIRE_PAPER_EXACT_INPUTS} == 1 ]] && fail "SPANDx v2.6 shim jobs failed under strict paper reproduction"
+            [[ ${REQUIRE_PAPER_METHOD_INPUTS} == 1 ]] && fail "SPANDx v2.6 shim jobs failed under strict paper-method distance endpoint recovery"
             return 0
         fi
     fi
@@ -580,7 +580,11 @@ summary = {
     "study_pairwise_max": max(values),
     "published_six_isolate_range": {"min": 7, "max": 60, "mean": 44},
     "range_matches_published": min(values) == 7 and max(values) == 60,
-    "paper_reproduction_status": "paper_exact_candidate" if len(seqs) >= 26 else "paper_method_partial_context",
+    "paper_reproduction_status": (
+        "paper_method_distance_endpoint_recovered"
+        if len(seqs) >= 26
+        else "paper_method_partial_context"
+    ),
 }
 (outdir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 PY
@@ -783,7 +787,7 @@ PY
     printf 'spandx_config_location\t%s\n' "$(grep '^SPANDx_LOCATION=' "${SPANDX_ROOT}/SPANDx.config" 2>/dev/null | head -1 || true)"
     printf 'download_paper_context\t%s\n' "${DOWNLOAD_PAPER_CONTEXT}"
     printf 'install_spandx\t%s\n' "${INSTALL_SPANDX}"
-    printf 'require_paper_exact_inputs\t%s\n' "${REQUIRE_PAPER_EXACT_INPUTS}"
+    printf 'require_paper_method_inputs\t%s\n' "${REQUIRE_PAPER_METHOD_INPUTS}"
     printf 'bwa_version\t%s\n' "$("${BWA}" 2>&1 | sed -n 's/^Version: //p' | head -1 || true)"
     printf 'samtools_version\t%s\n' "$("${SAMTOOLS}" --version | head -1)"
     printf 'bcftools_version\t%s\n' "$("${BCFTOOLS}" --version | head -1)"

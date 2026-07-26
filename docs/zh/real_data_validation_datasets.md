@@ -541,8 +541,9 @@ truth 双方均 `>90%` coverage 且 identity `>80%`；真实样本中匹配同�
 官方 PLSDB 2018-12-05 archive 实际含 14,739 条 FASTA；低优先级精确序列扫描只发现 7 条
 重复，官方 SIM 图的连通分量也不能复现论文所述去重后 13,469 条。作者公开仓库没有发布
 该去重清单或评价代码。因此后续结果称为 **paper-method reconstruction**，不称
-paper-exact；provenance 会同时记录 14,739 与论文 13,469 的数据库范围差异。当前 K127
-恢复 watcher 已驻留，完成后才会发布新的独立 P/R/F1 和替换图表。
+paper-exact；provenance 会同时记录 14,739 与论文 13,469 的数据库范围差异。K127
+恢复与 v2 评分已经完成，独立 P/R/F1 和最终图表已在第 9.7 节发布；此前 provisional
+结果仍不得引用。
 
 2026-07-21 的恢复审计进一步冻结了三类运行证据。首次默认-k 运行在 K55 距离估计阶段
 达到约 107 GB RSS 后以 exit 68 失败，日志包含明确的 OS memory allocation failure；不能
