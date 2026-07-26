@@ -134,6 +134,7 @@ def test_install_skills_json_uses_agent_envelope_and_installs_readme(tmp_path):
     assert payload["status"] == "success"
     assert payload["command"] == "install_skills"
     assert (target / "README.md").is_file()
+    assert (target / "abi-plugin-development" / "SKILL.md").is_file()
     assert list(target.glob("*/SKILL.md"))
 
 

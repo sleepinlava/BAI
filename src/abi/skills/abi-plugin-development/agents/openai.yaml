@@ -1,0 +1,4 @@
+interface:
+  display_name: "ABI Plugin Development"
+  short_description: "Develop human-reviewed ABI workflow modules"
+  default_prompt: "Use $abi-plugin-development to turn my reviewed workflow graph into a versioned ABI workflow module."

@@ -1,14 +1,20 @@
-# AutoPlasm Skills 详细说明
+# ABI Skills
 
-`skills/` 目录是 AutoPlasm 的工具使用契约。它面向两类读者：
+`skills/` 收录随 ABI 安装的 Agent skills。维护者可以在这里核对工具用途、输入输出、
+资源要求和排错方法；Agent 则通过这些说明使用 `abi` CLI 和统一的生命周期接口。
 
-- 人类维护者：确认每个工具的用途、输入、输出、资源要求和失败排查方式。
-- agent 智能体：在修改配置、生成计划、执行 dry-run、解释 provenance 或排查失败时，按统一规则调用 AutoPlasm CLI。
+## 先分清几个名字
 
-## 安装 Skills 到 Claude Code
+项目和产品统一写作 **ABI**，Python 包、CLI、manifest 和环境变量使用小写 `abi`。
+AutoPlasm 是内置 `metagenomic_plasmid` 插件的历史名称，不代表整个项目。
+
+新建项目级文件、skill、类或配置时不要再用 `autoplasm`。已有的 `autoplasm_agent`、
+`autoplasm-*` 环境和 `autoplasm` 命令仅为该插件保留。
+
+## 安装 ABI Skills 到 Claude Code
 
 ```bash
-# 安装所有 skills 到 ~/.claude/skills/abi/
+# 通过 abi CLI 安装 ABI skills
 abi install-skills
 
 # 自定义目标目录
@@ -20,28 +26,31 @@ abi install-skills --force
 
 安装后，Claude Code 会自动加载 skills 目录中的所有 SKILL.md 文件。
 
-## 0. Agent Skills
+## 现有 Agent skills
 
 | 文件 | 用途 |
 | --- | --- |
-| `abi_agent/SKILL.md` | **ABI CLI agent skill** — 教 agent 如何使用 pip 安装后的 `abi` 命令（含 --output-json、MCP、OpenAI tools 等传输方式）。 |
-| `autoplasm_agent/SKILL.md` | 仓库级 operator skill，说明 agent 如何在源码开发模式下使用 CLI、配置、registry、资源检查和 provenance。
+| `abi_agent/SKILL.md` | ABI operator skill，说明如何使用生命周期命令和 Agent 传输接口。 |
+| `autoplasm_agent/SKILL.md` | 内置 `metagenomic_plasmid` 插件的历史兼容 skill，只用于该插件，不是 ABI 仓库级 operator。 |
+| `abi-plugin-development/SKILL.md` | ABI 插件开发门禁：开发者冻结流程图与版本，Agent 补充契约和实现建议，开发者逐项审查资源，最后由 Agent 实现、验证并进行代码审查。 |
 
-Python pipeline 的权威入口是 `plugins/metagenomic_plasmid/pipeline_dag.yaml`、
-`plugins/metagenomic_plasmid/tool_registry.yaml`、`plugins/metagenomic_plasmid/tool_contracts/`
-以及 `src/abi/executor.py` 的运行时契约校验。Markdown skill 文件负责把同一份契约写清楚，避免 agent 手工拼接不可追踪的命令。
+ABI 模块的权威入口是 `plugins/<analysis_type>/` 中的 manifest、DAG、registry、contracts、
+schemas 和 limitations，以及 `src/abi/` 中的共享运行时契约校验。Markdown skill 文件
+只负责解释这些契约，不应另写一套实现事实。
 
-## 1. 文件类型
+## 文件分工
 
 | 文件 | 用途 |
 | --- | --- |
-| `autoplasm_agent/SKILL.md` | 仓库级 operator skill，说明 agent 如何安全使用 CLI、配置、registry、资源检查和 provenance。 |
-| `{tool}/SKILL.md` | 每个注册外部工具一份 skill，说明工具何时被选中、需要哪些输入、在哪个 mamba 环境运行、命令模板如何渲染、失败时如何排查。 |
+| `abi-plugin-development/SKILL.md` | ABI workflow module 的开发、资源审查、验证和最终代码审查流程。 |
+| `abi_agent/SKILL.md` | 使用 `abi` CLI 操作所有已注册 ABI 模块。 |
+| `autoplasm_agent/SKILL.md` | 操作内置 `metagenomic_plasmid` 插件的历史兼容说明。 |
+| `{tool}/SKILL.md` | 当前主要服务于 `metagenomic_plasmid` 的外部工具 skill。 |
 | `README.md` | 当前文件，作为 skills 目录的维护说明、详细索引和同步清单。 |
 
-## 2. Agent 使用总原则
+## Agent 如何使用这些 skills
 
-agent 处理 AutoPlasm 任务时必须保留这个控制路径：
+Agent 处理 ABI workflow module 时必须保留这个控制路径：
 
 ```text
 validate-sample-sheet
@@ -54,19 +63,20 @@ run
 report
 ```
 
-除非正在调试单个失败步骤，否则不要直接运行 fastp、MEGAHIT、geNomad 等工具。直接运行会绕过 `commands.tsv`、stdout/stderr、资源状态和标准表记录。
+除非正在调试单个失败步骤，否则不要直接运行已注册的底层工具。直接运行会绕过
+`commands.tsv`、stdout/stderr、资源状态和标准表记录。
 
-dry-run 只证明 planner、命令模板和 provenance 可以生成。真实生物信息学结论必须来自 `run` 产生的工具输出、标准表和报告。
-即使某个组件工具有文献支持，也不能直接声称整条 ABI 工作流已被科学验证；
-整条路线的验证要求见 `docs/workflow_validation.md`。
+dry-run 只说明 planner、命令模板和 provenance 能正常生成。生物学结论必须来自真实
+运行得到的工具输出、标准表和报告。单个工具有论文支持，也不等于整条工作流已经完成
+科学验证；相关要求见 `docs/workflow_validation.md`。
 
-## 3. 每个工具 skill 的必需结构
+## `metagenomic_plasmid` 工具 skill 的写法
 
 每个 `{tool}/SKILL.md` 应包含以下小节：
 
 | 小节 | 必须说明的内容 |
 | --- | --- |
-| `Purpose` | 工具在 AutoPlasm 中解决什么问题。 |
+| `Purpose` | 工具在 `metagenomic_plasmid` ABI 模块中解决什么问题。 |
 | `When to Use` | 哪些平台、步骤或配置会选择该工具。 |
 | `Inputs` | registry 输入、命令模板参数和上游步骤提供的字段。 |
 | `Outputs` | 工具原始输出、标准化输出和 provenance 日志位置。 |
@@ -79,11 +89,13 @@ dry-run 只证明 planner、命令模板和 provenance 可以生成。真实生�
 | `Agent Usage Notes` | agent 不应绕过 CLI、不能夸大 dry-run、需要先更新配置再执行计划。 |
 | `Example` | 推荐 dry-run、run 或 report 示例。 |
 
-如果某个工具需要大型数据库、模型、参考图、索引或特殊输入，必须在 `Inputs`、`Interactive Parameters` 和 `Failure Handling` 中重复明确，而不是只写在示例里。
+如果工具依赖大型数据库、模型、参考图、索引或特殊输入，应在 `Inputs`、
+`Interactive Parameters` 和 `Failure Handling` 中写清楚，不要只放在示例里。
 
-## 4. 当前工具 skill 索引
+## 4. `metagenomic_plasmid` 工具 skill 索引
 
-以下索引来自当前 `plugins/metagenomic_plasmid/tool_registry.yaml` 和 `autoplasm list-tools` 输出。
+以下索引来自 `plugins/metagenomic_plasmid/tool_registry.yaml`。表中的 `autoplasm-*`
+环境名和 `autoplasm list-tools` 命令是该内置插件保留的技术兼容标识，不是项目名称。
 
 | 工具 | 类别 | 默认状态 | 必需性 | 运行环境 | Skill |
 | --- | --- | --- | --- | --- | --- |
@@ -127,7 +139,7 @@ dry-run 只证明 planner、命令模板和 provenance 可以生成。真实生�
 | `fastspar` | `network` | default | recommended | `stats` | [fastspar](fastspar/SKILL.md) |
 | `report_markdown` | `report` | default | recommended | `autoplasm-base` | [report_markdown](report_markdown/SKILL.md) |
 
-## 5. 平台到工具的默认路线
+## 5. `metagenomic_plasmid` 平台到工具的默认路线
 
 | 平台 | QC | Assembly | Plasmid detection | Host evidence | Annotation/typing | Abundance |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -137,9 +149,9 @@ dry-run 只证明 planner、命令模板和 provenance 可以生成。真实生�
 | `hybrid` | short-read QC plus long-read QC | `opera_ms` | `genomad` | `metaphlan` on short reads | same annotation defaults | short and long tracks are recorded separately |
 | `assembly` | skipped | skipped | `genomad` | explicit config only | configured typing/annotation tools | skipped unless reads and abundance module are configured |
 
-## 6. 常见真实运行资源
+## 6. `metagenomic_plasmid` 常见真实运行资源
 
-Tool availability only proves that the executable can be resolved. Real runs often need resource paths:
+能找到可执行程序不代表工具已经可以运行。下面这些工具还需要数据库、模型或参考文件：
 
 | 工具 | 常见必填资源或参数 |
 | --- | --- |
@@ -157,36 +169,36 @@ Tool availability only proves that the executable can be resolved. Real runs oft
 | `mummer` | reference plasmid FASTA |
 | `clinker` | annotated GenBank files |
 
-Missing resources should be fixed in project config. Do not edit generated provenance to hide missing inputs.
+缺少资源时应修改项目配置，不要通过编辑 provenance 来掩盖缺失输入。
 
-## 7. 更新规则
+## 7. `metagenomic_plasmid` 工具 skill 更新规则
 
-When changing a registry entry:
+修改 registry 条目时：
 
-1. Update `plugins/metagenomic_plasmid/tool_registry.yaml`.
-2. Update the matching `plugins/metagenomic_plasmid/tool_contracts/{tool}.yaml`.
-3. Update the matching `{tool}/SKILL.md`.
-4. Update `envs/*.yml` if executable availability changes.
-5. Run `autoplasm list-tools` and check the table still matches this README.
+1. 更新 `plugins/metagenomic_plasmid/tool_registry.yaml`。
+2. 更新对应的 `plugins/metagenomic_plasmid/tool_contracts/{tool}.yaml`。
+3. 更新对应的 `{tool}/SKILL.md`。
+4. 可执行程序发生变化时，同步 `envs/*.yml`。
+5. 运行 `autoplasm list-tools`，确认输出仍与本页表格一致。
 
-When changing CLI behavior:
+修改旧 AutoPlasm CLI 行为时：
 
-1. Update [../../../README.md](../../../README.md).
-2. Update [../../../docs/agent_usage.md](../../../docs/agent_usage.md).
-3. Update [autoplasm_agent/SKILL.md](autoplasm_agent/SKILL.md).
-4. Update affected tool skills when inputs, outputs, command templates, resources, or normalization behavior changes.
+1. 更新 [../../../README.md](../../../README.md)。
+2. 更新 [../../../docs/agent_usage.md](../../../docs/agent_usage.md)。
+3. 更新 [autoplasm_agent/SKILL.md](autoplasm_agent/SKILL.md)。
+4. 输入输出、命令模板、资源或归一化逻辑变化时，同步相关工具 skill。
 
-When adding a new tool skill:
+新增工具 skill 时：
 
-1. Add an entry to `plugins/metagenomic_plasmid/tool_registry.yaml`.
-2. Add or update the matching environment YAML.
-3. Create `{tool}/SKILL.md` using the required section structure above.
-4. Add parser/normalization notes if the tool feeds `tables/*.tsv`.
-5. Add or update tests and fixtures when output parsing is implemented.
+1. 在 `plugins/metagenomic_plasmid/tool_registry.yaml` 中注册工具。
+2. 添加或更新对应的环境 YAML。
+3. 按上面的结构创建 `{tool}/SKILL.md`。
+4. 工具写入 `tables/*.tsv` 时，补充 parser 和归一化说明。
+5. 实现输出解析时，同步测试和 fixture。
 
-## 8. 验证命令
+## 8. `metagenomic_plasmid` 工具 skill 验证命令
 
-Use these after documentation or skill updates:
+修改文档或 skill 后运行：
 
 ```bash
 PYTHONPATH=src python -m abi.autoplasm.cli --help
