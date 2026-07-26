@@ -1,28 +1,35 @@
 # 发布指南
 
-`abi-agent` 是本仓库唯一发布的 PyPI 分发包。
+本仓库只发布一个 PyPI 分发包：`abi-agent`。发布从已验证的 `master` 提交产生，Git tag、
+包版本、GitHub Release 和 PyPI 制品必须指向同一个发布身份。
 
 ## 发布前检查
 
-打标签或发布前，先运行统一发布检查入口：
+先运行统一的发布检查：
 
 ```bash
 scripts/release_check.sh
 ```
 
-推送发布候选前，确认 `CHANGELOG.md` 中存在与 `pyproject.toml` 的
-`project.version` 完全一致的版本小节；CI 会通过
-`scripts/check_release_identity.py` 强制检查这一点。该脚本也要求 Claude Code
-和 Codex plugin manifest 的版本与 `project.version` 完全一致。
+推送候选版本前，确认 `CHANGELOG.md` 中有与 `pyproject.toml` 的 `project.version`
+完全一致的小节。CI 通过 `scripts/check_release_identity.py` 检查这一点，同时核对
+Claude Code、Codex plugin manifest 与包版本。
 
-版本必须同时不存在于 PyPI 和远端 Git tag。tag 与 PyPI 版本都是不可变发布身份，推送后不能移动或复用。如果 tag 指向与包元数据不一致的提交，应放弃该版本并继续递增。`1.5.4` 因 tag 对应 `1.5.3` 元数据而未发布，下一有效版本为 `1.5.5`。
+版本必须同时不存在于 PyPI 和远端 Git tag。tag 与 PyPI 版本都是不可变发布身份，
+推送后不能移动或复用。如果 tag 指向与包元数据不一致的提交，应放弃该版本并继续
+递增。历史示例：`1.5.4` 因 tag 对应 `1.5.3` 元数据而被放弃；后续版本仍必须
+独立检查，不能从该示例推断某个版本可用。
+
+发布政策要求 tag 指向已验证的 `master` 提交。这是发布操作员的前置条件：
+`release.yml` 会验证 tag/包身份并复用 CI，但不会自动证明被标记提交就是当前
+`master` 顶端。推送前必须检查祖先关系和远端 tag 是否存在。
 
 脚本默认会在 `/tmp` 下创建 POSIX 临时目录，并在测试前导出
 `TMPDIR`、`TMP` 和 `TEMP`。这样可以避免 WSL/Windows 挂载的临时目录破坏
 权限敏感测试的 `chmod` 语义。可通过 `ABI_RELEASE_TMPDIR` 或
 `ABI_RELEASE_TMP_ROOT` 覆盖位置。
 
-该脚本运行与 CI 一致的质量门：
+该脚本运行以下本地 Python/包子集：
 
 ```bash
 ruff check src/ tests/
@@ -37,6 +44,12 @@ python scripts/check_module_coverage.py --coverage coverage.json
 python -m build
 abi query --type metagenomic_plasmid --what stages
 ```
+
+它不能替代全部发布表面门禁。还需分别运行 `bash docs/build_docs.sh`、
+`docker compose -f docker/docker-compose.yml config --quiet`、Docker 配置回归测试、
+全部 7 个插件的严格 contract lint、`python -m twine check dist/*`，以及适用的
+容器/真实工具验收。GitHub release workflow 会在创建 Release 前重新运行可复用
+CI 门禁。
 
 构建 wheel 后，使用 `[mcp]` extra 安装，并在可行的情况下于干净环境中对
 已安装命令进行冒烟测试：
@@ -84,6 +97,10 @@ Docker `/app` 上下文；该目录变化必须经过 Docker workflow。
 ```
 
 不能把 `publish-pypi.yml` 作为 reusable workflow 调用：PyPI 不支持父 workflow 的 OIDC Build Config URI。`release.published` 是唯一自动发布触发器。恢复操作使用 `workflow_dispatch` 并输入已有 GitHub Release tag，不能本地重新构建。重命名 publisher 前必须先更新 PyPI Trusted Publisher 配置。
+
+上述链条同时包含政策和自动化。`release.yml` 强制 `v*` 过滤；独立 PyPI workflow
+响应已发布 GitHub Release 和手动恢复输入。因此发布操作员只能发布已验证的
+`v<version>` Release，不能用手动路径绕过身份检查。
 
 合并 packaging 或容器变更前，必须看到默认 sdist→wheel 构建和所有适用 Docker 矩阵 job 成功。PR Docker 门禁必须覆盖构建、本地 load 和容器内 `abi list-types`，仅 BuildKit 初始化或 Conda 求解成功不算完成。plasmid 镜像因体积原因不进入自动 PR 构建；影响它的容器发布必须先通过手动 workflow dispatch 验证。
 

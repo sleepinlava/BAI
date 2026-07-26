@@ -1,7 +1,29 @@
 # ABI 开发日志
 
-> **注意**：完整英文开发日志请见 [`docs/en/devlog.md`](https://sleepinlava.github.io/BAI/en/devlog.html)（~1200 行）。
+> **注意**：完整英文开发日志请见 [`docs/en/devlog.md`](https://sleepinlava.github.io/BAI/en/devlog.html)。
 > 本文档为中文摘要索引，列出关键版本和里程碑条目。
+> 历史条目保留当时的术语和数量；权威发布历史以 `CHANGELOG.md` 为准。
+
+## 2026-07-25 — v1.5.7.1：编译计划、Snakemake、契约与限制
+
+- 新增 Snakemake 导出和执行，与 local、Nextflow、原生 HPC 并列。
+- 规划阶段接入 `CompiledPlan` 校验并持久化 `compiled_plan.json`。
+- 全部 7 个插件必须提供非空 `limitations.yaml`，所有报告格式都渲染限制。
+- 对全部外部工具 DAG 节点强制输出 contract 覆盖；无输出节点需显式说明豁免理由。
+- 19 个稳定错误码均增加结构化恢复动作。
+
+## 2026-07-15 — v1.5.6：Agent 集成、运行时锁与工作流编排
+
+- 新增可安装的 Claude Code、OpenCode 和 Codex 集成。
+- 加固严格运行时锁认证与不可变云端发布 helper。
+- 新增 EasyMeta/ViWrap 工作流编排和报告/产物 manifest。
+- 改进 SciPlot 标注排版、Unicode 支持及包/Docker 发布表面。
+
+## 2026-07-11 — v1.5.5：可信发布链
+
+- GitHub Actions 收敛为 CI、Docker、Release 和可信 PyPI publisher。
+- 修复 sdist→wheel 与 Docker 构建输入不变量。
+- PyPI Trusted Publishing 只使用已发布 GitHub Release 的原始产物。
 
 ## 2026-07-07 — v1.5.3: 发布质量门禁与 DAG 修复
 

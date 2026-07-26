@@ -224,7 +224,14 @@ Start interpretation with `report/report.html`, then use the TSV tables for filt
 
 **Scenario:** you want Codex, Claude Code, or OpenCode to operate ABI, but you want to approve the exact plan before any bioinformatics tool runs.
 
-Install the project integration:
+Ask an agent that supports Skills to install and register ABI:
+
+```text
+Help me install and register ABI from https://github.com/sleepinlava/BAI
+in this agent with Skills.
+```
+
+Alternatively, install the project integration from a terminal:
 
 ```bash
 pip install "abi-agent[mcp]"
@@ -232,13 +239,31 @@ abi agent install codex --scope project
 abi agent doctor codex --scope project
 ```
 
-Start a new Agent session and give it a request with explicit boundaries:
+Replace `codex` with `claude-code` or `opencode` for those clients. After
+registration, start a new Agent session, then invoke ABI explicitly or
+implicitly.
+
+**Explicit invocation:** use `/abi` and name both ABI and the analysis type.
 
 ```text
-Use ABI to plan differential-expression analysis for rnaseq-demo/samples.tsv.
-Use rnaseq-demo/config/rnaseq_expression.yaml and write review files under
-rnaseq-demo/results/agent-review. Query the plugin, run preflight and dry-run,
-then summarize samples, stages, tools, resources, warnings, and output paths.
+/abi Use ABI to analyze rnaseq-demo/samples.tsv. The analysis type is
+rnaseq_expression. Save the results to rnaseq-demo/results/agent-review.
+```
+
+**Implicit invocation:** describe the task and let an agent with the ABI Skill
+loaded recognize the intent, then select or confirm the analysis type.
+
+```text
+Analyze rnaseq-demo/samples.tsv and save the results to
+rnaseq-demo/results/agent-review.
+```
+
+To set a strict execution boundary, append the following to either request:
+
+```text
+Use rnaseq-demo/config/rnaseq_expression.yaml. Query the plugin, run preflight
+and dry-run, then summarize samples, stages, tools, resources, warnings, and
+output paths.
 Do not execute abi_run until I approve that summary.
 ```
 

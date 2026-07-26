@@ -1,10 +1,11 @@
 # ABI Development Standards
 
-Use this workflow for every behavior, plugin, transport, documentation, packaging, Docker, or release change. The goal is a traceable path from acceptance criteria to verified artifacts.
+Use this sequence for code, plugins, transports, documentation, packaging, Docker, and releases.
+It keeps the reason for a change, its implementation, and the evidence that it works in one trail.
 
 ## 1. Define behavior and acceptance criteria
 
-Before editing code, write down:
+Before editing, write down:
 
 - the user or system behavior that must change;
 - inputs, outputs, errors, and compatibility expectations;
@@ -12,7 +13,8 @@ Before editing code, write down:
 - the smallest test that proves the change;
 - affected docs, plugins, runtimes, and release surfaces.
 
-Do not combine an unrelated refactor with a behavior change. If the new behavior needs a refactor, isolate and verify the structural change first.
+Keep unrelated refactors out of the change. When a behavior change needs restructuring, make that
+dependency explicit and verify it separately.
 
 ## 2. Choose the owning boundary
 
@@ -25,7 +27,7 @@ Do not combine an unrelated refactor with a behavior change. If the new behavior
 | Docker and CI packaging | Dockerfiles, workflows, package metadata, build context |
 | Scientific plot behavior | `abi.sciplot` schema, renderer, lint, and tests |
 
-Preserve the architecture rule: thick core, thin transport, clean plugin.
+As a rule of thumb, keep the core substantial, transports thin, and plugins self-contained.
 
 ## 3. Implement the smallest coherent change
 
@@ -61,7 +63,10 @@ pytest tests/unit/test_affected_feature.py -q
 pytest tests/ -v --tb=short
 ```
 
-Run the affected integration tests after the focused unit test. The repository CI coverage floor is 75%; project policy requires total coverage to remain at least 60%.
+Run the affected integration tests after the focused unit test. CI enforces a
+75% global coverage floor plus module gates. The older 60% project minimum is a
+lower policy boundary, not a passing CI target; changes prepared for review
+must satisfy the effective 75% gate.
 
 ### Plugin changes
 

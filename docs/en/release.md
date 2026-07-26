@@ -1,32 +1,39 @@
 # Release Guide
 
-`abi-agent` is the only PyPI distribution produced from this repository.
+This repository publishes one PyPI distribution, `abi-agent`. A release is built from a verified
+`master` commit and keeps the Git tag, package version, GitHub Release, and PyPI artifacts tied to
+the same identity.
 
 ## Pre-Release Checks
 
-Run the consolidated release check before tagging or publishing:
+Start with the consolidated release check:
 
 ```bash
 scripts/release_check.sh
 ```
 
-Before pushing a release candidate, confirm `CHANGELOG.md` has a section for
-the exact `project.version` in `pyproject.toml`; CI enforces this with
-`scripts/check_release_identity.py`. The same check requires the Claude Code and
-Codex plugin manifest versions to equal `project.version`.
+Before pushing a candidate, confirm that `CHANGELOG.md` contains the exact `project.version` from
+`pyproject.toml`. CI enforces this through `scripts/check_release_identity.py`, which also compares
+the Claude Code and Codex plugin manifests with the package version.
 
 Choose a version that is absent from both PyPI and remote Git tags. Tags and
 PyPI versions are immutable identities: never move or reuse a tag after it has
 been pushed. If a tag points to mismatched package metadata, abandon that
-version and increment again. Version `1.5.4` was not published because its tag
-was created against `1.5.3` metadata; the next valid release is `1.5.5`.
+version and increment again. Historical example: `1.5.4` was abandoned because
+its tag was created against `1.5.3` metadata. Later versions must still be
+checked independently; never infer availability from that example.
+
+The release policy requires the tag to point at the verified `master` commit.
+This is a release-operator precondition: `release.yml` validates tag/package
+identity and reuses CI, but it does not itself prove that the tagged commit is
+the current `master` tip. Verify ancestry and remote tag absence before pushing.
 
 The script creates a POSIX temporary directory under `/tmp` by default and
 exports `TMPDIR`, `TMP`, and `TEMP` before running tests. This keeps
 permission-sensitive checks off WSL/Windows-mounted temporary directories. Use
 `ABI_RELEASE_TMPDIR` or `ABI_RELEASE_TMP_ROOT` to override the location.
 
-The script runs the same quality gate expected by CI:
+The script runs the local Python/package subset below:
 
 ```bash
 ruff check src/ tests/
@@ -41,6 +48,13 @@ python scripts/check_module_coverage.py --coverage coverage.json
 python -m build
 abi query --type metagenomic_plasmid --what stages
 ```
+
+It does not replace every release-surface gate. Run `bash docs/build_docs.sh`,
+`docker compose -f docker/docker-compose.yml config --quiet`, the Docker
+configuration regression test, strict contract lint for all seven plugins,
+`python -m twine check dist/*`, and applicable container/real-tool acceptance
+checks separately. The GitHub release workflow reruns the reusable CI gate
+before creating a Release.
 
 After building a wheel, install it with its `[mcp]` extra and smoke-test the
 installed commands in a clean environment when possible:
@@ -98,6 +112,12 @@ parent workflow's OIDC Build Config URI. `release.published` is the single
 automatic publication trigger. Recovery uses `workflow_dispatch` with the
 existing GitHub Release tag and never rebuilds locally. Renaming the publisher
 requires updating the trusted publisher configuration on PyPI first.
+
+This chain combines policy and automation. The `v*` filter is enforced by
+`release.yml`; the separate PyPI workflow reacts to a published GitHub Release
+and manual recovery input. Release operators must therefore publish only the
+verified `v<version>` Release and must not use the manual path to bypass the
+identity checks.
 
 Before merging packaging or container changes, require a successful default
 sdist-to-wheel build and all applicable Docker matrix jobs. The PR Docker gate

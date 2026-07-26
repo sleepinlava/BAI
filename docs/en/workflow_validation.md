@@ -1,11 +1,12 @@
 # Workflow Validation and Scientific Evidence Plan
 
-This document tracks whether ABI can become a constrained, verifiable, and
-reproducible workflow whose biological route is backed by published methods.
+This page separates what ABI already checks from what still needs scientific validation. It also
+records the evidence expected before a workflow is described as reproducible or biologically
+validated.
 
 ## Current Assessment
 
-ABI is already a strong workflow control layer:
+ABI already provides the following control-layer checks:
 
 - **Constrained**: plans are generated from plugin schemas and the metagenomic
   plasmid DAG; external execution is confirmation-gated; step contracts enforce
@@ -21,10 +22,9 @@ ABI is already a strong workflow control layer:
 - **Literature-aligned**: core route stages use established bioinformatics
   tools with published method papers.
 
-The codebase should **not yet** be described as a fully validated scientific
-workflow. Published component tools support the route, but system-level
-reliability still needs pinned environments, database manifests, benchmark
-datasets, expected biological outputs, and documented acceptance thresholds.
+ABI is **not yet** a fully validated scientific workflow. Papers for individual tools support the
+choice of components, but the full route still needs pinned environments, database manifests,
+benchmark datasets, expected biological outputs, and written acceptance thresholds.
 
 ## Evidence Spine
 
@@ -85,7 +85,10 @@ when all of the following are true:
 ### Phase 2: Biological Benchmarks
 
 - Add curated tiny positive controls: known plasmid references, negative
-  chromosomal controls, and mixed samples. ✅ Benchmark datasets established in data/benchmarks/
+  chromosomal controls, and mixed samples. The benchmark harness and smoke
+  tests exist, but the current checkout does not ship a complete
+  `data/benchmarks/` fixture tree; provision and freeze the exact datasets
+  before claiming a reproducible benchmark.
 - Define standard-table acceptance checks for plasmid calls, annotations,
   abundance rows, and report contents.
 - Attach expected failure cases: missing database, malformed sample sheet,

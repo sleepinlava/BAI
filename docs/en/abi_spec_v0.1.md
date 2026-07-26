@@ -5,16 +5,22 @@
 `ABIAgentInterface` is the stable boundary for all transports:
 
 - `list_types`
+- `query`
 - `plan`
+- `check`
 - `dry_run`
 - `inspect`
 - `report`
 - `run`
 - `export_nextflow`
+- `export_snakemake`
 - `export_agent_context`
+- `check_resources`
 - `doctor_agent`
+- `install_skills`
+- `abi_validate_result`
+- `autoplasm_validate_result` (compatibility alias)
 - `dispatch`
-- `query`
 
 Every public method returns a JSON string with a uniform envelope.
 
@@ -55,15 +61,16 @@ Error (compact, default):
 ```
 
 By default `error_type` is omitted from error envelopes to save tokens.
-Pass `verbose_errors=True` to `ABIAgentInterface` or use `--debug` on the
-CLI to include the full `error_type` field for debugging.
+Pass `verbose_errors=True` when constructing `ABIAgentInterface` to include the
+Python exception class for debugging.
 
 ## Permissions
 
-- `read_only`: `list_types`, `inspect`, `abi_validate_result`,
+- `read_only`: `list_types`, `query`, `check`, `inspect`,
+  `abi_validate_result`, `autoplasm_validate_result`, `check_resources`,
   `export_agent_context`, `doctor_agent`
 - `planning_write`: `plan`, `dry_run`, `report`, `export_nextflow`,
-  `export_snakemake`
+  `export_snakemake`, `install_skills`
 - `execution`: `run`
 
 Execution requires `confirm_execution=true`. Descriptors do not export
@@ -91,10 +98,10 @@ outdir/
     report.html
 ```
 
-`provenance/commands.tsv` always includes the lifecycle columns from
-`Rebuild.md`. Nextflow-backed runs also populate `remote_scheduler_job_id` when
-the Nextflow trace exposes a scheduler/native id, for example from Slurm or
-cloud batch executors.
+`provenance/commands.tsv` records the lifecycle fields defined by the
+provenance schema. Nextflow-backed runs also populate
+`remote_scheduler_job_id` when the Nextflow trace exposes a scheduler/native
+ID, for example from Slurm or a cloud batch executor.
 
 ## Error Codes
 
@@ -150,16 +157,17 @@ output-less aggregation nodes.
 ## Plan Summary
 
 `plan` envelopes include a `summary` field so agents understand workflow
-structure without reading the full `execution_plan.json` (which can reach
-5,000+ tokens for complex pipelines like metagenomic_plasmid with 84 nodes).
+structure without reading the full `execution_plan.json` (which can be large
+for workflows such as the 90-node metagenomic plasmid DAG).
 
 ```json
 {
   "status": "success",
   "command": "plan",
   "result": {
-    "plan": "/tmp/plan/execution_plan.json",
-    "steps": 84,
+      "plan_path": "/tmp/plan/execution_plan.json",
+      "compiled_plan_path": "/tmp/plan/compiled_plan.json",
+      "steps": 90,
     "summary": {
       "pipeline": "metagenomic_plasmid",
       "stages": ["qc", "assembly", "plasmid_detection", "annotation", "abundance"],
@@ -186,9 +194,9 @@ that only need metadata (available tools, pipeline structure, step I/O).
 
 ## Step Contracts and Reproducibility
 
-Runtime step contracts are embedded in `PlanStep.params["_contract"]` by
-plugins that support contract enforcement. For the DAG-driven
-`metagenomic_plasmid` plugin, this block is copied from `pipeline_dag.yaml`.
+Runtime step contracts are embedded in `PlanStep.params["_contract"]` by the
+shared DAG planner. All seven built-in plugins copy this block from their
+`pipeline_dag.yaml`.
 
 Supported output checks include:
 

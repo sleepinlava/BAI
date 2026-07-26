@@ -7,7 +7,7 @@ ABI gives every supported analysis the same safe lifecycle: inspect the workflow
 [![PyPI](https://img.shields.io/pypi/v/abi-agent?style=flat-square&color=blue)](https://pypi.org/project/abi-agent/)
 [![Python](https://img.shields.io/pypi/pyversions/abi-agent?style=flat-square)](https://pypi.org/project/abi-agent/)
 [![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/BAI/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-CI%20%E2%89%A575%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/BAI/)
 [![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/BAI)
 [![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/BAI/blob/master/LICENSE)
@@ -20,7 +20,9 @@ ABI gives every supported analysis the same safe lifecycle: inspect the workflow
 - **Use one workflow interface.** The same `plan -> check -> dry-run -> run -> inspect -> report` flow works across all built-in analysis types.
 - **Keep results traceable.** Each run records resolved inputs, configuration, commands, tool versions, resources, progress, tables, and reports.
 - **Let agents operate safely.** Agents call typed ABI tools instead of generating ad hoc shell pipelines, and execution remains confirmation-gated.
-- **Move between runtimes.** Start locally, then use Docker, Nextflow, HPC, cloud workers, or the HTTP Job Service without changing the workflow contract.
+- **Move between runtimes.** Run the same compiled plan with the local, Nextflow,
+  Snakemake, or native HPC backend; Docker, cloud workers, and the HTTP Job
+  Service provide additional deployment boundaries.
 
 ABI is an orchestration and interface layer. It does not replace the underlying bioinformatics tools, reference databases, or compute resources required by an analysis.
 
@@ -28,7 +30,8 @@ ABI is an orchestration and interface layer. It does not replace the underlying 
 
 - **Researchers and bioinformaticians** who want a predictable way to preview, run, inspect, and reproduce an analysis.
 - **Teams using AI agents** that need machine-readable tools, clear permissions, and structured diagnostics.
-- **Platform engineers** exposing workflows through CLI, MCP, HTTP, Nextflow, HPC, or cloud infrastructure.
+- **Platform engineers** exposing workflows through CLI, MCP, HTTP, Nextflow,
+  Snakemake, native HPC, or cloud infrastructure.
 - **Plugin authors** who want to add a workflow while reusing ABI's planning, provenance, validation, tables, and reporting core.
 
 ## Choose an analysis workflow
@@ -54,7 +57,83 @@ abi query --type metagenomic_plasmid --what tools
 abi query --type metagenomic_plasmid --step qc_fastp --what inputs
 ```
 
-## Get started in five minutes
+## How to use ABI
+
+### From a general-purpose coding agent
+
+First, enter this prompt in a coding agent that supports Skills:
+
+```text
+Help me install and register ABI from https://github.com/sleepinlava/BAI
+in this agent with Skills.
+```
+
+The agent installs ABI for the current platform, registers the Skill and MCP
+configuration, and runs the integration diagnostics. You can also register it
+manually; replace `codex` with `claude-code` or `opencode` as needed:
+
+```bash
+pip install "abi-agent[mcp]"
+abi agent install codex --scope project
+abi agent doctor codex --scope project
+```
+
+After registration, start a new agent session. You can then ask Codex, Claude
+Code, or OpenCode to use ABI in either of two ways.
+
+1. **Explicit invocation**
+
+   Invoke `/abi` and provide the input, analysis type, and output location:
+
+   ```text
+   /abi Use ABI to analyze <input file or directory>. The analysis type is
+   <analysis_type>. Save the results to <output directory>.
+   ```
+
+   For example:
+
+   ```text
+   /abi Use ABI to analyze rnaseq-demo/samples.tsv. The analysis type is
+   rnaseq_expression. Save the results to rnaseq-demo/results/run-001.
+   ```
+
+2. **Implicit invocation**
+
+   Describe the outcome directly. An agent with the ABI Skill loaded can
+   recognize the bioinformatics request, select or confirm the appropriate
+   `analysis_type`, and follow the ABI lifecycle:
+
+   ```text
+   Analyze rnaseq-demo/samples.tsv and save the results to
+   rnaseq-demo/results/run-001.
+   ```
+
+In both cases, the agent should inspect the workflow, check inputs and
+resources, and present a dry-run summary first. It may start the real analysis
+only after your explicit approval. See the [Agent usage guide](docs/en/agent_usage.md)
+for integration setup and permission boundaries.
+
+### From the ABI CLI
+
+To operate ABI yourself, use the same lifecycle from a terminal:
+
+```bash
+abi list-types
+abi plan --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <plan-dir>
+abi check --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv>
+abi dry-run --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <dry-run-dir>
+abi run --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <result-dir> --confirm-execution
+abi inspect --result-dir <result-dir>
+abi report --type <analysis_type> --result-dir <result-dir>
+```
+
+The runnable quickstart below expands each step.
+
+## CLI quickstart in five minutes
 
 ### 1. Install ABI
 
@@ -72,7 +151,7 @@ pip install "abi-agent[report]"    # Scientific figures and richer reports
 To run the bundled example and work with the source repository:
 
 ```bash
-git clone https://github.com/sleepinlava/BAI.git
+git clone https://github.com/sleepinlava/BAI.git abi
 cd abi
 python -m venv .venv
 . .venv/bin/activate
@@ -151,7 +230,9 @@ abi inspect --result-dir results/my-run
 abi report --result-dir results/my-run --type metatranscriptomics
 ```
 
-All agent-facing commands support `--output-json` for structured automation.
+Lifecycle and discovery commands support `--output-json` for structured
+automation. Run `abi <command> --help` for the exact options of management
+commands such as `agent`, `job`, and `install-skills`.
 
 ## How the lifecycle protects your run
 
@@ -169,7 +250,10 @@ All agent-facing commands support `--output-json` for structured automation.
 
 ### Local and Conda environments
 
-ABI maps registered tools to 18 Conda environments through `environments.yaml`. By default, repository-local environments are resolved from `.mamba/envs/<env_name>/bin`.
+ABI currently maps 98 registered tool IDs to 19 declared Conda environments
+through `environments.yaml`. Treat that manifest as the source of truth rather
+than copying the counts into automation. By default, repository-local
+environments are resolved from `.mamba/envs/<env_name>/bin`.
 
 Set `ABI_MAMBA_ROOT` to use another root. `AUTOPLASM_MAMBA_ROOT` remains available for backward compatibility.
 
@@ -180,20 +264,31 @@ Dockerfiles are provided for amplicon, RNA-seq, bacterial WGS, metatranscriptomi
 ```bash
 docker build -f docker/Dockerfile.amplicon -t abi-amplicon .
 
+docker run --rm abi-amplicon list-types
 docker run --rm -v "$PWD:/data" abi-amplicon \
-  abi plan --type amplicon_16s --outdir /data/results
+  init --type amplicon_16s --outdir /data/amplicon-work
 
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Approximate image sizes are 1.5 GB for amplicon, 2-2.5 GB for RNA-seq/WGS/metatranscriptomics, and 15 GB for plasmid analysis.
+Image size depends on the platform, tool/database versions, and build cache.
+Measure the exact tag you plan to deploy. The plasmid image is intentionally
+manual-only in CI because it is substantially larger than the automatic matrix.
 
-### Nextflow, HPC, cloud, and queued jobs
+### Nextflow, Snakemake, HPC, cloud, and queued jobs
 
-Export a workflow to Nextflow, target an HPC executor, or submit work through the queue-backed Job Service when a local foreground process is not enough.
+Export a workflow to Nextflow or Snakemake, select a runtime backend, or submit
+work through the queue-backed Job Service when a local foreground process is
+not enough.
 
 ```bash
 abi export-nextflow --type metatranscriptomics --output workflow.nf
+abi export-snakemake --type metatranscriptomics --output Snakefile
+
+abi run --type metatranscriptomics --engine snakemake \
+  --config path/to/config.yaml --confirm-execution
+abi run --type metatranscriptomics --engine hpc --scheduler slurm \
+  --config path/to/config.yaml --confirm-execution
 
 abi job-service --host 127.0.0.1 --port 18791 --workers 2 --subprocess-workers
 abi job submit --command run --analysis-type metatranscriptomics --confirm-execution

@@ -1,6 +1,8 @@
 # Development Guide
 
-This repository publishes one Python distribution: `abi-agent`.
+ABI is shipped as one Python distribution, `abi-agent`. This page is a map of the codebase and the
+main extension points. For the order in which changes should be made and checked, see
+`development_workflow.md`.
 
 ## Source Tree
 
@@ -14,16 +16,16 @@ src/abi/
   workflow/           ResourceManifest, workflow validation, figure_specs loading
   plugins/            Built-in analysis-type plugins
     metagenomic_plasmid/   Self-contained plugin package (engine in _engine/, 64 tools, 90-node DAG)
-	    easymetagenome/        P0 shotgun metagenomics (12 tools, 3 presets, internal handlers)
-	    viral_viwrap/          Managed external CLI plugin wrapping ViWrap 1.3.1 (1 tool)
-    rnaseq_expression.py   Bulk RNA-seq (6 tools)
+    easymetagenome.py     Shotgun metagenomics adapter (10 tools, 25-node DAG)
+    viral_viwrap.py       Managed external CLI adapter (1 tool, 7-node DAG)
+    rnaseq_expression.py  Bulk RNA-seq (5 tools, 5-node DAG)
     wgs_bacteria.py        Bacterial WGS (5 tools)
-    amplicon_16s.py        16S microbiome (8 tools)
+    amplicon_16s.py        16S microbiome (10 tools)
     metatranscriptomics.py Metatranscriptomics (3 tools)
   autoplasm/          Backward-compatible re-export shim → plugins/metagenomic_plasmid/_engine/
-  sciplot/            Publication-grade scientific figure compiler — FigureSpec → Validate →
+  sciplot/            Publication-grade Matplotlib figure compiler — FigureSpec → Validate →
                       Render → Export → Lint → Provenance. Pydantic schema, 15 plot types,
-                      3 themes, 11 lint rules, SHA256 provenance. (v1.4.0)
+                      3 themes, lint rules, SHA-256 provenance.
   dag_planner.py      UniversalDAG — declarative plan generation from pipeline_dag.yaml
   tsv_mapping.py      Declarative TSV column mapper — YAML-driven output parsing, 3 source types
   _shared.py          Shared utilities: _read_tsv, _display_command, _plan_dict, _common_overrides
@@ -70,7 +72,7 @@ core modules for shared infrastructure.
 | `abi.dag` | `infer_dag`, `ABIDAG`, `StepBinding` — DAG inference with literature + path + validation layers |
 | `abi.dag_planner` | `UniversalDAG`, `build_plan_from_dag`, `PathTemplateContext` — declarative plan generation, shared by all 7 plugins |
 | `abi.tsv_mapping` | `TSVMapper`, `generate_rows` — YAML-driven TSV/JSON/log parsing with 3 source types |
-| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — publication-grade figure compiler, 15 plot types, plotnine+seaborn backends (v1.4.0) |
+| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — publication-grade Matplotlib figure compiler with 15 plot types |
 | `abi.errors` | `ABIError`, `ConfigError`, `SampleSheetError`, `ToolError` |
 | `abi.diagnostics` | Error taxonomy + `DiagnosticHint` + `classify_exception` |
 | `abi.json_utils` | JSON file/payload loading with `ABIJSONError` |
@@ -165,7 +167,6 @@ Small source assets are tracked:
 - `plugins/`
 - `integrations/` — platform-native Claude Code, OpenCode, and Codex bundles
 - `examples/`
-- `data/examples/`
 - `scripts/`
 
 Large or generated runtime state is ignored:
@@ -174,7 +175,7 @@ Large or generated runtime state is ignored:
 - `resources/`
 - `results/`
 - `log/`
-- Nextflow work directories
+- Nextflow and Snakemake work directories
 
 Tool execution resolves environments via ``abi.config.resolved_mamba_root()``
 with this priority:
@@ -182,10 +183,10 @@ with this priority:
 2. ``AUTOPLASM_MAMBA_ROOT`` env var (legacy compat)
 3. ``PROJECT_ROOT / ".mamba"`` (default local install)
 4. ``PROJECT_ROOT.parent / "abi-envs"`` (sibling dir)
-The ``env_name`` for each tool is resolved at runtime from ``environments.yaml``
-(single source of truth for all 18 conda environments and 98 tool→env assignments).
-(2026-06-21: fixed metaphlan/kraken2 env_name from ``autoplasm-stats`` → ``stats``;
-added mmseqs2 ResourceSpec; amrfinderplus install_post: makeblastdb; kraken2 S3 download).
+The ``env_name`` for each tool is resolved at runtime from ``environments.yaml``.
+The current manifest declares 19 Conda environments and 98 tool-to-environment
+assignments; code and documentation should derive these inventories from the
+manifest rather than duplicating them.
 
 ### Parallel Execution
 

@@ -5,14 +5,21 @@
 `ABIAgentInterface` 是所有传输层的稳定边界：
 
 - `list_types`
+- `query`
 - `plan`
+- `check`
 - `dry_run`
 - `inspect`
 - `report`
 - `run`
 - `export_nextflow`
+- `export_snakemake`
 - `export_agent_context`
+- `check_resources`
 - `doctor_agent`
+- `install_skills`
+- `abi_validate_result`
+- `autoplasm_validate_result`（兼容别名）
 - `dispatch`
 
 每个公开方法返回一个带有统一信封格式的 JSON 字符串。
@@ -55,8 +62,11 @@
 
 ## 权限
 
-- `read_only`：`list_types`、`inspect`、`abi_validate_result`、`export_agent_context`、`doctor_agent`
-- `planning_write`：`plan`、`dry_run`、`report`、`export_nextflow`、`export_snakemake`
+- `read_only`：`list_types`、`query`、`check`、`inspect`、
+  `abi_validate_result`、`autoplasm_validate_result`、`check_resources`、
+  `export_agent_context`、`doctor_agent`
+- `planning_write`：`plan`、`dry_run`、`report`、`export_nextflow`、
+  `export_snakemake`、`install_skills`
 - `execution`：`run`
 
 执行需要 `confirm_execution=true`。描述符默认不导出 `abi_run`。
@@ -83,7 +93,9 @@ outdir/
     report.html
 ```
 
-`provenance/commands.tsv` 始终包含来自 `Rebuild.md` 的生命周期列。Nextflow 支持的运行在 Nextflow trace 暴露调度器/原生 ID 时（例如来自 Slurm 或云端批量执行器）也会填充 `remote_scheduler_job_id`。
+`provenance/commands.tsv` 记录 provenance schema 定义的生命周期字段。Nextflow
+运行在 trace 暴露调度器/原生 ID 时（例如 Slurm 或云端批量执行器）也会填充
+`remote_scheduler_job_id`。
 
 ## 错误码
 
@@ -127,7 +139,8 @@ ABI 使用来自 `abi.diagnostics` 的 19 个稳定错误码，枚举每一种�
 
 ## 步骤合约与可复现性
 
-运行时步骤合约由支持合约执行的插件嵌入在 `PlanStep.params["_contract"]` 中。对于 DAG 驱动的 `metagenomic_plasmid` 插件，此块从 `pipeline_dag.yaml` 复制。
+运行时步骤合约由共享 DAG 规划器嵌入 `PlanStep.params["_contract"]`。全部 7 个
+内置插件都从各自的 `pipeline_dag.yaml` 复制此块。
 
 支持的输出检查包括：
 

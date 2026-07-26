@@ -19,6 +19,7 @@ Default exports include:
 
 - `abi_list_types`
 - `abi_plan`
+- `abi_check`
 - `abi_dry_run`
 - `abi_inspect`
 - `abi_report`
@@ -26,7 +27,10 @@ Default exports include:
 - `abi_export_snakemake`
 - `abi_export_agent_context`
 - `abi_doctor_agent`
+- `abi_install_skills`
+- `abi_query`
 - `abi_validate_result`
+- `abi_autoplasm_validate_result` (legacy compatibility alias)
 
 `abi_run` is omitted unless `--include-execution` is passed.
 
@@ -70,14 +74,23 @@ each session start.
 
 ```bash
 abi-mcp                    # safe profile: no execution or management tools
+abi-mcp --profile discovery
 abi-mcp --profile full     # add confirmation-gated abi_run
+abi-mcp --profile management
 python -m abi.mcp.server   # equivalent (if abi-mcp not available)
 ```
 
-The default `safe` profile registers discovery, planning, inspection, and
-reporting tools for Claude Desktop and Claude Code. Use `full` only when the
-session needs `abi_run`; execution still requires `confirm_execution=true`
-after explicit user approval.
+MCP visibility profiles are separate from the default descriptor export:
+
+- `discovery` exposes seven read-only discovery, preflight, and inspection tools;
+- `safe` exposes twelve tools, adding planning, dry-run, report, and workflow
+  export while omitting execution and management;
+- `full` adds confirmation-gated `abi_run`;
+- `management` also exposes `abi_install_skills` and the legacy
+  `abi_autoplasm_validate_result` alias.
+
+Use `full` only when the session needs `abi_run`; execution still requires
+`confirm_execution=true` after explicit user approval.
 
 ## Python API
 

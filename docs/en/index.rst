@@ -170,8 +170,10 @@ Component summary
    * - Results
      - Execution plan, provenance, standard TSV tables, reports, and figures
 
-All agent-facing commands support ``--output-json``. Use ``abi list-types
---output-json`` for the authoritative plugin list in the current environment.
+Lifecycle and discovery commands expose structured JSON, commonly through
+``--output-json``. Use ``abi <command> --help`` for exact management-command
+options and ``abi list-types --output-json`` for the authoritative plugin list
+in the current environment.
 Representative declarative plugins include ``metagenomic_plasmid``,
 ``easymetagenome``, and ``viral_viwrap``; availability still depends on the
 installed runtime and resources.

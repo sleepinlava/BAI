@@ -1,11 +1,13 @@
 # ABI 插件生产环境手动验收检查清单
 
-本文档用于 ABI 插件在实际生产环境上线前的手动验收。检查项按以下两个环境分类：
+ABI 插件进入生产环境前，按本清单完成手动验收。本地检查与生产平台检查分开记录：
 
-1. **本地 IDE/普通机器验收**：验证配置、计划、命令渲染、路径解析、安全门、mock/smoke 和产物契约。
-2. **HPC/生产平台验收**：验证真实工具、真实数据库、调度器、共享存储、性能、并发和故障恢复。
+1. **本地 IDE 或普通机器**：检查配置、计划、命令渲染、路径、安全门、mock/smoke 和
+   产物契约。
+2. **HPC 或生产平台**：检查真实工具与数据库、调度器、共享存储、性能、并发和故障恢复。
 
-> 本地 `dry-run`、`--mock` 或 `--smoke` 通过，只能证明软件契约和控制流程基本正确，不能代替 HPC 上的真实生产运行，也不能证明生物学结果正确。
+本地 `dry-run`、`--mock` 或 `--smoke` 通过，只能说明控制流程和软件契约正常。它不能
+代替 HPC 上的生产运行，也不能验证生物学结果。
 
 ## 1. 验收范围
 
@@ -21,7 +23,7 @@ viral_viwrap
 wgs_bacteria
 ```
 
-建议为每个插件分别建立验收记录，至少保留以下信息：
+每个插件单独保存一份验收记录，至少包含：
 
 | 字段 | 内容 |
 |---|---|
@@ -86,7 +88,7 @@ abi init --type <TYPE> --outdir /tmp/abi-uat/<TYPE>
 - [ ] **L-015** 初始化失败时不残留半初始化文件。
 - [ ] **L-016** 中文、空格和长路径可正常处理。
 
-### 当前实现状态
+### 当前状态
 
 全部 7 个内置插件均已提供 `sample_sheet_template.tsv`。其中
 `amplicon_16s`、`metagenomic_plasmid` 和 `viral_viwrap` 的模板已补齐，必须分别执行
@@ -173,7 +175,7 @@ abi plan \
 autoplasm check-tools --config <CONFIG.yaml>
 ```
 
-### 当前实现状态
+### 当前状态
 
 全部 7 个内置插件均已实现输入、工具和资源 preflight。验收仍必须逐插件制造缺失输入、
 缺失工具和缺失资源，确认返回 `fail` 和非零退出码；不得仅依据一个正常配置的 `pass`
@@ -304,7 +306,7 @@ abi setup-resources \
 - [ ] **L-132** 资源清单记录版本、来源、日期、checksum 和文件数量。
 - [ ] **L-133** 小型资源真实下载后可重复检查和复用。
 
-### 当前实现状态与已知风险
+### 当前状态与已知风险
 
 资源 setup 返回行已统一包含 `mock` 布尔字段；`metagenomic_plasmid` 的
 `ResourceStatus` 和资源清单也记录该字段。L-124 必须覆盖全部 7 个插件，并同时比较执行前后
@@ -406,7 +408,7 @@ PBS 环境替换为 `--scheduler pbs`。
 - [ ] **H-020** partition/account/qos 等参数不能造成 shell 或调度指令注入。
 - [ ] **H-021** 调度脚本包含 `set -euo pipefail` 或等价严格错误处理。
 
-### 当前已知限制
+### 已知限制
 
 `HpcRuntime.dry_run()` 已实现 HPC 脚本生成，但主 `abi dry-run` 当前未暴露 `--engine hpc`。CLI 用户不能直接预览完整 HPC 脚本，应作为验收缺口记录。
 
@@ -517,7 +519,31 @@ abi run \
 - [ ] **H-116** Nextflow 失败时 ABI CLI 退出码非 0，并指出 stderr 路径。
 - [ ] **H-117** Nextflow work 和 cache 清理策略明确。
 
-## 21. 性能与容量
+## 21. Snakemake 生产验收
+
+```bash
+abi run \
+  --engine snakemake \
+  --type <TYPE> \
+  --config <PROD_CONFIG.yaml> \
+  --workflow <RESULT_DIR>/snakemake/Snakefile \
+  --mamba-root <MAMBA_ROOT> \
+  --confirm-execution
+```
+
+- [ ] **S-001** 生成的 `Snakefile` 可解析，且 rule 保留 ABI DAG 依赖关系。
+- [ ] **S-002** Snakemake 从 `PATH` 或 `ABI_SNAKEMAKE_BIN` 解析；验收证据记录实际
+  可执行文件及版本。
+- [ ] **S-003** 调用使用 `--use-conda`，每个外部工具 rule 都解析到
+  `environments.yaml` 分配的环境。
+- [ ] **S-004** 完成标记不会把缺失或不完整输出误判为成功。
+- [ ] **S-005** `snakemake.stdout.log`、`snakemake.stderr.log`、命令行记录和最终
+  provenance 的状态与退出码一致。
+- [ ] **S-006** Snakemake 失败或超时时，ABI 返回非零结果并指出 stderr 日志。
+- [ ] **S-007** 真实工具生产验收前，`export-snakemake --smoke` 和
+  `run --engine snakemake --smoke` 均通过。
+
+## 22. 性能与容量
 
 - [ ] **H-120** 记录 plan、提交、排队、运行和报告耗时。
 - [ ] **H-121** 记录单样本和多样本峰值内存。
@@ -530,7 +556,7 @@ abi run \
 - [ ] **H-128** 并发 worker 数与节点 CPU/内存匹配。
 - [ ] **H-129** 超大样本或超长路径不会导致命令行、文件名或调度脚本失败。
 
-## 22. 可追溯性与结果归档
+## 23. 可追溯性与结果归档
 
 - [ ] **H-130** `execution_plan.json` 与实际执行配置一致。
 - [ ] **H-131** `commands.tsv` 包含所有步骤及最终状态。
@@ -548,7 +574,7 @@ abi run \
 
 # 第三部分：生产放行与缺陷管理
 
-## 23. 生产放行门槛
+## 24. 生产放行门槛
 
 只有同时满足以下条件，才能判定插件可用于生产：
 
@@ -561,7 +587,7 @@ abi run \
 - [ ] 真实结果通过基线或领域专家审查。
 - [ ] 已知限制、运行成本、数据库许可证和运维流程有正式文档。
 
-## 24. 当前修复状态与建议优先处理的问题
+## 25. 待修问题与优先级
 
 已完成并需要持续回归：
 
@@ -582,7 +608,7 @@ abi run \
 3. 显式工具路径检查应补充执行权限和版本探测。
 4. 主 CLI 应提供 HPC dry-run/调度脚本预览入口。
 
-## 25. 单项验收记录模板
+## 26. 单项验收记录模板
 
 ```markdown
 ### 检查项：L-070 dry-run 不调用真实工具

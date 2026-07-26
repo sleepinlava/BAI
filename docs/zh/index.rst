@@ -133,6 +133,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    paper_outline
    real_data_validation_datasets
    abi_real_data_validation_status_20260724
+   scapp_v2_biological_correctness_audit_20260726
    production_manual_acceptance_checklist
 
 运维与发布
@@ -168,7 +169,9 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    * - 结果层
      - 执行计划、溯源、标准 TSV、报告和科研图形
 
-所有面向 Agent 的命令都支持 ``--output-json``。当前环境的权威插件列表以 ``abi list-types --output-json`` 为准。
+生命周期和发现命令提供结构化 JSON，通常通过 ``--output-json`` 启用。管理命令的
+准确参数以 ``abi <command> --help`` 为准；当前环境的权威插件列表以
+``abi list-types --output-json`` 为准。
 
 索引与表
 ------------------------------

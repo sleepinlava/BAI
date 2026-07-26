@@ -18,6 +18,7 @@ DeepSeek、智谱 (GLM)、Kimi (Moonshot)、通义 (Qwen)、MiniMax。
 
 - `abi_list_types`
 - `abi_plan`
+- `abi_check`
 - `abi_dry_run`
 - `abi_inspect`
 - `abi_report`
@@ -25,7 +26,10 @@ DeepSeek、智谱 (GLM)、Kimi (Moonshot)、通义 (Qwen)、MiniMax。
 - `abi_export_snakemake`
 - `abi_export_agent_context`
 - `abi_doctor_agent`
+- `abi_install_skills`
+- `abi_query`
 - `abi_validate_result`
+- `abi_autoplasm_validate_result`（旧版兼容别名）
 
 `abi_run` 默认不导出，除非传入 `--include-execution`。
 
@@ -65,11 +69,20 @@ Claude Code 在每次会话启动时自动加载 `~/.claude/skills/` 中的所�
 
 ```bash
 abi-mcp                    # safe profile：不包含执行和管理工具
+abi-mcp --profile discovery
 abi-mcp --profile full     # 加入受确认门控的 abi_run
+abi-mcp --profile management
 python -m abi.mcp.server   # 等效命令（如果 abi-mcp 不可用）
 ```
 
-默认 `safe` profile 为 Claude Desktop 和 Claude Code 注册发现、规划、检查和报告工具。
+MCP 可见性 profile 与默认描述符导出是两个不同概念：
+
+- `discovery` 暴露 7 个只读的发现、预检和检查工具；
+- `safe` 暴露 12 个工具，增加规划、dry-run、报告和工作流导出，但不含执行与管理；
+- `full` 增加受确认门控的 `abi_run`；
+- `management` 还增加 `abi_install_skills` 和旧兼容别名
+  `abi_autoplasm_validate_result`。
+
 只有会话确实需要 `abi_run` 时才使用 `full`；真实执行仍须在用户明确批准后传入
 `confirm_execution=true`。
 

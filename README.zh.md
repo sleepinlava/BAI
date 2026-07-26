@@ -7,7 +7,7 @@ ABI 为所有受支持的分析提供同一套安全流程：先了解工作流�
 [![PyPI](https://img.shields.io/pypi/v/abi-agent?style=flat-square&color=blue)](https://pypi.org/project/abi-agent/)
 [![Python](https://img.shields.io/pypi/pyversions/abi-agent?style=flat-square)](https://pypi.org/project/abi-agent/)
 [![CI](https://img.shields.io/github/actions/workflow/status/sleepinlava/BAI/ci.yml?branch=master&style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-83%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-CI%20%E2%89%A575%25-brightgreen?style=flat-square)](https://github.com/sleepinlava/BAI/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-Sphinx-blue?style=flat-square)](https://sleepinlava.github.io/BAI/)
 [![Status](https://img.shields.io/badge/status-alpha-orange?style=flat-square)](https://github.com/sleepinlava/BAI)
 [![License](https://img.shields.io/pypi/l/abi-agent?style=flat-square)](https://github.com/sleepinlava/BAI/blob/master/LICENSE)
@@ -20,7 +20,9 @@ ABI 为所有受支持的分析提供同一套安全流程：先了解工作流�
 - **用一套方式操作所有流程。** 所有内置分析都遵循 `plan -> check -> dry-run -> run -> inspect -> report`。
 - **让结果可追溯。** 每次运行都会记录解析后的输入、配置、命令、工具版本、资源、进度、标准表格和报告。
 - **让 Agent 安全操作。** Agent 调用有类型约束的 ABI 工具，而不是生成临时 Shell 流程；真正执行仍需明确确认。
-- **在不同运行环境间迁移。** 可以从本地开始，再接入 Docker、Nextflow、HPC、云端 worker 或 HTTP Job Service，而不改变工作流契约。
+- **在不同运行环境间迁移。** 同一份编译计划可以交给 local、Nextflow、
+  Snakemake 或原生 HPC 后端执行；Docker、云端 worker 和 HTTP Job Service
+  提供额外的部署边界。
 
 ABI 是工作流编排与接口层，不会替代分析所需的底层生物信息学软件、参考数据库和计算资源。
 
@@ -28,7 +30,8 @@ ABI 是工作流编排与接口层，不会替代分析所需的底层生物信�
 
 - **科研人员和生物信息学工程师**：希望用可预期的方式预览、运行、检查和复现分析。
 - **使用 AI Agent 的团队**：需要机器可读的工具、清晰的权限边界和结构化诊断。
-- **平台工程团队**：需要通过 CLI、MCP、HTTP、Nextflow、HPC 或云端基础设施提供工作流。
+- **平台工程团队**：需要通过 CLI、MCP、HTTP、Nextflow、Snakemake、原生 HPC
+  或云端基础设施提供工作流。
 - **插件开发者**：希望复用 ABI 的规划、溯源、验证、标准表格和报告能力来接入新流程。
 
 ## 选择适合你的分析流程
@@ -54,7 +57,79 @@ abi query --type metagenomic_plasmid --what tools
 abi query --type metagenomic_plasmid --step qc_fastp --what inputs
 ```
 
-## 五分钟上手
+## 如何使用 ABI？
+
+### 在通用编码 Agent 中使用
+
+先在支持 Skills 的编码 Agent 中输入：
+
+```text
+Help me install and register ABI from https://github.com/sleepinlava/BAI
+in this agent with Skills.
+```
+
+Agent 会根据当前平台安装 ABI、注册 Skill 和 MCP 配置，并运行诊断。也可以在终端中
+手动注册；将 `codex` 替换为 `claude-code` 或 `opencode` 即可：
+
+```bash
+pip install "abi-agent[mcp]"
+abi agent install codex --scope project
+abi agent doctor codex --scope project
+```
+
+完成注册并开启新的 Agent 会话后，可以通过两种方式调用 ABI。
+
+1. **显式调用**
+
+   直接使用 `/abi`，并给出输入、分析类型和输出位置：
+
+   ```text
+   /abi 请使用 ABI 分析 <输入文件或目录>，分析类型为 <analysis_type>，
+   并将结果保存到 <输出目录>。
+   ```
+
+   例如：
+
+   ```text
+   /abi 请使用 ABI 分析 rnaseq-demo/samples.tsv，分析类型为
+   rnaseq_expression，并将结果保存到 rnaseq-demo/results/run-001。
+   ```
+
+2. **隐式调用**
+
+   直接描述分析目标。已加载 ABI Skill 的 Agent 会识别生物信息学分析意图，
+   选择或确认合适的 `analysis_type`，再按照 ABI 生命周期执行：
+
+   ```text
+   请分析 rnaseq-demo/samples.tsv，并将结果保存到
+   rnaseq-demo/results/run-001。
+   ```
+
+无论采用哪种方式，Agent 都应先查询流程、检查输入与资源并生成 dry-run 摘要。
+只有在你明确批准后，它才能开始真实分析。集成安装方式和权限边界详见
+[Agent 使用指南](docs/zh/agent_usage.md)。
+
+### 人工使用 ABI CLI
+
+如果你希望自己在终端中操作，可以直接使用同一套 CLI 生命周期：
+
+```bash
+abi list-types
+abi plan --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <plan-dir>
+abi check --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv>
+abi dry-run --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <dry-run-dir>
+abi run --type <analysis_type> --config <config.yaml> \
+  --sample-sheet <samples.tsv> --outdir <result-dir> --confirm-execution
+abi inspect --result-dir <result-dir>
+abi report --type <analysis_type> --result-dir <result-dir>
+```
+
+下面用一个可直接运行的示例展开每一步。
+
+## CLI 五分钟上手
 
 ### 1. 安装 ABI
 
@@ -72,7 +147,7 @@ pip install "abi-agent[report]"    # 科研图形和增强报告
 如需运行仓库自带示例并使用源码开发：
 
 ```bash
-git clone https://github.com/sleepinlava/BAI.git
+git clone https://github.com/sleepinlava/BAI.git abi
 cd abi
 python -m venv .venv
 . .venv/bin/activate
@@ -151,7 +226,9 @@ abi inspect --result-dir results/my-run
 abi report --result-dir results/my-run --type metatranscriptomics
 ```
 
-所有面向 Agent 的命令都支持 `--output-json`，方便结构化自动化调用。
+生命周期和发现命令支持 `--output-json`，方便结构化自动化调用。`agent`、
+`job`、`install-skills` 等管理命令的准确参数请以
+`abi <command> --help` 为准。
 
 ## 每一步会发生什么
 
@@ -169,7 +246,9 @@ abi report --result-dir results/my-run --type metatranscriptomics
 
 ### 本地与 Conda 环境
 
-ABI 通过 `environments.yaml` 把已注册工具映射到 18 个 Conda 环境。默认从仓库内的 `.mamba/envs/<env_name>/bin` 解析工具。
+ABI 当前通过 `environments.yaml` 把 98 个已注册工具 ID 映射到 19 个
+声明的 Conda 环境。自动化应直接读取该清单，不要依赖复制出来的数量。默认从
+仓库内的 `.mamba/envs/<env_name>/bin` 解析工具。
 
 可以设置 `ABI_MAMBA_ROOT` 使用其他根目录；`AUTOPLASM_MAMBA_ROOT` 继续用于向后兼容。
 
@@ -180,20 +259,29 @@ ABI 通过 `environments.yaml` 把已注册工具映射到 18 个 Conda 环境�
 ```bash
 docker build -f docker/Dockerfile.amplicon -t abi-amplicon .
 
+docker run --rm abi-amplicon list-types
 docker run --rm -v "$PWD:/data" abi-amplicon \
-  abi plan --type amplicon_16s --outdir /data/results
+  init --type amplicon_16s --outdir /data/amplicon-work
 
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-镜像大小约为：16S 1.5 GB，RNA-seq、WGS 和宏转录组 2-2.5 GB，质粒分析 15 GB。
+镜像大小取决于平台、工具/数据库版本和构建缓存，应测量准备部署的准确 tag。
+质粒镜像明显大于自动矩阵中的其他镜像，因此 CI 中有意仅允许手动构建。
 
-### Nextflow、HPC、云端与队列任务
+### Nextflow、Snakemake、HPC、云端与队列任务
 
-当本地前台进程无法满足需求时，可以导出 Nextflow 工作流、选择 HPC 执行器，或通过带队列的 Job Service 提交任务。
+当本地前台进程无法满足需求时，可以导出 Nextflow 或 Snakemake 工作流、
+选择运行时后端，或通过带队列的 Job Service 提交任务。
 
 ```bash
 abi export-nextflow --type metatranscriptomics --output workflow.nf
+abi export-snakemake --type metatranscriptomics --output Snakefile
+
+abi run --type metatranscriptomics --engine snakemake \
+  --config path/to/config.yaml --confirm-execution
+abi run --type metatranscriptomics --engine hpc --scheduler slurm \
+  --config path/to/config.yaml --confirm-execution
 
 abi job-service --host 127.0.0.1 --port 18791 --workers 2 --subprocess-workers
 abi job submit --command run --analysis-type metatranscriptomics --confirm-execution

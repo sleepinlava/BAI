@@ -1,434 +1,162 @@
 # ABI Testing Guide
 
-> Test counts and coverage change frequently. Use the latest CI run as the current
-> status; the commands and enforced thresholds below are the maintained contract.
+Test counts and coverage move with the code, so use the latest CI run for current numbers. This page
+explains where tests belong, which commands are useful locally, and what CI requires.
 
-This guide covers the ABI testing infrastructure: test taxonomy, shared fixtures, the benchmark framework, contract validation, golden traces, smoke tests, CI/CD, and conventions for plugin authors.
+## Test layout
 
-## Test Taxonomy
+| Layer | Location | Purpose | External tools |
+| --- | --- | --- | --- |
+| Unit | `tests/unit/` | Core logic, schemas, parsers, contracts, runtimes | No |
+| Integration | `tests/integration/` | CLI/core boundaries, dry-runs, golden traces | Normally no |
+| Smoke | `tests/smoke/` | Real tools and value-level workflow checks | Usually yes |
+| SciPlot | `src/abi/sciplot/tests/` | Schema, renderer, lint, CLI/API, Unicode layout | Report dependencies |
 
-ABI tests are organized into four layers by scope and speed:
+Name files `test_<feature>.py` and functions `test_<behavior>`. Every behavior change should come
+with a regression test. Tests that run external tools use `@pytest.mark.smoke`,
+`@pytest.mark.requires_tools`, or both.
 
-| Layer | Directory | Purpose | Speed | Requires tools? |
-|-------|-----------|---------|-------|-----------------|
-| **Unit** | `tests/unit/` | Isolated logic tests for core modules | < 1s each | No |
-| **Integration** | `tests/integration/` | Cross-component tests (CLI, dry-run, golden traces) | 1-10s each | No |
-| **Smoke** | `tests/smoke/` | Real tool execution with synthetic data | 30s-5min each | Yes |
-| **Benchmark** | `tests/smoke/test_*_benchmark.py` | Value-level validation against expected outputs | 30s-5min each | Yes |
-
-### When to use each layer
-
-- **Unit tests**: For parser functions, schema validation, DAG logic, contract evaluation. Always add unit tests for new parsing logic or schema changes.
-- **Integration tests**: For CLI argument handling, dry-run artifact generation, cross-plugin consistency.
-- **Smoke tests**: When a new tool contract is added and you need to verify real execution. Mark with `@pytest.mark.smoke`.
-- **Benchmark tests**: For end-to-end pipeline validation with known datasets. Use `run_benchmark()` from `abi.testing`.
-
-## Running Tests
+## Local commands
 
 ```bash
-# All tests
+# Main suite
 pytest tests/ -v --tb=short
 
-# Only fast tests (skip real-tool tests)
-pytest tests/ -v -m "not requires_tools"
+# CI-like suite without external tools
+pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+  --strict-markers -m "not requires_tools"
 
-# Only smoke tests
-pytest tests/ -v -m smoke
+# Focused module
+pytest tests/unit/test_dag_planner.py -q
 
-# Single test file
-pytest tests/unit/test_dag_planner.py -v
+# Real-tool tests only
+pytest tests/ -v -m requires_tools
 
-# Single test function
-pytest tests/unit/test_dag_planner.py::test_build_plan_per_sample -v
-
-# With coverage
-pytest tests/ --cov=src/abi --cov-report=term --cov-fail-under=75
+# Branch-aware global gate
+pytest tests/ src/abi/sciplot/tests/ \
+  --strict-markers -m "not requires_tools" \
+  --cov=src/abi --cov-branch --cov-report=term \
+  --cov-report=json:coverage.json --cov-fail-under=75
+python scripts/check_module_coverage.py --coverage coverage.json
 ```
 
-## Shared Fixtures
+The CI floor is 75% plus risk-based per-module line/branch gates. Do not put a
+fixed measured percentage or test count in maintained guidance.
 
-All fixtures live in `tests/conftest.py` and are available to every test file without explicit import.
+## Shared fixtures
 
-### `mock_sample`
+`tests/conftest.py` currently provides:
 
-A minimal valid `ABISample` suitable for plugin tests:
+- `mock_sample`;
+- `mock_sample_context`;
+- `mock_contract_dict`;
+- `tmp_project`;
+- an autouse fixture that isolates mamba/resource-root environment variables.
 
-```python
-def test_my_parser(mock_sample):
-    assert mock_sample.sample_id == "S1"
-    assert mock_sample.platform == "illumina"
-    assert mock_sample.group == "treatment"
-```
+Keep reusable fixtures there. Use `tmp_path` for filesystem writes and restore
+environment/global state through pytest fixtures.
 
-### `mock_sample_context`
+## Plugin contract gates
 
-A single-sample `ABISampleContext` built from `mock_sample`:
+Every built-in plugin must:
 
-```python
-def test_plan_builder(mock_sample_context):
-    assert len(mock_sample_context.samples) == 1
-    assert mock_sample_context.multi_sample is False
-```
+1. satisfy the Python plugin protocol checked by `assert_plugin_contract`;
+2. load its registry and standard-table schemas;
+3. have a declarative `pipeline_dag.yaml`;
+4. provide a contract for every external-tool output, or a justified explicit
+   exemption;
+5. ship a non-empty `limitations.yaml`.
 
-### `mock_contract_dict`
-
-A minimal valid tool contract dict for lint/test scaffolding:
-
-```python
-def test_contract_lint(mock_contract_dict):
-    assert mock_contract_dict["tool_id"] == "fastp"
-    assert mock_contract_dict["execution"]["env_name"] == "abi-qc"
-```
-
-### `tmp_project`
-
-A temporary directory with `results/`, `logs/`, `provenance/`, and `tables/` subdirectories:
-
-```python
-def test_output_writer(tmp_project):
-    results_dir = tmp_project / "results"
-    # write outputs, verify they land correctly
-```
-
-### Adding new fixtures
-
-Add shared fixtures to `tests/conftest.py`. Plugin-specific fixtures should go in the plugin's test file or a `conftest.py` in the plugin test directory.
-
-Use naming convention `mock_<thing>` for test doubles, `tmp_<thing>` for temporary scaffolding, and `real_<thing>` for fixtures that require real data.
-
-## Plugin Contract Testing
-
-Every plugin must pass `assert_plugin_contract(plugin)`:
-
-```python
-from abi.testing import assert_plugin_contract
-from abi.plugins.rnaseq_expression import RNASeqExpressionPlugin
-
-
-def test_plugin_contract():
-    plugin = RNASeqExpressionPlugin()
-    assert_plugin_contract(plugin)
-```
-
-`assert_plugin_contract` verifies:
-
-1. The plugin implements `ABIPlugin` (required) — checks for all 9 mandatory methods/attributes:
-   `plugin_id`, `display_name`, `description`, `report_title`, `load_config`,
-   `build_plan`, `registry`, `table_schemas`, `parse_outputs`, `write_report`
-
-2. If the plugin implements `ABIDryRunPlugin` (optional) — checks for `execute_dry_run`
-
-3. If the plugin implements `ABIInitializablePlugin` (optional) — checks for `root`
-
-All built-in plugins have contract tests. Run with:
+Run strict lint for all built-ins:
 
 ```bash
-pytest tests/ -k "contract" -v
+for plugin in \
+  amplicon_16s easymetagenome metagenomic_plasmid metatranscriptomics \
+  rnaseq_expression viral_viwrap wgs_bacteria
+do
+  abi contract-lint --type "$plugin" --strict
+done
+
+python scripts/audit_contract_coverage.py
 ```
 
-## Benchmark Framework
+Strict lint turns warnings into failures and also enforces missing/invalid/empty
+limitations declarations and output-contract coverage.
 
-`abi.testing.benchmark` provides a unified framework for value-level pipeline validation.
-All five plugins have benchmark tests using this framework.
+## Golden traces
 
-### `BenchmarkAssertion`
+Golden traces are stored at the repository root:
 
-A single assertion against a pipeline output:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `step_id` | `str` | DAG step name (e.g. `"fastp"`, `"star_align"`) |
-| `table` | `str` | Output table path relative to result_dir |
-| `column` | `str` | Column to check, or `""` for file-level checks |
-| `condition` | `str` | Comparison: `"exists"`, `">"`, `">="`, `"<="`, `"contains"`, `"between"` |
-| `expected` | `Any` | Expected value. For `"between"`: `[min, max]` |
-| `description` | `str` | Human-readable description |
-
-### `BenchmarkResult`
-
-Returned by `run_benchmark()`:
-
-```python
-@dataclass
-class BenchmarkResult:
-    plugin_id: str
-    passed: int
-    failed: int
-    total: int
-    assertions: list[BenchmarkAssertion]
-    failures: list[BenchmarkAssertion]
-    errors: list[str]
+```text
+golden_traces/
+├── amplicon_16s.jsonl
+├── metagenomic_plasmid.jsonl
+├── metatranscriptomics.jsonl
+├── rnaseq_expression.jsonl
+└── wgs_bacteria.jsonl
 ```
 
-### Writing a benchmark test
-
-Benchmark tests follow this pattern:
-
-```python
-from pathlib import Path
-import pytest
-from abi.testing.benchmark import BenchmarkResult, run_benchmark
-
-
-@pytest.mark.smoke
-@pytest.mark.requires_tools
-def test_rnaseq_expression_benchmark(tmp_path):
-    result = run_benchmark(
-        plugin_id="rnaseq_expression",
-        dataset_path=Path("data/benchmarks/rnaseq_expression"),
-        outdir=tmp_path / "results",
-    )
-
-    assert result.total > 0, "No assertions defined"
-    assert result.passed >= result.total * 0.8, (
-        f"Benchmark failed: {result.passed}/{result.total} passed\n"
-        + "\n".join(f"  - {f.description}" for f in result.failures)
-    )
-```
-
-### Benchmark configuration
-
-Each benchmark dataset in `data/benchmarks/<plugin_id>/` contains:
-
-```
-data/benchmarks/rnaseq_expression/
-  expected_assertions.yaml    # list of BenchmarkAssertion dicts
-  config.yaml                 # plugin-specific config for the run
-  samples.tsv                 # sample sheet with benchmark data paths
-```
-
-## Golden Traces
-
-Golden traces are pre-recorded execution plans that capture expected DAG output for known inputs.
-They enable deterministic regression testing of the DAG planner.
-
-Golden traces live in `tests/fixtures/golden_traces/` and are replayed via integration tests:
+They currently cover five workflow families, not all seven built-ins. Replay
+them with:
 
 ```bash
-pytest tests/integration/test_golden_traces.py -v
+pytest tests/integration/test_golden_traces.py -q
 ```
 
-### Creating a new golden trace
+When a deliberate plan change modifies a trace, review the semantic diff before
+updating the fixture. Do not regenerate traces merely to make a test pass.
 
-1. Run a dry-run against the target configuration:
-   ```bash
-   abi dry-run --type my_plugin --config my_config.yaml --outdir /tmp/golden
-   ```
+## Smoke and benchmark tests
 
-2. Copy the execution plan to `tests/fixtures/golden_traces/`:
-   ```bash
-   cp /tmp/golden/execution_plan.json tests/fixtures/golden_traces/my_plugin_golden.json
-   ```
+`tests/smoke/test_*_benchmark.py` contains real-tool checks for the original five
+workflow families, and `abi.testing.benchmark` provides a generic
+`expected_assertions.yaml` evaluator. The current repository checkout does not
+ship a complete `data/benchmarks/` fixture tree. Before running those tests,
+verify that the required dataset, expected assertions, tools, databases, and
+environment variables are provisioned. CI excludes `requires_tools` tests from
+the default quality gate.
 
-3. Add a test in `tests/integration/test_golden_traces.py`:
-   ```python
-   def test_my_plugin_golden_trace():
-       expected = load_golden_trace("my_plugin_golden.json")
-       actual = build_plan(...)
-       assert_plans_match(expected, actual)
-   ```
+EasyMetagenome and ViWrap are covered by contract, dry-run, integration, and
+release wheel smoke paths, but do not currently have the same checked-in
+value-level benchmark fixture shape as the original five.
 
-## Smoke Tests
+## CI and release surface
 
-Smoke tests execute real bioinformatics tools with synthetic data to verify tool contracts,
-parsers, and output contracts work end-to-end.
+The repository intentionally keeps four workflows:
 
-### Smoke test conventions
+- `ci.yml`: Python 3.10–3.13 lint/format/mypy, tests, 3.12 coverage, strict
+  contract lint, docs, Compose validation, package build, wheel smoke, and a
+  migration gate;
+- `docker.yml`: automatic amd64 builds for amplicon, RNA-seq, WGS, and
+  metatranscriptomics; plasmid is manual-only; registry pushes enable
+  provenance/SBOM and are multi-platform except RNA-seq;
+- `release.yml`: reusable CI gate, build, Twine check, clean-wheel smoke, and
+  GitHub Release creation;
+- `publish-pypi.yml`: download the exact GitHub Release artifacts and publish
+  with PyPI Trusted Publishing.
 
-- Mark with `@pytest.mark.smoke` and `@pytest.mark.requires_tools`
-- Generate synthetic input data in the test (no checked-in FASTQ files)
-- Use small data sizes (500-1000 reads) for speed
-- Verify key output artifacts exist (files, directories)
-- Verify parser output has expected columns and non-trivial values
-- Clean up with `tmp_path` (pytest auto-cleans)
-
-### Example smoke test
-
-```python
-import pytest
-from pathlib import Path
-from abi.plugins.amplicon_16s import Amplicon16SPlugin
-
-
-@pytest.mark.smoke
-@pytest.mark.requires_tools
-def test_amplicon_smoke(tmp_path):
-    plugin = Amplicon16SPlugin()
-    # Generate synthetic reads...
-    # Run pipeline...
-    # Verify outputs...
-    assert (tmp_path / "tables" / "asv_table.tsv").exists()
-```
-
-To skip smoke tests in environments without bioinformatics tools:
+For CI/Docker/build-input changes run:
 
 ```bash
-pytest tests/ -v -m "not requires_tools"
+pytest tests/unit/test_docker_configuration.py -q
+docker compose -f docker/docker-compose.yml config --quiet
+python -m build
 ```
 
-## CI/CD Pipeline
-
-ABI keeps exactly four GitHub Actions workflows: CI, Docker, Release, and the
-trusted PyPI publisher.
-
-### `ci.yml` — Runs on every push and PR
-
-| Step | Python Versions |
-|------|----------------|
-| `ruff check` | 3.10, 3.11, 3.12, 3.13 |
-| `ruff format --check` | 3.10, 3.11, 3.12, 3.13 |
-| `mypy src/abi/` | 3.10, 3.11, 3.12, 3.13 |
-| `pytest tests/` | 3.10, 3.11, 3.12, 3.13 |
-| `pytest --cov --cov-fail-under=75` | 3.12 only |
-| Sphinx docs build | 3.12 only |
-| Wheel build + smoke test | 3.12 only |
-
-The 3.12 build uses the default `python -m build` path: source tree → sdist →
-wheel. Files configured as wheel `force-include` inputs must therefore also be
-included in the sdist. This specifically includes the root
-`environments.yaml` manifest and the platform-native assets under `integrations/`.
-The clean-wheel smoke test installs the wheel with `[mcp]`, then installs and
-diagnoses the Claude Code, OpenCode, and Codex integrations so a missing package
-asset or unusable MCP runtime fails before release.
-
-### `docker.yml` — Builds plugin images on relevant PRs and release tags
-
-- PR builds load one `linux/amd64` image under `abi-<plugin>:latest` and run
-  `abi list-types` in the resulting container.
-- Local `load: true` builds disable provenance and SBOM attestations. Registry
-  pushes enable both; combining attestations with the local Docker exporter
-  produces an unsupported manifest list.
-- Docker build inputs include `docker/.condarc`, `environments.yaml`, generated
-  `envs/*.yml`, `integrations/`, plugins, configuration, scripts, data, examples,
-  and golden traces. None may be excluded by `.dockerignore`; all plugin images
-  copy `integrations/` into `/app`, and `integrations/**` triggers this workflow.
-- Automatic PR CI builds amplicon, RNA-seq, WGS, and metatranscriptomics. The
-  large plasmid image is manual-only.
-- Registry pushes are multi-platform except RNA-seq, which remains
-  `linux/amd64`-only until its R/DESeq2 environment passes native arm64 build
-  and smoke validation.
-- Run `pytest tests/unit/test_docker_configuration.py -q` for every packaging,
-  environment, Dockerfile, ignore-file, or Docker workflow change.
-
-### `release.yml` — Builds and creates GitHub Release for `v*` tags
-
-### `release.yml` and `publish-pypi.yml` — Release and publish
-
-The release workflow creates the verified GitHub Release. Its published event
-starts `publish-pypi.yml` as a top-level workflow, which downloads and publishes
-those exact artifacts. PyPI Trusted Publishing binds its OIDC policy to that
-filename and does not support a reusable-workflow caller identity.
-
-## Test Writing Conventions
-
-### File naming
-
-- Test files: `test_<feature>.py`
-- Test functions: `test_<behavior>`
-- Example: `tests/unit/test_dag_planner.py::test_build_plan_per_sample`
-
-### Code quality gates
-
-All tests must pass these gates before commit:
+For documentation changes run:
 
 ```bash
-ruff check src/ tests/        # 0 errors
-ruff format --check src/ tests/  # 236 files formatted
-mypy src/abi/ --ignore-missing-imports  # 0 errors
-pytest tests/ -v --tb=short   # 1364+ passed
+bash docs/build_docs.sh
 ```
 
-### Isolation
+## Before review
 
-- Use `tmp_path` (pytest built-in) for file system isolation — never write to project directories
-- Use `mock_sample` and `mock_sample_context` fixtures for shared test data — avoid duplicating sample construction
-- Do not depend on test execution order — every test should be independently runnable
+Python changes require Ruff, formatting, mypy, focused pytest, and affected
+integration tests. Plugin changes additionally require strict contract lint,
+dry-run validation, and relevant smoke tests. Release and Docker changes have
+the additional gates described in the
+[development workflow](development_workflow.md) and [release guide](release.md).
 
-### Contract testing for plugins
-
-Every new plugin should include at minimum:
-
-```python
-def test_plugin_contract():
-    """Plugin satisfies the ABIPlugin protocol."""
-    from abi.testing import assert_plugin_contract
-    plugin = MyPlugin()
-    assert_plugin_contract(plugin)
-
-
-def test_registry_loads():
-    """Tool registry YAML parses without error."""
-    plugin = MyPlugin()
-    registry = plugin.registry()
-    assert len(registry.tools) > 0
-
-
-def test_build_plan():
-    """build_plan() returns valid ExecutionPlan for default config."""
-    plugin = MyPlugin()
-    plan = plugin.build_plan(...)
-    assert len(plan.steps) > 0
-    # Verify step ordering
-    tool_ids = [s.step_id for s in plan.steps]
-    assert tool_ids[0] == "qc_fastp"  # QC always first
-```
-
-### Benchmark test thresholds
-
-Benchmark tests should target:
-
-| Stage | Threshold | When |
-|-------|-----------|------|
-| **Development** | ≥ 70% assertions pass | Plugin under active development |
-| **Stable** | ≥ 80% assertions pass | Plugin with verified parsers |
-| **Release** | ≥ 85% assertions pass | Plugin candidate for release |
-
-## Coverage
-
-CI enforces a minimum 75% line coverage floor plus risk-based module gates. The coverage baseline is maintained through:
-
-- Unit tests for all parser functions
-- Integration tests for CLI and dry-run paths
-- Contract tests for all 7 plugins
-
-To check coverage locally:
-
-```bash
-pip install pytest-cov
-pytest tests/ --cov=src/abi --cov-report=html
-# Open htmlcov/index.html
-```
-
-## Troubleshooting Tests
-
-### Test fails with "tool not found"
-
-Ensure conda environments are set up and the tool is on PATH:
-
-```bash
-abi check-resources --type <plugin_id>
-```
-
-### Benchmark assertion fails
-
-1. Check `expected_assertions.yaml` — are expected values still correct?
-2. Has the tool output format changed? Re-run and update expected values.
-3. Check if the tool version changed — some tools change output formats between versions.
-
-### Contract-lint shows `output_dir.exists()` errors
-
-This is a known limitation of static contract analysis — `output_dir` is not in scope during lint.
-Runtime contract enforcement works correctly. This does not affect execution.
-
-### Test isolation issues
-
-If tests interfere with each other, ensure:
-- Each test uses a unique `tmp_path`
-- No test modifies global state (`os.environ`, module-level variables, `sys.path`)
-- Tests that require real tools are marked `@pytest.mark.requires_tools`
-
-## See Also
-
-- `docs/en/plugin_development_guide.md` — How to structure plugin code
-- `docs/en/development.md` — Source tree and SDK reference
-- `CLAUDE.md` — Project commands and architecture
+Record commands and results in the pull request. If a real-tool, container, or
+cluster check cannot run, state that explicitly and describe the remaining
+risk.

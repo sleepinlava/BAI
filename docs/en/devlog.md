@@ -1,5 +1,38 @@
 # ABI Development Log
 
+> Historical entries keep the terminology and counts that were true when they
+> were written. For the authoritative release history, use `CHANGELOG.md`.
+
+## 2026-07-25 — v1.5.7.1: Compiled Plans, Snakemake, Contracts, and Limitations
+
+- Added first-class Snakemake export and execution alongside local, Nextflow,
+  and native HPC.
+- Wired `CompiledPlan` validation into planning and persisted
+  `compiled_plan.json`.
+- Made non-empty `limitations.yaml` mandatory for all seven plugins and rendered
+  limitations in every report format.
+- Enforced output-contract coverage for every external-tool DAG node, with
+  explicit justified exemptions for output-less nodes.
+- Added structured recovery actions to diagnostics for all 19 stable error
+  codes.
+
+## 2026-07-15 — v1.5.6: Integrations, Runtime Locks, and Workflow Orchestration
+
+- Added installable Claude Code, OpenCode, and Codex integrations.
+- Hardened strict runtime-lock certification and the immutable cloud publication
+  helper.
+- Added EasyMeta/ViWrap workflow orchestration and report/artifact manifests.
+- Improved SciPlot annotation layout, Unicode handling, and package/Docker
+  release surfaces.
+
+## 2026-07-11 — v1.5.5: Trusted Release Chain
+
+- Consolidated GitHub Actions to CI, Docker, Release, and the trusted PyPI
+  publisher.
+- Fixed sdist-to-wheel and Docker build-input invariants.
+- Made the published GitHub Release artifacts the exact inputs to PyPI Trusted
+  Publishing.
+
 ## 2026-07-07 — v1.5.3: Release Quality Gate & DAG Fixes
 
 ### Overview

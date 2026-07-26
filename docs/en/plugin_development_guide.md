@@ -1,12 +1,14 @@
 # Plugin Development Guide
 
-ABI plugins expose biological analysis types behind the shared lifecycle API.
+An ABI plugin packages one biological analysis behind the shared lifecycle. Start with the
+declarative interface below. Use the low-level protocol only when the manifest-driven path cannot
+express the required behavior.
 
 ## Recommended Declarative Interface
 
-Place `abi-plugin.yaml` beside your plugin module and inherit from
-`DeclarativeABIPlugin`. The base class reads plugin identity, the tool registry,
-and standard-table paths from the manifest, so those values are declared once:
+Place `abi-plugin.yaml` beside the plugin module and inherit from `DeclarativeABIPlugin`. The base
+class reads identity, the tool registry, and standard-table paths from the manifest, which keeps
+those values in one place:
 
 ```python
 from abi.plugin import DeclarativeABIPlugin
@@ -358,7 +360,7 @@ Plugins should import from the public SDK:
 | `abi._shared` | `_read_tsv`, `_display_command`, `_plan_dict`, `_common_overrides` |
 | `abi.dag_planner` | `UniversalDAG`, `build_plan_from_dag`, `PathTemplateContext` — DAG-driven `build_plan()` (added 2026-06-18) |
 | `abi.tsv_mapping` | `TSVMapper`, `generate_rows` — declarative TSV column mapping (added 2026-06-18) |
-| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — publication-grade figure compiler. 15 plot types (PCoA, volcano, stacked bar, heatmap, phylogeny), plotnine+seaborn backends. (v1.4.0, added 2026-06-20) |
+| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — Matplotlib-based publication figure compiler with 15 plot types, three themes, lint, and SHA-256 provenance |
 | `abi.contracts` | `WorkflowSpec`, `WorkflowStepSpec`, `load_workflow_spec`, `run_contract_lint` — L1/L2/L3 workflow declaration + validation |
 | `abi.report` | `write_plugin_report`, `render_figures_via_sciplot` — report generation + figure rendering |
 

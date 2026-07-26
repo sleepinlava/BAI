@@ -282,7 +282,6 @@ Do not claim that a workflow is biologically validated from dry-run alone or fro
 | `docs/en/workflow_validation.md` | Biological validation methodology |
 | `docs/en/plugin_development_guide.md` | How to add a new analysis type |
 | `docs/en/devlog.md` | Daily development log — engineering fixes, features, status |
-| `docs/en/paper_execution_plan.md` | Paper execution stratification — Tier 1/2/3 hardware, local/cloud/HPC |
 
 ### Shared utilities (`_shared.py`)
 

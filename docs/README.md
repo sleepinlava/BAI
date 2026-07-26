@@ -22,7 +22,6 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 |:---|:---:|:---:|
 | 开发指南 | [zh](zh/development.md) | [en](en/development.md) |
 | 测试指南 | [zh](zh/testing.md) | [en](en/testing.md) |
-| 测试审计报告 | — | [en](en/comprehensive-testing-audit.md) |
 | 发布指南 | [zh](zh/release.md) | [en](en/release.md) |
 | 插件开发指南 | [zh](zh/plugin_development_guide.md) | [en](en/plugin_development_guide.md) |
 | 插件报告与图表规范 | — | [en](en/plugin_report_figure_spec.md) |
@@ -31,7 +30,6 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 | ABI SciPlot 设计 | — | [en](en/abi_sciplot_design.md) |
 | 工作流验证 | [zh](zh/workflow_validation.md) | [en](en/workflow_validation.md) |
 | OpenAI 接口标准 | [zh](zh/openai_interface_standard.md) | [en](en/openai_interface_standard.md) |
-| 工程差距审计 | — | [en](en/full-engineering-gap-audit.md) [en](en/tool-engineering-gap-audit.md) |
 
 ### 项目规划 / Planning
 
@@ -39,7 +37,6 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 |:---|:---|
 | [ABI 重构计划](../ABI_REFACTOR_PLAN.md) | 中文 |
 | [开发日志](en/devlog.md) | English |
-| [论文执行计划](en/paper_execution_plan.md) | English |
 | [生产验收检查清单](zh/production_manual_acceptance_checklist.md) | 中文 |
 
 ### 规范 / Specification

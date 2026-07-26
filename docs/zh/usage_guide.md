@@ -224,7 +224,14 @@ abi report \
 
 **场景：** 你希望 Codex、Claude Code 或 OpenCode 操作 ABI，但任何生物信息学工具运行前都必须由你审查并批准计划。
 
-安装项目级集成：
+可以直接让支持 Skills 的 Agent 完成安装和注册：
+
+```text
+Help me install and register ABI from https://github.com/sleepinlava/BAI
+in this agent with Skills.
+```
+
+也可以在终端中安装项目级集成：
 
 ```bash
 pip install "abi-agent[mcp]"
@@ -232,13 +239,29 @@ abi agent install codex --scope project
 abi agent doctor codex --scope project
 ```
 
-开启新的 Agent 会话，并给出边界明确的请求：
+使用 Claude Code 或 OpenCode 时，将 `codex` 替换为 `claude-code` 或
+`opencode`。完成注册并开启新的 Agent 会话后，可以显式或隐式调用 ABI。
+
+**显式调用：** 使用 `/abi`，直接指定 ABI 和分析类型。
 
 ```text
-使用 ABI 为 rnaseq-demo/samples.tsv 规划差异表达分析。
-使用 rnaseq-demo/config/rnaseq_expression.yaml，并把审查文件写入
-rnaseq-demo/results/agent-review。查询插件，运行预检和 dry-run，
-然后汇总样本、阶段、工具、资源、警告和输出路径。
+/abi 请使用 ABI 分析 rnaseq-demo/samples.tsv，分析类型为
+rnaseq_expression，并将结果保存到 rnaseq-demo/results/agent-review。
+```
+
+**隐式调用：** 只描述分析任务，让已加载 ABI Skill 的 Agent 识别意图并选择
+或确认分析类型。
+
+```text
+请分析 rnaseq-demo/samples.tsv，并将结果保存到
+rnaseq-demo/results/agent-review。
+```
+
+如果需要严格限制执行边界，可以在上述任一种请求后补充：
+
+```text
+使用 rnaseq-demo/config/rnaseq_expression.yaml。先查询插件，运行预检和
+dry-run，然后汇总样本、阶段、工具、资源、警告和输出路径。
 在我批准摘要之前，不要执行 abi_run。
 ```
 

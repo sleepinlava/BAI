@@ -205,9 +205,6 @@ docs/*/*paper*.md
 !docs/zh/paper_outline.md
 !docs/en/paper_evaluation.md
 !docs/zh/paper_evaluation.md
-docs/*/comprehensive-testing-audit.md
-docs/*/full-engineering-gap-audit.md
-docs/*/tool-engineering-gap-audit.md
 docs/*/plugin_report_figure_spec.md
 paper-evaluation/
 docs/diagrams

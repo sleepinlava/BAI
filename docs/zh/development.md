@@ -1,6 +1,7 @@
 # 开发指南
 
-本仓库发布一个 Python 分发包：`abi-agent`。
+ABI 只发布一个 Python 分发包：`abi-agent`。本文主要说明代码放在哪里、各层如何分工。
+具体的开发和检查顺序见 `development_workflow.md`。
 
 ## 源代码树
 
@@ -14,16 +15,16 @@ src/abi/
   workflow/           ResourceManifest、工作流验证、figure_specs 加载
   plugins/            内置分析类型插件
     metagenomic_plasmid/   自包含插件包（引擎在 _engine/ 中，64 工具，90 节点 DAG）
-	    easymetagenome/        P0 猎枪宏基因组（12 工具，3 预设，内部处理器）
-	    viral_viwrap/          托管外部 CLI 插件包装 ViWrap 1.3.1（1 工具）
-    rnaseq_expression.py   批量 RNA-seq（6 工具）
+    easymetagenome.py     猎枪宏基因组适配器（10 工具，25 节点 DAG）
+    viral_viwrap.py       托管外部 CLI 适配器（1 工具，7 节点 DAG）
+    rnaseq_expression.py  批量 RNA-seq（5 工具，5 节点 DAG）
     wgs_bacteria.py        细菌 WGS（5 工具）
-    amplicon_16s.py        16S 微生物组（8 工具）
+    amplicon_16s.py        16S 微生物组（10 工具）
     metatranscriptomics.py 宏转录组（3 工具）
   autoplasm/          向后兼容的重导出垫片 → plugins/metagenomic_plasmid/_engine/
-  sciplot/            论文级科研图形编译器 — FigureSpec → Validate → Render → Export →
-                      Lint → Provenance。Pydantic schema，15 种图表类型，3 套主题，
-                      11 条 lint 规则，SHA256 溯源。（v1.4.0）
+  sciplot/            基于 Matplotlib 的论文级科研图形编译器 — FigureSpec → Validate →
+                      Render → Export → Lint → Provenance。Pydantic schema，
+                      15 种图表类型、3 套主题、lint 与 SHA-256 溯源。
   dag_planner.py      UniversalDAG — 从 pipeline_dag.yaml 声明式生成执行计划
   tsv_mapping.py      声明式 TSV 列映射器 — YAML 驱动的输出解析，3 种源类型
   _shared.py          共享工具：_read_tsv、_display_command、_plan_dict、_common_overrides
@@ -69,7 +70,7 @@ src/abi/
 | `abi.dag` | `infer_dag`、`ABIDAG`、`StepBinding` — DAG 推断，支持文献 + 路径 + 验证三层模型 |
 | `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — 声明式计划生成，所有 7 个插件共用 |
 | `abi.tsv_mapping` | `TSVMapper`、`generate_rows` — YAML 驱动 TSV/JSON/日志解析，3 种源类型 |
-| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 论文级科研图形编译器，15 种图表类型，plotnine+seaborn 后端（v1.4.0） |
+| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 基于 Matplotlib、支持 15 种图表类型的论文级图形编译器 |
 | `abi.errors` | `ABIError`、`ConfigError`、`SampleSheetError`、`ToolError` |
 | `abi.diagnostics` | 错误分类 + `DiagnosticHint` + `classify_exception` |
 | `abi.json_utils` | 带 `ABIJSONError` 的 JSON 文件/负载加载 |
@@ -137,7 +138,8 @@ Docker `/app` 上下文；该目录的变化也必须触发 Docker workflow。
 
 回归测试覆盖位于 `tests/unit/test_executor.py` 和 `tests/unit/test_step_contract.py` 中。
 
-**当前测试状态 (2026-07-07)**: 约 2252 通过, 11 跳过, 3 预存失败, 83% 覆盖率, 0 ruff 错误, 0 mypy 错误。
+测试数量和覆盖率会频繁变化；当前结果以最新 CI 为准。持续门禁与本地命令见
+[测试指南](testing.md)。
 
 ## 运行时资产
 
@@ -149,7 +151,6 @@ Docker `/app` 上下文；该目录的变化也必须触发 Docker workflow。
 - `plugins/`
 - `integrations/` — Claude Code、OpenCode 和 Codex 的平台原生集成包
 - `examples/`
-- `data/examples/`
 - `scripts/`
 
 大型或生成的运行时状态被忽略：
@@ -158,18 +159,16 @@ Docker `/app` 上下文；该目录的变化也必须触发 Docker workflow。
 - `resources/`
 - `results/`
 - `log/`
-- Nextflow 工作目录
+- Nextflow 与 Snakemake 工作目录
 
 工具执行通过 ``abi.config.resolved_mamba_root()`` 解析环境，优先级如下：
 1. ``ABI_MAMBA_ROOT`` 环境变量（显式覆盖）
 2. ``AUTOPLASM_MAMBA_ROOT`` 环境变量（旧版兼容）
 3. ``PROJECT_ROOT / ".mamba"``（默认本地安装）
 4. ``PROJECT_ROOT.parent / "abi-envs"``（同级目录）
-每个工具的 ``env_name`` 在运行时从 ``environments.yaml`` 解析
-（所有 18 个 conda 环境和 98 个工具→环境映射的单一事实来源）。
-（2026-06-21 修复：metaPhlAn/kraken2 的 env_name 从错误的 ``autoplasm-stats`` 更正为 ``stats``；
-新增 mmseqs2 ResourceSpec；amrfinderplus install_post: makeblastdb；kraken2 S3 下载）。
-（2026-06-21 pm 三维修复：图表系统从旧 FigureEngine 迁移至 abi-sciplot（8 张科学图表，PDF+SVG+PNG）；GenericABIExecutor 支持样本级并行执行（ThreadPoolExecutor）；CoverM 解析器修复动态列名匹配）。
+每个工具的 ``env_name`` 在运行时从 ``environments.yaml`` 解析。当前清单声明
+19 个 Conda 环境和 98 个工具→环境映射；代码和文档应从清单派生这些清单，
+不要复制一份独立维护。
 
 ### 并行执行
 

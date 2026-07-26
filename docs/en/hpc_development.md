@@ -1,190 +1,179 @@
-# ABI HPC Development Guide
+# Runtime and HPC Development Guide
 
-> **Status**: Active (2026-06-18)
-> **Audience**: Plugin developers deploying ABI pipelines on HPC clusters
+ABI supports four execution engines. They all consume the same compiled plan; the difference is
+where and how each step runs.
 
-## Overview
+| Engine | Implementation | Typical use |
+| --- | --- | --- |
+| `local` | `src/abi/runtimes/local.py` | One host, direct subprocess execution |
+| `nextflow` | `src/abi/runtimes/nextflow.py` | Nextflow DSL2 on a workstation, cluster, or cloud |
+| `snakemake` | `src/abi/runtimes/snakemake.py` | Snakemake with marker-file completion and optional Conda |
+| `hpc` | `src/abi/runtimes/hpc.py` | ABI-native Slurm/PBS submission and polling |
 
-ABI pipelines can execute on three runtimes:
+`abi plan` writes `execution_plan.json` and `compiled_plan.json` without choosing a backend.
+The engine is selected later with `abi run --engine`.
 
-```text
-Runtimes
-  ├── local        — Single machine, subprocess-based (default)
-  ├── nextflow     — DSL2 export via ``abi export-nextflow``
-  └── hpc          — Native Slurm jobs; PBS script/submission compatibility
-```
+## Preflight
 
-## Local Runtime (Current Default)
-
-All Phase 2-5 development uses the local runtime.  Tools are invoked as
-subprocesses via ``GenericCommandSkill`` with conda environment isolation.
-
-### Resource requirements per tool
-
-| Tool | CPU | Memory | Disk I/O | Typical runtime |
-| --- | --- | --- | --- | --- |
-| fastp | 1-4 | 2 GB | Read-heavy | 5-15 min/sample |
-| STAR | 8-16 | 32 GB | Heavy | 30-60 min/sample |
-| featureCounts | 1-4 | 4 GB | Light | 2-5 min/sample |
-| DESeq2 (R) | 1 | 4 GB | Light | 1-5 min |
-| SPAdes | 8-16 | 64 GB | Heavy | 1-4 hr/sample |
-| Prokka | 4-8 | 8 GB | Moderate | 10-30 min/sample |
-| MLST | 1 | 1 GB | Light | < 1 min/sample |
-| AMRFinderPlus | 4-8 | 8 GB | Moderate | 5-15 min/sample |
-| cutadapt | 1-4 | 2 GB | Read-heavy | 5-15 min/sample |
-| vsearch | 1-4 | 8 GB | Moderate | 10-30 min/step |
-| MetaPhlAn | 4-8 | 16 GB | Moderate | 20-60 min/sample |
-| HUMAnN | 8-16 | 32 GB | Heavy | 1-6 hr/sample |
-
-## HPC Execution Strategy
-
-### Nextflow export
+Run a side-effect-free check for the intended engine before submission:
 
 ```bash
-abi export-nextflow --type rnaseq_expression \
+abi check \
+  --type rnaseq_expression \
   --config config.yaml \
-  --outdir nextflow_pipeline/
+  --sample-sheet samples.tsv \
+  --engine hpc
 ```
 
-Produces a self-contained Nextflow DSL2 pipeline that can be submitted
-to SLURM/PBS clusters.  Each tool becomes a Nextflow process with
-per-step resource directives.
+This checks plugin inputs and resources and, unless `--no-check-runtime` is used,
+the required runtime executables. A successful preflight does not prove that
+cluster nodes can see the same paths; verify shared storage, modules/Conda
+environments, and scheduler account policy separately.
 
-### Native HPC submission
+## Nextflow
+
+Export a standalone DSL2 file:
 
 ```bash
-abi run --type rnaseq_expression \
-  --engine hpc \
-  --scheduler slurm \
-  --partition production \
-  --account proj_abi \
+abi export-nextflow \
+  --type rnaseq_expression \
   --config config.yaml \
+  --sample-sheet samples.tsv \
+  --output workflow.nf
+
+nextflow run workflow.nf -resume
+```
+
+Or let ABI export and launch it:
+
+```bash
+abi run \
+  --type rnaseq_expression \
+  --engine nextflow \
+  --config config.yaml \
+  --sample-sheet samples.tsv \
+  --workflow workflow.nf \
+  --work-dir work/nextflow \
+  --nextflow-profile slurm \
+  --resume \
   --confirm-execution
 ```
 
-ABI creates one payload and scheduler script per worker-scoped step, submits
-real `afterok` dependencies, polls `squeue` with `sacct` fallback, cancels timed
-out jobs, and aggregates atomic step result files. Driver-scoped validation runs
-before the first submission. `--resume` reuses only non-empty outputs whose
-checksums match `provenance/checksums.json`.
+Relevant options include `--nextflow-bin`, `--nextflow-profile`, `--executor`,
+`--nxf-home`, and `--work-dir`.
 
-Run `abi check --type <plugin> --config config.yaml --engine hpc` before
-submission. Production support targets Slurm; PBS retains compatible directives
-and dependency submission but has a smaller validation surface.
+## Snakemake
 
-### Key HPC considerations for plugin developers
-
-1. **Tool contracts declare resources**: Each ``tool_contracts/*.yaml`` should
-   include realistic ``resources:`` blocks (cpu, memory, walltime) so the
-   HPC scheduler can allocate correctly.
-
-2. **Database volumes**: Plugins that reference large databases (Kraken2,
-   SILVA, GTDB, MetaPhlAn, HUMAnN) should declare database paths in
-   ``abi-plugin.yaml`` resources section, not hardcoded.
-
-3. **Checkpoint/restart**: The checksum chain in ``provenance/checksums.json``
-   enables resume-after-failure.  A failed step can be re-run without
-   recomputing upstream steps.
-
-4. **Parallel sample execution**: The local runtime already supports
-   ``--workers N`` for intra-node parallelism.  HPC execution extends
-   this to cross-node parallelism via job arrays.
-
-## Database Management
-
-### Resource manifest
-
-Every real execution generates ``provenance/resource_manifest.json``:
-
-```json
-{
-  "analysis_type": "metagenomic_plasmid",
-  "resources": [
-    {
-      "id": "genomad_db",
-      "path": "/shared/databases/genomad_db_v1.5",
-      "version": "1.5",
-      "checksum_sha256": "abc123...",
-      "validated_at": "2026-06-18"
-    }
-  ]
-}
-```
-
-### Database directory convention
-
-```text
-resources/
-  genomad_db/           # geNomad marker database
-  bakta_db/             # Bakta annotation database  
-  amrfinder_db/         # NCBI AMRFinderPlus database
-  kraken2_db/           # Kraken2/Bracken index
-  silva_138/            # SILVA 16S taxonomy
-  gtdb_r207/            # GTDB taxonomy
-  metaphlan_db/         # MetaPhlAn marker database
-  humann_db/            # HUMAnN ChocoPhlAn + UniRef
-  star_index_hg38/      # STAR index for human GRCh38
-  star_index_ecoli/     # STAR index for E. coli
-```
-
-### Download and validation
+Export a standalone Snakefile:
 
 ```bash
-# Example: validate a database
-abi setup-resources --type metagenomic_plasmid --confirm
-# → downloads DBs, computes checksums, writes resource_manifest.json
+abi export-snakemake \
+  --type rnaseq_expression \
+  --config config.yaml \
+  --sample-sheet samples.tsv \
+  --output Snakefile
+
+snakemake --snakefile Snakefile --cores 8 --use-conda
 ```
 
-## Environment Management
+Or execute through ABI:
 
-### Conda environments per analysis type
-
-| Plugin | Environment | Key packages |
-| --- | --- | --- |
-| metagenomic_plasmid | abi-qc, abi-asm, abi-annot, abi-amr | fastp, megahit, spades, bakta, prokka, amrfinderplus |
-| rnaseq_expression | rnaseq | fastp, star, featurecounts, r-deseq2 |
-| wgs_bacteria | rnaseq | fastp, spades, prokka, mlst, amrfinderplus |
-| amplicon_16s | amplicon | cutadapt, vsearch, python-diversity |
-| metatranscriptomics | abi-qc, abi-stats | fastp, star, featurecounts |
-| easymetagenome | easymetagenome | fastp, megahit, quast, prokka, kraken2, metaphlan, humann |
-| viral_viwrap | viral_viwrap | ViWrap 1.3.1 toolchain |
-
-### Container support
-
-Docker/Singularity images as an alternative to conda environments:
-
-```yaml
-execution:
-  container: docker://biocontainers/fastp:v0.23.2
+```bash
+abi run \
+  --type rnaseq_expression \
+  --engine snakemake \
+  --config config.yaml \
+  --sample-sheet samples.tsv \
+  --workflow Snakefile \
+  --confirm-execution
 ```
 
-## Performance Benchmarks
+ABI invokes Snakemake with `--rerun-incomplete` and writes provenance on
+success and failure. Marker files represent completed rules; do not treat the
+presence of a work directory alone as successful completion. The generic CLI
+accepts `--resume`, but the current Snakemake backend does not add a separate
+Snakemake resume flag.
 
-### Small test dataset (Phase 6 target)
+## Native Slurm/PBS
 
-| Plugin | Input | Tools | Walltime (local, 16 cores) |
-| --- | --- | --- | --- |
-| rnaseq_expression | 4 samples, 1M reads each | fastp→STAR→featureCounts→DESeq2 | ~2 hr |
-| wgs_bacteria | 2 isolates, 1M reads each | fastp→SPAdes→Prokka→MLST→AMRFinderPlus | ~6 hr |
-| amplicon_16s | 4 samples, 100K reads each | cutadapt→vsearch(×3)→taxonomy→diversity | ~1 hr |
-| metatranscriptomics | 4 samples, 5M reads each | fastp→STAR→featureCounts | ~3 hr |
+```bash
+abi run \
+  --type rnaseq_expression \
+  --engine hpc \
+  --scheduler slurm \
+  --partition production \
+  --account project_abi \
+  --qos normal \
+  --config config.yaml \
+  --sample-sheet samples.tsv \
+  --resource-profile hpc_standard \
+  --hpc-timeout 86400 \
+  --poll-interval 30 \
+  --resume \
+  --confirm-execution
+```
 
-### Production dataset estimates (HPC, 32 cores × 10 nodes)
+The native runtime creates payload and scheduler scripts for worker-scoped
+steps, submits dependency-linked jobs, polls the scheduler, records job IDs and
+atomic step results, and cancels timed-out work. Slurm has the primary
+production validation surface. PBS is supported for compatible directives and
+dependency submission but should be accepted against the target cluster before
+production use.
 
-| Plugin | Samples | Reads/sample | Estimated walltime |
-| --- | --- | --- | --- |
-| rnaseq_expression | 100 | 50M | ~6 hr (STAR-dominated) |
-| wgs_bacteria | 500 | 5M | ~12 hr (SPAdes-dominated) |
-| amplicon_16s | 200 | 200K | ~4 hr (vsearch-dominated) |
-| metatranscriptomics | 50 | 100M | ~24 hr (HUMAnN-dominated) |
+Resource choices can come from step contracts, a profile
+(`dev_small`, `hpc_standard`, `hpc_large`), or command-line overrides:
 
-## Security Considerations
+```bash
+--cpu 16 --memory 64GB --walltime 08:00:00 --accelerator gpu:v100:1
+```
 
-1. **Path traversal**: All plugin path resolution uses ``abi._shared._resolve_path``
-   which validates containment within project directories (B25 fix).
-2. **Command injection**: ``SafeFormatDict`` prevents injection via template
-   parameter values.
-3. **Network isolation**: Tools flagged ``network: false`` in their contracts
-   cannot access external resources during execution.
-4. **Database integrity**: Resource manifests with SHA256 checksums ensure
-   database files haven't been tampered with.
+Container overrides are also available:
+
+```bash
+--container-image ghcr.io/example/abi-rnaseq:1.5.7.1 \
+--container-runtime apptainer
+```
+
+Supported runtime names are `docker`, `podman`, `singularity`, and `apptainer`.
+The container image still needs access to input, output, and resource paths.
+
+## Conda and resources
+
+`environments.yaml` is the tool-to-environment source of truth. The current
+plugin assignments are:
+
+| Plugin | Declared environments |
+| --- | --- |
+| `rnaseq_expression` | `rnaseq` |
+| `wgs_bacteria` | `wgs` |
+| `amplicon_16s` | `amplicon` |
+| `metatranscriptomics` | `abi-qc`, `abi-stats` |
+| `easymetagenome` | `easymeta-p0`, `easymeta-humann` |
+| `viral_viwrap` | `autoplasm-base` (ViWrap itself is managed externally) |
+| `metagenomic_plasmid` | 11 `autoplasm-*`/`stats` environments |
+
+Set `ABI_MAMBA_ROOT` or pass `--mamba-root` to select a shared environment
+root. Use `abi check-resources` for read-only diagnosis and
+`abi setup-resources --dry-run` before any confirmed setup.
+
+The managed cloud release layout and strict certification process are defined
+in [Release-ready runtime locks](runtime_locks.md). Do not interchange the
+top-level `ABI_RUNTIME_RESOURCE_ROOT` used by runtime locks with the legacy
+plasmid database meaning of `ABI_RESOURCE_ROOT`.
+
+## Acceptance checklist
+
+Before calling a cluster deployment production-ready:
+
+1. Run strict contract lint for the affected plugin.
+2. Validate input and resource visibility from a compute node, not only the
+   login node.
+3. Export and inspect the selected workflow representation.
+4. Run a small `--smoke` job with the same scheduler/profile/container path.
+5. Test failure, timeout, cancellation, and `--resume`.
+6. Verify standard tables, provenance, checksums, report limitations, and
+   scheduler IDs.
+7. Capture a strict runtime lock for the release scope.
+
+See the [production manual acceptance checklist](production_manual_acceptance_checklist.md)
+for the full set of local and HPC gates.

@@ -1,11 +1,15 @@
 # ABI Plugin Production Manual Acceptance Checklist
 
-This document is used for manual acceptance of ABI plugins before going live in a real production environment. The checks are categorized into the following two environments:
+Use this checklist before an ABI plugin is put into production. Keep local checks and production
+platform checks separate:
 
-1. **Local IDE / General Machine Acceptance**: Verify configuration, plans, command rendering, path resolution, safety gates, mock/smoke, and artifact contracts.
-2. **HPC / Production Platform Acceptance**: Verify real tools, real databases, schedulers, shared storage, performance, concurrency, and failure recovery.
+1. **Local IDE or general machine**: configuration, plans, rendered commands, paths, safety gates,
+   mock/smoke behavior, and artifact contracts.
+2. **HPC or production platform**: real tools and databases, schedulers, shared storage, performance,
+   concurrency, and failure recovery.
 
-> Passing local `dry-run`, `--mock`, or `--smoke` only proves that the software contracts and control flow are basically correct; it cannot substitute for real production runs on HPC, nor can it prove that biological results are correct.
+A passing local `dry-run`, `--mock`, or `--smoke` confirms only the control flow and software
+contracts. It does not replace a production run on HPC or validate the biological result.
 
 ## 1. Acceptance Scope
 
@@ -21,7 +25,7 @@ viral_viwrap
 wgs_bacteria
 ```
 
-It is recommended to create a separate acceptance record for each plugin, retaining at least the following information:
+Keep a separate acceptance record for each plugin with at least the following information:
 
 | Field | Content |
 |---|---|
@@ -86,7 +90,7 @@ abi init --type <TYPE> --outdir /tmp/abi-uat/<TYPE>
 - [ ] **L-015** No residual half-initialized files remain on init failure.
 - [ ] **L-016** Chinese characters, spaces, and long paths are handled correctly.
 
-### Current Implementation Status
+### Current status
 
 All 7 built-in plugins now provide `sample_sheet_template.tsv`. Among them,
 `amplicon_16s`, `metagenomic_plasmid`, and `viral_viwrap` templates have been supplemented; regression tests
@@ -173,7 +177,7 @@ Expected tool path resolution order:
 autoplasm check-tools --config <CONFIG.yaml>
 ```
 
-### Current Implementation Status
+### Current status
 
 All 7 built-in plugins have implemented input, tool, and resource preflight. Acceptance must still, on a per-plugin basis, manufacture missing inputs,
 missing tools, and missing resources, and confirm a `fail` return code and non-zero exit code; do not conclude the runtime environment is ready based solely on a single `pass` result from a valid configuration.
@@ -303,7 +307,7 @@ abi setup-resources \
 - [ ] **L-132** Resource manifest records version, source, date, checksum, and file count.
 - [ ] **L-133** Small resources are checkable and reusable after real download.
 
-### Current Implementation Status and Known Risks
+### Current status and known risks
 
 Resource setup return lines have been unified to include the `mock` boolean field; `metagenomic_plasmid`'s
 `ResourceStatus` and resource manifest also record this field. L-124 must cover all 7 plugins and also compare target
@@ -405,7 +409,7 @@ For PBS environments, replace with `--scheduler pbs`.
 - [ ] **H-020** partition/account/qos parameters must not allow shell or scheduler directive injection.
 - [ ] **H-021** Scheduler scripts include `set -euo pipefail` or equivalent strict error handling.
 
-### Current Known Limitations
+### Known limitations
 
 `HpcRuntime.dry_run()` has implemented HPC script generation, but the main `abi dry-run` currently does not expose `--engine hpc`. CLI users cannot directly preview complete HPC scripts; this should be recorded as an acceptance gap.
 
@@ -515,7 +519,32 @@ abi run \
 - [ ] **H-116** On Nextflow failure, ABI CLI exit code is non-zero and points to stderr path.
 - [ ] **H-117** Nextflow work and cache cleanup strategy is clear.
 
-## 21. Performance and Capacity
+## 21. Snakemake Production Acceptance
+
+```bash
+abi run \
+  --engine snakemake \
+  --type <TYPE> \
+  --config <PROD_CONFIG.yaml> \
+  --workflow <RESULT_DIR>/snakemake/Snakefile \
+  --mamba-root <MAMBA_ROOT> \
+  --confirm-execution
+```
+
+- [ ] **S-001** Generated `Snakefile` parses and its rules preserve ABI DAG dependencies.
+- [ ] **S-002** Snakemake is resolved from `PATH` or `ABI_SNAKEMAKE_BIN`; the selected
+  executable and version are recorded in the acceptance evidence.
+- [ ] **S-003** The invocation uses `--use-conda`, and every external-tool rule resolves
+  the environment assigned by `environments.yaml`.
+- [ ] **S-004** Completion markers cannot make missing or incomplete outputs appear successful.
+- [ ] **S-005** `snakemake.stdout.log`, `snakemake.stderr.log`, command rows, and final
+  provenance agree on status and return code.
+- [ ] **S-006** A failed or timed-out Snakemake run returns a non-zero ABI result and points
+  to the stderr log.
+- [ ] **S-007** `export-snakemake --smoke` and `run --engine snakemake --smoke` pass before
+  real-tool production acceptance.
+
+## 22. Performance and Capacity
 
 - [ ] **H-120** Record plan, submission, queue, run, and report elapsed times.
 - [ ] **H-121** Record single-sample and multi-sample peak memory.
@@ -528,7 +557,7 @@ abi run \
 - [ ] **H-128** Concurrent worker count matches node CPU/memory.
 - [ ] **H-129** Excessively large samples or overly long paths do not cause command line, filename, or scheduler script failures.
 
-## 22. Traceability and Result Archiving
+## 23. Traceability and Result Archiving
 
 - [ ] **H-130** `execution_plan.json` is consistent with the actual execution configuration.
 - [ ] **H-131** `commands.tsv` includes all steps and their final status.
@@ -546,7 +575,7 @@ abi run \
 
 # Part 3: Production Release and Defect Management
 
-## 23. Production Release Threshold
+## 24. Production Release Threshold
 
 A plugin can only be deemed ready for production when all of the following conditions are met simultaneously:
 
@@ -559,7 +588,7 @@ A plugin can only be deemed ready for production when all of the following condi
 - [ ] Real results pass baseline or domain expert review.
 - [ ] Known limitations, running costs, database licenses, and operational procedures are formally documented.
 
-## 24. Current Fix Status and Recommended Priority Items
+## 25. Open fixes and priorities
 
 Completed items requiring ongoing regression:
 
@@ -574,7 +603,7 @@ Still recommended for priority treatment:
 3. Explicit tool path checks should supplement execute permission and version probing.
 4. The main CLI should provide an HPC dry-run / scheduler script preview entry point.
 
-## 25. Individual Acceptance Record Template
+## 26. Individual Acceptance Record Template
 
 ```markdown
 ### Check Item: L-070 dry-run does not invoke real tools
@@ -594,4 +623,3 @@ Still recommended for priority treatment:
 - Tester:
 - Time:
 ```
-

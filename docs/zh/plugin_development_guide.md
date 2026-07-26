@@ -1,12 +1,12 @@
 # 插件开发指南
 
-ABI 插件在共享生命周期 API 背后暴露生物学分析类型。
+一个 ABI 插件对应一种生物学分析，并通过共享生命周期对外提供能力。新插件优先使用
+下面的声明式接口；只有 manifest 无法表达所需行为时，才使用底层 Python 协议。
 
 ## 推荐的声明式接口
 
-将 `abi-plugin.yaml` 放在插件模块旁边，并继承
-`DeclarativeABIPlugin`。基类会从 manifest 读取插件身份、工具注册表和
-标准表路径，因此这些信息只需声明一次：
+将 `abi-plugin.yaml` 放在插件模块旁边，并继承 `DeclarativeABIPlugin`。基类会从
+manifest 读取插件身份、工具注册表和标准表路径，避免在多个位置重复维护：
 
 ```python
 from abi.plugin import DeclarativeABIPlugin
@@ -329,7 +329,7 @@ assertions:
 | `abi._shared` | `_read_tsv`、`_display_command`、`_plan_dict`、`_common_overrides` |
 | `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — DAG 驱动的 `build_plan()`（2026-06-18 新增） |
 | `abi.tsv_mapping` | `TSVMapper`、`generate_rows` — 声明式 TSV 列映射（2026-06-18 新增） |
-| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 论文级科研图形编译器。15 种图表类型（含 PCoA、火山图、堆叠柱状图、系统发育热图），plotnine+seaborn 后端。（v1.4.0，2026-06-20 新增） |
+| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 基于 Matplotlib 的论文级图形编译器，支持 15 种图形、3 套主题、lint 和 SHA-256 溯源 |
 | `abi.contracts` | `WorkflowSpec`、`WorkflowStepSpec`、`load_workflow_spec`、`run_contract_lint` — L1/L2/L3 工作流声明与验证 |
 | `abi.report` | `write_plugin_report`、`render_figures_via_sciplot` — 报告生成与图表渲染 |
 
