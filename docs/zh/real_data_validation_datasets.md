@@ -632,3 +632,36 @@ manifest 逐一复核一致；分层分析输出位于其 `analysis/` 子目录�
 `docs/paper_examples/scapp_status.tsv` 同步更新，`limitations.tsv` 中
 `SCAPP-TRUTH-PENDING` 由 `SCAPP-FP-INTERPRETATION` 取代（严格 concordance precision
 不得解释为生物学假阳性率）。
+
+### 9.8 原版 SCAPP 复现与 ABI-SCAPP 节点端到端验证（2026-07-26）
+
+在 v2 冻结证据基础上，进一步完成了原版 SCAPP 独立复现与 ABI 插件节点化验证。
+
+**原版 SCAPP 复现**：使用论文 protocol（SPAdes 3.13.1 `--meta -k 21,33,55,77`）对 SRR11038083
+重新装配，然后以 SCAPP 官方默认参数 `-k 77` 运行。最终得到 **102** 条 confident plasmid
+predictions；以同一 PLSDB v2018-12-05 快照和论文 contig-coverage 规则重建的 87 条 truth
+references 为 gold standard，precision **12.75%**（13/102）、recall **81.61%**（71/87）、
+F1 **22.05%**。与论文报告的 82 predictions、P/R/F1 17.1/35.9/23.1% 相比，F1 接近，但
+召回率显著更高、精确率偏低，反映 gold standard 构建细节与原版存在差异。
+
+**ABI-SCAPP 节点**：将 SCAPP 正式接入 `metagenomic_plasmid` 插件的 `plasmid_binning_scapp`
+节点。修正了 `assembly_metaspades` 的 `assembly_graph.fastg` 输出声明、SCAPP 命令模板
+（`-g graph -o output -k 77 -p threads -r1/-r2 reads`）以及 read1/read2 输入绑定。
+端到端 ABI 运行（`qc_fastp → assembly_metaspades → genomad → plasmid_consensus → scapp`）
+输出 **103** 条 predictions，precision **12.62%**（13/103）、recall **81.61%**（71/87）、
+F1 **21.86%**。`abi validate-result` 返回 `valid=true`，`abi contract-lint --strict` 通过。
+
+**一致性**：ABI-SCAPP 与原版 SCAPP 在 predictions、TP、recalled truth 和 P/R/F1 上几乎
+完全一致（103 vs 102，12.62% vs 12.75%，21.86% vs 22.05%），证明 ABI 插件节点与原版
+工具行为一致。剩余微小差异来自 assembly 的 k-mer 集合（ABI 使用 metaspades 默认
+`-k 21,33,55`，原版使用 `-k 21,33,55,77`）。
+
+**产物**：原版复现完整链保存在云端
+`/root/autodl-tmp/abi-real-data/comparisons/scapp_original_20260725/`（含 assembly、
+SCAPP、gold truth、scoring、SHA256SUMS）；ABI 运行结果位于
+`/root/autodl-tmp/abi-real-data/results/plasmid_scapp_abi_node/`。
+三方对比表 `three_way_comparison.tsv` 与 scorer 摘要已生成并记录 SHA-256。
+
+根目录 `metrics.tsv` 新增 `original_scapp_predictions/precision/recall/f1` 与
+`abi_scapp_predictions/precision/recall/f1` 八行，状态为 `claim_eligible`；
+`docs/paper_examples/scapp_status.tsv` 同步更新。
