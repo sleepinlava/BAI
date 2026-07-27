@@ -856,7 +856,7 @@ nodes:
     inputs:
       long_reads:
         type: file
-        format: fastq.gz
+        format: fastq
         source: host_removal_minimap2_long.clean_long_reads
         fallback: qc_hifiadapterfilt.filtered_hifi_reads
       threads:
