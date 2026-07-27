@@ -1,5 +1,6 @@
 # Known limitations for the easymetagenome plugin.
-# DRAFT — placeholder content pending review by the workflow authors.
+# Reviewed and updated 2026-07-27 against the AutoDL cloud deployment audit
+# (see 'abi paper writing/云端资源与工具注册核查表.md', gaps G2/G3/G4/G9).
 # These are rendered into every report to prevent over-interpretation.
 
 limitations:
@@ -10,3 +11,6 @@ limitations:
   - "HUMAnN4 functional profiles cover only genes and pathways represented in the UniRef/ChocoPhlAn databases; uncharacterized gene families are invisible to this analysis. (Ref: Beghini et al., eLife 2021, https://doi.org/10.7554/eLife.65088)"
   - "Stratified functional assignments link pathways to taxa only through database annotations; low-coverage organisms yield noisy or missing stratifications. (Ref: Beghini et al., eLife 2021, https://doi.org/10.7554/eLife.65088)"
   - "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs."
+  - "Cloud Kraken2 database is k2_standard_20260226 (frozen 2026-07-27), not the k2_pluspf_20240605 snapshot used by the reference study; the standard snapshot lacks the protozoa/fungi genomes present in pluspf, so eukaryotic gut taxa may be under-detected or misassigned. Endpoint E5 (genus-level rank-consistency vs the reference study's Supplementary Table S3) is therefore degraded to directional/order consistency rather than strict pre-registered thresholds. (Ref: cloud audit cloud_audit_20260727_phaseB/D logs; gap G2)"
+  - "KneadData host-filtering index is the original official Homo_sapiens_Bowtie2_v0.1 (Ensembl GRCh37, 85 sequences, built 2015-06-12; tarball SHA-256 28bd91e3...3f801f frozen); unlike the reference study's hg37dec index it contains no decoy sequences and uses Ensembl chromosome naming, so host-removal stringency may differ slightly. (Ref: cloud audit 2026-07-27, gap G3)"
+  - "HUMAnN is pinned to v3.9 (channel maximum as of 2026-07-27; humann>=4 is currently unsatisfiable on bioconda/PyPI), paired with ChocoPhlAn v201901_v31, UniRef90 201901b_full and MetaPhlAn mpa_vJan25_CHOCOPhlAnSGB_202503; functional-profile differences relative to HUMAnN4-based studies are expected and version-tagged in provenance. (Ref: cloud audit 2026-07-27, gaps G4/G9)"
