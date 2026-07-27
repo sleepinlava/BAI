@@ -80,6 +80,7 @@ ABI CLI 命令行界面。
 from __future__ import annotations
 
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -2434,6 +2435,14 @@ def contract_lint_command(
         "--strict",
         help="Treat warnings as errors (non-zero exit code on warnings).",
     ),
+    check_cli: bool = typer.Option(
+        False,
+        "--check-cli",
+        help=(
+            "Additionally run each tool's --help and verify that the literal flags "
+            "used by command_template exist in the tool's real CLI."
+        ),
+    ),
 ) -> None:
     """Lint pipeline DAG and tool contracts for structural errors (B18/B20/B19).
 
@@ -2444,6 +2453,13 @@ def contract_lint_command(
     - **Orphan nodes** — nodes with no dependents and no dependencies.
     - **Assertion syntax** — compiles every assertion expression to check validity.
     - **Contract consistency** — cross-references contracts with the tool registry.
+    - **Source correctness** — explicit ``NODE.KEY`` and template ``{x}.KEY`` input
+      sources must resolve to declared outputs; explicit-source formats must agree;
+      ``required: false`` inputs must not appear as command-template fields.
+    - **Registry input parity** — declared registry inputs must be used by the
+      tool's ``command_template``.
+    - **Environment assignments** — env names in ``environments.yaml``
+      ``tool_assignments:`` must be defined under ``environments:``.
 
     Exit code 0 means no errors found.  Use ``--strict`` to also fail on warnings.
 
@@ -2523,6 +2539,15 @@ def contract_lint_command(
                 registry_tools = {str(tool.get("id", "")): tool for tool in registry.list_tools()}
                 registry_ids = set(registry_tools)
 
+        # Load environments.yaml so assigned-but-undefined envs are caught.
+        environments = None
+        try:
+            from abi.runtime_environment import load_environment_assignments
+
+            environments = load_environment_assignments()
+        except Exception:
+            environments = None
+
         result = run_contract_lint(
             dag_spec,
             contracts=contracts,
@@ -2530,7 +2555,44 @@ def contract_lint_command(
             registry_tools=registry_tools,
             plugin_root=root,
             enforce_output_contract_coverage=True,
+            environments=environments,
         )
+
+        if check_cli:
+            from abi.contracts.cli_check import check_cli_flags
+
+            if hasattr(plugin, "registry"):
+                cli_findings, cli_skipped = check_cli_flags(plugin.registry())
+                result["findings"].extend(
+                    {
+                        "severity": f.severity,
+                        "check": f.check,
+                        "detail": f.detail,
+                        "location": f.location,
+                    }
+                    for f in cli_findings
+                )
+                result["error_count"] += sum(1 for f in cli_findings if f.severity == "error")
+                result["warning_count"] += sum(1 for f in cli_findings if f.severity == "warning")
+                result["passed"] = result["error_count"] == 0
+                result["cli_check_skipped"] = [
+                    {
+                        "tool_id": s.tool_id,
+                        "executable": s.executable,
+                        "env_name": s.env_name,
+                        "reason": s.reason,
+                    }
+                    for s in cli_skipped
+                ]
+            else:
+                result["cli_check_skipped"] = [
+                    {
+                        "tool_id": "",
+                        "executable": "",
+                        "env_name": "",
+                        "reason": f"Plugin {analysis_type!r} provides no runtime registry.",
+                    }
+                ]
 
         typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
@@ -2542,6 +2604,88 @@ def contract_lint_command(
         raise
     except Exception as exc:
         _fail(exc)
+
+
+@app.command("status")
+def status_command(
+    outdir: Path = typer.Argument(
+        ...,
+        help="ABI output directory containing provenance/progress.json.",
+    ),
+    stale_after: float = typer.Option(
+        30.0,
+        "--stale-after",
+        help="Minutes without progress events before a 'running' run is "
+        "considered stale (its process likely died).",
+    ),
+) -> None:
+    """Summarize a local run's progress and detect stale (dead-process) runs.
+
+    Reads ``<outdir>/provenance/progress.json`` and prints the run status,
+    step counts, and start/finish times.  A run that still claims
+    ``"running"`` but recorded no progress events for longer than
+    ``--stale-after`` minutes is reported as stale: the ABI process was
+    likely killed (screen/OOM) without finalizing the snapshot.
+
+    Exit codes: 0 = healthy (completed or actively progressing), 1 = failed
+    or stale run, 2 = no readable progress.json.
+
+    汇总本地运行的进度并检测停滞（进程已死）的运行。
+    """
+    from abi.provenance import detect_stale_run
+
+    progress_path = outdir / "provenance" / "progress.json"
+    if not progress_path.exists():
+        typer.secho(
+            f"No progress snapshot found: {progress_path}\n"
+            "This does not look like an ABI output directory with recorded "
+            "progress (expected provenance/progress.json).",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    try:
+        snapshot = json.loads(progress_path.read_text(encoding="utf-8"))
+    except Exception:
+        typer.secho(
+            f"Could not parse progress snapshot: {progress_path}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    if not isinstance(snapshot, dict):
+        typer.secho(
+            f"Progress snapshot is not a JSON object: {progress_path}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
+    steps = [s for s in snapshot.get("steps", []) if isinstance(s, dict)]
+    succeeded = sum(1 for s in steps if s.get("status") == "success")
+    failed = sum(1 for s in steps if s.get("status") == "failed")
+    total = int(snapshot.get("total_step_count") or len(steps))
+
+    typer.echo(f"Run status: {snapshot.get('status', 'unknown')}")
+    typer.echo(f"Steps: {succeeded} succeeded, {failed} failed, {total} total")
+    typer.echo(f"Started: {snapshot.get('started_at') or 'unknown'}")
+    typer.echo(f"Finished: {snapshot.get('finished_at') or '(not finished)'}")
+
+    stale = detect_stale_run(snapshot, stale_after=timedelta(minutes=stale_after))
+    if stale is not None:
+        elapsed_minutes = stale["elapsed_seconds"] / 60.0
+        step_id = stale["current_step_id"] or "unknown"
+        typer.secho(
+            f"\nWARNING: this run appears STALE — no progress events for "
+            f"{elapsed_minutes:.0f} minutes (threshold {stale_after:g}).\n"
+            f"The ABI process seems to have died without finalizing the run.\n"
+            f"Last running step: {step_id}\n"
+            f"Inspect its log: {outdir / 'provenance' / 'step_logs' / (step_id + '.stderr.log')}",
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(code=1)
+    if snapshot.get("status") == "failed":
+        raise typer.Exit(code=1)
 
 
 @app.command("doctor")
