@@ -39,7 +39,7 @@ from __future__ import annotations
 import json
 import shutil
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping
 
@@ -48,6 +48,7 @@ from abi.filesystem import ensure_directory
 
 __all__ = [
     "capture_tool_version",
+    "detect_stale_run",
     "PipelineProgressRecorder",
     "RunLogger",
     "reset_run_provenance",
@@ -674,6 +675,100 @@ class PipelineProgressRecorder:
             encoding="utf-8",
         )
         tmp_path.replace(self.snapshot_path)
+
+
+def _parse_snapshot_timestamp(value: Any) -> datetime | None:
+    """Parse a snapshot timestamp string, returning None on empty/invalid input."""
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def detect_stale_run(
+    snapshot: Mapping[str, Any],
+    *,
+    now: datetime | None = None,
+    stale_after: timedelta = timedelta(minutes=30),
+) -> Dict[str, Any] | None:
+    """Detect a run whose snapshot claims "running" but whose process has died.
+
+    # Why this exists / 为什么需要
+    When the ABI process is killed (screen detach, OOM killer, SSH drop) the
+    atomic snapshot in ``progress.json`` keeps ``"status": "running"``
+    forever — nothing remains alive to write ``run_completed``.  Pure
+    inspection of the snapshot cannot *prove* the process died, so this uses
+    a staleness heuristic: the run is stale when no progress event has been
+    recorded for longer than ``stale_after``.
+
+    # Semantics / 语义
+    Returns None unless ALL of the following hold:
+      1. ``status == "running"`` — completed/failed runs are never stale.
+      2. ``finished_at`` is empty — a finished run is never stale.
+      3. ``now - last_activity > stale_after`` where last activity is the
+         ``last_event.timestamp`` (every recorded event updates it), falling
+         back to ``started_at`` when no event was ever recorded.
+
+    Timestamps are the naive local ISO-8601 strings written by
+    :func:`_timestamp`; ``now`` defaults to ``datetime.now()`` to match.
+    If ``now`` is naive and the stored timestamp is aware (or vice versa),
+    ``now`` is converted to the stored timestamp's timezone for comparison.
+
+    When stale, returns a dict with:
+      - ``current_step_id``: the step still marked "running" ("" if none).
+      - ``last_activity``: ISO timestamp of the last recorded activity.
+      - ``elapsed_seconds``: seconds since that activity.
+      - ``stale_after_seconds``: the threshold that was exceeded.
+    """
+    if str(snapshot.get("status", "")) != "running":
+        return None
+    if snapshot.get("finished_at"):
+        return None
+
+    last_event = snapshot.get("last_event") or {}
+    last_activity_raw = ""
+    if isinstance(last_event, Mapping):
+        last_activity_raw = str(last_event.get("timestamp") or "")
+    last_activity = _parse_snapshot_timestamp(last_activity_raw)
+    if last_activity is None:
+        # No event ever recorded (or unparseable) — fall back to run start.
+        last_activity_raw = str(snapshot.get("started_at") or "")
+        last_activity = _parse_snapshot_timestamp(last_activity_raw)
+    if last_activity is None:
+        # Running but no usable timestamp at all: cannot judge staleness.
+        return None
+
+    if now is None:
+        now = datetime.now(tz=last_activity.tzinfo) if last_activity.tzinfo else datetime.now()
+    elif (now.tzinfo is None) != (last_activity.tzinfo is None):
+        # Align naive/aware so the subtraction cannot raise TypeError.
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=last_activity.tzinfo)
+        else:
+            now = now.replace(tzinfo=None)
+
+    elapsed = now - last_activity
+    if elapsed <= stale_after:
+        return None
+
+    current_step_id = ""
+    for step in snapshot.get("steps", []):
+        if isinstance(step, dict) and step.get("status") == "running":
+            current_step_id = str(step.get("step_id", ""))
+            break
+    if not current_step_id:
+        current_steps = snapshot.get("current_steps") or []
+        if current_steps:
+            current_step_id = str(current_steps[0])
+
+    return {
+        "current_step_id": current_step_id,
+        "last_activity": last_activity.isoformat(),
+        "elapsed_seconds": elapsed.total_seconds(),
+        "stale_after_seconds": stale_after.total_seconds(),
+    }
 
 
 def write_minimal_progress_artifacts(
