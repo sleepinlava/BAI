@@ -16,6 +16,18 @@ Checks performed:
   7. Output-contract coverage (opt-in via ``enforce_output_contract_coverage``):
      every external tool node must declare at least one non-exempt output
      contract, and ``exempt: true`` contracts must be well-formed.
+  8. Input ``source:`` correctness (:func:`lint_source_keys`): explicit
+     ``NODE.KEY`` references must point at a declared node output, template
+     ``{selector}.KEY`` references must match at least one declared output
+     key in the DAG, declared input/output ``format`` must agree on explicit
+     references, and a ``required: false`` input must not appear as a
+     command-template field of the node's registry tool.
+  9. Registry input/template parity (:func:`lint_template_input_parity`):
+     every declared registry tool input must be referenced by the tool's
+     ``command_template``.
+ 10. Environment assignments (:func:`lint_environment_assignments`): every
+     env name referenced under ``tool_assignments:`` must be defined under
+     ``environments:`` in ``environments.yaml``.
 
 Design / 设计
 --------------
@@ -40,8 +52,11 @@ __all__ = [
     "LintFinding",
     "lint_assertion_syntax",
     "lint_dag",
+    "lint_environment_assignments",
     "lint_limitations",
     "lint_output_contracts",
+    "lint_source_keys",
+    "lint_template_input_parity",
     "lint_tool_contracts",
     "run_contract_lint",
     "validate_pipeline_template_params",
@@ -800,6 +815,243 @@ def lint_output_contracts(dag_spec: Mapping[str, Any]) -> List[LintFinding]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# Input source correctness checks (declaration correctness, not just coverage)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def lint_source_keys(
+    dag_spec: Mapping[str, Any],
+    registry_tools: Optional[Mapping[str, Mapping[str, Any]]] = None,
+) -> List[LintFinding]:
+    """Check that node input ``source:`` references resolve to declared outputs.
+
+    Four rules:
+
+    1. **unknown_source_output** (error) — an explicit ``NODE.KEY`` source
+       must reference an existing node, and ``KEY`` must be one of that
+       node's declared ``outputs:``.  ``output_dir`` counts as declared on
+       every node (the plan-time resolver auto-adds it).  ``sample_sheet``,
+       ``config.*``, dot-less sample-field references, and
+       ``active_*``/``upstream_*`` dynamic selectors are skipped (they are
+       not static DAG references).
+    2. **unknown_source_output** (error) — a template source such as
+       ``{active_assembly_node}.assembly_graph`` is resolved at plan time by
+       scanning upstream outputs, so the lint only requires that *some* node
+       in the DAG declares the output key.  Missing-everywhere keys are
+       dead references; partial coverage is a plan-time concern.
+    3. **format_mismatch** (warning) — for explicit ``NODE.KEY`` sources
+       only, when both the consuming input and the upstream output declare
+       ``format`` the values must agree.  Template sources are skipped
+       because formats legitimately vary across alternative providers.
+    4. **optional_input_in_template** (error) — an input marked
+       ``required: false`` whose key appears as a ``{field}`` in the
+       ``command_template`` of the node's registry tool.  Template fields
+       are effectively mandatory at render time, so the optional flag is a
+       contradiction.  Skipped when ``registry_tools`` is None or the node's
+       ``tool_id`` is not in the registry (e.g. internal nodes).
+    """
+    findings: List[LintFinding] = []
+    nodes = _normalize_dag_nodes(dag_spec)
+    node_by_id: Dict[str, Dict[str, Any]] = {str(n.get("id", "")): n for n in nodes}
+    # ``output_dir`` is auto-added to every node's resolved outputs by the
+    # plan-time resolver (``dag_planner._declared_output_keys``), so it is a
+    # valid source key even when not explicitly declared.
+    all_output_keys: Set[str] = {"output_dir"}
+    for node in nodes:
+        outputs = node.get("outputs")
+        if isinstance(outputs, Mapping):
+            all_output_keys.update(str(key) for key in outputs)
+
+    for node in nodes:
+        nid = str(node.get("id", ""))
+        inputs = node.get("inputs")
+        if not isinstance(inputs, Mapping):
+            continue
+        for input_name, input_spec in inputs.items():
+            if not isinstance(input_spec, Mapping):
+                continue
+
+            if input_spec.get("required") is False and registry_tools:
+                tool = registry_tools.get(str(node.get("tool_id", "")))
+                template = str(tool.get("command_template") or "") if tool else ""
+                if template and str(input_name) in _template_field_roots(template):
+                    findings.append(
+                        LintFinding(
+                            severity="error",
+                            check="optional_input_in_template",
+                            detail=(
+                                f"Input {input_name!r} is marked 'required: false' but appears "
+                                f"as a template field in tool {node.get('tool_id')!r} — "
+                                "template params are effectively mandatory at render time"
+                            ),
+                            location=nid,
+                        )
+                    )
+
+            source = input_spec.get("source")
+            if source is None:
+                continue
+            source_str = str(source)
+            if (
+                source_str == "sample_sheet"
+                or source_str.startswith("config.")
+                or "." not in source_str
+            ):
+                continue
+            upstream_id, upstream_key = source_str.split(".", 1)
+            if upstream_id.startswith(_DYNAMIC_TEMPLATE_PREFIXES):
+                continue
+
+            if upstream_id.startswith("{") and upstream_id.endswith("}"):
+                if upstream_key not in all_output_keys:
+                    findings.append(
+                        LintFinding(
+                            severity="error",
+                            check="unknown_source_output",
+                            detail=(
+                                f"Template source {source_str!r}: no node in the DAG declares "
+                                f"output {upstream_key!r}"
+                            ),
+                            location=nid,
+                        )
+                    )
+                continue
+
+            upstream_node = node_by_id.get(upstream_id)
+            if upstream_node is None:
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="unknown_source_output",
+                        detail=(
+                            f"Source {source_str!r} references node {upstream_id!r} "
+                            "which does not exist in the DAG"
+                        ),
+                        location=nid,
+                    )
+                )
+                continue
+            upstream_outputs = upstream_node.get("outputs")
+            if not isinstance(upstream_outputs, Mapping):
+                upstream_outputs = {}
+            declared_keys = {str(k) for k in upstream_outputs} | {"output_dir"}
+            if upstream_key not in declared_keys:
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="unknown_source_output",
+                        detail=(
+                            f"Source {source_str!r}: node {upstream_id!r} does not declare "
+                            f"output {upstream_key!r} "
+                            f"(available: {sorted(declared_keys)})"
+                        ),
+                        location=nid,
+                    )
+                )
+                continue
+
+            input_format = input_spec.get("format")
+            upstream_spec = upstream_outputs.get(upstream_key)
+            upstream_format = (
+                upstream_spec.get("format") if isinstance(upstream_spec, Mapping) else None
+            )
+            if (
+                input_format is not None
+                and upstream_format is not None
+                and str(input_format) != str(upstream_format)
+            ):
+                findings.append(
+                    LintFinding(
+                        severity="warning",
+                        check="format_mismatch",
+                        detail=(
+                            f"Input {input_name!r} declares format {input_format!r} but "
+                            f"source {source_str!r} declares format {upstream_format!r}"
+                        ),
+                        location=nid,
+                    )
+                )
+    return findings
+
+
+def lint_template_input_parity(
+    registry_tools: Mapping[str, Mapping[str, Any]],
+) -> List[LintFinding]:
+    """Check that every declared registry tool input is used by its template.
+
+    A tool registry entry may declare an ``inputs`` list; each declared
+    input name must appear as a ``{field}`` in the tool's
+    ``command_template``.  A declared-but-unused input is dead metadata
+    (e.g. the historical SCAPP ``assembly`` input) — warning level.
+    Tools without a ``command_template`` or without declared ``inputs``
+    are skipped.
+    """
+    findings: List[LintFinding] = []
+    for tool_id in sorted(registry_tools):
+        tool = registry_tools[tool_id]
+        template = tool.get("command_template")
+        inputs = tool.get("inputs")
+        if not isinstance(template, str) or not template.strip():
+            continue
+        if not isinstance(inputs, list):
+            continue
+        template_fields = _template_field_roots(template)
+        for entry in inputs:
+            if isinstance(entry, str):
+                name = entry
+            elif isinstance(entry, Mapping):
+                name = str(entry.get("name") or entry.get("id") or "")
+            else:
+                continue
+            if name and name not in template_fields:
+                findings.append(
+                    LintFinding(
+                        severity="warning",
+                        check="unused_registry_input",
+                        detail=(
+                            f"Registry tool {tool_id!r} declares input {name!r} that is not "
+                            "referenced by its command_template"
+                        ),
+                        location=str(tool_id),
+                    )
+                )
+    return findings
+
+
+def lint_environment_assignments(environments: Mapping[str, Any]) -> List[LintFinding]:
+    """Check that every assigned tool environment is defined.
+
+    Given the parsed ``environments.yaml`` document, every env name
+    referenced under ``tool_assignments:`` (plugin → tool → env name) must
+    be defined under the top-level ``environments:`` mapping.  Tools with
+    no assignment are not reported — only dangling references are.
+    """
+    findings: List[LintFinding] = []
+    defined = environments.get("environments")
+    defined_names = {str(name) for name in defined} if isinstance(defined, Mapping) else set()
+    assignments = environments.get("tool_assignments")
+    if not isinstance(assignments, Mapping):
+        return findings
+    for plugin_id, tools in sorted(assignments.items(), key=lambda item: str(item[0])):
+        if not isinstance(tools, Mapping):
+            continue
+        for tool_id, env_name in sorted(tools.items(), key=lambda item: str(item[0])):
+            if str(env_name) not in defined_names:
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="unknown_environment",
+                        detail=(
+                            f"Tool {tool_id!r} is assigned environment {env_name!r} which is "
+                            "not defined under 'environments:'"
+                        ),
+                        location=f"{plugin_id}/{tool_id}",
+                    )
+                )
+    return findings
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # Orchestrator
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -811,6 +1063,7 @@ def run_contract_lint(
     registry_tools: Mapping[str, Mapping[str, Any]] | None = None,
     plugin_root: Path | None = None,
     enforce_output_contract_coverage: bool = False,
+    environments: Mapping[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Run all contract lint checks and return a structured result.
 
@@ -826,6 +1079,12 @@ def run_contract_lint(
             and validate ``exempt`` usage (:func:`lint_output_contracts`).
             Off by default so programmatic callers with partial DAGs stay
             lenient; the ``abi contract-lint`` CLI enables it.
+        environments: Optional parsed ``environments.yaml`` document.  When
+            given, every env name referenced under ``tool_assignments:`` is
+            checked against the defined ``environments:``
+            (:func:`lint_environment_assignments`).  Callers without access
+            to the repo root (e.g. the testing harness) pass None and the
+            check is skipped.
 
     Returns:
         A dict with keys ``findings`` (list of LintFinding as dicts),
@@ -839,6 +1098,9 @@ def run_contract_lint(
     # Assertion syntax
     all_findings.extend(lint_assertion_syntax(dag_spec))
 
+    # Input source correctness (declaration correctness, not just coverage)
+    all_findings.extend(lint_source_keys(dag_spec, registry_tools=registry_tools))
+
     # Contract checks
     if contracts is not None:
         all_findings.extend(
@@ -849,6 +1111,14 @@ def run_contract_lint(
             )
         )
         all_findings.extend(lint_resource_blocks(contracts))
+
+    # Registry input/template parity
+    if registry_tools is not None:
+        all_findings.extend(lint_template_input_parity(registry_tools))
+
+    # Environment assignment references
+    if environments is not None:
+        all_findings.extend(lint_environment_assignments(environments))
 
     # Mandatory limitations declaration
     if plugin_root is not None:
