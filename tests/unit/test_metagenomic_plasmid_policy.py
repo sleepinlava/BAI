@@ -193,8 +193,14 @@ def test_auto_tool_policy_is_resolved_before_dag_filtering(tmp_path):
 
     plan = build_plan_from_dag(config, _context([sample]), check_files=False)
     tools = {step.tool_id for step in plan.steps}
+    skipped_tools = {step.tool_id for step in plan.skipped_steps}
 
-    assert {"gplas2", "plasmidfinder", "mob_typer", "mob_suite"} <= tools
+    # gplas2 requires an assembly graph, but the default short-read assembler
+    # (megahit) does not declare one. The planner skips the optional node
+    # instead of creating an unresolvable required input.
+    assert "gplas2" not in tools
+    assert "gplas2" in skipped_tools
+    assert {"plasmidfinder", "mob_typer", "mob_suite"} <= tools
 
 
 def test_hifi_route_does_not_run_ont_specific_nanoplot(tmp_path):

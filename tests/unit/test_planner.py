@@ -65,8 +65,13 @@ def test_optional_auto_tools_require_explicit_enable():
     )
     plan = build_plan(config)
     tool_ids = {step.tool_id for step in plan.steps}
+    skipped_tool_ids = {step.tool_id for step in plan.skipped_steps}
 
-    assert "gplas2" in tool_ids
+    # gplas2 needs an assembly graph; the default short-read assembler (megahit)
+    # does not produce one, so it is skipped rather than planned with an empty
+    # required input.
+    assert "gplas2" not in tool_ids
+    assert "gplas2" in skipped_tool_ids
     assert "metaphlan" in tool_ids
     assert "plasmidhostfinder" in tool_ids
 

@@ -47,10 +47,20 @@ __all__ = [
     "PathTemplateContext",
     "PluginContextResolver",
     "UniversalDAG",
+    "UnresolvableSourceError",
     "build_plan_from_dag",
     "build_sample_context",
     "detect_platform",
 ]
+
+
+class UnresolvableSourceError(ValueError):
+    """Raised when a required input source cannot be resolved at plan time."""
+
+    def __init__(self, message: str, *, node_id: str = "", input_key: str = "") -> None:
+        super().__init__(message)
+        self.node_id = node_id
+        self.input_key = input_key
 
 
 # ── PathTemplateContext ──────────────────────────────────────────────────
@@ -895,9 +905,42 @@ def build_plan_from_dag(
             category_dir = dag.category_dir_for(category)
 
             # Resolve inputs / 解析输入
-            resolved_inputs = _resolve_inputs(
-                dag, node_id, sample, sample_config, upstream_outputs, plugin_root
-            )
+            try:
+                resolved_inputs = _resolve_inputs(
+                    dag, node_id, sample, sample_config, upstream_outputs, plugin_root
+                )
+            except UnresolvableSourceError as exc:
+                # Optional nodes whose required inputs cannot be satisfied by the
+                # active upstream DAG are skipped rather than aborting planning.
+                # Required nodes still fail fast so configuration errors surface.
+                if not dag.is_optional(node_id):
+                    raise
+                tool_id = node_id_to_tool_id(dag, node_id)
+                step_id = f"{sample.sample_id}_{category}_{tool_id}"
+                _logger.warning(
+                    "Skipping optional DAG node %r for sample %s: %s",
+                    node_id,
+                    sample.sample_id,
+                    exc,
+                )
+                skipped_steps.append(
+                    PlanStep(
+                        step_id=step_id,
+                        sample_id=sample.sample_id,
+                        step_name=category,
+                        tool_id=tool_id,
+                        category=category,
+                        inputs={},
+                        outputs={},
+                        params={"_reason": str(exc)},
+                        reason=(
+                            f"excluded DAG node {node_id!r}: required input "
+                            f"{exc.input_key!r} could not be resolved from active upstream nodes"
+                        ),
+                        skipped=True,
+                    )
+                )
+                continue
 
             # Resolve output paths / 解析输出路径
             template_ctx = PathTemplateContext(
@@ -978,15 +1021,43 @@ def build_plan_from_dag(
                     ).get(dep_id, {})
 
         # Resolve inputs with aggregation / 解析带有聚合的输入
-        resolved_inputs = _resolve_cross_sample_inputs(
-            dag,
-            node_id,
-            sample_context,
-            config,
-            sample_outputs,
-            cross_sample_outputs,
-            plugin_root,
-        )
+        try:
+            resolved_inputs = _resolve_cross_sample_inputs(
+                dag,
+                node_id,
+                sample_context,
+                config,
+                sample_outputs,
+                cross_sample_outputs,
+                plugin_root,
+            )
+        except UnresolvableSourceError as exc:
+            if not dag.is_optional(node_id):
+                raise
+            tool_id = node_id_to_tool_id(dag, node_id)
+            _logger.warning(
+                "Skipping optional cross-sample DAG node %r: %s",
+                node_id,
+                exc,
+            )
+            skipped_steps.append(
+                PlanStep(
+                    step_id=node_id,
+                    sample_id=None,
+                    step_name=category,
+                    tool_id=tool_id,
+                    category=category,
+                    inputs={},
+                    outputs={},
+                    params={"_reason": str(exc)},
+                    reason=(
+                        f"excluded DAG node {node_id!r}: required input "
+                        f"{exc.input_key!r} could not be resolved from active upstream nodes"
+                    ),
+                    skipped=True,
+                )
+            )
+            continue
 
         # Build template context (no single sample) / 构建模板上下文（无单一样本）
         template_ctx = PathTemplateContext(
@@ -1065,6 +1136,80 @@ def build_plan_from_dag(
 # ── Input resolution ─────────────────────────────────────────────────────
 
 
+def _declared_output_keys(dag: UniversalDAG, node_id: str) -> set[str]:
+    """Output keys a node can provide: declared ``outputs`` plus ``output_dir``.
+
+    ``output_dir`` is always present in resolved outputs (``_resolve_outputs``
+    auto-adds it), so it is a valid source key even when not declared.
+    """
+    return set(dag.node_outputs(node_id)) | {"output_dir"}
+
+
+def _check_explicit_source(
+    dag: UniversalDAG,
+    node_id: str,
+    key: str,
+    source_str: str,
+    upstream_id: str,
+    upstream_key: str,
+) -> None:
+    """Reject an explicit ``NODE.OUTPUT_KEY`` source naming an undeclared key.
+
+    Resolved upstream outputs are built from the node's declared ``outputs``
+    at plan time, so a key that is not declared can never resolve — this is a
+    static DAG bug, distinct from a declared key with a legitimately empty
+    value (which still flows through fallback/default).  Unknown upstream node
+    IDs are left to the legacy empty-value behavior.
+    """
+    if not dag.get_node(upstream_id):
+        return
+    declared = _declared_output_keys(dag, upstream_id)
+    if upstream_key not in declared:
+        raise UnresolvableSourceError(
+            f"Node {node_id!r} input {key!r}: source {source_str!r} references output "
+            f"{upstream_key!r}, but upstream node {upstream_id!r} does not declare it. "
+            f"Available outputs of {upstream_id!r}: {sorted(declared)}",
+            node_id=node_id,
+            input_key=key,
+        )
+
+
+def _check_template_source(
+    dag: UniversalDAG,
+    node_id: str,
+    key: str,
+    source_str: str,
+    upstream_key: str,
+    spec: Mapping[str, Any],
+    upstream_outputs: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Reject an unresolvable template source for a required input.
+
+    Called when scanning *upstream_outputs* found no value for *upstream_key*.
+    The scan finding nothing is only a plan-time error when no scanned node
+    even declares the key (a static DAG bug) — a scanned node that declares
+    the key but currently has an empty value keeps the fallback/default/empty
+    behavior.  Inputs with a ``fallback``, a ``default``, or ``required:
+    false`` legitimately tolerate an empty resolution and never fail here.
+    """
+    if spec.get("fallback") is not None or spec.get("default") is not None:
+        return
+    if spec.get("required", True) is False:
+        return
+    if any(upstream_key in _declared_output_keys(dag, uid) for uid in upstream_outputs):
+        return
+    scanned = {uid: sorted(_declared_output_keys(dag, uid)) for uid in upstream_outputs}
+    raise UnresolvableSourceError(
+        f"Node {node_id!r} input {key!r}: template source {source_str!r} did not "
+        f"resolve — no active upstream node offers output {upstream_key!r}. "
+        f"Scanned upstream nodes and their outputs: {scanned}. Mark the input "
+        f"'required: false' or add a 'fallback'/'default' if an empty value is "
+        f"acceptable.",
+        node_id=node_id,
+        input_key=key,
+    )
+
+
 def _resolve_inputs(
     dag: UniversalDAG,
     node_id: str,
@@ -1081,6 +1226,15 @@ def _resolve_inputs(
     3. If ``source`` is absent → try config resources, then config, then default/empty.
     4. ``fallback`` is tried when the primary source yields an empty value.
     5. ``default`` is used as the final fallback when nothing else resolves.
+
+    Plan-time validation / 计划期校验:
+    - An explicit ``NODE.OUTPUT_KEY`` source whose *OUTPUT_KEY* is not declared
+      in *NODE*'s ``outputs`` is a static DAG bug and raises ``ValueError``.
+      A declared key that merely resolved to an empty value (e.g. the upstream
+      node is inactive for this sample) still flows through fallback/default.
+    - A template source ``{...}.OUTPUT_KEY`` that no active upstream node can
+      provide raises ``ValueError`` unless the input declares a ``fallback``,
+      a ``default``, or ``required: false``.
     """
     inputs_spec = dag.node_inputs(node_id)
     resolved: Dict[str, Any] = {}
@@ -1117,7 +1271,12 @@ def _resolve_inputs(
                         if val:
                             value = str(val)
                             break
+                    if not value:
+                        _check_template_source(
+                            dag, node_id, key, source_str, upstream_key, spec, upstream_outputs
+                        )
                 else:
+                    _check_explicit_source(dag, node_id, key, source_str, upstream_id, upstream_key)
                     value = upstream_outputs.get(upstream_id, {}).get(upstream_key, "")
             else:
                 value = sample_dict.get(source_str, "")
@@ -1216,6 +1375,7 @@ def _resolve_cross_sample_inputs(
                     # Upstream reference: "NODE_ID.OUTPUT_KEY"
                     parts = source_str.split(".", 1)
                     upstream_id, upstream_key = parts[0], parts[1]
+                    _check_explicit_source(dag, node_id, key, source_str, upstream_id, upstream_key)
                     # Check cross-sample outputs first, then per-sample
                     if upstream_id in cross_sample_outputs:
                         resolved[key] = cross_sample_outputs[upstream_id].get(upstream_key, "")
