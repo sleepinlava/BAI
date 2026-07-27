@@ -365,7 +365,7 @@ ViWrap 本轮不下载论文 reads 或数据库 bundle，不做独立的上游�
 | DADA2 Extreme `dada2_extreme_retry` | ✅ 9/9 steps；26 ASV，895,819 个 ASV counts | 输入、denoising、taxonomy、系统树和标准表完整 | 官方 expected-sequence 文件尚未取得，不能报告 ASV P/R/F1 |
 | ST93 MRSA `wgs_st93_mrsa_retry` | ✅ 30/30 steps；6 samples | 6/6 为 *S. aureus* ST93；6/6 原始 AMRFinderPlus `mecA` 为 668/668 aa、100% coverage/identity | workflow 不含 core-SNP tree，不能推断是否为近期暴发 |
 | SCAPP plasmidome `plasmid_scapp_core_retry7` | ✅ 10/10 steps；167 primary calls、157 consensus plasmids、601 Bakta annotations | 质粒预测、consensus、结构与注释均非空；54 个预测有 DTR/ITR terminal-repeat evidence | 尚未按论文 contig-coverage 规则冻结 74-plasmid truth，不能报告 reference P/R/F1 |
-| Airway `rnaseq_airway_dex_untreated_retry4` | ✅ 26/26 steps；8 samples；正式 `--resume` 全部为 `resumed` | 17,612 个基因被检验，5,526 个 FDR<0.05；与 GEO Cuffdiff 的 13,725 个匹配基因中，Dex log2FC Spearman ρ=0.927、方向一致率 90.8%；7 个预注册 sentinel genes 均同向 | STAR/featureCounts/DESeq2 与论文 hg19/TopHat/Cuffdiff 不同，不能以显著基因总数或逐项 FDR 相等为门槛 |
+| Airway `rnaseq_airway_dex_untreated_retry5`（2026-07-27 起为 canonical 最终数据源） | ✅ 26/26 steps；8 samples；run_summary `status=success` | 端点数字首验于同配置的 retry4：17,612 个基因被检验，5,526 个 FDR<0.05；与 GEO Cuffdiff 的 13,725 个匹配基因中，Dex log2FC Spearman ρ=0.927、方向一致率 90.8%；7 个预注册 sentinel genes 均同向。retry4/retry5 配置差异仅项目名/线程数/输出路径（fastp+STAR GRCh37.75+featureCounts `-p`+DESeq2 1.50.2 完全一致），2026-07-27 文献一致性验收与富集分析均直接基于 retry5 | STAR/featureCounts/DESeq2 与论文 hg19/TopHat/Cuffdiff 不同，不能以显著基因总数或逐项 FDR 相等为门槛 |
 
 Airway 的 GEO `gene_exp.diff` 将 Cuffdiff log2FC 的符号与表中 `Dex`/`Untreated`
 显示顺序相反；比较前已取反使其表示 Dex 相对 untreated 的效应。ABI 显著集与可映射
@@ -568,7 +568,9 @@ K77 并行分片一度使数据盘只剩约 40 GiB。为避免 ENOSPC，同时�
 matrix、DESeq2 表、报告和 provenance 均保留，七个关键结果文件另有 SHA-256 清单。机器
 可读的待删文件列表、清理范围、完成时间和 retained-evidence hashes 位于对应 RNA 日志
 目录。清理后 retry4 结果从 39 GB 缩至 395 MB，数据盘恢复到约 103 GB 可用；活动中的
-K77 进程没有打开任何被删文件，计算未被中断。
+K77 进程没有打开任何被删文件，计算未被中断。2026-07-27 复核确认：retry4 与 retry5
+配置等价（仅项目名/线程数/输出路径不同），canonical 最终数据源已切换为 retry5
+（26/26 steps，`status=success`），retry4 云端仅余 395 MB 文档化残留。
 
 在主组装运行期间，两项低优先级真实格式预检已完成：评分器在157条真实预测和旧小型 truth
 上完整生成 prediction/reference/status/JSON；重建器在真实 retry7 contigs 与 PLSDB 前100条
