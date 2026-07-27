@@ -190,6 +190,8 @@ def _resource_status(
         if isinstance(tool_parameter_values, Mapping):
             configured.update(tool_parameter_values)
 
+    specs = _engine_resource_specs(config, tool_id)
+
     details: Dict[str, str] = {}
     missing = []
     not_configured = []
@@ -200,7 +202,7 @@ def _resource_status(
             not_configured.append(field)
             continue
         path = Path(str(value))
-        if path.exists():
+        if _resource_ready(path, specs.get(field)):
             details[field] = str(path)
         else:
             details[field] = f"missing:{path}"
@@ -211,6 +213,38 @@ def _resource_status(
     if not_configured:
         return "not_configured", details
     return "ok", details
+
+
+def _engine_resource_specs(
+    config: Mapping[str, Any],
+    tool_id: str,
+) -> Dict[str, Any]:
+    """Return ``{field: ResourceSpec}`` for *tool_id* from the engine resource registry.
+
+    Imported lazily because ``resources.py`` imports this module at module
+    level, so a top-level import would create a cycle.
+    """
+    from abi.plugins.metagenomic_plasmid._engine import resources as engine_resources
+
+    return {
+        spec.field: spec
+        for spec in engine_resources.default_resource_specs(config)
+        if spec.tool_id == tool_id
+    }
+
+
+def _resource_ready(path: Path, spec: Any) -> bool:
+    """Delegate readiness to the engine integrity check when a spec is known.
+
+    Falls back to bare existence for resource fields without a declared
+    ``ResourceSpec`` (the single integrity source of truth only covers
+    registered resources, e.g. genomad's ``genomad_db`` subdirectory).
+    """
+    if spec is None:
+        return path.exists()
+    from abi.plugins.metagenomic_plasmid._engine import resources as engine_resources
+
+    return engine_resources._resource_path_ready(path, spec)
 
 
 def _resource_fields(command_template: str) -> List[str]:

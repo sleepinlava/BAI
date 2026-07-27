@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Protocol, runtime_checkable
 
+from abi.dag_planner import UniversalDAG
+
 
 @dataclass(frozen=True)
 class InternalHandlerContext:
@@ -149,14 +151,16 @@ def _run_generic_preflight(
 
     if check_runtime:
         try:
+            enabled_optional = _enabled_optional_tool_ids(plugin, config)
             for row in plugin.registry().check_tools(config=config):
-                if not bool(row.get("required", True)):
+                tool_id = str(row.get("tool_id", "unknown"))
+                if not bool(row.get("required", True)) and tool_id not in enabled_optional:
                     continue
                 installed = bool(row.get("installed"))
                 resource_status = str(row.get("resource_status", "ok"))
                 checks.append(
                     {
-                        "name": f"tool:{row.get('tool_id', 'unknown')}",
+                        "name": f"tool:{tool_id}",
                         "status": (
                             "pass"
                             if installed and resource_status in {"ok", "not_required"}
@@ -175,3 +179,38 @@ def _run_generic_preflight(
         "checks": checks,
         "recommendations": [f"Fix failed preflight check: {item['name']}" for item in failures],
     }
+
+
+def _enabled_optional_tool_ids(plugin: Any, config: Mapping[str, Any]) -> set[str]:
+    """Return tool IDs of optional DAG nodes that *config* enables.
+
+    Loads the plugin's ``pipeline_dag.yaml`` and reuses the planner's
+    ``UniversalDAG.active_node_ids`` (the same ``enable_condition`` evaluation
+    used when building an execution plan) so preflight checks exactly the
+    optional tools the executor would run.  Returns an empty set when the
+    plugin exposes no DAG, which preserves the legacy behaviour of checking
+    only ``required`` tools.
+    """
+    root = getattr(plugin, "root", None)
+    if root is None:
+        return set()
+    dag_path = Path(root) / "pipeline_dag.yaml"
+    if not dag_path.exists():
+        return set()
+    dag = UniversalDAG.from_yaml(dag_path)
+    platforms = dag.platforms or [""]
+    active: set[str] = set()
+    for platform in platforms:
+        active.update(dag.active_node_ids(platform, config))
+    enabled: set[str] = set()
+    for node_id in active:
+        node = dag.get_node(node_id)
+        # Only config-activated nodes: optional nodes, or nodes gated by an
+        # enable_condition.  Unconditional nodes keep the legacy behaviour
+        # (non-required tools are skipped) even though they are active.
+        if not dag.is_optional(node_id) and not isinstance(node.get("enable_condition"), Mapping):
+            continue
+        tool_id = str(node.get("tool_id", "")).strip()
+        if tool_id:
+            enabled.add(tool_id)
+    return enabled

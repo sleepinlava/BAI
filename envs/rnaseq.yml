@@ -21,3 +21,8 @@ dependencies:
 - gzip
 - curl
 - wget
+- pandas
+- numpy
+- scipy
+- pip:
+  - gseapy==1.3.0

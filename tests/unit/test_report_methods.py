@@ -94,7 +94,7 @@ def test_write_methods_with_resource_manifest(tmp_path: Path) -> None:
 
 
 def test_write_methods_no_resource_manifest(tmp_path: Path) -> None:
-    """resource_manifest is None → no Resources section."""
+    """resource_manifest is None → Resources section rendered with placeholder."""
     result_dir = tmp_path
     prov_dir = result_dir / "provenance"
     prov_dir.mkdir(parents=True)
@@ -110,11 +110,12 @@ def test_write_methods_no_resource_manifest(tmp_path: Path) -> None:
 
     path = write_methods(result_dir, plan=FakePlan())
     content = path.read_text(encoding="utf-8")
-    assert "## Resources & Databases" not in content
+    assert "## Resources & Databases" in content
+    assert "| not_configured | not_configured | not_configured | not_configured |" in content
 
 
 def test_write_methods_resource_manifest_empty_resources(tmp_path: Path) -> None:
-    """resource_manifest with empty resources list → no Resources section."""
+    """resource_manifest with empty resources list → Resources section rendered with placeholder."""
     result_dir = tmp_path
     prov_dir = result_dir / "provenance"
     prov_dir.mkdir(parents=True)
@@ -134,7 +135,55 @@ def test_write_methods_resource_manifest_empty_resources(tmp_path: Path) -> None
         resource_manifest={"resources": []},
     )
     content = path.read_text(encoding="utf-8")
-    assert "## Resources & Databases" not in content
+    assert "## Resources & Databases" in content
+    assert "| not_configured | not_configured | not_configured | not_configured |" in content
+
+
+def test_write_methods_empty_tool_versions(tmp_path: Path) -> None:
+    """Empty tool_versions.tsv → Tool Versions section rendered with placeholder."""
+    result_dir = tmp_path
+    prov_dir = result_dir / "provenance"
+    prov_dir.mkdir(parents=True)
+    tables_dir = result_dir / "tables"
+    tables_dir.mkdir(parents=True)
+
+    (prov_dir / "tool_versions.tsv").write_text("tool_id\tversion\n", encoding="utf-8")
+    (prov_dir / "commands.tsv").write_text("step_id\tcommand\n", encoding="utf-8")
+
+    class FakePlan:
+        def to_dict(self):
+            return {"analysis_type": "rnaseq", "project_name": "test"}
+
+    path = write_methods(result_dir, plan=FakePlan())
+    content = path.read_text(encoding="utf-8")
+    assert "## Tool Versions" in content
+    assert "| not_configured | not_configured | not_configured |" in content
+
+
+def test_write_methods_tool_version_placeholders(tmp_path: Path) -> None:
+    """Empty tool version cells use not_configured or not_captured based on status."""
+    result_dir = tmp_path
+    prov_dir = result_dir / "provenance"
+    prov_dir.mkdir(parents=True)
+    tables_dir = result_dir / "tables"
+    tables_dir.mkdir(parents=True)
+
+    (prov_dir / "tool_versions.tsv").write_text(
+        "tool_id\texecutable\tversion\tstatus\n"
+        "unconfigured\\t/usr/bin/unconfigured\\t\\tnot_configured\n"
+        "mocked\\t/usr/bin/mocked\\t\\tnot_captured\n",
+        encoding="utf-8",
+    )
+    (prov_dir / "commands.tsv").write_text("step_id\tcommand\n", encoding="utf-8")
+
+    class FakePlan:
+        def to_dict(self):
+            return {"analysis_type": "rnaseq", "project_name": "test"}
+
+    path = write_methods(result_dir, plan=FakePlan())
+    content = path.read_text(encoding="utf-8")
+    assert "not_configured" in content
+    assert "not_captured" in content
 
 
 # ── write_methods: Citations section ──────────────────────────────────────

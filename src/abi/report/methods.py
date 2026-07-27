@@ -31,6 +31,20 @@ from abi.report.limitations import FALLBACK_LIMITATION
 __all__ = ["write_methods"]
 
 
+_FAILED_VERSION_PREFIXES = ("version_command_", "regex_unmatched:", "capture_failed")
+
+
+def _format_version_cell(version: str, status: str) -> str:
+    """Return a displayable version string with placeholders for missing values."""
+    if version and not version.startswith(_FAILED_VERSION_PREFIXES):
+        return version
+    if version:
+        return f"capture_failed ({version})"
+    if status == "not_configured":
+        return "not_configured"
+    return "not_captured"
+
+
 def write_methods(
     result_dir: str | Path,
     *,
@@ -92,21 +106,23 @@ def write_methods(
 
     # ── Tool versions / 工具版本 ──
     versions_rows = _read_tsv(root / "provenance" / "tool_versions.tsv")
+    lines.extend(
+        [
+            "## Tool Versions",
+            "",
+            "| Tool | Version | Command |",
+            "| --- | --- | --- |",
+        ]
+    )
     if versions_rows:
-        lines.extend(
-            [
-                "## Tool Versions",
-                "",
-                "| Tool | Version | Command |",
-                "| --- | --- | --- |",
-            ]
-        )
         for row in versions_rows:
             tool = row.get("tool_id", row.get("tool", ""))
-            version = row.get("version", "")
+            version = _format_version_cell(row.get("version", ""), row.get("status", ""))
             cmd = row.get("executable", row.get("command", ""))
             lines.append(f"| `{tool}` | {version} | `{cmd}` |")
-        lines.append("")
+    else:
+        lines.append("| not_configured | not_configured | not_configured |")
+    lines.append("")
 
     # ── Commands / 命令 ──
     commands_rows = _read_tsv(root / "provenance" / "commands.tsv")
@@ -125,25 +141,28 @@ def write_methods(
         lines.append("")
 
     # ── Resources / 资源 ──
+    resources: list[Any] = []
     if resource_manifest:
-        resources = resource_manifest.get("resources", [])
-        if resources:
-            lines.extend(
-                [
-                    "## Resources & Databases",
-                    "",
-                    "| Resource | Version | Path | Checksum |",
-                    "| --- | --- | --- | --- |",
-                ]
-            )
-            for res in resources:
-                rid = res.get("id", "")
-                ver = res.get("version", "")
-                path = res.get("path", "")
-                cs_raw = res.get("checksum_sha256", "")
-                cs = cs_raw[:12] + "..." if cs_raw else ""
-                lines.append(f"| {rid} | {ver} | `{path}` | {cs} |")
-            lines.append("")
+        resources = resource_manifest.get("resources", []) or []
+    lines.extend(
+        [
+            "## Resources & Databases",
+            "",
+            "| Resource | Version | Path | Checksum |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    if resources:
+        for res in resources:
+            rid = res.get("id", "")
+            ver = _format_version_cell(res.get("version", ""), res.get("status", ""))
+            path = res.get("path", "")
+            cs_raw = res.get("checksum_sha256", "")
+            cs = cs_raw[:12] + "..." if cs_raw else ""
+            lines.append(f"| {rid} | {ver} | `{path}` | {cs} |")
+    else:
+        lines.append("| not_configured | not_configured | not_configured | not_configured |")
+    lines.append("")
 
     # ── Citations / 文献引用 ──
     if citations:

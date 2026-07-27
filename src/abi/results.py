@@ -148,6 +148,12 @@ class ABIResultWriter:
             encoding="utf-8",
         )
         table_summary = self.table_manager.summarize(tables_dir)
+        # Surface declared standard tables that stayed header-only as a
+        # non-fatal warning.  Validation semantics (allow_empty_tables) are
+        # unchanged; this only makes the empty tables visible in the summary.
+        # 将保持空表头（无数据行）的已声明标准表格作为非致命警告展示。
+        # 校验语义（allow_empty_tables）不变；此处仅让空表在摘要中可见。
+        empty_tables = sorted(name for name, info in table_summary.items() if info.get("rows") == 0)
         write_generic_report(
             plan,
             result_dir,
@@ -166,6 +172,7 @@ class ABIResultWriter:
             "completed_step_count": _completed_step_count(command_rows),
             "selected_tools": plan.selected_tools,
             "standard_tables": table_summary,
+            "warnings": {"empty_tables": empty_tables},
         }
         if extra_summary:
             summary.update(dict(extra_summary))

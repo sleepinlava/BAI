@@ -290,13 +290,49 @@ def test_write_methods_md_with_resources(tmp_path: Path) -> None:
     assert "STAR Index" in md
 
 
+def test_write_methods_md_with_resource_id_source_keys(tmp_path: Path) -> None:
+    """Resource rows keyed by resource_id/source (as produced by executor) are not blank."""
+    resource = {
+        "resource_id": "host_genome",
+        "version": "GRCh38",
+        "source": "http://example.com/host",
+        "path": "/ref/host",
+        "status": "ok",
+    }
+    md = write_methods_md([], [], resources=[resource])
+    assert "## Reference Databases" in md
+    assert "host_genome" in md
+    assert "GRCh38" in md
+    assert "http://example.com/host" in md
+    assert "/ref/host" in md
+
+
 def test_write_methods_md_missing_version(tmp_path: Path) -> None:
-    """Marks missing version as 'not_captured'."""
+    """Marks missing version as 'not_captured' when status is not not_configured."""
     md = write_methods_md(
         [],
         [{"tool_id": "custom", "executable": "custom_tool", "version": "", "status": "ok"}],
     )
     assert "not_captured" in md
+
+
+def test_write_methods_md_not_configured_version(tmp_path: Path) -> None:
+    """Marks missing version as 'not_configured' when status says so."""
+    md = write_methods_md(
+        [],
+        [
+            {
+                "tool_id": "custom",
+                "executable": "custom_tool",
+                "version": "",
+                "status": "not_configured",
+            }
+        ],
+    )
+    assert "not_configured" in md
+    tool_row = [line for line in md.splitlines() if "custom_tool" in line]
+    assert tool_row
+    assert "not_captured" not in tool_row[0]
 
 
 def test_write_methods_md_failed_version_capture(tmp_path: Path) -> None:
@@ -309,6 +345,20 @@ def test_write_methods_md_failed_version_capture(tmp_path: Path) -> None:
     }
     md = write_methods_md([], [bad_tool])
     assert "capture_failed" in md
+
+
+def test_write_methods_md_empty_tool_versions(tmp_path: Path) -> None:
+    """Empty tool_versions list still renders Software Versions section with placeholder."""
+    md = write_methods_md([], [])
+    assert "## Software Versions" in md
+    assert "| not_configured | not_configured | not_configured | not_configured |" in md
+
+
+def test_write_methods_md_empty_resources(tmp_path: Path) -> None:
+    """Empty resources list still renders Reference Databases section with placeholder."""
+    md = write_methods_md([], [], resources=[])
+    assert "## Reference Databases" in md
+    assert "| not_configured | not_configured | not_configured | not_configured |" in md
 
 
 def test_write_methods_md_pipe_escape(tmp_path: Path) -> None:

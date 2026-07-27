@@ -7,3 +7,11 @@ mobilizable_calls	20	20	157	plasmids	interim_descriptive	MOB-suite database infe
 paper_method_precision	0.07643312101910828	12	157	fraction	claim_eligible	Paper-method reconstruction; not paper-exact; v2 frozen evidence 2026-07-23
 paper_method_recall	0.7272727272727273	64	88	fraction	claim_eligible	Paper-method reconstruction; not paper-exact; v2 frozen evidence 2026-07-23
 paper_method_f1	0.138328530259366			fraction	claim_eligible	Harmonic mean of paper-method precision 12/157 and recall 64/88; not paper-exact
+original_scapp_predictions	102	102		predictions	claim_eligible	Original SCAPP defaults on SRR11038083 paper protocol; 2026-07-26
+original_scapp_precision	0.12745098039215685	13	102	fraction	claim_eligible	Against paper-method gold standard from PLSDB 2018-12-05; not paper-exact
+original_scapp_recall	0.8160919540229885	71	87	fraction	claim_eligible	Against paper-method gold standard from PLSDB 2018-12-05; not paper-exact
+original_scapp_f1	0.22047056013376326			fraction	claim_eligible	Harmonic mean of precision 13/102 and recall 71/87
+abi_scapp_predictions	103	103		predictions	claim_eligible	ABI SCAPP node on SRR11038083; 2026-07-26
+abi_scapp_precision	0.1262135922330097	13	103	fraction	claim_eligible	Against paper-method gold standard from PLSDB 2018-12-05; not paper-exact
+abi_scapp_recall	0.8160919540229885	71	87	fraction	claim_eligible	Against paper-method gold standard from PLSDB 2018-12-05; not paper-exact
+abi_scapp_f1	0.21861676930364757			fraction	claim_eligible	Harmonic mean of precision 13/103 and recall 71/87

@@ -13,6 +13,20 @@ alignment:
 resources:
   genome_index: GENOME_INDEX_NOT_CONFIGURED
   annotation_gtf: ANNOTATION_GTF_NOT_CONFIGURED
+  go_obo: GO_OBO_NOT_CONFIGURED
+  go_gaf: GO_GAF_NOT_CONFIGURED
+  reactome_gmt: REACTOME_GMT_NOT_CONFIGURED
+
+enrichment:
+  enabled: false
+  annotation_release: GRCh37.75
+  alpha: 0.05
+  rank_column: stat
+  permutations: 1000
+  seed: 20260727
+  min_size: 15
+  max_size: 500
+  top_n: 5
 
 differential_expression:
   comparison: "treatment_vs_control"

@@ -44,3 +44,57 @@ tables:
     - count
     - tool
     - source_file
+  annotated_differential_expression:
+    - gene_id
+    - gene_symbol
+    - baseMean
+    - log2FoldChange
+    - lfcSE
+    - stat
+    - pvalue
+    - padj
+    - comparison
+    - tool
+    - source_file
+  go_overrepresentation: &ora_columns
+    - source
+    - aspect
+    - direction
+    - term
+    - plot_label
+    - score
+    - overlap_count
+    - term_size
+    - selected_size
+    - background_size
+    - fold_enrichment
+    - pvalue
+    - padj
+    - gene_symbols
+    - method
+    - tool
+    - source_file
+  reactome_overrepresentation: *ora_columns
+  go_overrepresentation_plot: *ora_columns
+  reactome_overrepresentation_plot: *ora_columns
+  go_gsea: &gsea_columns
+    - source
+    - aspect
+    - direction
+    - term
+    - plot_label
+    - score
+    - es
+    - nes
+    - pvalue
+    - padj
+    - fwer_pvalue
+    - tag_fraction
+    - gene_fraction
+    - gene_symbols
+    - method
+    - tool
+    - source_file
+  reactome_gsea: *gsea_columns
+  go_gsea_plot: *gsea_columns
+  reactome_gsea_plot: *gsea_columns

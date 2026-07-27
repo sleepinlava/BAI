@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
 
 from abi.plugins import get_plugin, list_plugins
@@ -30,6 +31,11 @@ def test_table_schemas():
     assert "alignment_summary" in schemas
     assert "normalized_expression" in schemas
     assert "count_matrix" in schemas
+    assert "annotated_differential_expression" in schemas
+    assert "go_overrepresentation" in schemas
+    assert "reactome_overrepresentation" in schemas
+    assert "go_gsea" in schemas
+    assert "reactome_gsea" in schemas
 
 
 def test_registry():
@@ -39,6 +45,7 @@ def test_registry():
     assert registry.has("star")
     assert registry.has("featurecounts")
     assert registry.has("deseq2")
+    assert registry.has("rnaseq_enrichment")
 
 
 def test_star_output_prefix_is_not_a_preexisting_path_input():
@@ -128,14 +135,63 @@ def test_deseq2_plan_supports_paired_donor_design(tmp_path):
     assert deseq2_step.params["design"] == "~ donor + condition"
 
 
+def test_enrichment_is_opt_in_and_uses_offline_resources(tmp_path):
+    plugin = get_plugin("rnaseq_expression")
+    base_overrides = {
+        "outdir": str(tmp_path / "results"),
+        "input": {"sample_sheet": _TEST_SS},
+    }
+
+    default_plan = plugin.build_plan(
+        plugin.load_config(overrides=base_overrides),
+        check_files=False,
+    )
+    assert "rnaseq_enrichment" not in {step.tool_id for step in default_plan.steps}
+
+    resources = {
+        "annotation_gtf": str(tmp_path / "Homo_sapiens.GRCh37.75.gtf"),
+        "go_obo": str(tmp_path / "go-basic.obo"),
+        "go_gaf": str(tmp_path / "goa_human.gaf.gz"),
+        "reactome_gmt": str(tmp_path / "ReactomePathways.gmt"),
+    }
+    enabled_plan = plugin.build_plan(
+        plugin.load_config(
+            overrides={
+                **base_overrides,
+                "resources": resources,
+                "enrichment": {"enabled": True},
+            }
+        ),
+        check_files=False,
+    )
+
+    enrichment_step = enabled_plan.steps[-1]
+    assert enrichment_step.tool_id == "rnaseq_enrichment"
+    assert enrichment_step.inputs["annotation_gtf"] == resources["annotation_gtf"]
+    assert enrichment_step.inputs["go_obo"] == resources["go_obo"]
+    assert enrichment_step.inputs["go_gaf"] == resources["go_gaf"]
+    assert enrichment_step.inputs["reactome_gmt"] == resources["reactome_gmt"]
+    assert enrichment_step.params["annotation_release"] == "GRCh37.75"
+    assert enrichment_step.params["rank_column"] == "stat"
+    assert enrichment_step.params["seed"] == 20260727
+    assert enrichment_step.params["permutations"] == 1000
+
+
+def test_enrichment_requires_all_offline_resource_paths():
+    plugin = get_plugin("rnaseq_expression")
+    with pytest.raises(ValueError, match="enrichment requires configured offline resources"):
+        plugin.load_config(overrides={"enrichment": {"enabled": True}})
+
+
 def test_workflow_spec_loads():
     from abi.contracts import load_workflow_spec
 
     ws = load_workflow_spec("plugins/rnaseq_expression")
     assert ws is not None
-    assert len(ws.steps) == 5
+    assert len(ws.steps) == 6
     assert ws.steps[0].tool == "fastp"
-    assert ws.steps[-1].tool == "deseq2"
+    assert ws.steps[-1].tool == "rnaseq_enrichment"
+    assert ws.steps[-1].optional is True
     # All steps must have DOIs
     for s in ws.steps:
         assert s.citation is not None, f"step {s.id} missing citation"
@@ -252,6 +308,33 @@ def test_parse_build_count_matrix(tmp_path):
     ]
 
 
+def test_parse_enrichment_outputs_preserves_gene_symbols(tmp_path):
+    (tmp_path / "annotated_differential_expression.tsv").write_text(
+        "gene_id\tgene_symbol\tstat\tpadj\nENSG1\tCRISPLD2\t4.2\t0.001\n",
+        encoding="utf-8",
+    )
+    enrichment_header = (
+        "source\taspect\tdirection\tterm\tplot_label\tscore\tpvalue\tpadj\tgene_symbols\tmethod\n"
+    )
+    for filename, source, method in (
+        ("go_overrepresentation.tsv", "GO", "ORA"),
+        ("reactome_overrepresentation.tsv", "Reactome", "ORA"),
+        ("go_gsea.tsv", "GO", "GSEA"),
+        ("reactome_gsea.tsv", "Reactome", "GSEA"),
+    ):
+        (tmp_path / filename).write_text(
+            enrichment_header + f"{source}\tBP\tup\tTERM1 | response\tresponse\t3.2\t0.001\t0.01"
+            "\tCRISPLD2;DUSP1\t" + method + "\n",
+            encoding="utf-8",
+        )
+
+    parsed = get_plugin("rnaseq_expression").parse_outputs("rnaseq_enrichment", tmp_path, "")
+
+    assert parsed["annotated_differential_expression"][0]["gene_symbol"] == "CRISPLD2"
+    assert parsed["go_overrepresentation"][0]["gene_symbols"] == "CRISPLD2;DUSP1"
+    assert parsed["reactome_gsea"][0]["method"] == "GSEA"
+
+
 def test_unknown_tool_returns_empty():
     """Unrecognized tool_id → empty dict (graceful no-op)."""
     plugin = get_plugin("rnaseq_expression")
@@ -313,7 +396,7 @@ def test_figure_specs_valid():
     plugin = get_plugin("rnaseq_expression")
     schemas = plugin.table_schemas()
     specs = load_figure_specs(plugin.root / "figure_specs.yaml", table_schemas=schemas)
-    assert len(specs) == 6
+    assert len(specs) == 10
     spec_ids = {s.id for s in specs}
     assert spec_ids == {
         "qc_read_counts",
@@ -322,6 +405,10 @@ def test_figure_specs_valid():
         "volcano_deg",
         "top_deg_heatmap",
         "ma_plot",
+        "go_overrepresentation",
+        "reactome_overrepresentation",
+        "go_preranked_gsea",
+        "reactome_preranked_gsea",
     }
     required = [s for s in specs if s.required]
     assert len(required) == 3  # qc_read_counts, mapping_rate, volcano_deg

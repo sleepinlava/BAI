@@ -32,8 +32,7 @@ outputs:
     format: fasta
 execution:
   executable: scapp
-  command_template: scapp -g {assembly_graph} -o {output_dir}/scapp -k {max_k} -r1
-    {read1} -r2 {read2} -p {threads}
+  command_template: scapp -g {assembly_graph} -o {output_dir} -k 77 -p {threads} -r1 {read1} -r2 {read2}
   network: false
   writes_output: true
 failure_handling:

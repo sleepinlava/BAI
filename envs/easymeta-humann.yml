@@ -6,5 +6,5 @@ channels:
 - defaults
 dependencies:
 - python=3.10
-- humann>=4
+- humann>=3.9
 - metaphlan>=4

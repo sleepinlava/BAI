@@ -250,6 +250,11 @@ environments:
     - gzip
     - curl
     - wget
+    - pandas
+    - numpy
+    - scipy
+    - pip:
+      - gseapy==1.3.0
   amplicon:
     channels:
     - conda-forge
@@ -304,8 +309,22 @@ environments:
     channel_priority: strict
     dependencies:
     - python=3.10
-    - humann>=4
+    # Channels (bioconda/PyPI) currently top out at humann 3.9; 4.x is not
+    # published yet. 3.9 is the official match for ChocoPhlAn v201901_v31 +
+    # UniRef90 201901b deployed on the cloud host. Bump to >=4 once released.
+    - humann>=3.9
     - metaphlan>=4
+  scapp:
+    channels:
+    - conda-forge
+    - bioconda
+    - defaults
+    channel_priority: strict
+    dependencies:
+    - python=3.8
+    - scapp
+    - bwa
+    - plasclass
 tool_assignments:
   metagenomic_plasmid:
     fastp: autoplasm-qc
@@ -357,7 +376,7 @@ tool_assignments:
     semibin: autoplasm-plasmid-binning
     plasmaag: autoplasm-plasmid-binning
     gplas2: autoplasm-plasmid-binning
-    scapp: autoplasm-scapp
+    scapp: scapp
     recycler: autoplasm-plasmid-binning
     kraken2: stats
     metaphlan: stats
@@ -395,6 +414,7 @@ tool_assignments:
     featurecounts: rnaseq
     build_count_matrix: rnaseq
     deseq2: rnaseq
+    rnaseq_enrichment: rnaseq
   metatranscriptomics:
     fastp: abi-qc
     star: abi-stats

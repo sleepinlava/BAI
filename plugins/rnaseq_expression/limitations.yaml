@@ -7,5 +7,7 @@ limitations:
   - "DESeq2 normalisation assumes most genes are not differentially expressed; severe global shifts in expression violate this assumption."
   - "Differential expression p-values are not corrected for unmeasured confounders (batch effects, sample processing variation) unless explicitly modeled."
   - "Lowly expressed genes (mean count < 10) have inflated false discovery rates even after multiple testing correction."
-  - "Enrichment analysis is database-dependent (GO, KEGG); pathways absent from the reference database cannot be detected."
+  - "GO/Reactome enrichment is database-release dependent; pathways absent from the configured offline OBO/GAF/GMT snapshots cannot be detected."
+  - "Gene-symbol mapping uses the configured GTF gene_name attribute; missing, duplicated, or retired symbols are excluded from enrichment after deterministic de-duplication."
+  - "ORA depends on the significance threshold and measured-gene universe, while preranked GSEA depends on the chosen ranking statistic and permutation count; neither establishes pathway causality."
   - "Reference genome version, annotation version, and alignment index version all affect results; these are recorded in the resource manifest."

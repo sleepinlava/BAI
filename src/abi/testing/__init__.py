@@ -75,11 +75,14 @@ def assert_plugin_contract(plugin: object) -> None:
         if dag_path.exists() and contracts_path.is_dir():
             dag_spec = yaml.safe_load(dag_path.read_text(encoding="utf-8")) or {}
             contracts = load_tool_contracts(str(plugin_root))
-            registry_ids = {str(tool["id"]) for tool in typed_plugin.registry().list_tools()}
+            registry_tools = {
+                str(tool.get("id", "")): tool for tool in typed_plugin.registry().list_tools()
+            }
             lint_result = run_contract_lint(
                 dag_spec,
                 contracts=contracts,
-                registry_tool_ids=registry_ids,
+                registry_tool_ids=set(registry_tools),
+                registry_tools=registry_tools,
                 plugin_root=plugin_root,
                 # The contract-declaration pass has landed: every external
                 # node in the built-in plugins now carries a non-exempt

@@ -39,7 +39,7 @@ def test_database_profile_resource_paths_rebase_to_resource_root(tmp_path):
 
     paths = {row["resource_id"]: Path(row["path"]) for row in rows}
     assert paths == {
-        "genomad": resource_root / "genomad",
+        "genomad": resource_root / "genomad" / "genomad_db",
         "bakta": resource_root / "bakta" / "db",
     }
 

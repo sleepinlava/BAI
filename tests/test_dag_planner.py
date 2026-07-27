@@ -100,7 +100,7 @@ class TestUniversalDAGLoading:
             ("easymetagenome", 25),
             ("metagenomic_plasmid", 90),
             ("metatranscriptomics", 3),
-            ("rnaseq_expression", 5),
+            ("rnaseq_expression", 6),
             ("viral_viwrap", 7),
             ("wgs_bacteria", 5),
         ],

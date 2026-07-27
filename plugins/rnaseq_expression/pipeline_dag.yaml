@@ -19,6 +19,7 @@ category_dirs:
   expression: 03_expression
   preprocessing: 03_expression
   differential_expression: 04_differential_expression
+  enrichment: 05_enrichment
 
 standard_tables:
   gene_expression:
@@ -166,5 +167,93 @@ nodes:
       output_dir:
         type: directory
         path: "{outdir}/04_differential_expression"
+    assertions:
+      - "output_files.output_dir exists"
+
+  # ── Offline gene annotation and pathway enrichment ───────────────────
+  enrichment_offline:
+    tool_id: rnaseq_enrichment
+    platforms: [illumina]
+    category: enrichment
+    scope: cross_sample
+    optional: true
+    enable_condition:
+      field: enrichment.enabled
+      operator: value
+      value: true
+    depends_on: [de_deseq2]
+    config_params:
+      annotation_release: enrichment.annotation_release
+      alpha: enrichment.alpha
+      rank_column: enrichment.rank_column
+      permutations: enrichment.permutations
+      seed: enrichment.seed
+      min_size: enrichment.min_size
+      max_size: enrichment.max_size
+      top_n: enrichment.top_n
+    inputs:
+      de_results: {type: file, format: tsv, source: de_deseq2.de_results}
+      annotation_gtf: {type: file, format: gtf}
+      go_obo: {type: file, format: obo}
+      go_gaf: {type: file, format: gaf.gz}
+      reactome_gmt: {type: file, format: gmt}
+      enrichment_script:
+        type: file
+        format: py
+        path: "plugins/rnaseq_expression/scripts/run_enrichment.py"
+    outputs:
+      annotated_de:
+        type: file
+        format: tsv
+        contract: {min_size: "100B"}
+        path: "{outdir}/05_enrichment/annotated_differential_expression.tsv"
+      go_ora:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/go_overrepresentation.tsv"
+      reactome_ora:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/reactome_overrepresentation.tsv"
+      go_gsea:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/go_gsea.tsv"
+      reactome_gsea:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/reactome_gsea.tsv"
+      go_ora_plot:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/go_overrepresentation_plot.tsv"
+      reactome_ora_plot:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/reactome_overrepresentation_plot.tsv"
+      go_gsea_plot:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/go_gsea_plot.tsv"
+      reactome_gsea_plot:
+        type: file
+        format: tsv
+        contract: {min_size: "1B"}
+        path: "{outdir}/05_enrichment/reactome_gsea_plot.tsv"
+      enrichment_manifest:
+        type: file
+        format: json
+        contract: {min_size: "20B"}
+        path: "{outdir}/05_enrichment/enrichment_manifest.json"
+      output_dir:
+        type: directory
+        path: "{outdir}/05_enrichment"
     assertions:
       - "output_files.output_dir exists"

@@ -34,6 +34,7 @@ simple and auditable.
 from __future__ import annotations
 
 import csv
+import logging
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
@@ -49,6 +50,34 @@ from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge,
 from abi.report import write_plugin_report
 from abi.schemas import ABIExecutionPlan, ABISample, ABISampleContext
 from abi.tools import ToolRegistry
+
+logger = logging.getLogger(__name__)
+
+# Hand-written tool → standard-table fallbacks in ``parse_outputs()``.
+# Mirrors the branch structure there; keep the two in sync.
+_HAND_WRITTEN_TOOL_TABLES: Dict[str, List[str]] = {
+    "fastp": ["qc_summary"],
+    "star": ["alignment_summary"],
+    "hisat2": ["alignment_summary"],
+    "deseq2": ["differential_expression", "normalized_expression"],
+    "build_count_matrix": ["count_matrix"],
+    "rnaseq_enrichment": [
+        "annotated_differential_expression",
+        "go_overrepresentation",
+        "reactome_overrepresentation",
+        "go_gsea",
+        "reactome_gsea",
+        "go_overrepresentation_plot",
+        "reactome_overrepresentation_plot",
+        "go_gsea_plot",
+        "reactome_gsea_plot",
+    ],
+}
+
+# Columns of the long-format ``count_matrix`` standard table.  When the source
+# file already carries these columns it is the unpivoted long table, not the
+# wide per-sample matrix this parser expects.
+_LONG_FORMAT_COLUMNS = {"sample_id", "count"}
 
 
 class RNASeqExpressionPlugin:
@@ -202,7 +231,22 @@ class RNASeqExpressionPlugin:
             }
         if tool_id == "build_count_matrix":
             return {"count_matrix": _parse_count_matrix(Path(output_dir))}
+        if tool_id == "rnaseq_enrichment":
+            return _parse_enrichment_outputs(Path(output_dir))
         return {}
+
+    def standard_tables_for_tool(self, tool_id: str) -> List[str]:
+        """Return the standard tables *tool_id* is expected to produce.
+
+        Optional protocol consumed by the executor: it distinguishes "tool
+        legitimately has no standard-table mapping" from "tool should have
+        produced rows but parsed zero".  Covers both the declarative
+        ``parsers.yaml`` mappings and the hand-written fallbacks above.
+        """
+        target = self._tsv_mapper.get_target_table(tool_id)
+        if target:
+            return [target]
+        return list(_HAND_WRITTEN_TOOL_TABLES.get(tool_id, ()))
 
     # ── Report generation ────────────────────────────────────────────────
 
@@ -223,6 +267,35 @@ class RNASeqExpressionPlugin:
             raise ValueError("threads must be a positive integer") from None
         if threads < 1:
             raise ValueError("threads must be a positive integer")
+
+        enrichment = config.get("enrichment", {})
+        if not isinstance(enrichment, Mapping):
+            raise ValueError("enrichment must be a mapping")
+        if enrichment.get("enabled") is True:
+            resources = config.get("resources", {})
+            required_resources = ("annotation_gtf", "go_obo", "go_gaf", "reactome_gmt")
+            missing_resources = [
+                resource_id
+                for resource_id in required_resources
+                if not _configured_resource(resources, resource_id)
+            ]
+            if missing_resources:
+                raise ValueError(
+                    "enrichment requires configured offline resources: "
+                    + ", ".join(missing_resources)
+                )
+
+
+def _configured_resource(resources: Any, resource_id: str) -> bool:
+    if not isinstance(resources, Mapping):
+        return False
+    value = resources.get(resource_id)
+    if isinstance(value, Mapping):
+        value = value.get("path")
+    text = str(value or "").strip()
+    return bool(text) and not any(
+        marker in text.upper() for marker in ("NOT_CONFIGURED", "PLACEHOLDER", "TODO")
+    )
 
 
 # ── Sample sheet parser ──────────────────────────────────────────────────
@@ -284,11 +357,31 @@ def _parse_count_matrix(output_dir: Path) -> List[Dict[str, Any]]:
     """Unpivot the generated wide count matrix into stable standard rows."""
     path = output_dir / "count_matrix.tsv"
     if not path.exists():
+        logger.warning(
+            "count matrix parser found no source file at %s; returning zero rows",
+            path,
+        )
         return []
     rows: List[Dict[str, Any]] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         if not reader.fieldnames or len(reader.fieldnames) < 2:
+            logger.warning(
+                "count matrix at %s has a malformed header (columns=%s); expected a "
+                "wide matrix with a gene column plus at least one sample column; "
+                "returning zero rows",
+                path,
+                list(reader.fieldnames or ()),
+            )
+            return []
+        if _LONG_FORMAT_COLUMNS.issubset(reader.fieldnames):
+            logger.warning(
+                "count matrix at %s has long-format columns %s but a wide per-sample "
+                "matrix is expected; the source may already be unpivoted or the wrong "
+                "file was staged; returning zero rows",
+                path,
+                list(reader.fieldnames),
+            )
             return []
         gene_column = "gene_id" if "gene_id" in reader.fieldnames else reader.fieldnames[0]
         sample_columns = [column for column in reader.fieldnames if column != gene_column]
@@ -306,7 +399,41 @@ def _parse_count_matrix(output_dir: Path) -> List[Dict[str, Any]]:
                         "source_file": str(path),
                     }
                 )
+    if not rows:
+        logger.warning(
+            "count matrix at %s contains zero data rows; returning zero rows",
+            path,
+        )
     return rows
+
+
+_ENRICHMENT_OUTPUTS = {
+    "annotated_differential_expression": "annotated_differential_expression.tsv",
+    "go_overrepresentation": "go_overrepresentation.tsv",
+    "reactome_overrepresentation": "reactome_overrepresentation.tsv",
+    "go_gsea": "go_gsea.tsv",
+    "reactome_gsea": "reactome_gsea.tsv",
+    "go_overrepresentation_plot": "go_overrepresentation_plot.tsv",
+    "reactome_overrepresentation_plot": "reactome_overrepresentation_plot.tsv",
+    "go_gsea_plot": "go_gsea_plot.tsv",
+    "reactome_gsea_plot": "reactome_gsea_plot.tsv",
+}
+
+
+def _parse_enrichment_outputs(output_dir: Path) -> Dict[str, List[Dict[str, Any]]]:
+    parsed: Dict[str, List[Dict[str, Any]]] = {}
+    for table_name, filename in _ENRICHMENT_OUTPUTS.items():
+        path = output_dir / filename
+        rows: List[Dict[str, Any]] = []
+        if path.exists():
+            with path.open("r", encoding="utf-8", newline="") as handle:
+                for source_row in csv.DictReader(handle, delimiter="\t"):
+                    row = dict(source_row)
+                    row.setdefault("tool", "rnaseq_enrichment")
+                    row.setdefault("source_file", str(path))
+                    rows.append(row)
+        parsed[table_name] = rows
+    return parsed
 
 
 # ── DESeq2 parser ───────────────────────────────────────────────────────

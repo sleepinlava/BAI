@@ -13,7 +13,7 @@ resources:
   root: /root/autodl-tmp/resources/autoplasm
 
   genomad:
-    database: genomad
+    database: genomad/genomad_db
   bakta:
     # Bakta light database (~2GB) — sufficient for synthetic/smoke contigs.
     # For production genome annotation, switch to `full` profile.

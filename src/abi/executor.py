@@ -502,6 +502,26 @@ class GenericABIExecutor:
                 command_rows=command_rows,
             )
 
+        # Collect non-fatal warnings from steps that succeeded but produced no
+        # standard rows although their tool declares standard-table output
+        # (e.g. a misplaced parser source file).  The step status is unchanged;
+        # the warning already appears in the commands.tsv reason column and is
+        # mirrored here so run-level consumers see it without scanning rows.
+        # 收集非致命警告：步骤成功但解析不到标准行（尽管其工具声明了标准表格输出）。
+        # 步骤状态不变；警告已写入 commands.tsv 的 reason 列，这里再汇总一份，
+        # 便于运行级消费者无需逐行扫描即可看到。
+        run_warnings = [
+            {
+                "step_id": str(row.get("step_id", "")),
+                "tool_id": str(row.get("tool_id", "")),
+                "reason": str(row.get("reason", "")),
+            }
+            for row in command_rows
+            if row.get("status") == "success"
+            and row.get("parsed_status") == "no_standard_rows"
+            and row.get("reason")
+        ]
+
         # Write the machine-readable run summary — the primary artifact that
         # downstream consumers (agents, dashboards, job service) read.
         # 写出机器可读的运行摘要——下游消费者（agent、dashboard、job service）读取的主要产物。
@@ -520,6 +540,7 @@ class GenericABIExecutor:
                     "workers": workers,
                     "selected_tools": plan.selected_tools,
                     "standard_tables": table_summary,
+                    "warnings": run_warnings,
                     "progress_file": str(progress_paths["snapshot"]),
                     "progress_events": str(progress_paths["events"]),
                     "log_file": str(self.logger.log_file),
@@ -1016,13 +1037,45 @@ class GenericABIExecutor:
         # Append the parsed rows to the standard tables directory.
         # 将解析后的行追加到标准表格目录中。
         written = self.table_manager.append_rows(tables_dir, rows_by_table)
+        # Escalate (without failing the step) when the tool declares
+        # standard-table output but the parser produced zero rows — the most
+        # common cause is a missing/misplaced source file, as with a real
+        # rnaseq run that left tables/count_matrix.tsv header-only.
+        # 当工具声明了标准表格输出但解析器产出零行时升级提示（不使步骤失败）——
+        # 最常见的原因是源文件缺失或位置错误。
+        reason = ""
+        if not written and self._tool_declares_standard_tables(step.tool_id):
+            reason = (
+                "no standard rows parsed although the tool declares standard-table "
+                "output; inspect the step output files"
+            )
+            _logger.warning("Step %s (%s): %s", step.step_id, step.tool_id, reason)
         return {
             "status": result.status,
             "return_code": result.return_code,
-            "reason": "",
+            "reason": reason,
             "parsed_status": "parsed" if written else "no_standard_rows",
             "standard_tables": ",".join(sorted(written)),
         }
+
+    def _tool_declares_standard_tables(self, tool_id: str) -> bool:
+        """Return True when the plugin declares standard-table output for *tool_id*.
+
+        The executor only holds the plugin's ``parse_outputs`` callable, so the
+        declaration check goes through the bound plugin instance when it
+        implements the optional ``standard_tables_for_tool(tool_id)`` protocol.
+        Unknown tools and plugins without the protocol conservatively return
+        False (no warning), keeping the tolerant-by-design flow.
+        """
+        plugin = getattr(self.parse_outputs, "__self__", None)
+        checker = getattr(plugin, "standard_tables_for_tool", None)
+        if not callable(checker):
+            return False
+        try:
+            return bool(checker(tool_id))
+        except Exception:  # a broken checker must never fail a step
+            _logger.debug("standard_tables_for_tool(%r) raised", tool_id, exc_info=True)
+            return False
 
     def _command_for_step(self, step: Any, *, dry_run: bool) -> List[str]:
         """Build the shell command tokens for a step.

@@ -796,9 +796,6 @@ nodes:
         type: file
         format: fastg
         path: '{outdir}/{category_dir}/{sample_id}/assembly_graph.fastg'
-        contract:
-          file_exists: true
-          min_size: 0B
       output_dir:
         type: directory
   assembly_metaflye:
@@ -834,6 +831,10 @@ nodes:
         contract:
           min_size: 500B
           min_contigs: 1
+      assembly_graph:
+        type: file
+        format: gfa
+        path: '{outdir}/{category_dir}/{sample_id}/assembly_graph.gfa'
       output_dir:
         type: directory
   assembly_hifiasm:
@@ -855,7 +856,7 @@ nodes:
     inputs:
       long_reads:
         type: file
-        format: fastq.gz
+        format: fastq
         source: host_removal_minimap2_long.clean_long_reads
         fallback: qc_hifiadapterfilt.filtered_hifi_reads
       threads:
@@ -1536,7 +1537,6 @@ nodes:
         type: file
         format: gfa
         source: '{active_assembly_node}.assembly_graph'
-        required: false
     outputs:
       plasmid_bins:
         type: file
@@ -2245,7 +2245,6 @@ nodes:
       host_genomes:
         type: directory
         source: mag_metabat2.mag_bins
-        required: false
       plasmid_contigs:
         type: file
         format: fasta
@@ -3038,6 +3037,48 @@ nodes:
           min_contigs: 1
       output_dir:
         type: directory
+  plasmid_binning_scapp:
+    tool_id: scapp
+    category: plasmid_binning
+    scope: per_sample
+    name: SCAPP plasmid reconstruction from assembly graph
+    platforms:
+    - illumina
+    - ont
+    - pacbio_hifi
+    - hybrid
+    optional: true
+    enable_condition:
+      field: plasmid_binning.tools
+      operator: list_contains
+      value: scapp
+    depends_on:
+    - plasmid_consensus
+    inputs:
+      assembly:
+        type: file
+        format: fasta
+        source: '{active_assembly_node}.assembly'
+      assembly_graph:
+        type: file
+        format: fastg
+        source: '{active_assembly_node}.assembly_graph'
+      read1:
+        type: file
+        format: fastq.gz
+        source: qc_fastp.clean_read1
+      read2:
+        type: file
+        format: fastq.gz
+        source: qc_fastp.clean_read2
+      threads:
+        type: integer
+        default: 1
+    outputs:
+      output_dir:
+        type: directory
+        contract:
+          min_files: 1
   plasmid_binning_recycler:
     tool_id: recycler
     category: plasmid_binning
@@ -3059,9 +3100,8 @@ nodes:
     inputs:
       assembly_graph:
         type: file
-        format: gfa
+        format: fastg
         source: '{active_assembly_node}.assembly_graph'
-        required: false
       plasmid_contigs:
         type: file
         format: fasta
