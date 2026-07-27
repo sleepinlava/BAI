@@ -74,3 +74,47 @@ figures:
     xlabel: "Mean of normalized counts"
     ylabel: "log2(Fold Change)"
     required: false
+
+  - id: go_overrepresentation
+    type: bar
+    source_table: go_overrepresentation_plot
+    x: plot_label
+    y: score
+    title: "GO over-representation with gene symbols"
+    xlabel: "GO term [direction: overlap genes]"
+    ylabel: "-log10(BH adjusted p-value)"
+    required: false
+    figsize: [12, 7]
+
+  - id: reactome_overrepresentation
+    type: bar
+    source_table: reactome_overrepresentation_plot
+    x: plot_label
+    y: score
+    title: "Reactome over-representation with gene symbols"
+    xlabel: "Reactome pathway [direction: overlap genes]"
+    ylabel: "-log10(BH adjusted p-value)"
+    required: false
+    figsize: [12, 7]
+
+  - id: go_preranked_gsea
+    type: bar
+    source_table: go_gsea_plot
+    x: plot_label
+    y: score
+    title: "GO BP preranked GSEA with leading-edge genes"
+    xlabel: "GO BP term [direction: leading-edge genes]"
+    ylabel: "Normalized enrichment score (NES)"
+    required: false
+    figsize: [12, 7]
+
+  - id: reactome_preranked_gsea
+    type: bar
+    source_table: reactome_gsea_plot
+    x: plot_label
+    y: score
+    title: "Reactome preranked GSEA with leading-edge genes"
+    xlabel: "Reactome pathway [direction: leading-edge genes]"
+    ylabel: "Normalized enrichment score (NES)"
+    required: false
+    figsize: [12, 7]

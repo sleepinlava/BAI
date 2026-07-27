@@ -11,7 +11,7 @@ FASTQ
   → STAR / HISAT2 (比对)
   → featureCounts (定量)
   → DESeq2 (差异表达)
-  → 富集分析 (clusterProfiler, 可选)
+  → 离线基因符号注释 + GO/Reactome ORA/GSEA（GSEApy，可选）
   → 报告 + 图表
 ```
 
@@ -23,7 +23,7 @@ FASTQ
 | 比对 | STAR | HISAT2 | alignment |
 | 定量 | featureCounts | Salmon, Kallisto | expression |
 | 差异表达 | DESeq2 | edgeR | differential_expression |
-| 富集分析 | clusterProfiler | gseapy | enrichment |
+| 富集分析 | ABI 离线富集 + GSEApy | — | enrichment |
 
 ## 标准表格
 
@@ -34,7 +34,9 @@ FASTQ
 | `gene_expression` | 每个基因的原始计数 | 是 |
 | `normalized_expression` | DESeq2 中位数比率归一化计数 | 是 |
 | `differential_expression` | 每个基因的 log2FC, p-value, padj | 是 |
-| `enrichment_results` | GO/KEGG 通路富集 | 否 |
+| `annotated_differential_expression` | 带 GTF `gene_symbol` 的 DESeq2 结果 | 否 |
+| `go_overrepresentation`、`reactome_overrepresentation` | 含 overlap gene symbols 的完整 ORA 结果 | 否 |
+| `go_gsea`、`reactome_gsea` | 含 leading-edge gene symbols 的完整 preranked GSEA 结果 | 否 |
 
 ## 图表
 
@@ -46,7 +48,7 @@ FASTQ
 | 火山图 | `figures/volcano_deg.png` | 是 |
 | MA 图 | `figures/ma_plot.png` | 否 |
 | Top DEG 热图 | `figures/top_deg_heatmap.png` | 否 |
-| 富集分析点图 | `figures/enrichment_dotplot.png` | 否 |
+| GO/Reactome ORA + GSEA | 四组 SciPlot PDF/SVG/PNG 图 | 否 |
 
 ## 快速开始
 
@@ -87,7 +89,16 @@ alignment:
   tool: star
 resources:
   genome_index: /path/to/star_index
-  annotation_gtf: /path/to/annotations.gtf
+  annotation_gtf: /path/to/Homo_sapiens.GRCh37.75.gtf
+  go_obo: /path/to/go-basic.obo
+  go_gaf: /path/to/goa_human.gaf.gz
+  reactome_gmt: /path/to/ReactomePathways.gmt
+enrichment:
+  enabled: true
+  annotation_release: GRCh37.75
+  rank_column: stat
+  permutations: 1000
+  seed: 20260727
 differential_expression:
   comparison: "treatment_vs_control"
   alpha: 0.05
@@ -112,7 +123,8 @@ sample4	control	untreated	rna_seq	raw/s4_R1.fastq.gz	raw/s4_R2.fastq.gz
 1. **STAR 基因组索引** — 通过 `STAR --runMode genomeGenerate` 构建。
 2. **GTF 注释** — GENCODE、Ensembl 或 RefSeq 格式。
 3. **R + DESeq2** — `BiocManager::install("DESeq2")`。
-4. **可选: R + clusterProfiler** — `BiocManager::install("clusterProfiler")`。
+4. **可选富集资源** — 本地 GO OBO、人类 GOA GAF 和 Reactome GMT 快照。
+5. **可选富集运行时** — 锁定的 `rnaseq` 环境包含 GSEApy 1.3.0；该阶段不访问网络。
 
 所有资源在真实运行后出现在 `provenance/resource_manifest.json` 中。
 
@@ -146,3 +158,4 @@ load_config()  →  build_plan()  →  run (ExternalExecutor)
 - `star` → `_parse_star()` → `alignment_summary`
 - `featurecounts` → `_parse_featurecounts()` → `gene_expression`
 - `deseq2` → `_parse_deseq2()` + `_parse_deseq2_normalized()` → `differential_expression` + `normalized_expression`
+- `rnaseq_enrichment` → 基因符号注释 + 四张完整富集表 + 四张 top-N SciPlot 输入表

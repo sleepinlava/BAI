@@ -1,7 +1,7 @@
 abi_version: "0.1"
 plugin_id: rnaseq_expression
 display_name: RNA-seq Gene Expression Quantification
-description: "Standard RNA-seq pipeline: QC (fastp) → alignment (STAR) → quantification (featureCounts) → differential expression (DESeq2)."
+description: "Standard RNA-seq pipeline: QC, alignment, quantification, differential expression, and optional offline GO/Reactome enrichment."
 report_title: RNA-seq Gene Expression ABI Report
 plugin_type: standalone
 entry_point: abi.plugins.rnaseq_expression:RNASeqExpressionPlugin
@@ -14,6 +14,7 @@ core_contracts:
   - featurecounts
   - build_count_matrix
   - deseq2
+  - rnaseq_enrichment
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Workflow declaration — literature-backed, plugin-author-maintained.
@@ -53,3 +54,8 @@ workflow:
       after: [count_matrix]
       optional: false
       citation: "Love et al. 2014, Genome Biology, doi:10.1186/s13059-014-0550-8"
+    - id: pathway_enrichment
+      tool: rnaseq_enrichment
+      after: [differential_expression]
+      optional: true
+      citation: "Subramanian et al. 2005, PNAS, doi:10.1073/pnas.0506580102"

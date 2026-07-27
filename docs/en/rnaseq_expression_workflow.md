@@ -11,7 +11,7 @@ FASTQ
   → STAR / HISAT2 (alignment)
   → featureCounts (quantification)
   → DESeq2 (differential expression)
-  → enrichment (clusterProfiler, optional)
+  → offline gene-symbol + GO/Reactome ORA/GSEA (GSEApy, optional)
   → report + figures
 ```
 
@@ -23,7 +23,7 @@ FASTQ
 | Alignment | STAR | HISAT2 | alignment |
 | Quantification | featureCounts | Salmon, Kallisto | expression |
 | Differential expression | DESeq2 | edgeR | differential_expression |
-| Enrichment | clusterProfiler | gseapy | enrichment |
+| Enrichment | ABI offline enrichment + GSEApy | — | enrichment |
 
 ## Standard Tables
 
@@ -34,7 +34,9 @@ FASTQ
 | `gene_expression` | Per-gene raw counts | Yes |
 | `normalized_expression` | DESeq2 median-of-ratios normalized counts | Yes |
 | `differential_expression` | log2FC, p-value, padj per gene | Yes |
-| `enrichment_results` | GO/KEGG pathway enrichment | No |
+| `annotated_differential_expression` | DESeq2 rows with GTF `gene_symbol` | No |
+| `go_overrepresentation`, `reactome_overrepresentation` | Complete ORA results with overlap symbols | No |
+| `go_gsea`, `reactome_gsea` | Complete preranked GSEA results with leading-edge symbols | No |
 
 ## Figures
 
@@ -46,7 +48,7 @@ FASTQ
 | Volcano plot | `figures/volcano_deg.png` | Yes |
 | MA plot | `figures/ma_plot.png` | No |
 | Top DEG heatmap | `figures/top_deg_heatmap.png` | No |
-| Enrichment dotplot | `figures/enrichment_dotplot.png` | No |
+| GO/Reactome ORA + GSEA | Four SciPlot PDF/SVG/PNG figure bundles | No |
 
 ## Quick Start
 
@@ -87,7 +89,16 @@ alignment:
   tool: star
 resources:
   genome_index: /path/to/star_index
-  annotation_gtf: /path/to/annotations.gtf
+  annotation_gtf: /path/to/Homo_sapiens.GRCh37.75.gtf
+  go_obo: /path/to/go-basic.obo
+  go_gaf: /path/to/goa_human.gaf.gz
+  reactome_gmt: /path/to/ReactomePathways.gmt
+enrichment:
+  enabled: true
+  annotation_release: GRCh37.75
+  rank_column: stat
+  permutations: 1000
+  seed: 20260727
 differential_expression:
   comparison: "treatment_vs_control"
   alpha: 0.05
@@ -112,7 +123,8 @@ Real execution requires:
 1. **STAR genome index** — Build with `STAR --runMode genomeGenerate`.
 2. **GTF annotation** — GENCODE, Ensembl, or RefSeq format.
 3. **R + DESeq2** — `BiocManager::install("DESeq2")`.
-4. **Optional: R + clusterProfiler** — `BiocManager::install("clusterProfiler")`.
+4. **Optional enrichment resources** — local GO OBO, human GOA GAF, and Reactome GMT snapshots.
+5. **Optional enrichment runtime** — the locked `rnaseq` environment includes GSEApy 1.3.0; the stage performs no network access.
 
 All resources appear in `provenance/resource_manifest.json` after a real run.
 
@@ -146,3 +158,4 @@ load_config()  →  build_plan()  →  run (ExternalExecutor)
 - `star` → `_parse_star()` → `alignment_summary`
 - `featurecounts` → `_parse_featurecounts()` → `gene_expression`
 - `deseq2` → `_parse_deseq2()` + `_parse_deseq2_normalized()` → `differential_expression` + `normalized_expression`
+- `rnaseq_enrichment` → gene-symbol annotation + four complete enrichment tables + four top-N SciPlot tables

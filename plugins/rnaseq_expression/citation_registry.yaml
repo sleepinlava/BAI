@@ -17,3 +17,8 @@ citations:
   - tool: deseq2
     stage: differential_expression
     citation: "Love et al. 2014, Genome Biology, doi:10.1186/s13059-014-0550-8"
+
+
+  - tool: rnaseq_enrichment
+    stage: enrichment
+    citation: "Subramanian et al. 2005, PNAS, doi:10.1073/pnas.0506580102"

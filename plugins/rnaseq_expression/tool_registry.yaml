@@ -59,3 +59,25 @@ tools:
   - count_matrix
   - sample_metadata
   - deseq2_script
+
+- id: rnaseq_enrichment
+  name: Offline RNA-seq Enrichment
+  category: enrichment
+  executable: python
+  default_enabled: false
+  required: false
+  command_template: >-
+    python {enrichment_script} --de-results {de_results}
+    --annotation-gtf {annotation_gtf} --go-obo {go_obo} --go-gaf {go_gaf}
+    --reactome-gmt {reactome_gmt} --output-dir {output_dir}
+    --annotation-release {annotation_release}
+    --alpha {alpha} --rank-column {rank_column} --permutations {permutations}
+    --seed {seed} --min-size {min_size} --max-size {max_size}
+    --top-n {top_n} --threads {threads}
+  inputs:
+  - de_results
+  - annotation_gtf
+  - go_obo
+  - go_gaf
+  - reactome_gmt
+  - enrichment_script
