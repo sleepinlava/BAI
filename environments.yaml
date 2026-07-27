@@ -286,7 +286,10 @@ environments:
     channel_priority: strict
     dependencies:
     - python=3.10
-    - humann>=4
+    # Channels (bioconda/PyPI) currently top out at humann 3.9; 4.x is not
+    # published yet. 3.9 is the official match for ChocoPhlAn v201901_v31 +
+    # UniRef90 201901b deployed on the cloud host. Bump to >=4 once released.
+    - humann>=3.9
     - metaphlan>=4
 tool_assignments:
   metagenomic_plasmid:
