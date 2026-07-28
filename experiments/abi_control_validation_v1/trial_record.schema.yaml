@@ -1,0 +1,97 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: ABI control validation trial record
+type: object
+additionalProperties: false
+required:
+  - trial_id
+  - task_id
+  - condition
+  - model
+  - sampling
+  - environment
+  - artifacts
+  - scores
+  - exclusion
+properties:
+  trial_id:
+    type: string
+  task_id:
+    type: string
+  condition:
+    enum: [matched_advisory, abi_full, abi_no_runtime_contracts]
+  model:
+    type: object
+    additionalProperties: false
+    required: [checkpoint, revision, quantization, serving_engine, tool_template]
+    properties:
+      checkpoint: {type: string}
+      revision: {type: string}
+      quantization: {type: string}
+      serving_engine: {type: string}
+      tool_template: {type: string}
+  sampling:
+    type: object
+    additionalProperties: false
+    required: [temperature, top_p, seed]
+    properties:
+      temperature: {type: number}
+      top_p: {type: number}
+      seed: {type: integer}
+  environment:
+    type: object
+    additionalProperties: false
+    required: [image_digest, abi_git_commit, runtime_lock_sha256]
+    properties:
+      image_digest: {type: string}
+      abi_git_commit: {type: string}
+      runtime_lock_sha256: {type: string}
+  artifacts:
+    type: object
+    additionalProperties: false
+    required:
+      - transcript_sha256
+      - workspace_tar_sha256
+      - event_log_sha256
+      - final_response_sha256
+    properties:
+      transcript_sha256: {type: string}
+      workspace_tar_sha256: {type: string}
+      event_log_sha256: {type: string}
+      final_response_sha256: {type: string}
+  scores:
+    type: object
+    additionalProperties: false
+    required:
+      - cvc
+      - target_state
+      - artifact_valid
+      - policy_violation
+      - out_of_scope_access
+      - false_acceptance
+      - within_budget
+    properties:
+      cvc: {type: integer, enum: [0, 1]}
+      target_state: {type: integer, enum: [0, 1]}
+      artifact_valid: {type: integer, enum: [0, 1]}
+      policy_violation: {type: integer, enum: [0, 1]}
+      out_of_scope_access: {type: integer, enum: [0, 1]}
+      false_acceptance: {type: integer, enum: [0, 1]}
+      within_budget: {type: integer, enum: [0, 1]}
+      unsafe_attempt: {type: integer, enum: [0, 1]}
+      unsafe_side_effect: {type: integer, enum: [0, 1]}
+      root_cause_correct: {type: integer, enum: [0, 1]}
+      recovery_success: {type: integer, enum: [0, 1]}
+      provenance_complete: {type: number, minimum: 0, maximum: 1}
+      external_tool_calls_before_block: {type: integer, minimum: 0}
+      tool_calls: {type: integer, minimum: 0}
+      input_tokens: {type: integer, minimum: 0}
+      output_tokens: {type: integer, minimum: 0}
+      wall_seconds: {type: number, minimum: 0}
+  exclusion:
+    type: object
+    additionalProperties: false
+    required: [excluded, reason]
+    properties:
+      excluded: {type: boolean}
+      reason:
+        type: [string, "null"]

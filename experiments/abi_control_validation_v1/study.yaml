@@ -1,0 +1,170 @@
+study_id: abi_control_validation_v1
+status: draft_not_frozen
+retired_inputs:
+  import_old_abi_bench_tasks: false
+  import_old_abi_bench_scores: false
+  import_old_abi_bench_prompts: false
+
+primary_question: >-
+  When model, task, workflow knowledge, underlying tools, data, environment, and
+  budget are held constant, does ABI's executable control layer improve controlled
+  valid completion compared with an information-matched advisory interface?
+
+canonical_lifecycle_to_freeze:
+  discovery: [list_types, query]
+  preparation: [plan, check, dry_run, inspect_preview]
+  execution: [request_authorization, run]
+  validation: [inspect, validate_result, report]
+
+workflows:
+  - rnaseq_expression
+  - wgs_bacteria
+  - metagenomic_plasmid
+
+conditions:
+  matched_advisory:
+    label_for_agent: interface_a
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: generated_read_only_advisory_card
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: false
+    active_authorization_gate: false
+    active_output_contracts: false
+    structured_recovery: false
+    forced_provenance: false
+    purpose: >-
+      Information-matched advisory control. The agent sees the same workflow facts
+      but must apply them without active ABI enforcement.
+
+  abi_full:
+    label_for_agent: interface_b
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: abi_agent_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: true
+    active_authorization_gate: true
+    active_output_contracts: true
+    structured_recovery: true
+    forced_provenance: true
+    purpose: Primary ABI condition.
+
+  abi_no_runtime_contracts:
+    label_for_agent: interface_c
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: abi_agent_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: false
+    active_authorization_gate: true
+    active_output_contracts: false
+    structured_recovery: true
+    forced_provenance: true
+    purpose: >-
+      Targeted ablation retaining interface, authorization, diagnostics, and
+      provenance while removing pre- and post-execution runtime contracts.
+    confirmatory_scope: [preflight, output_acceptance]
+
+models:
+  primary:
+    checkpoint: TO_BE_FROZEN
+    revision: TO_BE_FROZEN
+    quantization: TO_BE_FROZEN
+    serving_engine: TO_BE_FROZEN
+    tool_template: TO_BE_FROZEN
+    role: main_text
+  robustness:
+    checkpoint: TO_BE_FROZEN
+    revision: TO_BE_FROZEN
+    quantization: TO_BE_FROZEN
+    serving_engine: TO_BE_FROZEN
+    tool_template: TO_BE_FROZEN
+    role: supplementary_six_task_subset
+
+sampling:
+  temperature: 0
+  top_p: 1
+  seeds: [1103, 2207, 3313, 4421, 5531]
+  replicates_per_cell: 5
+
+budget:
+  wall_seconds: 300
+  max_tool_calls: 20
+  max_input_tokens: 30000
+  max_output_tokens: 6000
+  max_recovery_attempts: 2
+
+environment:
+  isolation: one_fresh_oci_container_per_trial
+  base_image_digest: TO_BE_FROZEN
+  abi_version: TO_BE_FROZEN
+  abi_git_commit: TO_BE_FROZEN
+  runtime_lock_sha256: TO_BE_FROZEN
+  contract_snapshot_sha256: TO_BE_FROZEN
+  network: disabled
+  user: non_root
+  root_filesystem: read_only
+  mounts:
+    input: /task/input:ro
+    work: /task/work:rw
+    interface: /task/interface:ro
+  grader:
+    path: /grader
+    visible_to_agent: false
+  locale: C.UTF-8
+  timezone: UTC
+  cpu_limit: 2
+  memory_limit_gb: 4
+  disk_limit_gb: 4
+  process_limit: 128
+  cache_between_trials: false
+
+run_matrix:
+  primary_model:
+    task_selector: all_confirmatory_tasks
+    conditions: [matched_advisory, abi_full, abi_no_runtime_contracts]
+    ablation_rule: >-
+      abi_no_runtime_contracts contributes to the primary ablation only for
+      preflight and output_acceptance tasks; other categories are recorded as
+      implementation-equivalence checks, not mechanism estimates.
+  robustness_model:
+    task_selector:
+      - rnaseq_t3_missing_mate
+      - rnaseq_t5_empty_count_table
+      - wgs_t4_check_only_authorization
+      - wgs_t6_resumable_tool_failure
+      - plasmid_t3_missing_database
+      - plasmid_t5_stale_output
+    conditions: [matched_advisory, abi_full]
+
+randomization:
+  block: task_id_x_model_id_x_replicate_id
+  randomize_condition_order_within_block: true
+  randomization_seed: 20260728
+  share_session_between_conditions: false
+  share_workspace_between_conditions: false
+
+pilot:
+  uses_confirmatory_tasks: false
+  required_exit_artifact: pilot_exit_report.json
+  may_tune:
+    - container_orchestration
+    - neutral_interface_instructions
+    - budgets
+    - validator_bugs
+  may_not_tune:
+    - confirmatory_prompts_after_outcome_observation
+    - condition_specific_help
+    - task_selection_based_on_effect_size
+
+stopping:
+  run_once_after_freeze: true
+  optional_stopping_based_on_results: false
+  failed_trial_policy: apply_preregistered_exclusion_only
+
+publication:
+  archive_target: Zenodo
+  release_raw_transcripts: true
+  release_event_logs: true
+  release_workspaces: true
+  release_task_manifests: true
+  release_validators: true
+  release_randomization_order: true

@@ -131,6 +131,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    current_conclusions_next_steps
    paper_evaluation
    paper_outline
+   new_validation_experiment_research
    real_data_validation_datasets
    abi_real_data_validation_status_20260724
    scapp_v2_biological_correctness_audit_20260726
