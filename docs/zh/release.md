@@ -114,7 +114,10 @@ gh workflow run docker.yml --ref master \
 ```
 
 tag 和 GitHub Release 均不会启动 Docker workflow。容器发布是独立且有意的
-操作员动作，不属于自动 GitHub Release → PyPI 链。
+操作员动作，不属于自动 GitHub Release → PyPI 链。发布时必须把手动 workflow
+ref 设为准确且已验证的 `v<version>` tag，先记录一次成功的 `push=false` 运行，
+再在同一 tag 上以 `push=true` 重跑。workflow 会拒绝从分支或非版本 tag 发布，
+并在推送 registry tag 前重新执行本地冒烟测试。
 
 ## 发布后验证
 

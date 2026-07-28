@@ -16,7 +16,7 @@ on:
         default: "all"
         required: false
       push:
-        description: "Push to GHCR after building"
+        description: "Push after local smoke test (v* tag ref only)"
         type: boolean
         default: false
         required: false
@@ -83,6 +83,10 @@ jobs:
 
           # Publishing is also opt-in during a manual dispatch.
           if [[ "${{ inputs.push }}" == "true" ]]; then
+            if [[ "${{ github.ref }}" != refs/tags/v* ]]; then
+              echo "Publishing requires a manually selected v* tag ref." >&2
+              exit 1
+            fi
             PUSH=true
             if [[ "${{ inputs.push_to_dockerhub }}" == "true" ]]; then
               PUSH_TO_DH=true
@@ -91,6 +95,28 @@ jobs:
 
           echo "push=${PUSH}" >> $GITHUB_OUTPUT
           echo "push_to_dh=${PUSH_TO_DH}" >> $GITHUB_OUTPUT
+
+      # ── Validate locally before any registry publication ─────────
+      - name: Build validation image
+        if: steps.gate.outcome == 'success'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          tags: ${{ matrix.image-name }}:latest
+          push: false
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: false
+
+      - name: Smoke-test validation image
+        if: steps.gate.outcome == 'success'
+        run: |
+          docker run --rm ${{ matrix.image-name }}:latest list-types
+          echo "=== Image ${{ matrix.image-name }} local smoke-test OK ==="
 
       # ── Registry logins ───────────────────────────────────────────
       - name: Login to GitHub Container Registry
@@ -111,16 +137,15 @@ jobs:
       # ── Tag / label generation ────────────────────────────────────
       - name: Docker metadata (GHCR)
         id: meta-ghcr
-        if: steps.gate.outcome == 'success'
+        if: steps.gate.outcome == 'success' && steps.flags.outputs.push == 'true'
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image-name }}
           tags: |
-            type=raw,value=latest,enable=${{ steps.flags.outputs.push == 'true' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=ref,event=tag
+            type=raw,value=latest
+            type=semver,pattern={{version}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}},value=${{ github.ref_name }}
           labels: |
             org.opencontainers.image.title=ABI ${{ matrix.plugin }}
             org.opencontainers.image.description=ABI bioinformatics plugin: ${{ matrix.plugin }}
@@ -133,25 +158,18 @@ jobs:
         with:
           images: ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image-name }}
           tags: |
-            type=raw,value=latest,enable=${{ steps.flags.outputs.push == 'true' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=ref,event=tag
+            type=raw,value=latest
+            type=semver,pattern={{version}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}},value=${{ github.ref_name }}
 
       # ── Merge GHCR + Docker Hub tags / labels ─────────────────────
       - name: Merge image tags
         id: meta
-        if: steps.gate.outcome == 'success'
+        if: steps.gate.outcome == 'success' && steps.flags.outputs.push == 'true'
         run: |
           TAGS="${{ steps.meta-ghcr.outputs.tags }}"
           LABELS="${{ steps.meta-ghcr.outputs.labels }}"
-          # Non-push builds must always be loaded under the stable local tag
-          # consumed by the smoke test. Manual dispatch metadata may otherwise
-          # produce no usable tag when the selected ref is not a release tag.
-          if [ "${{ steps.flags.outputs.push }}" == "false" ]; then
-            TAGS="${TAGS}"$'\n'"${{ matrix.image-name }}:latest"
-          fi
           if [ -n "${{ steps.meta-dh.outputs.tags }}" ]; then
             TAGS="${TAGS}"$'\n'"${{ steps.meta-dh.outputs.tags }}"
           fi
@@ -162,34 +180,24 @@ jobs:
           echo "$LABELS" >> $GITHUB_OUTPUT
           echo 'EOF_LABELS' >> $GITHUB_OUTPUT
 
-      # ── Build & push ──────────────────────────────────────────────
-      - name: Build and push Docker image
-        if: steps.gate.outcome == 'success'
+      # ── Publish only after the local smoke test succeeds ──────────
+      - name: Build and push registry image
+        if: steps.gate.outcome == 'success' && steps.flags.outputs.push == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           # RNA-seq's R/DESeq2 environment is not yet arm64-ready under QEMU.
-          platforms: ${{ steps.flags.outputs.push == 'true' && matrix.plugin != 'rnaseq' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: ${{ matrix.plugin != 'rnaseq' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          push: ${{ steps.flags.outputs.push }}
-          load: ${{ steps.flags.outputs.push == 'false' }}
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Attestations create a manifest list, which the local Docker
-          # exporter cannot load. Generate them only for registry pushes.
-          provenance: ${{ steps.flags.outputs.push == 'true' && 'mode=max' || 'false' }}
-          sbom: ${{ steps.flags.outputs.push == 'true' }}
+          provenance: mode=max
+          sbom: true
 
-      # ── Smoke-test (local image, when not pushing) ────────────────
-      - name: Smoke-test (local)
-        if: steps.gate.outcome == 'success' && steps.flags.outputs.push == 'false'
-        run: |
-          docker run --rm ${{ matrix.image-name }}:latest list-types
-          echo "=== Image ${{ matrix.image-name }} local smoke-test OK ==="
-
-      # ── Smoke-test (pushed image, when pushing) ───────────────────
+      # ── Verify the published registry image ───────────────────────
       - name: Smoke-test (pushed image)
         if: steps.gate.outcome == 'success' && steps.flags.outputs.push == 'true'
         run: |

@@ -167,7 +167,11 @@ gh workflow run docker.yml --ref master \
   -f plugin=all -f push=false -f push_to_dockerhub=false
 ```
 
-Enable `push` only for an intentional container release. Enable
+For a container release, select the exact verified `v<version>` tag as the
+workflow ref and first complete a `push=false` validation run. Then rerun the
+same tag with `push=true`; the workflow repeats the local build and
+`abi list-types` smoke test before it publishes `latest` and immutable semver
+tags. Publishing from a branch or a non-version tag is rejected. Enable
 `push_to_dockerhub` only when the repository secrets and target namespace have
 been verified.
 

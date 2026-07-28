@@ -147,7 +147,10 @@ gh workflow run docker.yml --ref master \
   -f plugin=all -f push=false -f push_to_dockerhub=false
 ```
 
-只有计划发布容器时才启用 `push`；只有确认仓库 secret 与目标命名空间后才启用
+发布容器时，workflow ref 必须选择已验证的准确 `v<version>` tag，并先完成一次
+`push=false` 验证。随后在同一 tag 上以 `push=true` 重跑；workflow 会在发布
+`latest` 和不可变 semver tag 前，再次完成本地构建与 `abi list-types` 冒烟测试。
+从分支或非版本 tag 发布会被拒绝。只有确认仓库 secret 与目标命名空间后才启用
 `push_to_dockerhub`。
 
 ## 完成定义

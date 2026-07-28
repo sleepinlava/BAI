@@ -136,7 +136,11 @@ gh workflow run docker.yml --ref master \
 
 The Docker workflow is never started by a tag or GitHub Release. Container
 publication is a separate, intentional operator action and is outside the
-automatic GitHub Release → PyPI chain.
+automatic GitHub Release → PyPI chain. To publish, select the exact verified
+`v<version>` tag as the manual workflow ref, first record a successful
+`push=false` run, and then rerun the same tag with `push=true`. The workflow
+rejects branch and non-version-tag publication and repeats the local smoke test
+before pushing registry tags.
 
 ## Post-Release Verification
 

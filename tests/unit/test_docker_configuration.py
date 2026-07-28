@@ -9,14 +9,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_docker_workflow_is_manual_only():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
-    trigger_block = workflow.split("on:", maxsplit=1)[1].split("jobs:", maxsplit=1)[0]
-    top_level_triggers = [
-        line.strip()
-        for line in trigger_block.splitlines()
-        if line.startswith("  ") and not line.startswith("    ") and line.strip()
-    ]
+    parsed = yaml.load(workflow, Loader=yaml.BaseLoader)
 
-    assert top_level_triggers == ["workflow_dispatch:"]
+    assert set(parsed["on"]) == {"workflow_dispatch"}
+    for path in (ROOT / ".github" / "workflows").glob("*.yml"):
+        if path.name == "docker.yml":
+            continue
+        contents = path.read_text(encoding="utf-8")
+        assert "docker/build-push-action" not in contents
+        assert "docker build" not in contents
 
 
 def test_docker_build_inputs_are_not_excluded_from_context():
@@ -43,20 +44,35 @@ def test_conda_mirror_maps_defaults_to_existing_repositories():
 def test_non_push_docker_build_has_the_local_smoke_test_tag():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
 
-    assert 'if [ "${{ steps.flags.outputs.push }}" == "false" ]; then' in workflow
-    assert '"${{ matrix.image-name }}:latest"' in workflow
+    assert "tags: ${{ matrix.image-name }}:latest" in workflow
     assert "docker run --rm ${{ matrix.image-name }}:latest list-types" in workflow
 
 
 def test_manual_docker_workflow_exposes_build_and_publish_controls():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
+    parsed = yaml.load(workflow, Loader=yaml.BaseLoader)
+    inputs = parsed["on"]["workflow_dispatch"]["inputs"]
+    options = inputs["plugin"]["options"]
+    matrix_plugins = [
+        entry["plugin"] for entry in parsed["jobs"]["build"]["strategy"]["matrix"]["include"]
+    ]
 
-    assert "workflow_dispatch:" in workflow
-    assert "      plugin:" in workflow
-    assert "      push:" in workflow
-    assert "      push_to_dockerhub:" in workflow
-    assert "refs/tags/v*" not in workflow
-    assert "github.event_name" not in workflow
+    assert set(inputs) == {"plugin", "push", "push_to_dockerhub"}
+    assert options == ["all", *matrix_plugins]
+    assert "inputs.plugin == 'all' || inputs.plugin == matrix.plugin" in workflow
+
+
+def test_registry_publish_requires_a_version_tag_after_local_smoke():
+    workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
+
+    assert 'if [[ "${{ github.ref }}" != refs/tags/v* ]]; then' in workflow
+    assert "Publishing requires a manually selected v* tag ref." in workflow
+    assert workflow.index("- name: Build validation image") < workflow.index(
+        "- name: Smoke-test validation image"
+    )
+    assert workflow.index("- name: Smoke-test validation image") < workflow.index(
+        "- name: Build and push registry image"
+    )
 
 
 def test_python_ci_validates_docker_compose_configuration():
@@ -68,16 +84,24 @@ def test_python_ci_validates_docker_compose_configuration():
 def test_local_docker_export_disables_registry_attestations():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
 
-    push_condition = "steps.flags.outputs.push == 'true'"
-    assert f"provenance: ${{{{ {push_condition} && 'mode=max' || 'false' }}}}" in workflow
-    assert f"sbom: ${{{{ {push_condition} }}}}" in workflow
+    validation_step = workflow.split("- name: Build validation image", maxsplit=1)[1].split(
+        "- name: Smoke-test validation image", maxsplit=1
+    )[0]
+    publish_step = workflow.split("- name: Build and push registry image", maxsplit=1)[1]
+
+    assert "push: false" in validation_step
+    assert "load: true" in validation_step
+    assert "provenance: false" in validation_step
+    assert "sbom: false" in validation_step
+    assert "push: true" in publish_step
+    assert "provenance: mode=max" in publish_step
+    assert "sbom: true" in publish_step
 
 
 def test_rnaseq_registry_build_is_amd64_only_until_arm64_is_validated():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
 
-    assert "steps.flags.outputs.push == 'true' && matrix.plugin != 'rnaseq'" in workflow
-    assert "'linux/amd64,linux/arm64' || 'linux/amd64'" in workflow
+    assert "matrix.plugin != 'rnaseq' && 'linux/amd64,linux/arm64' || 'linux/amd64'" in workflow
 
 
 def test_sdist_contains_files_forced_into_the_wheel():

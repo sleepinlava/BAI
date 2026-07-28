@@ -70,6 +70,8 @@ lists. Keep TUNA channel mappings valid: `defaults` belongs under `default_chann
 `pkgs/r`), while `conda-forge` and `bioconda` belong under `custom_channels`. Verify changed URLs
 return repository metadata before pushing. Manual registry pushes are multi-platform except RNA-seq,
 which is `linux/amd64` only until its R/DESeq2 environment passes a native arm64 build and smoke test.
+A registry push must use a manually selected, verified `v<version>` tag ref and must run the local
+build plus `abi list-types` smoke test before any registry mutation; branch publication is forbidden.
 A PR is complete when all Python matrix jobs and Migration Gate pass; Docker validation is recommended
 manually for affected container inputs and mandatory only before container publication. Pages
 deployment being skipped on a PR is expected.
