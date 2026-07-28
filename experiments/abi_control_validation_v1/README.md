@@ -24,6 +24,8 @@ completion compared with an information-matched advisory interface?
 - `system_prompt.txt`: common system prompt used verbatim in every condition.
 - `tasks.yaml`: 18 confirmatory task specifications, user prompts, fault recipes, gold
   states, and deterministic validators.
+- `fixture_recipes.yaml`: deterministic project layouts, sample sheets, resources,
+  clean twins, and task-to-recipe mapping.
 - `scoring.yaml`: metric definitions, denominators, and trial-level CVC logic.
 - `execution_plan.md`: fixture construction, condition implementation, orchestration,
   preflight, pilot, and clean-run procedure.

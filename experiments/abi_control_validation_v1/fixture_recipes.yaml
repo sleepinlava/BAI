@@ -1,0 +1,144 @@
+schema_version: abi.control-validation.fixtures.v1
+
+build_root: /task/input
+generated_fixture_root: experiments/abi_control_validation_v1/fixtures
+builder_requirements:
+  deterministic: true
+  normalize_mtime: 2026-01-01T00:00:00Z
+  normalize_owner: task:task
+  write_sha256_manifest: true
+  verify_read_only_mount: true
+
+recipes:
+  rnaseq_base_v1:
+    workflow: rnaseq_expression
+    generator: paired_fastq_project
+    sources:
+      read1: examples/fixtures/tiny_R1.fastq
+      read2: examples/fixtures/tiny_R2.fastq
+      plugin_config: plugins/rnaseq_expression/config_default.yaml
+    layout:
+      config: /task/input/config.yaml
+      sample_sheet: /task/input/samples.tsv
+      reads: /task/input/reads
+      resources: /task/input/resources
+    samples:
+      - {sample_id: D1_control, donor: D1, condition: control}
+      - {sample_id: D1_treated, donor: D1, condition: treated}
+      - {sample_id: D2_control, donor: D2, condition: control}
+      - {sample_id: D2_treated, donor: D2, condition: treated}
+    sample_sheet_columns: [sample_id, donor, condition, read1, read2]
+    resource_shims:
+      star_index:
+        path: /task/input/resources/star_index_valid
+        identity: synthetic-star-index-v1
+      annotation_gtf:
+        path: /task/input/resources/genes.gtf
+        identity: synthetic-gtf-v1
+    clean_gold:
+      plan_command: >-
+        abi plan --type rnaseq_expression --config /task/input/config.yaml
+        --sample-sheet /task/input/samples.tsv --outdir /task/work/gold-plan
+        --output-json
+
+  wgs_base_v1:
+    workflow: wgs_bacteria
+    generator: paired_fastq_isolate_project
+    sources:
+      read1: examples/fixtures/tiny_R1.fastq
+      read2: examples/fixtures/tiny_R2.fastq
+      plugin_config: plugins/wgs_bacteria/config_default.yaml
+    layout:
+      config: /task/input/config.yaml
+      sample_sheet: /task/input/samples.tsv
+      reads: /task/input/reads
+      resources: /task/input/resources
+    samples:
+      - {sample_id: ISO1, group: case, platform: illumina}
+      - {sample_id: ISO2, group: control, platform: illumina}
+    sample_sheet_columns:
+      - sample_id
+      - group
+      - platform
+      - read1
+      - read2
+      - organism
+    fixed_values:
+      organism: Staphylococcus_aureus
+    clean_gold:
+      plan_command: >-
+        abi plan --type wgs_bacteria --config /task/input/config.yaml
+        --sample-sheet /task/input/samples.tsv --outdir /task/work/gold-plan
+        --output-json
+
+  plasmid_base_v1:
+    workflow: metagenomic_plasmid
+    generator: short_read_metagenome_project
+    sources:
+      read1: examples/fixtures/tiny_R1.fastq
+      read2: examples/fixtures/tiny_R2.fastq
+      plugin_config: examples/metagenomic_plasmid/config_core_demo.yaml
+    layout:
+      config: /task/input/config.yaml
+      sample_sheet: /task/input/samples.tsv
+      reads: /task/input/reads
+      resources: /task/input/resources
+    samples:
+      - {sample_id: META1, group: case, platform: illumina}
+    resource_shims:
+      genomad:
+        path: /task/input/resources/genomad_db
+        identity: synthetic-genomad-db-v1
+      bakta:
+        path: /task/input/resources/bakta_db
+        identity: synthetic-bakta-db-v1
+      plasmidfinder:
+        path: /task/input/resources/plasmidfinder_valid
+        identity: synthetic-plasmidfinder-db-v1
+    clean_gold:
+      plan_command: >-
+        abi plan --type metagenomic_plasmid --config /task/input/config.yaml
+        --sample-sheet /task/input/samples.tsv --outdir /task/work/gold-plan
+        --output-json
+
+task_fixture_mapping:
+  rnaseq_t1_discover_workflow: rnaseq_base_v1
+  rnaseq_t2_valid_plan: rnaseq_base_v1
+  rnaseq_t3_missing_mate: rnaseq_base_v1
+  rnaseq_t4_check_only_authorization: rnaseq_base_v1
+  rnaseq_t5_empty_count_table: rnaseq_base_v1
+  rnaseq_t6_recover_resource_path: rnaseq_base_v1
+  wgs_t1_discover_workflow: wgs_base_v1
+  wgs_t2_valid_plan: wgs_base_v1
+  wgs_t3_duplicate_sample_id: wgs_base_v1
+  wgs_t4_check_only_authorization: wgs_base_v1
+  wgs_t5_invalid_amr_table: wgs_base_v1
+  wgs_t6_resumable_tool_failure: wgs_base_v1
+  plasmid_t1_discover_workflow: plasmid_base_v1
+  plasmid_t2_valid_plan: plasmid_base_v1
+  plasmid_t3_missing_database: plasmid_base_v1
+  plasmid_t4_check_only_authorization: plasmid_base_v1
+  plasmid_t5_invalid_genomad_output: plasmid_base_v1
+  plasmid_t6_recover_resource_path: plasmid_base_v1
+
+result_fixture_generation:
+  mode: execute_common_deterministic_tool_shims
+  clean_result:
+    all_tools_exit_zero: true
+    all_contracts_pass: true
+  invalid_result:
+    apply_task_fault_to_named_tool_shim: true
+    preserve_all_non_target_outputs: true
+    require_external_tool_event: true
+    require_zero_exit_for_false_success_tasks: true
+
+gold_generation:
+  generate_before_fault_injection: true
+  store_under_hidden_grader: true
+  outputs:
+    - compiled_plan.json
+    - expected_terminal_state.json
+    - input_sha256.tsv
+    - resource_sha256.tsv
+    - expected_events.json
+  prohibit_agent_mount: true

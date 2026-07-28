@@ -80,10 +80,22 @@ models:
     role: supplementary_six_task_subset
 
 sampling:
-  temperature: 0
-  top_p: 1
+  temperature: 0.2
+  top_p: 0.95
   seeds: [1103, 2207, 3313, 4421, 5531]
   replicates_per_cell: 5
+  rationale: >-
+    Low but non-zero sampling makes the five seeded repetitions meaningful while
+    keeping tool-use behavior concentrated. The serving engine must attest that
+    it honors the supplied seed.
+
+prompt_variants:
+  confirmatory: one_frozen_standard_prompt_per_task
+  supplementary_wording_robustness: not_in_v1
+  rationale: >-
+    The protocol permits one preregistered standard wording when resources are
+    limited. Wording robustness is deliberately deferred rather than selected
+    after observing confirmatory outcomes.
 
 budget:
   wall_seconds: 300
@@ -132,7 +144,7 @@ run_matrix:
       - wgs_t4_check_only_authorization
       - wgs_t6_resumable_tool_failure
       - plasmid_t3_missing_database
-      - plasmid_t5_stale_output
+      - plasmid_t5_invalid_genomad_output
     conditions: [matched_advisory, abi_full]
 
 randomization:

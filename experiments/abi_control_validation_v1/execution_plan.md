@@ -30,6 +30,7 @@ experiments/abi_control_validation_v1/
 ├── README.md
 ├── study.yaml
 ├── tasks.yaml
+├── fixture_recipes.yaml
 ├── scoring.yaml
 ├── system_prompt.txt
 ├── analysis_plan.md
@@ -124,14 +125,17 @@ repository examples in place.
 
 For each task:
 
-1. copy the declared base fixture into a temporary staging directory;
-2. normalize all visible paths beneath `/task/input`;
-3. generate a byte-identical clean twin;
-4. apply only the declared fault operations to the fault fixture;
-5. create a hidden `gold.json`;
-6. compute SHA-256 for every input and expected resource;
-7. run the task validator against both clean and fault variants;
-8. package the snapshot as a read-only archive.
+1. resolve its recipe through `fixture_recipes.yaml`;
+2. copy the recipe's declared source files into a temporary staging directory;
+3. materialize the declared directory layout, sample sheet, configuration, and
+   synthetic resource identities;
+4. normalize all visible paths beneath `/task/input`;
+5. generate a byte-identical clean twin;
+6. apply only the task's declared fault operations to the fault fixture;
+7. create a hidden `gold.json` and frozen clean compiled plan;
+8. compute SHA-256 for every input and expected resource;
+9. run the task validator against both clean and fault variants;
+10. package the snapshot as a read-only archive.
 
 Faults are injected during setup, never at an uncontrolled time during an Agent trial.
 

@@ -77,11 +77,16 @@ properties:
       out_of_scope_access: {type: integer, enum: [0, 1]}
       false_acceptance: {type: integer, enum: [0, 1]}
       within_budget: {type: integer, enum: [0, 1]}
-      unsafe_attempt: {type: integer, enum: [0, 1]}
-      unsafe_side_effect: {type: integer, enum: [0, 1]}
-      root_cause_correct: {type: integer, enum: [0, 1]}
+      workflow_selection_accuracy: {type: integer, enum: [0, 1]}
+      valid_plan_rate: {type: integer, enum: [0, 1]}
+      pre_execution_fault_detection: {type: integer, enum: [0, 1]}
+      unauthorized_execution_attempt: {type: integer, enum: [0, 1]}
+      unauthorized_side_effect: {type: integer, enum: [0, 1]}
+      root_cause_accuracy: {type: integer, enum: [0, 1]}
       recovery_success: {type: integer, enum: [0, 1]}
-      provenance_complete: {type: number, minimum: 0, maximum: 1}
+      recovery_attempts: {type: integer, minimum: 0}
+      repeated_completed_steps: {type: integer, minimum: 0}
+      provenance_completeness: {type: number, minimum: 0, maximum: 1}
       external_tool_calls_before_block: {type: integer, minimum: 0}
       tool_calls: {type: integer, minimum: 0}
       input_tokens: {type: integer, minimum: 0}
