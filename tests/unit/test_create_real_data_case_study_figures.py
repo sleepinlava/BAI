@@ -44,8 +44,26 @@ def test_create_figures_excludes_benchmark_outcomes(
     source.write_text("\n".join(rows) + "\n")
     data_dir = tmp_path / "data"
     data_dir.mkdir()
+    monkeypatch.setattr(figure_builder, "ROOT", tmp_path)
     monkeypatch.setattr(figure_builder, "FIGURE_DIR", tmp_path / "figures")
     monkeypatch.setattr(figure_builder, "DATA_DIR", data_dir)
+    source_runs = (
+        ("downloads/rnaseq_retry5", "differential_expression.tsv"),
+        ("downloads/wgs_st93_mrsa_retry", "mlst_profile.tsv"),
+        ("downloads/plasmid_scapp_core_retry7", "plasmid_consensus.tsv"),
+    )
+    for index, (result_dir, standard_table) in enumerate(source_runs):
+        run_root = tmp_path / result_dir
+        (run_root / "provenance").mkdir(parents=True)
+        (run_root / "provenance/run_summary.json").write_text(
+            f'{{"run_id": "test-run-{index}"}}\n',
+            encoding="utf-8",
+        )
+        (run_root / "tables").mkdir()
+        (run_root / "tables" / standard_table).write_text(
+            "metric\tvalue\nexample\t1\n",
+            encoding="utf-8",
+        )
     for name in ("airway_metrics.tsv", "wgs_metrics.tsv", "wgs_snp_pairwise_distances.tsv"):
         original = Path(__file__).resolve().parents[2] / "docs/paper_examples" / name
         (data_dir / name).write_bytes(original.read_bytes())
