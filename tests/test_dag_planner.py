@@ -98,7 +98,7 @@ class TestUniversalDAGLoading:
         [
             ("amplicon_16s", 10),
             ("easymetagenome", 25),
-            ("metagenomic_plasmid", 90),
+            ("metagenomic_plasmid", 91),
             ("metatranscriptomics", 3),
             ("rnaseq_expression", 6),
             ("viral_viwrap", 7),
@@ -110,6 +110,13 @@ class TestUniversalDAGLoading:
         dag = UniversalDAG.from_yaml(dag_path)
         assert dag.pipeline_id == plugin_name
         assert len(dag._nodes) == expected_nodes
+
+    def test_metagenomic_plasmid_has_distinct_scapp_stages(self) -> None:
+        dag_path = PLUGIN_ROOT / "metagenomic_plasmid" / "pipeline_dag.yaml"
+        dag = UniversalDAG.from_yaml(dag_path)
+
+        assert dag._nodes["plasmid_detect_scapp"]["category"] == "plasmid_detection"
+        assert dag._nodes["plasmid_binning_scapp"]["category"] == "plasmid_binning"
 
     def test_missing_file_raises(self) -> None:
         with pytest.raises(FileNotFoundError):
