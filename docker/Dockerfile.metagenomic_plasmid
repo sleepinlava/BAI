@@ -32,6 +32,9 @@ RUN mamba env create -f /tmp/envs/autoplasm-assembly.yml && rm /tmp/envs/autopla
 COPY envs/autoplasm-annotation.yml /tmp/envs/autoplasm-annotation.yml
 RUN mamba env create -f /tmp/envs/autoplasm-annotation.yml && rm /tmp/envs/autoplasm-annotation.yml
 
+COPY envs/autoplasm-rgi.yml /tmp/envs/autoplasm-rgi.yml
+RUN mamba env create -f /tmp/envs/autoplasm-rgi.yml && rm /tmp/envs/autoplasm-rgi.yml
+
 COPY envs/autoplasm-abundance.yml /tmp/envs/autoplasm-abundance.yml
 RUN mamba env create -f /tmp/envs/autoplasm-abundance.yml && rm /tmp/envs/autoplasm-abundance.yml
 
@@ -41,6 +44,9 @@ RUN mamba env create -f /tmp/envs/autoplasm-plasmid-detect.yml && rm /tmp/envs/a
 
 COPY envs/autoplasm-plasmid-binning.yml /tmp/envs/autoplasm-plasmid-binning.yml
 RUN mamba env create -f /tmp/envs/autoplasm-plasmid-binning.yml && rm /tmp/envs/autoplasm-plasmid-binning.yml
+
+COPY envs/autoplasm-scapp.yml /tmp/envs/autoplasm-scapp.yml
+RUN mamba env create -f /tmp/envs/autoplasm-scapp.yml && rm /tmp/envs/autoplasm-scapp.yml
 
 COPY envs/stats.yml /tmp/envs/stats.yml
 RUN mamba env create -f /tmp/envs/stats.yml && rm /tmp/envs/stats.yml

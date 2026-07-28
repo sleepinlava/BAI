@@ -74,14 +74,14 @@ environments:
     channel_priority: strict
     dependencies:
     - python=3.10
-    - numpy >=1.23,<1.24
-    # SciPy 1.13 fails at import time with this environment's NumPy 1.23 ABI.
-    - scipy >=1.10,<1.11
-    - pandas >=1.5,<2
+    # Keep NumPy below 2 for MOB-suite compatibility while allowing current
+    # conda-forge builds to resolve with Bakta's modern zlib stack.
+    - numpy >=1.26,<2
+    - scipy >=1.11,<2
+    - pandas >=1.5,<3
     - bakta
     # Required by Bakta for tRNA prediction; pin the version validated with DB v6.
     - trnascan-se=2.0.12
-    - prokka
     - prodigal
     - diamond
     - hmmer
@@ -93,6 +93,17 @@ environments:
     - plasmidfinder
     - isescan
     - eggnog-mapper
+  # RGI pins Diamond/BLAST versions incompatible with Bakta, so keep its
+  # solver domain isolated. Prokka is not a registered ABI tool and is not
+  # installed as an untracked dependency.
+  autoplasm-rgi:
+    channels:
+    - conda-forge
+    - bioconda
+    - defaults
+    channel_priority: strict
+    dependencies:
+    - python=3.10
     - rgi
   autoplasm-abundance:
     channels:
@@ -314,17 +325,6 @@ environments:
     # UniRef90 201901b deployed on the cloud host. Bump to >=4 once released.
     - humann>=3.9
     - metaphlan>=4
-  scapp:
-    channels:
-    - conda-forge
-    - bioconda
-    - defaults
-    channel_priority: strict
-    dependencies:
-    - python=3.8
-    - scapp
-    - bwa
-    - plasclass
 tool_assignments:
   metagenomic_plasmid:
     fastp: autoplasm-qc
@@ -356,7 +356,7 @@ tool_assignments:
     mummer: autoplasm-plasmid-detect
     minced: autoplasm-annotation
     eggnog_mapper: autoplasm-annotation
-    rgi: autoplasm-annotation
+    rgi: autoplasm-rgi
     copla: autoplasm-annotation
     plasmidhostfinder: autoplasm-annotation
     conjscan: autoplasm-annotation
@@ -376,7 +376,7 @@ tool_assignments:
     semibin: autoplasm-plasmid-binning
     plasmaag: autoplasm-plasmid-binning
     gplas2: autoplasm-plasmid-binning
-    scapp: scapp
+    scapp: autoplasm-scapp
     recycler: autoplasm-plasmid-binning
     kraken2: stats
     metaphlan: stats

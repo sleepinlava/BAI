@@ -552,8 +552,8 @@ else
     mkdir -p "${CARD_DIR}"
     log "  加载 CARD 数据库 (需访问 card.mcmaster.ca)..."
     bash -c "
-        export PATH=$(env_path autoplasm-annotation):\$PATH
-        export CONDA_PREFIX=$(env_prefix autoplasm-annotation)
+        export PATH=$(env_path autoplasm-rgi):\$PATH
+        export CONDA_PREFIX=$(env_prefix autoplasm-rgi)
         rgi load --card_json ${CARD_DIR}/card.json --local
     " > "${LOG_DIR}/card_db.log" 2>&1
     if [ -n "$(ls -A "${CARD_DIR}" 2>/dev/null)" ]; then

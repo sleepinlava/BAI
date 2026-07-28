@@ -27,6 +27,8 @@
   graph format, and SCAPP template inputs are wired as required dependencies.
 - Report methods sections use consistent placeholders when tool or resource
   versions are unavailable.
+- Plasmid Docker builds now isolate RGI from Bakta's incompatible Diamond and
+  BLAST dependency stack and remove the unregistered legacy Prokka dependency.
 - Updated the metagenomic plasmid DAG regression expectation for the added SCAPP
   binning node and added semantic coverage for the distinct SCAPP stages.
 

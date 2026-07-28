@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ABI 完整环境与全量数据库重建脚本
 # 阶段 0: 镜像配置 + 包缓存迁移 + 基础设置
-# 阶段 1: 18 个环境并行安装 (清华镜像 + 缓存加速)
+# 阶段 1: 所有环境并行安装 (清华镜像 + 缓存加速)
 # 阶段 2: 全量数据库并行下载 (bakta full 84GB)
 # 阶段 3: 验证
 # 阶段 4: 自动关机
@@ -47,6 +47,7 @@ check_python() { [[ -f "$1/bin/python" ]] && return 0 || return 1; }
 
 ALL_ENVS=(
     autoplasm-base autoplasm-qc autoplasm-assembly autoplasm-annotation
+    autoplasm-rgi
     autoplasm-abundance autoplasm-plasmid-detect autoplasm-plasmid-binning
     autoplasm-integronfinder stats autoplasm-visualization autoplasm-nextflow
     abi-qc abi-stats rnaseq amplicon wgs easymeta-p0 easymeta-humann
@@ -144,10 +145,10 @@ else
 fi
 
 # ============================================================================
-# 阶段 1：18 个环境并行安装 (利用缓存，极快)
+# 阶段 1：所有环境并行安装 (利用缓存，极快)
 # ============================================================================
 log "=========================================="
-log " 阶段 1：18 个环境并行安装 (4路并发)"
+log " 阶段 1：${#ALL_ENVS[@]} 个环境并行安装 (4路并发)"
 log "=========================================="
 
 # 检查哪些环境需要安装
@@ -165,7 +166,7 @@ for env_name in "${ALL_ENVS[@]}"; do
 done
 
 if [[ ${#TO_INSTALL[@]} -eq 0 ]]; then
-    log "所有 18 个环境已就绪！"
+    log "所有 ${#ALL_ENVS[@]} 个环境已就绪！"
 else
     log "需要安装 ${#TO_INSTALL[@]} 个环境: ${TO_INSTALL[*]}"
 
@@ -231,7 +232,7 @@ for env_name in "${ALL_ENVS[@]}"; do
         failed_list="${failed_list} ${env_name}"
     fi
 done
-log "环境总计: ${env_ok}/18 OK, ${env_fail} 失败"
+log "环境总计: ${env_ok}/${#ALL_ENVS[@]} OK, ${env_fail} 失败"
 [[ -n "${failed_list}" ]] && log "失败列表:${failed_list}"
 
 # 清理旧环境目录

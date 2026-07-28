@@ -25,6 +25,7 @@ mkdir -p /root/autodl-tmp/resources/autoplasm
 export RES=/root/autodl-tmp/resources/autoplasm
 export MAMBA=/root/autodl-tmp/.mamba
 export ANN=$MAMBA/envs/autoplasm-annotation/bin
+export RGI=$MAMBA/envs/autoplasm-rgi/bin
 export DETECT=$MAMBA/envs/autoplasm-plasmid-detect/bin
 export STATS=$MAMBA/envs/stats/bin
 export EASYMETA=$MAMBA/envs/easymeta-p0/bin
@@ -240,7 +241,7 @@ echo "✔ uniref: $(du -sh $RES/humann/uniref 2>/dev/null | cut -f1)"
 ## 第 6 步：CARD / RGI
 
 ```bash
-PATH=$ANN:$PATH rgi load --card_json $RES/card/card.json --local
+PATH=$RGI:$PATH rgi load --card_json $RES/card/card.json --local
 # 如果失败 → 手动从 https://card.mcmaster.ca/download 下载
 ```
 

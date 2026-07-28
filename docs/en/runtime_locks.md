@@ -62,7 +62,8 @@ The helper currently certifies the six provisioned cloud workflows and excludes
 database bundle; include it only after those resources have been provisioned and
 validated explicitly with `--type viral_viwrap`.
 
-The bootstrap inventory in `scripts/cloud/libcommon.sh` tracks all 19
-environments declared by `environments.yaml`, including `autoplasm-scapp`.
+The bootstrap inventory in `scripts/cloud/libcommon.sh` tracks all 20
+environments declared by `environments.yaml`, including `autoplasm-scapp` and
+`autoplasm-rgi`.
 Strict validation remains authoritative and must reject any future inventory
 drift.

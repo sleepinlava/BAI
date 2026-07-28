@@ -181,7 +181,7 @@ echo "=== Phase 6: CARD ==="
 
 cat << 'CMDS'
 # CARD/RGI 数据库 (需要网络)
-PATH=/root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin:$PATH \
+PATH=/root/autodl-tmp/.mamba/envs/autoplasm-rgi/bin:$PATH \
 rgi load --card_json /root/autodl-tmp/resources/autoplasm/card/card.json --local
 # 如果失败 → 手动从 https://card.mcmaster.ca/download 下载
 CMDS

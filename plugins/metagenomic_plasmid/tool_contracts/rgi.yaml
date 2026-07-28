@@ -32,7 +32,7 @@ failure_handling:
   missing_database:
     hint: Download CARD database with 'rgi load --card_json'.
   tool_not_found:
-    hint: Install rgi in the autoplasm-annotation environment.
+    hint: Install rgi in the autoplasm-rgi environment.
   nonzero_exit:
     hint: Inspect RGI stderr log in provenance/step_logs.
 resources:

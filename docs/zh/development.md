@@ -167,7 +167,7 @@ Docker `/app` 上下文；该目录的变化也必须触发 Docker workflow。
 3. ``PROJECT_ROOT / ".mamba"``（默认本地安装）
 4. ``PROJECT_ROOT.parent / "abi-envs"``（同级目录）
 每个工具的 ``env_name`` 在运行时从 ``environments.yaml`` 解析。当前清单声明
-19 个 Conda 环境和 98 个工具→环境映射；代码和文档应从清单派生这些清单，
+20 个 Conda 环境和 99 个工具→环境映射；代码和文档应从清单派生这些清单，
 不要复制一份独立维护。
 
 ### 并行执行

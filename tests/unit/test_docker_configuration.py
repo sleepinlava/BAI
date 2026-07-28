@@ -207,3 +207,31 @@ def test_ci_and_docker_images_install_cjk_font_for_sciplot():
         assert "apt-get install -y --no-install-recommends fonts-wqy-zenhei" in contents, (
             dockerfile.name
         )
+
+
+def test_incompatible_plasmid_annotators_do_not_share_an_environment():
+    manifest = yaml.safe_load((ROOT / "environments.yaml").read_text(encoding="utf-8"))
+    environments = manifest["environments"]
+    assignments = manifest["tool_assignments"]["metagenomic_plasmid"]
+
+    assert assignments["bakta"] == "autoplasm-annotation"
+    assert assignments["rgi"] == "autoplasm-rgi"
+    assert "prokka" not in environments["autoplasm-annotation"]["dependencies"]
+    assert "rgi" not in environments["autoplasm-annotation"]["dependencies"]
+
+    dockerfile = (ROOT / "docker" / "Dockerfile.metagenomic_plasmid").read_text(encoding="utf-8")
+    for env_name in ("autoplasm-annotation", "autoplasm-rgi"):
+        assert f"COPY envs/{env_name}.yml " in dockerfile
+        assert f"mamba env create -f /tmp/envs/{env_name}.yml" in dockerfile
+
+
+def test_scapp_uses_the_cloud_verified_environment_in_plasmid_image():
+    manifest = yaml.safe_load((ROOT / "environments.yaml").read_text(encoding="utf-8"))
+    assignments = manifest["tool_assignments"]["metagenomic_plasmid"]
+
+    assert assignments["scapp"] == "autoplasm-scapp"
+    assert "scapp" not in manifest["environments"]
+
+    dockerfile = (ROOT / "docker" / "Dockerfile.metagenomic_plasmid").read_text(encoding="utf-8")
+    assert "COPY envs/autoplasm-scapp.yml " in dockerfile
+    assert "mamba env create -f /tmp/envs/autoplasm-scapp.yml" in dockerfile
