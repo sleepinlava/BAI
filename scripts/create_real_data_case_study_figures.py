@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.colors import ListedColormap  # noqa: E402
 from matplotlib.patches import Circle  # noqa: E402
 
+from abi.evidence import derive_run_id  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCAPP_SOURCE = ROOT / "docs/zh/figures/data/scapp_evidence_20260720/evidence_by_plasmid.tsv"
 DATA_DIR = ROOT / "docs/paper_examples"
@@ -30,6 +32,16 @@ INK = "#222222"
 BLUE = "#0072B2"
 ORANGE = "#E69F00"
 GREY = "#B8B8B8"
+
+
+def _source_binding(result_dir: str, standard_table: str) -> dict[str, str]:
+    run_root = ROOT / result_dir
+    table = run_root / "tables" / standard_table
+    return {
+        "source_run_id": derive_run_id(run_root),
+        "source_standard_table": _display_path(table),
+        "source_standard_table_sha256": _sha256(table),
+    }
 
 
 def _read_tsv(path: Path) -> list[dict[str, str]]:
@@ -128,6 +140,7 @@ def create_airway_figure() -> dict[str, Any]:
         "data": _display_path(data_path),
         "outputs": outputs,
         "claim": "method-sensitive significant-set overlap with strong effect-direction evidence",
+        **_source_binding("downloads/rnaseq_retry5", "differential_expression.tsv"),
     }
 
 
@@ -258,6 +271,7 @@ def create_wgs_figure() -> dict[str, Any]:
         "pairwise_data": _display_path(pairwise_path),
         "outputs": outputs,
         "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery",
+        **_source_binding("downloads/wgs_st93_mrsa_retry", "mlst_profile.tsv"),
     }
 
 
@@ -338,6 +352,10 @@ def create_scapp_figure(source_path: Path) -> dict[str, Any]:
         "data": _display_path(data_path),
         "outputs": outputs,
         "claim": "descriptive length-abundance and auxiliary mobility evidence; not accuracy",
+        **_source_binding(
+            "downloads/plasmid_scapp_core_retry7",
+            "plasmid_consensus.tsv",
+        ),
     }
 
 

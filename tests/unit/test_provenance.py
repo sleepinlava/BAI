@@ -10,6 +10,7 @@ from abi.provenance import (
     RunLogger,
     _minimal_sample_status,
     _tsv_value,
+    capture_run_identity,
     capture_tool_version,
     reset_run_provenance,
     write_commands_tsv,
@@ -18,6 +19,23 @@ from abi.provenance import (
     write_resolved_inputs_tsv,
     write_tool_versions,
 )
+
+
+def test_capture_run_identity_hashes_runtime_lock(tmp_path: Path) -> None:
+    runtime_lock = tmp_path / "runtime-lock.json"
+    runtime_lock.write_text('{"schema_version": 1}\n', encoding="utf-8")
+
+    identity = capture_run_identity(
+        {"provenance": {"runtime_lock": str(runtime_lock)}},
+        project_root=tmp_path,
+    )
+
+    assert identity["run_id"]
+    assert identity["abi_version"]
+    assert identity["git_commit"] == ""
+    assert identity["git_dirty"] is None
+    assert identity["runtime_lock_id"].startswith("sha256:")
+    assert len(identity["runtime_lock_id"]) == len("sha256:") + 64
 
 
 def test_reset_run_provenance_removes_stale_attempt_artifacts(tmp_path: Path) -> None:

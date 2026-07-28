@@ -35,6 +35,7 @@ outputs:
     format: tsv
 execution:
   executable: amrfinder
+  version_command: amrfinder --version
   command_template: amrfinder --plus --protein {prokka_faa} --gff {prokka_gff} --database
     {amrfinder_db} --output {output_dir}/amr.tsv --threads {threads} --annotation_format prokka
   network: false

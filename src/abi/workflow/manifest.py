@@ -49,6 +49,7 @@ __all__ = [
     "generate_resource_manifest",
     "write_resource_manifest",
     "checksum_file",
+    "checksum_path",
 ]
 
 
@@ -87,6 +88,7 @@ class ResourceManifest:
         source_url: str = "",
         license: str = "",
         checksum_sha256: str = "",
+        checksum_method: str = "",
         validated_at: str = "",
     ) -> None:
         """Add a resource entry to the manifest."""
@@ -96,6 +98,8 @@ class ResourceManifest:
             "version": version,
             "source_url": source_url,
             "checksum_sha256": checksum_sha256,
+            "checksum_method": checksum_method
+            or ("sha256:file-content" if checksum_sha256 and Path(path).is_file() else ""),
             "license": license,
             "validated_at": validated_at or _now_iso(),
         }
@@ -106,6 +110,7 @@ class ResourceManifest:
         config: Mapping[str, Any],
         *,
         checksum: bool = False,
+        checksum_directory_ids: Sequence[str] = (),
     ) -> None:
         """Scan a plugin config's ``resources`` block and add entries.
 
@@ -116,28 +121,71 @@ class ResourceManifest:
         """
         resources = config.get("resources", {})
         if not isinstance(resources, Mapping):
-            return
-        for key, value in sorted(resources.items()):
+            resources = {}
+        provenance = config.get("provenance", {})
+        identity_block = (
+            provenance.get("resource_identities", {}) if isinstance(provenance, Mapping) else {}
+        )
+        identities = identity_block if isinstance(identity_block, Mapping) else {}
+        directory_ids = {str(item) for item in checksum_directory_ids}
+        for key in sorted(set(resources) | set(identities)):
             if key in ("root",):
                 continue
-            if isinstance(value, Mapping):
+            value = resources.get(key)
+            identity_value = identities.get(key, {})
+            identity = dict(identity_value) if isinstance(identity_value, Mapping) else {}
+            if isinstance(value, Mapping) or identity:
+                resource = dict(value) if isinstance(value, Mapping) else {}
+                resource.update(identity)
                 res_path = Path(
-                    str(value.get("path", value.get("database", value.get("directory", ""))))
+                    str(
+                        resource.get(
+                            "path",
+                            resource.get(
+                                "database",
+                                resource.get("directory", value if value is not None else ""),
+                            ),
+                        )
+                    )
                 )
+                declared_checksum = str(
+                    resource.get("checksum_sha256", resource.get("checksum", ""))
+                ).strip()
+                computed_checksum = ""
+                checksum_method = ""
+                if declared_checksum:
+                    computed_checksum = declared_checksum
+                    checksum_method = str(resource.get("checksum_method", "sha256:declared"))
+                elif checksum and (res_path.is_file() or str(key) in directory_ids):
+                    computed_checksum = checksum_path(res_path)
+                    checksum_method = (
+                        "sha256:file-content" if res_path.is_file() else "sha256:content-tree-v1"
+                    )
                 self.add_resource(
                     id=str(key),
                     path=res_path,
-                    version=str(value.get("version", "")),
-                    source_url=str(value.get("source_url", value.get("url", ""))),
-                    license=str(value.get("license", "")),
-                    checksum_sha256=_checksum_path(res_path) if checksum else "",
+                    version=str(resource.get("version", "")),
+                    source_url=str(resource.get("source_url", resource.get("url", ""))),
+                    license=str(resource.get("license", "")),
+                    checksum_sha256=computed_checksum,
+                    checksum_method=checksum_method,
                 )
             else:
                 res_path = Path(str(value))
+                should_checksum = checksum and (res_path.is_file() or str(key) in directory_ids)
                 self.add_resource(
                     id=str(key),
                     path=res_path,
-                    checksum_sha256=_checksum_path(res_path) if checksum else "",
+                    checksum_sha256=checksum_path(res_path) if should_checksum else "",
+                    checksum_method=(
+                        "sha256:file-content"
+                        if should_checksum and res_path.is_file()
+                        else (
+                            "sha256:content-tree-v1"
+                            if should_checksum and res_path.is_dir()
+                            else ""
+                        )
+                    ),
                 )
 
     @property
@@ -172,8 +220,8 @@ class ResourceManifest:
             if not path.exists():
                 errors.append(f"Resource '{r['id']}': path does not exist: {path}")
                 continue
-            if r.get("checksum_sha256") and path.is_file():
-                actual = checksum_file(path)
+            if r.get("checksum_sha256"):
+                actual = checksum_path(path)
                 if actual != r["checksum_sha256"]:
                     errors.append(
                         f"Resource '{r['id']}': checksum mismatch. "
@@ -195,6 +243,7 @@ def generate_resource_manifest(
     analysis_type: str,
     config: Mapping[str, Any],
     checksum: bool = False,
+    checksum_directory_ids: Sequence[str] = (),
 ) -> ResourceManifest:
     """Create a ``ResourceManifest`` from a plugin config.
 
@@ -207,7 +256,11 @@ def generate_resource_manifest(
         manifest.write(result_dir / "provenance")
     """
     manifest = ResourceManifest(analysis_type=analysis_type)
-    manifest.add_resources_from_config(config, checksum=checksum)
+    manifest.add_resources_from_config(
+        config,
+        checksum=checksum,
+        checksum_directory_ids=checksum_directory_ids,
+    )
     return manifest
 
 
@@ -217,6 +270,7 @@ def write_resource_manifest(
     analysis_type: str,
     config: Mapping[str, Any],
     checksum: bool = False,
+    checksum_directory_ids: Sequence[str] = (),
 ) -> Path:
     """Generate and write a resource manifest in one call.
 
@@ -226,6 +280,7 @@ def write_resource_manifest(
         analysis_type=analysis_type,
         config=config,
         checksum=checksum,
+        checksum_directory_ids=checksum_directory_ids,
     )
     return manifest.write(output_dir)
 
@@ -243,6 +298,28 @@ def checksum_file(path: str | Path, *, algorithm: str = "sha256") -> str:
         for chunk in iter(lambda: handle.read(1 << 20), b""):  # 1 MiB chunks
             h.update(chunk)
     return h.hexdigest()
+
+
+def checksum_path(path: str | Path) -> str:
+    """Return a deterministic SHA-256 digest for a file or directory tree.
+
+    Directory digests bind each relative file path to the SHA-256 of its
+    contents.  Absolute paths, mtimes, permissions, and traversal order are
+    deliberately excluded so the digest remains portable across machines.
+    """
+    root = Path(path)
+    if root.is_file():
+        return checksum_file(root)
+    if not root.is_dir():
+        return ""
+    digest = hashlib.sha256()
+    for item in sorted((p for p in root.rglob("*") if p.is_file()), key=lambda p: p.as_posix()):
+        relative = item.relative_to(root).as_posix()
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(checksum_file(item).encode("ascii"))
+        digest.update(b"\n")
+    return digest.hexdigest()
 
 
 # ── Internal helpers / 内部辅助 ─────────────────────────────────────────

@@ -1,0 +1,68 @@
+{
+  "schema_version": "abi.evidence-manifest.v1",
+  "evidence_id": "abi-paper-wgs",
+  "run_id": "legacy-sha256:313338bb1f9f64e6ebea5e0334002457aebf0141d6d86f56ea3228275d241bbf",
+  "generated_at": "2026-07-28T10:53:20.970040+00:00",
+  "artifacts": [
+    {
+      "path": "docs/_static/paper_examples/wgs_validation.provenance.json",
+      "sha256": "3eb7945b24ab97af5167dab62e1332ed36cacfe628fedc2680c4cf2f4b1dd53e",
+      "size_bytes": 1073
+    },
+    {
+      "path": "docs/paper_examples/wgs_metrics.tsv",
+      "sha256": "e09aef7404ade5f1581822dee28e7e9fcaca93aab3cd455a5c621f50dc101d9b",
+      "size_bytes": 1621
+    },
+    {
+      "path": "docs/paper_examples/wgs_snp_pairwise_distances.tsv",
+      "sha256": "f765e2b88edaaf3dbbff021d78a142e955454044e588eb2b6a545fb0881b2fe2",
+      "size_bytes": 1206
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/checksums.json",
+      "sha256": "6b106258d4bafc51b28560210ce012067e3f7cbbc6c18be72c2fe741689eb40b",
+      "size_bytes": 4989
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/commands.tsv",
+      "sha256": "f3ac437e43d9683c8a8b439eaa5d8dcd040d3df24e197c5b0e61749b4b433eed",
+      "size_bytes": 13873
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/resolved_inputs.tsv",
+      "sha256": "b12c0e35fe858d210f3740f5bd8f2130543d79f99894f5eb6aec8d136f6d6ad0",
+      "size_bytes": 1568
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/resources.json",
+      "sha256": "86dfaf0bd4d5afe438a8ed9f68dd304305053ce5e6f9a2183a314376f28e821a",
+      "size_bytes": 2529
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/run_summary.json",
+      "sha256": "7a0073128282180beca35e93f3ef76491af4d0d0c46ab2dc066584a265c7fdbc",
+      "size_bytes": 1448
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/provenance/tool_versions.tsv",
+      "sha256": "b1e5b66c7501e3839d52080440354c67266b4076a6ad42ab8dd40b2edd945b64",
+      "size_bytes": 220
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/tables/amr_profile.tsv",
+      "sha256": "5a5f5719bbbecc43f07496c04a6d01fa7a0f18742d5e6d15bfb51dc3daee291a",
+      "size_bytes": 30798
+    },
+    {
+      "path": "downloads/wgs_st93_mrsa_retry/tables/mlst_profile.tsv",
+      "sha256": "e2239952ca1b8266f04ce4351b20a0fd490a009283ce0cf692006e329dae6d15",
+      "size_bytes": 1176
+    },
+    {
+      "path": "metrics.tsv",
+      "sha256": "8636d8eeef4b3cab675d6349dc74049818e07c7b7e913b38610b06ead2abf972",
+      "size_bytes": 20286
+    }
+  ]
+}

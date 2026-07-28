@@ -9,6 +9,7 @@ from abi.workflow.manifest import (
     ResourceManifest,
     _checksum_path,
     checksum_file,
+    checksum_path,
 )
 
 # ── ResourceManifest.__init__ with resources list ───────────────────────
@@ -164,3 +165,76 @@ def test_checksum_path_regular_file_returns_hash(tmp_path: Path) -> None:
     result = _checksum_path(f)
     assert len(result) == 64  # SHA-256 hex digest
     assert result == checksum_file(f)
+
+
+def test_directory_resource_checksum_detects_same_size_content_change(tmp_path: Path) -> None:
+    resource = tmp_path / "star_index"
+    resource.mkdir()
+    index = resource / "Genome"
+    index.write_text("AAAA", encoding="utf-8")
+
+    first = checksum_path(resource)
+    index.write_text("TTTT", encoding="utf-8")
+    second = checksum_path(resource)
+
+    assert len(first) == 64
+    assert first != second
+
+
+def test_resource_manifest_validates_directory_checksum(tmp_path: Path) -> None:
+    resource = tmp_path / "database"
+    resource.mkdir()
+    table = resource / "db.tsv"
+    table.write_text("id\tvalue\nA\t1\n", encoding="utf-8")
+    manifest = ResourceManifest("test")
+    manifest.add_resource(
+        id="database",
+        path=resource,
+        checksum_sha256=checksum_path(resource),
+        checksum_method="sha256:content-tree-v1",
+    )
+
+    assert manifest.validate() == []
+    table.write_text("id\tvalue\nA\t2\n", encoding="utf-8")
+    assert "checksum mismatch" in manifest.validate()[0]
+
+
+def test_resource_identity_overlay_adds_versions_sources_and_internal_databases(
+    tmp_path: Path,
+) -> None:
+    star_index = tmp_path / "star"
+    star_index.mkdir()
+    (star_index / "Genome").write_text("index", encoding="utf-8")
+    mlst_db = tmp_path / "mlst"
+    mlst_db.mkdir()
+    (mlst_db / "saureus.txt").write_text("scheme", encoding="utf-8")
+    config = {
+        "resources": {"genome_index": str(star_index)},
+        "provenance": {
+            "resource_identities": {
+                "genome_index": {
+                    "version": "GRCh37.75-STAR-2.7.11b",
+                    "source_url": "https://example.org/grch37",
+                },
+                "mlst_db": {
+                    "path": str(mlst_db),
+                    "version": "pubmlst-2026-07-01",
+                    "source_url": "https://pubmlst.org/",
+                },
+            }
+        },
+    }
+    manifest = ResourceManifest("test")
+    manifest.add_resources_from_config(
+        config,
+        checksum=True,
+        checksum_directory_ids=["genome_index", "mlst_db"],
+    )
+    resources = {resource["id"]: resource for resource in manifest.resources}
+
+    assert resources["genome_index"]["version"] == "GRCh37.75-STAR-2.7.11b"
+    assert resources["genome_index"]["source_url"] == "https://example.org/grch37"
+    assert len(resources["genome_index"]["checksum_sha256"]) == 64
+    assert resources["mlst_db"]["path"] == str(mlst_db)
+    assert resources["mlst_db"]["version"] == "pubmlst-2026-07-01"
+    assert len(resources["mlst_db"]["checksum_sha256"]) == 64

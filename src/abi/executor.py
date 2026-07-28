@@ -117,6 +117,7 @@ from abi.path_policy import InputPolicyError, resolve_within
 from abi.provenance import (
     PipelineProgressRecorder,
     RunLogger,
+    capture_run_identity,
     capture_tool_version,
     reset_run_provenance,
     write_commands_tsv,
@@ -285,7 +286,11 @@ class GenericABIExecutor:
         # Write tool versions BEFORE step iteration to avoid concurrent access
         # issues when parallel execution is enabled (B4 fix).
         # 在步骤迭代之前写入工具版本，避免并发访问问题（B4 修复）。
-        versions_path = self._write_tool_versions(provenance / "tool_versions.tsv")
+        versions_path = self._write_tool_versions(
+            provenance / "tool_versions.tsv",
+            tool_ids=plan.selected_tools,
+        )
+        run_identity = capture_run_identity(config)
 
         # Determine whether to record structured pipeline progress events.
         # Progress recording is enabled when config.execution.progress is True
@@ -466,6 +471,21 @@ class GenericABIExecutor:
         commands_path = write_commands_tsv(command_rows, provenance / "commands.tsv")
         # tool_versions.tsv is written before step iteration (B4 fix).
         resources_path = self._write_resources(config, provenance / "resources.json")
+        from abi.workflow.manifest import write_resource_manifest
+
+        provenance_options = config.get("provenance", {})
+        checksum_directory_ids = (
+            provenance_options.get("checksum_resource_ids", [])
+            if isinstance(provenance_options, Mapping)
+            else []
+        )
+        resource_manifest_path = write_resource_manifest(
+            provenance,
+            analysis_type=str(getattr(plan, "analysis_type", "")),
+            config=config,
+            checksum=True,
+            checksum_directory_ids=checksum_directory_ids,
+        )
         environment_path = self._write_environment(provenance / "environment.yml")
         methods_path = provenance / "methods.md"
         write_methods_md(
@@ -529,6 +549,7 @@ class GenericABIExecutor:
         summary_path.write_text(
             json.dumps(
                 {
+                    **run_identity,
                     "project_name": plan.project_name,
                     "analysis_type": getattr(plan, "analysis_type", ""),
                     "dry_run": dry_run,
@@ -562,6 +583,7 @@ class GenericABIExecutor:
             "resolved_inputs": resolved_inputs_path,
             "tool_versions": versions_path,
             "resources": resources_path,
+            "resource_manifest": resource_manifest_path,
             "environment": environment_path,
             "methods": methods_path,
             "summary": summary_path,
@@ -1236,24 +1258,32 @@ class GenericABIExecutor:
                 )
         return rows
 
-    def _write_tool_versions(self, path: Path) -> Path:
-        """Write a TSV file recording every tool's executable and installation status.
+    def _write_tool_versions(
+        self,
+        path: Path,
+        *,
+        tool_ids: Iterable[str] | None = None,
+    ) -> Path:
+        """Write a TSV recording each selected tool's executable and version status.
 
-        Iterates over all tools in the registry, instantiates each skill, and
-        checks installation status via ``skill.check_installation()``.
+        By default all registered tools are inspected for compatibility with
+        direct callers. Normal pipeline execution passes the compiled plan's
+        selected tool IDs so the artifact describes tools actually used.
 
         This artifact is critical for reproducibility: it captures exactly which
         tools were available and whether they were installed at execution time.
 
         写出记录每个工具的可执行文件和安装状态的 TSV 文件。
 
-        遍历注册表中的所有工具，实例化每个 skill，并通过
-        ``skill.check_installation()`` 检查安装状态。
+        正常执行传入编译计划实际选中的工具 ID，因此该文件不会混入未使用工具。
 
         此产物对可复现性至关重要：它精确记录了哪些工具可用以及它们在执行时是否已安装。
         """
+        selected = set(tool_ids) if tool_ids is not None else None
         rows = []
         for tool in self.registry.list_tools():
+            if selected is not None and str(tool.get("id")) not in selected:
+                continue
             skill = self.registry.create(str(tool.get("id")), mock_tools=self.mock_tools)
             version, status = capture_tool_version(skill, mock_tools=self.mock_tools)
             rows.append(

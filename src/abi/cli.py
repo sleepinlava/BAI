@@ -91,6 +91,7 @@ from abi._shared import _common_overrides
 from abi.agent import ABIAgentInterface
 from abi.agent.context import render_doctor_agent
 from abi.agent_integrations import doctor_agent_integration, install_agent_integration
+from abi.evidence import verify_evidence_manifest
 from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.json_utils import load_json_object, loads_json
 from abi.openai_contracts import export_openai_tools  # backward compat
@@ -786,6 +787,33 @@ def validate_result_command(
         typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
         if not result["valid"]:
             raise typer.Exit(code=1)
+    except Exception as exc:
+        _fail(exc)
+
+
+@app.command("verify-evidence")
+def verify_evidence_command(
+    manifest: Path = typer.Argument(..., help="Evidence manifest JSON file."),
+    artifact_root: Optional[Path] = typer.Option(
+        None,
+        "--artifact-root",
+        help="Artifact root; defaults to the manifest directory.",
+    ),
+) -> None:
+    """Independently verify every SHA-256-bound artifact in an evidence bundle."""
+    try:
+        result = verify_evidence_manifest(manifest, artifact_root=artifact_root)
+        payload = {
+            "valid": result.valid,
+            "checked": result.checked,
+            "missing": result.missing,
+            "mismatched": result.mismatched,
+        }
+        typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
+        if not result.valid:
+            raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
     except Exception as exc:
         _fail(exc)
 

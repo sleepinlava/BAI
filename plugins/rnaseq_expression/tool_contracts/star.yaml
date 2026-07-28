@@ -29,6 +29,7 @@ outputs:
     format: bam
 execution:
   executable: STAR
+  version_command: STAR --version
   command_template: STAR --runThreadN {threads} --genomeDir {genome_index} --readFilesIn
     {read1} {read2} --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix
     {output_prefix}

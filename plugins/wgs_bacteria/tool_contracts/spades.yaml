@@ -39,6 +39,7 @@ outputs:
     format: fasta
 execution:
   executable: spades.py
+  version_command: spades.py --version
   command_template: spades.py --isolate -1 {clean_read1} -2 {clean_read2} -o {output_dir}
     -t {threads} -m {memory_gb}
   network: false

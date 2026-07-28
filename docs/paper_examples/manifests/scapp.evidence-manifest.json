@@ -1,0 +1,68 @@
+{
+  "schema_version": "abi.evidence-manifest.v1",
+  "evidence_id": "abi-paper-scapp",
+  "run_id": "legacy-sha256:f8a8e13c360ac19267a23fbfa240e40f9651b053389fc0bd0c7db492dcdc4c9f",
+  "generated_at": "2026-07-28T10:53:20.974139+00:00",
+  "artifacts": [
+    {
+      "path": "docs/_static/paper_examples/scapp_descriptive_evidence.provenance.json",
+      "sha256": "666a301bb8e407b96452bfa36f1781a9986c2aac55a0512b0d2df435fafe81ea",
+      "size_bytes": 1116
+    },
+    {
+      "path": "docs/zh/figures/data/scapp_paper_method_v2_20260724/machine_readable_evidence.json",
+      "sha256": "704c20594e3f2ede9926223943641f072e55228f6c74529e05da85d6dbaf0579",
+      "size_bytes": 4885
+    },
+    {
+      "path": "downloads/abi_scapp/provenance/checksums.json",
+      "sha256": "752e27271ca0376da35619423654434f575a633ef525c9570e65a5521540ba81",
+      "size_bytes": 193
+    },
+    {
+      "path": "downloads/abi_scapp/provenance/commands.tsv",
+      "sha256": "88049987eba19ac5bdac6b7bb02ae150928062a081847a5109c331c6848f1351",
+      "size_bytes": 2845
+    },
+    {
+      "path": "downloads/abi_scapp/provenance/run_summary.json",
+      "sha256": "7b7c0f7420aa617aa83528517b3bd17cc5c36486061d59892a48901e85af18f6",
+      "size_bytes": 5437
+    },
+    {
+      "path": "downloads/abi_scapp/tables/plasmid_predictions.tsv",
+      "sha256": "56eaea090d98390bbecc5153891865b36b2d12b59f6ad844ce8c149b198644ee",
+      "size_bytes": 57435
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/checksums.json",
+      "sha256": "32614d37442a588c50c2dbed5d29ec87ea07ab3dc3f902d93f1a2ed63cec5900",
+      "size_bytes": 1991
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/commands.tsv",
+      "sha256": "80795fb46dcf04a90d74ca12f06080e827ed8946ad2ee6e26e5e63e6e13aef7b",
+      "size_bytes": 5052
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/run_summary.json",
+      "sha256": "e95dc0bd63b3023283d2c77b08d2d42b45ae46915119bb53c89b8c00791eabfd",
+      "size_bytes": 5645
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/tables/plasmid_consensus.tsv",
+      "sha256": "b3dff82169615f257419b0bb31f49931e28585ef22c434d46da40e806eb7d2d1",
+      "size_bytes": 18995
+    },
+    {
+      "path": "downloads/scapp_original/three_way_comparison.tsv",
+      "sha256": "138cb6eaa0001712bb150eaea888452538efc858d29759051adc32a497af6fc0",
+      "size_bytes": 190
+    },
+    {
+      "path": "metrics.tsv",
+      "sha256": "8636d8eeef4b3cab675d6349dc74049818e07c7b7e913b38610b06ead2abf972",
+      "size_bytes": 20286
+    }
+  ]
+}

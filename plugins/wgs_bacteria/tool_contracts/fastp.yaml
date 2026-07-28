@@ -43,6 +43,7 @@ outputs:
     format: json
 execution:
   executable: fastp
+  version_command: fastp --version
   command_template: fastp -i {read1} -I {read2} -o {output_dir}/{sample_id}_R1.clean.fastq.gz
     -O {output_dir}/{sample_id}_R2.clean.fastq.gz --thread {threads} --html {output_dir}/{sample_id}.fastp.html
     --json {output_dir}/{sample_id}.fastp.json

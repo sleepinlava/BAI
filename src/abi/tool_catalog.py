@@ -344,6 +344,9 @@ class ToolCatalog:
                     for key in (
                         "executable",
                         "command_template",
+                        "version_command",
+                        "version_regex",
+                        "version_timeout",
                         "container_image",
                         "execution_scope",
                     ):

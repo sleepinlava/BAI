@@ -23,4 +23,8 @@ export:
   formats: [png, pdf, svg]
 provenance:
   workflow_name: metagenomic_plasmid
+  abi_version: 1.5.8
   input_data_role: Descriptive completed-run outputs; not independent accuracy metrics
+  source_run_id: legacy-sha256:f8a8e13c360ac19267a23fbfa240e40f9651b053389fc0bd0c7db492dcdc4c9f
+  source_standard_table: downloads/plasmid_scapp_core_retry7/tables/plasmid_consensus.tsv
+  source_standard_table_sha256: b3dff82169615f257419b0bb31f49931e28585ef22c434d46da40e806eb7d2d1

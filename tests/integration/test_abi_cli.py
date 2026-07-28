@@ -83,6 +83,12 @@ def test_abi_metatranscriptomics_dry_run_writes_portability_artifacts(tmp_path):
     assert progress_snapshot.exists()
     summary = json.loads((outdir / "provenance" / "run_summary.json").read_text(encoding="utf-8"))
     assert summary["progress_events"] == str(progress_events)
+    assert summary["run_id"]
+    assert summary["abi_version"]
+    assert "git_commit" in summary
+    assert "git_dirty" in summary
+    assert "runtime_lock_id" in summary
+    assert (outdir / "provenance" / "resource_manifest.json").exists()
     events = [json.loads(line) for line in progress_events.read_text(encoding="utf-8").splitlines()]
     assert [event["event"] for event in events] == ["run_started", "run_completed"]
     resources = json.loads((outdir / "provenance" / "resources.json").read_text(encoding="utf-8"))[
@@ -102,6 +108,10 @@ def test_abi_metatranscriptomics_dry_run_writes_portability_artifacts(tmp_path):
     assert all(required_resource_fields <= set(resource) for resource in resources)
     version_rows = (outdir / "provenance" / "tool_versions.tsv").read_text(encoding="utf-8")
     assert "\tnot_captured\n" in version_rows
+    recorded_tool_ids = {
+        line.split("\t", 1)[0] for line in version_rows.splitlines()[1:] if line.strip()
+    }
+    assert recorded_tool_ids == set(summary["selected_tools"])
 
 
 def test_abi_inspect_reports_placeholder_inputs(tmp_path):

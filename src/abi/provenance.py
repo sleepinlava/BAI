@@ -36,18 +36,25 @@ events concurrently without corruption.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import shutil
+import subprocess
 import threading
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping
 
+from abi import __version__
 from abi._shared import _display_command
+from abi.config import PROJECT_ROOT
 from abi.filesystem import ensure_directory
 
 __all__ = [
     "capture_tool_version",
+    "capture_run_identity",
     "detect_stale_run",
     "PipelineProgressRecorder",
     "RunLogger",
@@ -58,6 +65,66 @@ __all__ = [
     "write_resolved_inputs_tsv",
     "write_tool_versions",
 ]
+
+
+def capture_run_identity(
+    config: Mapping[str, Any],
+    *,
+    project_root: str | Path = PROJECT_ROOT,
+) -> dict[str, Any]:
+    """Capture immutable run, source-tree, and runtime-lock identity fields."""
+    root = Path(project_root)
+    commit = ""
+    dirty: bool | None = None
+    try:
+        commit_result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        status_result = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if commit_result.returncode == 0:
+            commit = commit_result.stdout.strip()
+        if status_result.returncode == 0:
+            dirty = bool(status_result.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+    provenance_config = config.get("provenance", {})
+    configured_lock = (
+        provenance_config.get("runtime_lock") if isinstance(provenance_config, Mapping) else None
+    )
+    runtime_lock_path = str(configured_lock or os.environ.get("ABI_RUNTIME_LOCK", "")).strip()
+    runtime_lock_id = ""
+    if runtime_lock_path:
+        digest = _sha256_file(Path(runtime_lock_path))
+        if digest:
+            runtime_lock_id = f"sha256:{digest}"
+    return {
+        "run_id": str(uuid.uuid4()),
+        "abi_version": __version__,
+        "git_commit": commit,
+        "git_dirty": dirty,
+        "runtime_lock_id": runtime_lock_id,
+    }
+
+
+def _sha256_file(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def capture_tool_version(skill: Any, *, mock_tools: bool = False) -> tuple[str, str]:

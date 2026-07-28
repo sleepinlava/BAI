@@ -52,10 +52,57 @@ ABI **目前还不是**经过完整验证的科学工作流。单个工具的论
 
 ### 第 1 阶段：可复现性清单
 
-- 在可用的情况下通过真实的 `--version` 探测生成 `provenance/tool_versions.tsv`。 ✅ 已实现
-- 添加带有数据库/模型校验和的 `provenance/resource_manifest.json`。 ✅ 已实现
+- 仅针对编译计划实际选中的工具执行真实版本探测，并生成
+  `provenance/tool_versions.tsv`。 ✅ 已实现
+- 生成记录资源版本、来源以及文件或内容树 SHA-256 的
+  `provenance/resource_manifest.json`。 ✅ 已实现
+- 在 `provenance/run_summary.json` 中记录 `run_id`、ABI 版本、Git commit/dirty
+  状态以及 runtime-lock 的 SHA-256 身份。 ✅ 已实现
 - 通过显式的 conda lock 文件或容器固定冒烟测试环境。
 - 以机器可读形式记录命令模板和解析后的命令令牌。
+
+正式发布或论文运行必须显式声明每个外部参考资源。列入
+`checksum_resource_ids` 的目录会使用确定性的内容树 SHA-256；若资源发布方提供了
+正式哈希，则可直接写入 `checksum_sha256`。
+
+```yaml
+provenance:
+  runtime_lock: /frozen/runtime-lock.json
+  checksum_resource_ids:
+    - genome_index
+    - amrfinder_db
+    - mlst_db
+    - scapp_db
+  resource_identities:
+    reference_genome:
+      path: /references/genome.fa
+      version: "<组装 accession 与 release>"
+      source_url: "<权威下载地址>"
+    annotation_gtf:
+      path: /references/annotation.gtf
+      version: "<注释 release>"
+      source_url: "<权威下载地址>"
+    genome_index:
+      path: /references/star_index
+      version: "<STAR 版本 + 基因组/注释 release>"
+      source_url: "<索引构建配方或归档包地址>"
+    amrfinder_db:
+      path: /databases/amrfinder/latest
+      version: "<AMRFinder 数据库 release>"
+      source_url: "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/"
+    mlst_db:
+      path: /databases/mlst
+      version: "<快照日期或 commit>"
+      source_url: "<scheme 快照地址>"
+    scapp_db:
+      path: /databases/scapp
+      version: "<数据库 release>"
+      source_url: "<数据库归档地址>"
+```
+
+论文证据包可用 `abi verify-evidence MANIFEST --artifact-root 仓库根目录` 独立校验。
+仓库级命令 `python scripts/verify_paper_evidence.py` 会检查三个最终证据包，并在隔离
+副本中证明：任意一个 TSV 被修改后，完整性校验必定失败。
 
 ### 第 2 阶段：生物学基准
 

@@ -43,6 +43,7 @@ outputs:
     format: tsv
 execution:
   executable: Rscript
+  version_command: Rscript -e "cat(as.character(packageVersion('DESeq2')))"
   command_template: Rscript {deseq2_script} --counts {count_matrix} --metadata {sample_metadata}
     --output {output_dir} --comparison {comparison} --design "{design}" --alpha {alpha}
   network: false

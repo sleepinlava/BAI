@@ -52,6 +52,8 @@ def test_create_figures_excludes_benchmark_outcomes(
     result = figure_builder.create_figures(source)
     assert result["benchmark_outcomes_used"] is False
     assert len(result["figures"]) == 3
+    assert all(figure["source_run_id"] for figure in result["figures"])
+    assert all(len(figure["source_standard_table_sha256"]) == 64 for figure in result["figures"])
     derived = (data_dir / "scapp_biological_evidence.tsv").read_text()
     assert "reference_matched" not in derived
 
@@ -64,3 +66,14 @@ def test_canonical_metrics_exclude_historical_benchmark_outcomes() -> None:
     assert benchmark_rows
     assert all(row["status"] == "pending_new_run" for row in benchmark_rows)
     assert all(not row["estimate"] for row in benchmark_rows)
+
+
+def test_biological_metrics_bind_source_run_and_standard_table() -> None:
+    path = Path(__file__).resolve().parents[2] / "metrics.tsv"
+    with path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    biological = [row for row in rows if row["evidence_track"] == "biological_validation"]
+    assert biological
+    assert all(row["source_run_id"] for row in biological)
+    assert all(row["source_standard_table"] for row in biological)
+    assert all(len(row["source_standard_table_sha256"]) == 64 for row in biological)

@@ -1,0 +1,58 @@
+{
+  "schema_version": "abi.evidence-manifest.v1",
+  "evidence_id": "abi-paper-airway",
+  "run_id": "legacy-sha256:fdd7aeb25111531666c3bc26ff49044251642ee373d7f46eb6edbd167f704303",
+  "generated_at": "2026-07-28T10:53:20.965372+00:00",
+  "artifacts": [
+    {
+      "path": "docs/_static/paper_examples/airway_validation.provenance.json",
+      "sha256": "90dbaaaea6b0fddc3871ee8b7fbc8d23f98521dceeabf3a8a37d741d0b0b0900",
+      "size_bytes": 1079
+    },
+    {
+      "path": "docs/paper_examples/airway_metrics.tsv",
+      "sha256": "69123fa7cea621bd92bb84204509bfef40feaa9c5922f5178bf96735202764fc",
+      "size_bytes": 1247
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/checksums.json",
+      "sha256": "b39304fb78230bb7c383cc3465c8ed878caae5f3419834d813d45c72bf579c06",
+      "size_bytes": 6973
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/commands.tsv",
+      "sha256": "44fe5785f768fb3fbcde1ff43e18df26b8d0862d1f2acc7878ad30111c015292",
+      "size_bytes": 19835
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/resolved_inputs.tsv",
+      "sha256": "601f95104a099ac625a4469e85be2a2fd53c814672b734b3bbf93817f5900385",
+      "size_bytes": 9792
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/resources.json",
+      "sha256": "1ad72332fa81730aadab61d74b7d9e444ca276ac4a5edd2456da920d2db047e5",
+      "size_bytes": 2821
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/run_summary.json",
+      "sha256": "86091474bfb96b674df919a7d21d3795b26ca73d4e9f624dfe2de6fea6703f39",
+      "size_bytes": 1792
+    },
+    {
+      "path": "downloads/rnaseq_retry5/provenance/tool_versions.tsv",
+      "sha256": "89f7adfe41c7c9170c74ad1e262de0cae3bff2557b464b58b926910f33f379cc",
+      "size_bytes": 249
+    },
+    {
+      "path": "downloads/rnaseq_retry5/tables/differential_expression.tsv",
+      "sha256": "9d69ba0a30e4bb60b8fb65c1d1988c570ea2c24ec8c589dc27aa97a8ee0ce14f",
+      "size_bytes": 4304339
+    },
+    {
+      "path": "metrics.tsv",
+      "sha256": "8636d8eeef4b3cab675d6349dc74049818e07c7b7e913b38610b06ead2abf972",
+      "size_bytes": 20286
+    }
+  ]
+}

@@ -25,6 +25,7 @@ outputs:
     format: tsv
 execution:
   executable: genomad
+  version_command: genomad --version
   command_template: genomad end-to-end --cleanup --restart --threads {threads} {assembly}
     {output_dir} {database}
   network: false

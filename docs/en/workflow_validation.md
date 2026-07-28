@@ -76,11 +76,60 @@ when all of the following are true:
 
 ### Phase 1: Reproducibility Manifests
 
-- Generate `provenance/tool_versions.tsv` from real `--version` probes where
-  available. ✅ Implemented
-- Add `provenance/resource_manifest.json` with database/model checksums. ✅ Implemented
+- Generate `provenance/tool_versions.tsv` from the selected plan's real
+  `--version` probes. ✅ Implemented
+- Add `provenance/resource_manifest.json` with resource versions, sources, and
+  file or content-tree SHA-256 checksums. ✅ Implemented
+- Record `run_id`, ABI version, Git commit/dirty status, and the runtime-lock
+  SHA-256 identity in `provenance/run_summary.json`. ✅ Implemented
 - Pin smoke-test environments through explicit conda lock files or containers.
 - Record command templates and resolved command tokens in machine-readable form.
+
+For release or paper runs, declare identities for every external reference.
+Directory resources listed in `checksum_resource_ids` use a deterministic
+content-tree SHA-256; a publisher-supplied checksum can instead be placed in
+`checksum_sha256`.
+
+```yaml
+provenance:
+  runtime_lock: /frozen/runtime-lock.json
+  checksum_resource_ids:
+    - genome_index
+    - amrfinder_db
+    - mlst_db
+    - scapp_db
+  resource_identities:
+    reference_genome:
+      path: /references/genome.fa
+      version: "<assembly accession and release>"
+      source_url: "<authoritative download URL>"
+    annotation_gtf:
+      path: /references/annotation.gtf
+      version: "<annotation release>"
+      source_url: "<authoritative download URL>"
+    genome_index:
+      path: /references/star_index
+      version: "<STAR version + genome/annotation release>"
+      source_url: "<index build recipe or archived bundle URL>"
+    amrfinder_db:
+      path: /databases/amrfinder/latest
+      version: "<AMRFinder database release>"
+      source_url: "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/"
+    mlst_db:
+      path: /databases/mlst
+      version: "<snapshot date or commit>"
+      source_url: "<scheme snapshot URL>"
+    scapp_db:
+      path: /databases/scapp
+      version: "<database release>"
+      source_url: "<archived database URL>"
+```
+
+Paper evidence bundles are verified with `abi verify-evidence MANIFEST
+--artifact-root REPOSITORY_ROOT`. The repository-level
+`python scripts/verify_paper_evidence.py` command verifies all three final
+bundles and independently proves that a one-file TSV modification fails the
+integrity check.
 
 ### Phase 2: Biological Benchmarks
 

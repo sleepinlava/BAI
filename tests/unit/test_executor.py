@@ -79,6 +79,39 @@ def test_tool_version_status_taxonomy():
     assert capture_tool_version(Skill("1.2.3"))[1] == "captured"
 
 
+def test_tool_versions_only_capture_tools_selected_by_plan(tmp_path):
+    class Skill:
+        def check_installation(self):
+            return True
+
+        def capture_version(self):
+            return "1.0"
+
+    class Registry:
+        def list_tools(self):
+            return [
+                {"id": "used", "executable": "used"},
+                {"id": "unused", "executable": "unused"},
+            ]
+
+        def create(self, tool_id, *, mock_tools):
+            assert tool_id == "used"
+            assert mock_tools is False
+            return Skill()
+
+    executor = GenericABIExecutor.__new__(GenericABIExecutor)
+    executor.registry = Registry()
+    executor.mock_tools = False
+    path = executor._write_tool_versions(
+        tmp_path / "tool_versions.tsv",
+        tool_ids=["used"],
+    )
+
+    content = path.read_text(encoding="utf-8")
+    assert "\nused\tused\t\t1.0\tcaptured\n" in content
+    assert "unused" not in content
+
+
 def test_resolve_actual_outputs_keeps_read_pairs_in_order(tmp_path):
     output_dir = tmp_path / "fastp"
     output_dir.mkdir()

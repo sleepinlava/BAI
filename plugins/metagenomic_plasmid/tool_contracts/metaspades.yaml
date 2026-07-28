@@ -20,6 +20,7 @@ outputs:
     type: path
 execution:
   executable: metaspades.py
+  version_command: metaspades.py --version
   command_template: metaspades.py -1 {read1} -2 {read2} -o {output_dir} -t {threads}
   network: false
   writes_output: true

@@ -124,8 +124,9 @@ Legacy normalized tables remain available for compatibility.
 Each run writes `provenance/resource_manifest.json` and the compatibility file
 `provenance/resources.json`. Database entries record resource ID, path, version,
 date, source, status, and checksum. File resources use a content SHA-256;
-database directories use a bounded directory-manifest fingerprint unless a
-provider checksum is configured.
+database directories explicitly listed in `provenance.checksum_resource_ids`
+use a deterministic content-tree SHA-256 unless a provider checksum is
+configured.
 
 Tool versions, resolved inputs, commands, logs, and the resolved configuration
 are recorded separately. Placeholder paths ending in `NOT_CONFIGURED` are

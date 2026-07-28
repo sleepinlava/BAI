@@ -110,8 +110,8 @@ assembly-only 行不会被计作丰度分析重复。
 
 每次运行都会写出 `provenance/resource_manifest.json`，并保留兼容文件
 `provenance/resources.json`。数据库条目包含资源 ID、路径、版本、日期、来源、状态和
-checksum。普通文件使用内容 SHA-256；数据库目录使用有上限的目录清单指纹，除非配置中
-提供了上游发布方 checksum。
+checksum。普通文件使用内容 SHA-256；显式列入 `provenance.checksum_resource_ids` 的
+数据库目录使用确定性的内容树 SHA-256，除非配置中提供了上游发布方 checksum。
 
 工具版本、解析后的输入、命令、日志和最终配置分别记录。以 `NOT_CONFIGURED` 结尾的
 占位路径会明确标记为未配置；dry-run 通过不能证明外部工具或数据库已经安装。

@@ -2,19 +2,22 @@
   "schema_version": "abi.paper_case_study_figures.v1",
   "benchmark_outcomes_used": false,
   "generator": "scripts/create_real_data_case_study_figures.py",
-  "generator_sha256": "7618af2b23b08c50207389534c86b6dbee0b1497eea1b46cc78fdd577b3b4878",
+  "generator_sha256": "c9e96c7e0f3f1859d23461984adbd0c4426493edf928f33836a6e70a867aa602",
   "figures": [
     {
       "figure_id": "airway_biological_validation",
       "source": "docs/paper_examples/airway_metrics.tsv",
-      "source_sha256": "23ba08cfbf883be9e45b83621a14f9e5af904ebf35ddfbde5b0bdea7c12ecacb",
+      "source_sha256": "69123fa7cea621bd92bb84204509bfef40feaa9c5922f5178bf96735202764fc",
       "data": "docs/paper_examples/airway_significant_set_overlap.tsv",
       "outputs": [
         "docs/_static/paper_examples/airway_biological_validation.png",
         "docs/_static/paper_examples/airway_biological_validation.pdf",
         "docs/_static/paper_examples/airway_biological_validation.svg"
       ],
-      "claim": "method-sensitive significant-set overlap with strong effect-direction evidence"
+      "claim": "method-sensitive significant-set overlap with strong effect-direction evidence",
+      "source_run_id": "legacy-sha256:fdd7aeb25111531666c3bc26ff49044251642ee373d7f46eb6edbd167f704303",
+      "source_standard_table": "downloads/rnaseq_retry5/tables/differential_expression.tsv",
+      "source_standard_table_sha256": "9d69ba0a30e4bb60b8fb65c1d1988c570ea2c24ec8c589dc27aa97a8ee0ce14f"
     },
     {
       "figure_id": "wgs_biological_validation",
@@ -27,7 +30,10 @@
         "docs/_static/paper_examples/wgs_biological_validation.pdf",
         "docs/_static/paper_examples/wgs_biological_validation.svg"
       ],
-      "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery"
+      "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery",
+      "source_run_id": "legacy-sha256:313338bb1f9f64e6ebea5e0334002457aebf0141d6d86f56ea3228275d241bbf",
+      "source_standard_table": "downloads/wgs_st93_mrsa_retry/tables/mlst_profile.tsv",
+      "source_standard_table_sha256": "e2239952ca1b8266f04ce4351b20a0fd490a009283ce0cf692006e329dae6d15"
     },
     {
       "figure_id": "scapp_biological_evidence",
@@ -39,7 +45,10 @@
         "docs/_static/paper_examples/scapp_biological_evidence.pdf",
         "docs/_static/paper_examples/scapp_biological_evidence.svg"
       ],
-      "claim": "descriptive length-abundance and auxiliary mobility evidence; not accuracy"
+      "claim": "descriptive length-abundance and auxiliary mobility evidence; not accuracy",
+      "source_run_id": "legacy-sha256:f8a8e13c360ac19267a23fbfa240e40f9651b053389fc0bd0c7db492dcdc4c9f",
+      "source_standard_table": "downloads/plasmid_scapp_core_retry7/tables/plasmid_consensus.tsv",
+      "source_standard_table_sha256": "b3dff82169615f257419b0bb31f49931e28585ef22c434d46da40e806eb7d2d1"
     }
   ]
 }

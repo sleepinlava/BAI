@@ -169,6 +169,15 @@ class ProvenanceSpec(BaseModel):
         None,
         description="Role of the input data, e.g. 'DESeq2 differential expression result'.",
     )
+    source_run_id: Optional[str] = Field(
+        None, description="ABI run identifier that produced the source standard table."
+    )
+    source_standard_table: Optional[str] = Field(
+        None, description="Path or stable name of the source ABI standard table."
+    )
+    source_standard_table_sha256: Optional[str] = Field(
+        None, description="SHA-256 digest of the source ABI standard table."
+    )
 
 
 # ── Top-level model / 顶层模型 ────────────────────────────────────────────

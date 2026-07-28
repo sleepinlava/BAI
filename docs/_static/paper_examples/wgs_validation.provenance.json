@@ -1,7 +1,7 @@
 {
   "figure_id": "wgs_validation",
   "created_at": "2026-07-25T00:19:50.231578+00:00",
-  "abi_version": "unknown",
+  "abi_version": "1.5.8",
   "skill": "abi_sciplot",
   "skill_version": "0.1.0",
   "renderer": "matplotlib",
@@ -10,6 +10,9 @@
   "input_table": "docs/paper_examples/wgs_figure.tsv",
   "input_data_role": "Validated PRJNA286158 execution and biological endpoints",
   "input_sha256": "c60a2095002e66be0087dcad166f9e67202fca4071521d00250d17d832b073dd",
+  "source_run_id": "legacy-sha256:313338bb1f9f64e6ebea5e0334002457aebf0141d6d86f56ea3228275d241bbf",
+  "source_standard_table": "downloads/wgs_st93_mrsa_retry/tables/mlst_profile.tsv",
+  "source_standard_table_sha256": "e2239952ca1b8266f04ce4351b20a0fd490a009283ce0cf692006e329dae6d15",
   "workflow_name": "wgs_bacteria",
   "theme": "abi_nature",
   "palette": "colorblind_safe_8",

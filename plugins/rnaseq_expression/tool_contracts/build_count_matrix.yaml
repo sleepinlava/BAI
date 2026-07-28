@@ -37,6 +37,7 @@ outputs:
     description: Sample metadata for DESeq2
 execution:
   executable: python
+  version_command: python --version
   command_template: python {count_matrix_script} --expression-dir {expression_dir}
     --sample-sheet {sample_sheet} --output-dir {output_dir}
   network: false

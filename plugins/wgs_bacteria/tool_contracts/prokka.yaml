@@ -40,6 +40,7 @@ outputs:
     format: gbk
 execution:
   executable: prokka
+  version_command: prokka --version
   command_template: prokka --outdir {output_dir} --prefix {sample_id} --cpus {threads}
     --genus {genus} --species {species} --force {assembly_fasta}
   network: false

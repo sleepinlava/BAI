@@ -25,6 +25,7 @@ outputs:
     format: tsv
 execution:
   executable: mlst
+  version_command: mlst --version
   command_template: mlst {assembly_fasta} > {output_dir}/mlst.tsv
   network: false
   writes_output: true

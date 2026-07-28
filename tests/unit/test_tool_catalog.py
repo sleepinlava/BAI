@@ -63,6 +63,29 @@ class TestToolCatalog:
         assert c.tool_ids() == []
         assert not c.has("x")
 
+    def test_paper_case_tools_declare_version_probes(self) -> None:
+        catalog = ToolCatalog.from_project_root()
+        expected = {
+            "rnaseq_expression": {
+                "fastp",
+                "star",
+                "featurecounts",
+                "build_count_matrix",
+                "deseq2",
+            },
+            "wgs_bacteria": {"fastp", "spades", "prokka", "mlst", "amrfinderplus"},
+            "metagenomic_plasmid": {"fastp", "metaspades", "genomad", "scapp"},
+        }
+
+        missing = [
+            f"{plugin}/{tool_id}"
+            for plugin, tool_ids in expected.items()
+            for tool_id in sorted(tool_ids)
+            if not catalog.get_qualified(plugin, tool_id).metadata.get("version_command")
+        ]
+
+        assert missing == []
+
     def test_from_project_root_compiles_contract_with_registry_policy(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -94,6 +117,8 @@ class TestToolCatalog:
                     "execution": {
                         "executable": "new-aligner",
                         "command_template": "new-aligner {reads} -o {bam}",
+                        "version_command": "new-aligner --version",
+                        "version_regex": r"new-aligner\s+(\S+)",
                         "network": False,
                         "writes_output": True,
                     },
@@ -120,9 +145,13 @@ class TestToolCatalog:
         assert descriptor.execution == {
             "executable": "new-aligner",
             "command_template": "new-aligner {reads} -o {bam}",
+            "version_command": "new-aligner --version",
+            "version_regex": r"new-aligner\s+(\S+)",
             "network": False,
             "writes_output": True,
         }
+        assert descriptor.metadata["version_command"] == "new-aligner --version"
+        assert descriptor.metadata["version_regex"] == r"new-aligner\s+(\S+)"
 
     def test_tool_registry_uses_catalog_merged_contract(self, tmp_path: Path, monkeypatch) -> None:
         plugin = tmp_path / "plugins" / "demo"
