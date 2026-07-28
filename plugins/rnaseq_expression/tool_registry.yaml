@@ -72,6 +72,7 @@ tools:
     --reactome-gmt {reactome_gmt} --output-dir {output_dir}
     --annotation-release {annotation_release}
     --alpha {alpha} --rank-column {rank_column} --permutations {permutations}
+    --gsea-fdr {gsea_fdr}
     --seed {seed} --min-size {min_size} --max-size {max_size}
     --top-n {top_n} --threads {threads}
   inputs:

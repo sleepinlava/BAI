@@ -98,11 +98,15 @@ enrichment:
   annotation_release: GRCh37.75
   rank_column: stat
   permutations: 1000
+  gsea_fdr: 0.25
   seed: 20260727
 differential_expression:
   comparison: "treatment_vs_control"
   alpha: 0.05
 ```
+
+`enrichment.gsea_fdr` 必须位于 `(0, 1]`。它只筛选 SciPlot 的 GSEA 预览图；
+完整 GO 与 Reactome GSEA 表不会截断。
 
 ### 样本表格式
 

@@ -23,6 +23,7 @@ enrichment:
   alpha: 0.05
   rank_column: stat
   permutations: 1000
+  gsea_fdr: 0.25
   seed: 20260727
   min_size: 15
   max_size: 500

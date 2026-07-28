@@ -175,8 +175,6 @@ def ora(
         if term_size < min_size or term_size > max_size:
             continue
         overlap = selected & members
-        if len(overlap) < 3:
-            continue
         pvalue = float(hypergeom.sf(len(overlap) - 1, n_background, term_size, n_selected))
         expected = n_selected * term_size / n_background
         rows.append(
@@ -271,10 +269,19 @@ def run_prerank(
     return result[keep].sort_values(["padj", "pvalue", "term"])
 
 
-def _top_by_direction(table: pd.DataFrame, top_n: int) -> pd.DataFrame:
+def _top_by_direction(
+    table: pd.DataFrame,
+    top_n: int,
+    *,
+    max_padj: float,
+) -> pd.DataFrame:
     if table.empty:
         return table
-    ordered = table.sort_values(["direction", "padj", "pvalue", "term"])
+    significant = table.copy()
+    significant["padj"] = pd.to_numeric(significant["padj"], errors="coerce")
+    significant["pvalue"] = pd.to_numeric(significant["pvalue"], errors="coerce")
+    significant = significant[significant["padj"].lt(max_padj)]
+    ordered = significant.sort_values(["direction", "padj", "pvalue", "term"])
     return ordered.groupby("direction", sort=False, group_keys=False).head(top_n)
 
 
@@ -341,6 +348,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--alpha", type=float, default=0.05)
     parser.add_argument("--rank-column", default="stat")
     parser.add_argument("--permutations", type=int, default=1000)
+    parser.add_argument("--gsea-fdr", type=float, default=0.25)
     parser.add_argument("--seed", type=int, default=20260727)
     parser.add_argument("--min-size", type=int, default=15)
     parser.add_argument("--max-size", type=int, default=500)
@@ -351,6 +359,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if not np.isfinite(args.gsea_fdr) or not 0 < args.gsea_fdr <= 1:
+        raise ValueError("--gsea-fdr must be in the interval (0, 1]")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     de = pd.read_csv(args.de_results, sep="\t")
     required = {"gene_id", "log2FoldChange", "padj", args.rank_column}
@@ -472,22 +482,22 @@ def main() -> None:
     _write_table(gsea_tables[0], args.output_dir / "go_gsea.tsv", gsea_columns)
     _write_table(gsea_tables[1], args.output_dir / "reactome_gsea.tsv", gsea_columns)
     _write_table(
-        _top_by_direction(ora_tables[0], args.top_n),
+        _top_by_direction(ora_tables[0], args.top_n, max_padj=args.alpha),
         args.output_dir / "go_overrepresentation_plot.tsv",
         ora_columns,
     )
     _write_table(
-        _top_by_direction(ora_tables[1], args.top_n),
+        _top_by_direction(ora_tables[1], args.top_n, max_padj=args.alpha),
         args.output_dir / "reactome_overrepresentation_plot.tsv",
         ora_columns,
     )
     _write_table(
-        _top_by_direction(gsea_tables[0], args.top_n),
+        _top_by_direction(gsea_tables[0], args.top_n, max_padj=args.gsea_fdr),
         args.output_dir / "go_gsea_plot.tsv",
         gsea_columns,
     )
     _write_table(
-        _top_by_direction(gsea_tables[1], args.top_n),
+        _top_by_direction(gsea_tables[1], args.top_n, max_padj=args.gsea_fdr),
         args.output_dir / "reactome_gsea_plot.tsv",
         gsea_columns,
     )
@@ -498,6 +508,7 @@ def main() -> None:
         "rank_column": args.rank_column,
         "alpha": args.alpha,
         "permutations": args.permutations,
+        "gsea_plot_fdr": args.gsea_fdr,
         "seed": args.seed,
         "min_size": args.min_size,
         "max_size": args.max_size,

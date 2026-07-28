@@ -102,7 +102,7 @@ figures:
     source_table: go_gsea_plot
     x: plot_label
     y: score
-    title: "GO BP preranked GSEA with leading-edge genes"
+    title: "GO BP preranked GSEA with leading-edge genes (exploratory FDR < 0.25)"
     xlabel: "GO BP term [direction: leading-edge genes]"
     ylabel: "Normalized enrichment score (NES)"
     required: false
@@ -113,7 +113,7 @@ figures:
     source_table: reactome_gsea_plot
     x: plot_label
     y: score
-    title: "Reactome preranked GSEA with leading-edge genes"
+    title: "Reactome preranked GSEA with leading-edge genes (exploratory FDR < 0.25)"
     xlabel: "Reactome pathway [direction: leading-edge genes]"
     ylabel: "Normalized enrichment score (NES)"
     required: false

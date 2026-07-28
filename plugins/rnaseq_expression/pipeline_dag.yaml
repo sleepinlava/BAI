@@ -187,6 +187,7 @@ nodes:
       alpha: enrichment.alpha
       rank_column: enrichment.rank_column
       permutations: enrichment.permutations
+      gsea_fdr: enrichment.gsea_fdr
       seed: enrichment.seed
       min_size: enrichment.min_size
       max_size: enrichment.max_size

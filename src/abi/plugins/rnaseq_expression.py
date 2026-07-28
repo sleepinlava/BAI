@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import math
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
@@ -271,6 +272,12 @@ class RNASeqExpressionPlugin:
         enrichment = config.get("enrichment", {})
         if not isinstance(enrichment, Mapping):
             raise ValueError("enrichment must be a mapping")
+        try:
+            gsea_fdr = float(enrichment.get("gsea_fdr", 0.25))
+        except (TypeError, ValueError):
+            raise ValueError("enrichment.gsea_fdr must be in the interval (0, 1]") from None
+        if not math.isfinite(gsea_fdr) or not 0 < gsea_fdr <= 1:
+            raise ValueError("enrichment.gsea_fdr must be in the interval (0, 1]")
         if enrichment.get("enabled") is True:
             resources = config.get("resources", {})
             required_resources = ("annotation_gtf", "go_obo", "go_gaf", "reactome_gmt")

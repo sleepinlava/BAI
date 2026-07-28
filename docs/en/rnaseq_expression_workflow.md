@@ -98,11 +98,15 @@ enrichment:
   annotation_release: GRCh37.75
   rank_column: stat
   permutations: 1000
+  gsea_fdr: 0.25
   seed: 20260727
 differential_expression:
   comparison: "treatment_vs_control"
   alpha: 0.05
 ```
+
+`enrichment.gsea_fdr` must be in `(0, 1]`. It only filters the SciPlot GSEA
+preview; the complete GO and Reactome GSEA tables remain untruncated.
 
 ### Sample sheet format
 

@@ -5,6 +5,7 @@ import importlib.util
 import math
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 _SCRIPT = Path("plugins/rnaseq_expression/scripts/run_enrichment.py")
@@ -68,3 +69,47 @@ def test_offline_annotation_and_ora_use_gene_symbols(tmp_path: Path) -> None:
     assert "CRISPLD2,DUSP1" in plotted.iloc[0]["plot_label"]
     assert plotted.iloc[0]["gene_symbols"] == "CRISPLD2,DUSP1,KLF15"
     assert plotted.iloc[0]["score"] == pytest.approx(-math.log10(0.25))
+
+
+def test_ora_adjusts_over_all_eligible_gene_sets() -> None:
+    result = _MODULE.ora(
+        {"A", "B", "C"},
+        {"A", "B", "C", "D"},
+        {
+            "overlap": {"A", "B", "C"},
+            "no overlap": {"D"},
+        },
+        "GO",
+        "up",
+        min_size=1,
+        max_size=10,
+    )
+
+    assert set(result["term"]) == {"overlap", "no overlap"}
+    assert result.set_index("term").loc["overlap", "padj"] == pytest.approx(0.5)
+    assert result.set_index("term").loc["no overlap", "pvalue"] == pytest.approx(1.0)
+
+
+def test_plot_preview_excludes_terms_above_fdr_threshold() -> None:
+    table = pd.DataFrame(
+        {
+            "direction": ["up", "up", "up", "down", "down"],
+            "term": [
+                "up significant",
+                "up stronger",
+                "up non-significant",
+                "down significant",
+                "down non-significant",
+            ],
+            "padj": ["1e-2", "9e-3", "3e-1", "2e-1", "2.6e-1"],
+            "pvalue": ["1e-3", "8e-4", "2e-1", "1e-1", "2e-1"],
+        }
+    )
+
+    plotted = _MODULE._top_by_direction(table, top_n=5, max_padj=0.25)
+
+    assert plotted["term"].tolist() == [
+        "down significant",
+        "up stronger",
+        "up significant",
+    ]

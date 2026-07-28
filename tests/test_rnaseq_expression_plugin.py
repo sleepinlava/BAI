@@ -175,12 +175,20 @@ def test_enrichment_is_opt_in_and_uses_offline_resources(tmp_path):
     assert enrichment_step.params["rank_column"] == "stat"
     assert enrichment_step.params["seed"] == 20260727
     assert enrichment_step.params["permutations"] == 1000
+    assert enrichment_step.params["gsea_fdr"] == 0.25
 
 
 def test_enrichment_requires_all_offline_resource_paths():
     plugin = get_plugin("rnaseq_expression")
     with pytest.raises(ValueError, match="enrichment requires configured offline resources"):
         plugin.load_config(overrides={"enrichment": {"enabled": True}})
+
+
+@pytest.mark.parametrize("gsea_fdr", [0, -0.1, 1.1, float("nan"), "invalid"])
+def test_enrichment_rejects_invalid_gsea_plot_fdr(gsea_fdr):
+    plugin = get_plugin("rnaseq_expression")
+    with pytest.raises(ValueError, match=r"enrichment\.gsea_fdr must be"):
+        plugin.load_config(overrides={"enrichment": {"gsea_fdr": gsea_fdr}})
 
 
 def test_workflow_spec_loads():
