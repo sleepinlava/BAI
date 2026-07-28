@@ -46,7 +46,10 @@ COPY envs/autoplasm-plasmid-binning.yml /tmp/envs/autoplasm-plasmid-binning.yml
 RUN mamba env create -f /tmp/envs/autoplasm-plasmid-binning.yml && rm /tmp/envs/autoplasm-plasmid-binning.yml
 
 COPY envs/autoplasm-scapp.yml /tmp/envs/autoplasm-scapp.yml
-RUN mamba env create -f /tmp/envs/autoplasm-scapp.yml && rm /tmp/envs/autoplasm-scapp.yml
+COPY scripts/install_scapp_packages.sh /tmp/install_scapp_packages.sh
+RUN mamba env create -f /tmp/envs/autoplasm-scapp.yml && \
+    bash /tmp/install_scapp_packages.sh /opt/conda/envs/autoplasm-scapp/bin/python && \
+    rm /tmp/envs/autoplasm-scapp.yml /tmp/install_scapp_packages.sh
 
 COPY envs/stats.yml /tmp/envs/stats.yml
 RUN mamba env create -f /tmp/envs/stats.yml && rm /tmp/envs/stats.yml

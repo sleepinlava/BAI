@@ -228,10 +228,31 @@ def test_incompatible_plasmid_annotators_do_not_share_an_environment():
 def test_scapp_uses_the_cloud_verified_environment_in_plasmid_image():
     manifest = yaml.safe_load((ROOT / "environments.yaml").read_text(encoding="utf-8"))
     assignments = manifest["tool_assignments"]["metagenomic_plasmid"]
+    dependencies = manifest["environments"]["autoplasm-scapp"]["dependencies"]
 
     assert assignments["scapp"] == "autoplasm-scapp"
     assert "scapp" not in manifest["environments"]
+    assert not any(
+        isinstance(dependency, dict) and "pip" in dependency for dependency in dependencies
+    )
+    for dependency in (
+        "numpy=1.22.0",
+        "scipy=1.10.0",
+        "scikit-learn=0.22.2.post1",
+        "pysam=0.19.1",
+    ):
+        assert dependency in dependencies
 
     dockerfile = (ROOT / "docker" / "Dockerfile.metagenomic_plasmid").read_text(encoding="utf-8")
     assert "COPY envs/autoplasm-scapp.yml " in dockerfile
     assert "mamba env create -f /tmp/envs/autoplasm-scapp.yml" in dockerfile
+    assert "install_scapp_packages.sh /opt/conda/envs/autoplasm-scapp/bin/python" in dockerfile
+
+    installer = (ROOT / "scripts" / "install_scapp_packages.sh").read_text(encoding="utf-8")
+    assert "pip install --no-deps" in installer
+    assert "/refs/heads/master" not in installer
+    assert "plasclass-dpellow @" in installer
+    assert "scapp-dpellow @" in installer
+
+    cloud_bootstrap = (ROOT / "scripts" / "cloud" / "01_envs.sh").read_text(encoding="utf-8")
+    assert "install_scapp_packages.sh" in cloud_bootstrap

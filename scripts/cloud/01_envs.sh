@@ -106,6 +106,20 @@ for env_name in "${ENVS_TO_INSTALL[@]}"; do
   fi
 done
 
+# ── SCAPP/PlasClass packages ──────────────────────────────────────────────
+# Their upstream distribution names differ from their repository/import
+# names, and their setup.py files pin dependencies older than the
+# cloud-verified substitutions in environments.yaml. Install the packages
+# without dependency resolution after the Conda environment is ready.
+if [[ " ${ENVS_TO_INSTALL[*]} " == *" autoplasm-scapp "* ]]; then
+  log_step "Installing pinned SCAPP and PlasClass packages"
+  if [[ "${DRY_RUN}" != "true" ]]; then
+    bash "${ABI_PROJECT_ROOT}/scripts/install_scapp_packages.sh" \
+      "$(env_python autoplasm-scapp)" \
+      || { log_error "SCAPP/PlasClass installation failed."; ((++failed)); }
+  fi
+fi
+
 # ── rnaseq companion R packages (DESeq2 etc.) ─────────────────────────────
 if [[ " ${ENVS_TO_INSTALL[*]} " == *" rnaseq "* ]] && [[ "${SKIP_RNASEQ_R}" != "true" ]]; then
   log_step "Setting up rnaseq environment + DESeq2 R packages"
