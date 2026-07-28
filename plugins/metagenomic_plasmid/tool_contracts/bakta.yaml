@@ -22,6 +22,7 @@ outputs:
     type: directory
 execution:
   executable: bakta
+  version_command: bakta --version
   command_template: bakta --db {database} --output {output_dir} --threads {threads}
     --force --skip-sorf {plasmid_contigs}
   network: false

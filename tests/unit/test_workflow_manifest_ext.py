@@ -78,6 +78,72 @@ def test_add_resources_from_config_with_dict_config_creates_resources(tmp_path: 
     assert resources[0]["license"] == "MIT"
 
 
+def test_required_resource_identities_reject_missing_version_and_source(tmp_path: Path) -> None:
+    reference = tmp_path / "reference.fa"
+    reference.write_text(">ref\nACGT\n", encoding="utf-8")
+    manifest = ResourceManifest("test")
+    manifest.add_resources_from_config(
+        {"resources": {"reference_genome": str(reference)}},
+    )
+
+    assert manifest.identity_errors(["reference_genome", "mlst_db"]) == [
+        "Resource 'reference_genome': missing version",
+        "Resource 'reference_genome': missing source_url",
+        "Resource 'mlst_db': identity is not declared",
+    ]
+
+
+def test_required_resource_identities_accept_complete_metadata(tmp_path: Path) -> None:
+    reference = tmp_path / "reference.fa"
+    reference.write_text(">ref\nACGT\n", encoding="utf-8")
+    manifest = ResourceManifest("test")
+    manifest.add_resources_from_config(
+        {
+            "provenance": {
+                "resource_identities": {
+                    "reference_genome": {
+                        "path": str(reference),
+                        "version": "GCF_000001405.40",
+                        "source_url": "https://example.org/reference.fa",
+                    }
+                }
+            }
+        },
+    )
+
+    assert manifest.identity_errors(["reference_genome"]) == []
+
+
+def test_required_directory_identity_requires_checksum_policy(tmp_path: Path) -> None:
+    star_index = tmp_path / "star"
+    star_index.mkdir()
+    manifest = ResourceManifest("test")
+    manifest.add_resources_from_config(
+        {
+            "provenance": {
+                "resource_identities": {
+                    "genome_index": {
+                        "path": str(star_index),
+                        "version": "STAR 2.7.11b + GRCh38",
+                        "source_url": "https://example.org/build-recipe",
+                    }
+                }
+            }
+        }
+    )
+
+    assert manifest.identity_errors(["genome_index"]) == [
+        "Resource 'genome_index': directory is not selected for SHA-256"
+    ]
+    assert (
+        manifest.identity_errors(
+            ["genome_index"],
+            checksum_directory_ids=["genome_index"],
+        )
+        == []
+    )
+
+
 # ── add_resources_from_config(): with plain path config value ───────────
 
 

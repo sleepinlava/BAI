@@ -75,5 +75,23 @@ def test_biological_metrics_bind_source_run_and_standard_table() -> None:
     biological = [row for row in rows if row["evidence_track"] == "biological_validation"]
     assert biological
     assert all(row["source_run_id"] for row in biological)
+    assert all(row["source_artifact"] for row in biological)
+    assert all(len(row["source_artifact_sha256"]) == 64 for row in biological)
     assert all(row["source_standard_table"] for row in biological)
     assert all(len(row["source_standard_table_sha256"]) == 64 for row in biological)
+
+
+def test_canonical_airway_metrics_match_bound_metric_source() -> None:
+    root = Path(__file__).resolve().parents[2]
+    with (root / "metrics.tsv").open(newline="") as handle:
+        canonical = {
+            row["metric"]: row
+            for row in csv.DictReader(handle, delimiter="\t")
+            if row["model_or_workflow"] == "rnaseq_expression"
+        }
+    with (root / "docs/paper_examples/airway_metrics.tsv").open(newline="") as handle:
+        source = {row["metric"]: row for row in csv.DictReader(handle, delimiter="\t")}
+
+    for metric, source_row in source.items():
+        if metric in canonical:
+            assert canonical[metric]["estimate"] == source_row["estimate"]

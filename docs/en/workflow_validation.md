@@ -93,6 +93,13 @@ content-tree SHA-256; a publisher-supplied checksum can instead be placed in
 ```yaml
 provenance:
   runtime_lock: /frozen/runtime-lock.json
+  required_resource_identity_ids:
+    - reference_genome
+    - annotation_gtf
+    - genome_index
+    - amrfinder_db
+    - mlst_db
+    - scapp_db
   checksum_resource_ids:
     - genome_index
     - amrfinder_db
@@ -125,11 +132,18 @@ provenance:
       source_url: "<archived database URL>"
 ```
 
+When `required_resource_identity_ids` is present, ABI refuses to start the
+formal execution if a listed resource lacks a path, version, or source. A
+directory must also have a declared checksum or be selected in
+`checksum_resource_ids`.
+
 Paper evidence bundles are verified with `abi verify-evidence MANIFEST
 --artifact-root REPOSITORY_ROOT`. The repository-level
-`python scripts/verify_paper_evidence.py` command verifies all three final
-bundles and independently proves that a one-file TSV modification fails the
-integrity check.
+`python scripts/verify_paper_evidence.py` command verifies the three checked-in
+legacy-run bundles and independently tampers with every TSV copy to prove the
+integrity check fails. These bundles are marked `verified_legacy_run`; formal
+archival bundles must replace them after rerunning with complete mandatory
+resource identities.
 
 ### Phase 2: Biological Benchmarks
 

@@ -26,8 +26,9 @@ def test_verify_case_detects_tampered_tsv_without_modifying_original(tmp_path: P
     result = verify_case("airway", root=tmp_path)
 
     assert result["original_valid"] is True
-    assert result["isolated_copy_valid_before_tamper"] is True
-    assert result["tamper_detected"] is True
+    assert result["all_tsv_copies_valid_before_tamper"] is True
+    assert result["all_tsv_tampering_detected"] is True
+    assert result["tsv_files_checked"] == 1
     assert table.read_bytes() == before
     payload = json.loads(
         (manifest_dir / "airway.evidence-manifest.json").read_text(encoding="utf-8")

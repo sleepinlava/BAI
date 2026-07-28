@@ -68,6 +68,13 @@ ABI **目前还不是**经过完整验证的科学工作流。单个工具的论
 ```yaml
 provenance:
   runtime_lock: /frozen/runtime-lock.json
+  required_resource_identity_ids:
+    - reference_genome
+    - annotation_gtf
+    - genome_index
+    - amrfinder_db
+    - mlst_db
+    - scapp_db
   checksum_resource_ids:
     - genome_index
     - amrfinder_db
@@ -100,9 +107,14 @@ provenance:
       source_url: "<数据库归档地址>"
 ```
 
+配置 `required_resource_identity_ids` 后，若任一正式资源缺少路径、版本或来源，ABI
+会在执行前拒绝启动。目录资源还必须声明发布方 checksum，或列入
+`checksum_resource_ids` 以生成内容树 SHA-256。
+
 论文证据包可用 `abi verify-evidence MANIFEST --artifact-root 仓库根目录` 独立校验。
-仓库级命令 `python scripts/verify_paper_evidence.py` 会检查三个最终证据包，并在隔离
-副本中证明：任意一个 TSV 被修改后，完整性校验必定失败。
+仓库级命令 `python scripts/verify_paper_evidence.py` 会检查当前三个历史运行证据包，并
+逐一篡改每个 TSV 的隔离副本，证明任意 TSV 被修改后完整性校验必定失败。这三个包明确
+标记为 `verified_legacy_run`；正式归档前仍需使用强制资源身份配置重跑并替换。
 
 ### 第 2 阶段：生物学基准
 

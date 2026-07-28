@@ -50,8 +50,28 @@ def test_evidence_manifest_records_manifest_identity(tmp_path: Path) -> None:
     assert record["schema_version"] == "abi.evidence-manifest.v1"
     assert record["evidence_id"] == "case-wgs"
     assert record["run_id"] == "run-456"
+    assert "generated_at" not in record
     assert record["artifacts"][0]["path"] == "metrics.tsv"
     assert len(record["artifacts"][0]["sha256"]) == 64
+
+
+def test_evidence_manifest_is_deterministic_for_unchanged_inputs(tmp_path: Path) -> None:
+    table = tmp_path / "metrics.tsv"
+    table.write_text("metric\testimate\nx\t1\n", encoding="utf-8")
+    path = tmp_path / "evidence_manifest.json"
+    arguments = {
+        "artifact_root": tmp_path,
+        "paths": [table],
+        "output": path,
+        "evidence_id": "case-deterministic",
+        "run_id": "run-fixed",
+    }
+
+    build_evidence_manifest(**arguments)
+    first = path.read_bytes()
+    build_evidence_manifest(**arguments)
+
+    assert path.read_bytes() == first
 
 
 def test_verify_evidence_cli_exits_nonzero_after_tamper(tmp_path: Path) -> None:

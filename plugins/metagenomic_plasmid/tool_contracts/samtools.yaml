@@ -19,6 +19,7 @@ outputs:
     format: bam
 execution:
   executable: samtools
+  version_command: samtools --version
   command_template: samtools sort -@ {threads} -o {bam} {alignment}
   network: false
   writes_output: true

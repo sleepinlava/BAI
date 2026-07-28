@@ -32,6 +32,7 @@ outputs:
     format: sam
 execution:
   executable: bowtie2
+  version_command: bowtie2 --version
   command_template: sh -c 'bowtie2-build "$1" "$2/$3$4.plasmid_index" >/dev/null &&
     bowtie2 -x "$2/$3$4.plasmid_index" -1 "$5" -2 "$6" -p "$7" -S "$8"' autoplasm
     "{plasmid_contigs}" "{output_dir}" "{sample_id}" "{abundance_label}" "{read1}"

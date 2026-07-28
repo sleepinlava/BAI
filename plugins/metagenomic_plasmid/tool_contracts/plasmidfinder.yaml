@@ -17,6 +17,8 @@ outputs:
     type: path
 execution:
   executable: python
+  version_command: >-
+    python -c "import importlib.metadata as m; print(m.version('plasmidfinder'))"
   command_template: >-
     python -m plasmidfinder -i {plasmid_contigs} -o {output_dir} -p {database}
     --legacy -x

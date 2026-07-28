@@ -283,6 +283,33 @@ class GenericABIExecutor:
             self._resolved_input_rows(plan, dry_run=dry_run),
             provenance / "resolved_inputs.tsv",
         )
+        provenance_options = config.get("provenance", {})
+        checksum_directory_ids = (
+            provenance_options.get("checksum_resource_ids", [])
+            if isinstance(provenance_options, Mapping)
+            else []
+        )
+        required_resource_ids = (
+            provenance_options.get("required_resource_identity_ids", [])
+            if isinstance(provenance_options, Mapping)
+            else []
+        )
+        if required_resource_ids:
+            from abi.workflow.manifest import generate_resource_manifest
+
+            identity_manifest = generate_resource_manifest(
+                analysis_type=str(getattr(plan, "analysis_type", "")),
+                config=config,
+            )
+            identity_errors = identity_manifest.identity_errors(
+                required_resource_ids,
+                checksum_directory_ids=checksum_directory_ids,
+            )
+            if identity_errors:
+                raise ValueError(
+                    "Formal-run resource identity requirements failed: "
+                    + "; ".join(identity_errors)
+                )
         # Write tool versions BEFORE step iteration to avoid concurrent access
         # issues when parallel execution is enabled (B4 fix).
         # 在步骤迭代之前写入工具版本，避免并发访问问题（B4 修复）。
@@ -473,12 +500,6 @@ class GenericABIExecutor:
         resources_path = self._write_resources(config, provenance / "resources.json")
         from abi.workflow.manifest import write_resource_manifest
 
-        provenance_options = config.get("provenance", {})
-        checksum_directory_ids = (
-            provenance_options.get("checksum_resource_ids", [])
-            if isinstance(provenance_options, Mapping)
-            else []
-        )
         resource_manifest_path = write_resource_manifest(
             provenance,
             analysis_type=str(getattr(plan, "analysis_type", "")),

@@ -74,7 +74,19 @@ class TestToolCatalog:
                 "deseq2",
             },
             "wgs_bacteria": {"fastp", "spades", "prokka", "mlst", "amrfinderplus"},
-            "metagenomic_plasmid": {"fastp", "metaspades", "genomad", "scapp"},
+            "metagenomic_plasmid": {
+                "bakta",
+                "bowtie2",
+                "coverm",
+                "fastp",
+                "genomad",
+                "megahit",
+                "metaspades",
+                "plasmidfinder",
+                "report_markdown",
+                "samtools",
+                "scapp",
+            },
         }
 
         missing = [

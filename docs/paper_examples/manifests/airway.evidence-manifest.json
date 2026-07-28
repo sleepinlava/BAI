@@ -1,8 +1,12 @@
 {
+  "evidence_status": "verified_legacy_run",
+  "limitations": [
+    "The source run predates mandatory resource_manifest.json identity fields.",
+    "Re-run with required_resource_identity_ids before archival publication."
+  ],
   "schema_version": "abi.evidence-manifest.v1",
   "evidence_id": "abi-paper-airway",
   "run_id": "legacy-sha256:fdd7aeb25111531666c3bc26ff49044251642ee373d7f46eb6edbd167f704303",
-  "generated_at": "2026-07-28T10:53:20.965372+00:00",
   "artifacts": [
     {
       "path": "docs/_static/paper_examples/airway_validation.provenance.json",
@@ -51,8 +55,8 @@
     },
     {
       "path": "metrics.tsv",
-      "sha256": "8636d8eeef4b3cab675d6349dc74049818e07c7b7e913b38610b06ead2abf972",
-      "size_bytes": 20286
+      "sha256": "1380559a13151a87ed3ec2558b82a88681a8f7eb474bc4dfaec87504c82f8415",
+      "size_bytes": 24829
     }
   ]
 }

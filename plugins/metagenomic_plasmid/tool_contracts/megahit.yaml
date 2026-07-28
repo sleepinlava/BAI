@@ -28,6 +28,7 @@ outputs:
     format: fasta
 execution:
   executable: megahit
+  version_command: megahit --version
   command_template: megahit -1 {read1} -2 {read2} -o {output_dir} -t {threads} --memory
     {memory_bytes}
   network: false

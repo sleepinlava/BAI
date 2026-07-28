@@ -234,6 +234,32 @@ class ResourceManifest:
         """Return IDs of resources whose paths do not exist."""
         return [r["id"] for r in self._resources if not Path(r["path"]).exists()]
 
+    def identity_errors(
+        self,
+        required_ids: Sequence[str],
+        *,
+        checksum_directory_ids: Sequence[str] = (),
+    ) -> List[str]:
+        """Return missing identity fields for resources required by a formal run."""
+        by_id = {str(resource.get("id", "")): resource for resource in self._resources}
+        directory_ids = {str(resource_id) for resource_id in checksum_directory_ids}
+        errors: List[str] = []
+        for resource_id in required_ids:
+            resource = by_id.get(str(resource_id))
+            if resource is None:
+                errors.append(f"Resource '{resource_id}': identity is not declared")
+                continue
+            for field in ("path", "version", "source_url"):
+                if not str(resource.get(field, "")).strip():
+                    errors.append(f"Resource '{resource_id}': missing {field}")
+            path = Path(str(resource.get("path", "")))
+            if path.is_dir() and not resource.get("checksum_sha256"):
+                if str(resource_id) not in directory_ids:
+                    errors.append(
+                        f"Resource '{resource_id}': directory is not selected for SHA-256"
+                    )
+        return errors
+
 
 # ── Convenience functions / 便捷函数 ─────────────────────────────────────
 

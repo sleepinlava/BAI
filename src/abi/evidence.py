@@ -5,9 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Mapping
 
 from abi.workflow.manifest import checksum_file
 
@@ -61,6 +60,7 @@ def build_evidence_manifest(
     output: str | Path,
     evidence_id: str,
     run_id: str,
+    metadata: Mapping[str, Any] | None = None,
 ) -> Path:
     """Write a portable manifest binding evidence files to SHA-256 digests."""
     root = Path(artifact_root).resolve()
@@ -82,10 +82,10 @@ def build_evidence_manifest(
             }
         )
     payload = {
+        **dict(metadata or {}),
         "schema_version": "abi.evidence-manifest.v1",
         "evidence_id": evidence_id,
         "run_id": run_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
         "artifacts": sorted(artifacts, key=lambda item: str(item["path"])),
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,8 +1,12 @@
 {
+  "evidence_status": "verified_legacy_run",
+  "limitations": [
+    "The source run predates mandatory resource_manifest.json identity fields.",
+    "Re-run with required_resource_identity_ids before archival publication."
+  ],
   "schema_version": "abi.evidence-manifest.v1",
   "evidence_id": "abi-paper-scapp",
   "run_id": "legacy-sha256:f8a8e13c360ac19267a23fbfa240e40f9651b053389fc0bd0c7db492dcdc4c9f",
-  "generated_at": "2026-07-28T10:53:20.974139+00:00",
   "artifacts": [
     {
       "path": "docs/_static/paper_examples/scapp_descriptive_evidence.provenance.json",
@@ -25,9 +29,24 @@
       "size_bytes": 2845
     },
     {
+      "path": "downloads/abi_scapp/provenance/resolved_inputs.tsv",
+      "sha256": "73e50af718061dcbfac246f2debb27e0007d82f00737ccbc1796e0e243b2755d",
+      "size_bytes": 1587
+    },
+    {
+      "path": "downloads/abi_scapp/provenance/resources.json",
+      "sha256": "8bd731e6d47c5b077eafe621b6d5ce230712400a3307e53fee6e28be928b68be",
+      "size_bytes": 34608
+    },
+    {
       "path": "downloads/abi_scapp/provenance/run_summary.json",
       "sha256": "7b7c0f7420aa617aa83528517b3bd17cc5c36486061d59892a48901e85af18f6",
       "size_bytes": 5437
+    },
+    {
+      "path": "downloads/abi_scapp/provenance/tool_versions.tsv",
+      "sha256": "0bbafa4a6f84b2ba118cd2d4a00fe59afe0f6d4b9f101848b22c01a5c772f08a",
+      "size_bytes": 3421
     },
     {
       "path": "downloads/abi_scapp/tables/plasmid_predictions.tsv",
@@ -45,9 +64,24 @@
       "size_bytes": 5052
     },
     {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/resolved_inputs.tsv",
+      "sha256": "0fa4e4819e5e97d78d4acc668aefa960eac6368eefaf41420323076bbfab1af2",
+      "size_bytes": 2092
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/resources.json",
+      "sha256": "e82b9753ce32f3172c1a06af6ed0d1c912b09220089097ddcfce51b958255ccd",
+      "size_bytes": 34598
+    },
+    {
       "path": "downloads/plasmid_scapp_core_retry7/provenance/run_summary.json",
       "sha256": "e95dc0bd63b3023283d2c77b08d2d42b45ae46915119bb53c89b8c00791eabfd",
       "size_bytes": 5645
+    },
+    {
+      "path": "downloads/plasmid_scapp_core_retry7/provenance/tool_versions.tsv",
+      "sha256": "add303ae08d09ec546aab01e27e888672264cb2d72345638154ecbbd805936e1",
+      "size_bytes": 3436
     },
     {
       "path": "downloads/plasmid_scapp_core_retry7/tables/plasmid_consensus.tsv",
@@ -61,8 +95,8 @@
     },
     {
       "path": "metrics.tsv",
-      "sha256": "8636d8eeef4b3cab675d6349dc74049818e07c7b7e913b38610b06ead2abf972",
-      "size_bytes": 20286
+      "sha256": "1380559a13151a87ed3ec2558b82a88681a8f7eb474bc4dfaec87504c82f8415",
+      "size_bytes": 24829
     }
   ]
 }
