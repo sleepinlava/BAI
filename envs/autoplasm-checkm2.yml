@@ -1,0 +1,9 @@
+name: autoplasm-checkm2
+channel_priority: strict
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- python=3.8
+- checkm2=1.1.0=pyh7e72e81_0

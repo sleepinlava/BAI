@@ -14,7 +14,6 @@ dependencies:
 - fastspar
 - kraken2
 - metaphlan
-- checkm2
 - gtdbtk
 - r-base
 - r-vegan

@@ -10,7 +10,7 @@ them independently, resume after a failure, and verify the result.
 # 1. Clone the repo (or copy it to the cloud host)
 git clone <repo-url> abi && cd abi
 
-# 2. Install all 20 conda environments + ABI Python package + R/DESeq2
+# 2. Install all 21 conda environments + ABI Python package + R/DESeq2
 bash scripts/cloud/01_envs.sh
 
 # 3. Download all auto-fetchable databases (~200 GB; see disk requirements)
@@ -56,7 +56,7 @@ contains RNA references. Do not use the two variables interchangeably.
 ### `01_envs.sh` — Conda environments
 
 Installs micromamba (if no mamba/conda found), regenerates `envs/*.yml` from
-`environments.yaml`, creates all 20 environments, installs the ABI package
+`environments.yaml`, creates all 21 environments, installs the ABI package
 (`pip install -e ".[dev,report,mcp]"`), and sets up the `rnaseq` env + DESeq2.
 
 ```bash

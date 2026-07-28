@@ -49,7 +49,8 @@ ALL_ENVS=(
     autoplasm-base autoplasm-qc autoplasm-assembly autoplasm-annotation
     autoplasm-rgi
     autoplasm-abundance autoplasm-plasmid-detect autoplasm-plasmid-binning
-    autoplasm-integronfinder stats autoplasm-visualization autoplasm-nextflow
+    autoplasm-integronfinder autoplasm-checkm2 stats
+    autoplasm-visualization autoplasm-nextflow
     abi-qc abi-stats rnaseq amplicon wgs easymeta-p0 easymeta-humann
 )
 

@@ -256,3 +256,18 @@ def test_scapp_uses_the_cloud_verified_environment_in_plasmid_image():
 
     cloud_bootstrap = (ROOT / "scripts" / "cloud" / "01_envs.sh").read_text(encoding="utf-8")
     assert "install_scapp_packages.sh" in cloud_bootstrap
+
+
+def test_checkm2_isolated_from_modern_statistics_environment():
+    manifest = yaml.safe_load((ROOT / "environments.yaml").read_text(encoding="utf-8"))
+    environments = manifest["environments"]
+    assignments = manifest["tool_assignments"]["metagenomic_plasmid"]
+
+    assert assignments["checkm2"] == "autoplasm-checkm2"
+    assert "checkm2" not in environments["stats"]["dependencies"]
+    assert "python=3.8" in environments["autoplasm-checkm2"]["dependencies"]
+    assert "checkm2=1.1.0=pyh7e72e81_0" in environments["autoplasm-checkm2"]["dependencies"]
+
+    dockerfile = (ROOT / "docker" / "Dockerfile.metagenomic_plasmid").read_text(encoding="utf-8")
+    assert "COPY envs/autoplasm-checkm2.yml " in dockerfile
+    assert "mamba env create -f /tmp/envs/autoplasm-checkm2.yml" in dockerfile

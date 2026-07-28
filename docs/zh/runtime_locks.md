@@ -56,6 +56,7 @@ SHA-256，最后原子发布到
 `--type viral_viwrap` 将其纳入正式锁。
 
 `scripts/cloud/libcommon.sh` 中的引导清单现已覆盖 `environments.yaml`
-声明的全部 20 个环境，包括 `autoplasm-scapp` 和 `autoplasm-rgi`。严格校验仍是
+声明的全部 21 个环境，包括 `autoplasm-scapp`、`autoplasm-rgi` 和隔离的
+`autoplasm-checkm2`。严格校验仍是
 权威门禁，未来出现
 清单漂移时必须拒绝发布。

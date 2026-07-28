@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ── ABI Cloud Bootstrap — Stage 1: Conda environments ─────────────────────
-# Installs all 20 conda/mamba environments + the ABI Python package + the
+# Installs all 21 conda/mamba environments + the ABI Python package + the
 # rnaseq R/DESeq2 companion packages.
 #
 # Usage:

@@ -164,14 +164,14 @@ log_phase "Phase 1: 小型数据库并行"
 
 declare -A PIDS=()
 
-# 1a. CheckM2 — stats env
+# 1a. CheckM2 — isolated legacy-compatible env
 CHECKM2_DIR="${RESOURCE_ROOT}/checkm2"
 if ! is_ready "${CHECKM2_DIR}"; then
     safe_prepare_dir "${CHECKM2_DIR}" "checkm2"
     PIDS[checkm2]=$(bg_run "checkm2" "checkm2_db" \
         bash -c "
-            export PATH=$(env_path stats):\$PATH
-            export CONDA_PREFIX=$(env_prefix stats)
+            export PATH=$(env_path autoplasm-checkm2):\$PATH
+            export CONDA_PREFIX=$(env_prefix autoplasm-checkm2)
             export CHECKM2DB=${CHECKM2_DIR}
             checkm2 download --path ${CHECKM2_DIR}
             [ -n \"\$(ls -A ${CHECKM2_DIR} 2>/dev/null)\" ] && touch ${CHECKM2_DIR}/.autoplasm_resource_ready

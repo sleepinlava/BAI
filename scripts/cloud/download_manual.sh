@@ -67,7 +67,7 @@ echo "=== Phase 1: 小型数据库 — 可开4个终端分别运行 ==="
 
 cat << 'CMDS'
 # ── 终端1: checkm2 (~400MB) ──
-PATH=/root/autodl-tmp/.mamba/envs/stats/bin:$PATH \
+PATH=/root/autodl-tmp/.mamba/envs/autoplasm-checkm2/bin:$PATH \
 CHECKM2DB=/root/autodl-tmp/resources/autoplasm/checkm2 \
 checkm2 download --path /root/autodl-tmp/resources/autoplasm/checkm2
 

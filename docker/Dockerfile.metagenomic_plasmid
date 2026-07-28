@@ -54,6 +54,9 @@ RUN mamba env create -f /tmp/envs/autoplasm-scapp.yml && \
 COPY envs/stats.yml /tmp/envs/stats.yml
 RUN mamba env create -f /tmp/envs/stats.yml && rm /tmp/envs/stats.yml
 
+COPY envs/autoplasm-checkm2.yml /tmp/envs/autoplasm-checkm2.yml
+RUN mamba env create -f /tmp/envs/autoplasm-checkm2.yml && rm /tmp/envs/autoplasm-checkm2.yml
+
 COPY envs/autoplasm-visualization.yml /tmp/envs/autoplasm-visualization.yml
 RUN mamba env create -f /tmp/envs/autoplasm-visualization.yml && rm /tmp/envs/autoplasm-visualization.yml
 

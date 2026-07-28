@@ -60,8 +60,8 @@ elif timeout 6 bash -c '</dev/tcp/zenodo.org/443' 2>/dev/null; then
     rm -f "${CHECKM2_DIR}/.autoplasm_resource_ready"
     run_step "checkm2" "checkm2_db" bash -c "
         set -e
-        export PATH=$(env_path stats):\$PATH
-        export CONDA_PREFIX=$(env_prefix stats)
+        export PATH=$(env_path autoplasm-checkm2):\$PATH
+        export CONDA_PREFIX=$(env_prefix autoplasm-checkm2)
         export CHECKM2DB=${CHECKM2_DIR}
         checkm2 database --download --path ${CHECKM2_DIR}
         touch ${CHECKM2_DIR}/.autoplasm_resource_ready
