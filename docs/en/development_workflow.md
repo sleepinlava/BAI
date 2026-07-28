@@ -90,7 +90,20 @@ python -m build
 python -m twine check dist/*
 ```
 
-Build a representative image and run `abi list-types` inside it. The default sdist-to-wheel build path must succeed because forced wheel inputs must also exist in the sdist and Docker context.
+Docker image construction is manual-only and is not a required PR or PyPI
+release gate. A manual representative build and `abi list-types` smoke test are
+recommended when container inputs change or before publishing an image. Use
+**Actions → Docker → Run workflow**, or:
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=<plugin> -f push=false -f push_to_dockerhub=false
+```
+
+The default sdist-to-wheel build path must still succeed because forced wheel
+inputs must also exist in the sdist and Docker context. See the
+[Linux and macOS Support Plan](platform_support_plan.md) for the platform
+certification roadmap and complete manual Docker policy.
 
 ### Documentation changes
 

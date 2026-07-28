@@ -51,10 +51,11 @@ abi query --type metagenomic_plasmid --what stages
 
 It does not replace every release-surface gate. Run `bash docs/build_docs.sh`,
 `docker compose -f docker/docker-compose.yml config --quiet`, the Docker
-configuration regression test, strict contract lint for all seven plugins,
-`python -m twine check dist/*`, and applicable container/real-tool acceptance
-checks separately. The GitHub release workflow reruns the reusable CI gate
-before creating a Release.
+configuration regression test, strict contract lint for all seven plugins, and
+`python -m twine check dist/*` separately. Run applicable real-tool acceptance
+checks, and run container acceptance only when container inputs changed or an
+image will be published. The GitHub release workflow reruns the reusable CI
+gate before creating a Release.
 
 After building a wheel, install it with its `[mcp]` extra and smoke-test the
 installed commands in a clean environment when possible:
@@ -78,16 +79,18 @@ done
 Run this with the clean wheel environment's `bin` directory on `PATH`, because
 the doctor verifies the installed `abi-mcp` entry point. `integrations/` is a
 release input: it must be present in both distributions and every Docker `/app`
-context, and a change to it must exercise the Docker workflow.
+context. When it or another container input changes, a manual Docker workflow
+run is recommended before a container release.
 
 ## GitHub Actions
 
 - `ci.yml` runs lint, format check, mypy, tests, and a build check.
-- `docker.yml` builds and smoke-tests plugin images on relevant PRs. It pushes
-  images with provenance and SBOM only for tags or approved manual dispatches;
-  local PR image loads intentionally disable attestations. Published images are
-  multi-platform except RNA-seq, which remains `linux/amd64`-only until its
-  R/DESeq2 environment passes a native arm64 build and smoke test.
+- `docker.yml` is manual-only. It builds and smoke-tests a selected plugin (or
+  all plugins) and publishes only when the operator explicitly enables `push`.
+  Registry pushes include provenance and SBOM; non-push validation loads a
+  stable local image without attestations. Published images are multi-platform
+  except RNA-seq, which remains `linux/amd64`-only until its R/DESeq2
+  environment passes a native arm64 build and smoke test.
 - `release.yml` builds distributions, creates a GitHub Release for `v*` tags,
   and emits the published event.
 - `publish-pypi.yml` downloads those exact Release artifacts and publishes
@@ -119,12 +122,21 @@ and manual recovery input. Release operators must therefore publish only the
 verified `v<version>` Release and must not use the manual path to bypass the
 identity checks.
 
-Before merging packaging or container changes, require a successful default
-sdist-to-wheel build and all applicable Docker matrix jobs. The PR Docker gate
-must cover build, local load, and `abi list-types`; a successful BuildKit setup
-or Conda solve alone is not sufficient. The plasmid image is intentionally
-excluded from automatic PR builds because of its size and must be validated by
-manual workflow dispatch before a container release that affects it.
+Before merging packaging changes, require a successful default sdist-to-wheel
+build. Docker is not a strict PR or PyPI release gate. When container inputs
+change, a manual Docker workflow run is recommended; before publishing an image,
+that run must cover build, local load, and `abi list-types`. A successful
+BuildKit setup or Conda solve alone is not sufficient. Select the plasmid image
+explicitly because of its size.
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=<plugin> -f push=false -f push_to_dockerhub=false
+```
+
+The Docker workflow is never started by a tag or GitHub Release. Container
+publication is a separate, intentional operator action and is outside the
+automatic GitHub Release → PyPI chain.
 
 ## Post-Release Verification
 

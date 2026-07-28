@@ -7,30 +7,16 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_docker_workflow_watches_every_build_input_on_pull_requests():
+def test_docker_workflow_is_manual_only():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
-    pull_request_paths = workflow.split("pull_request:", maxsplit=1)[1].split("jobs:", maxsplit=1)[
-        0
+    trigger_block = workflow.split("on:", maxsplit=1)[1].split("jobs:", maxsplit=1)[0]
+    top_level_triggers = [
+        line.strip()
+        for line in trigger_block.splitlines()
+        if line.startswith("  ") and not line.startswith("    ") and line.strip()
     ]
 
-    expected_paths = {
-        ".dockerignore",
-        ".github/workflows/docker.yml",
-        "README.md",
-        "config/**",
-        "data/**",
-        "docker/**",
-        "environments.yaml",
-        "envs/**",
-        "examples/**",
-        "golden_traces/**",
-        "plugins/**",
-        "pyproject.toml",
-        "scripts/**",
-        "src/**",
-    }
-    for path in expected_paths:
-        assert f'- "{path}"' in pull_request_paths
+    assert top_level_triggers == ["workflow_dispatch:"]
 
 
 def test_docker_build_inputs_are_not_excluded_from_context():
@@ -62,23 +48,15 @@ def test_non_push_docker_build_has_the_local_smoke_test_tag():
     assert "docker run --rm ${{ matrix.image-name }}:latest list-types" in workflow
 
 
-def test_docker_workflow_watches_the_complete_release_surface():
+def test_manual_docker_workflow_exposes_build_and_publish_controls():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
 
-    for path in (
-        '".github/workflows/ci.yml"',
-        '".github/workflows/docker.yml"',
-        '".dockerignore"',
-        '"docker/**"',
-        '"environments.yaml"',
-        '"envs/**"',
-        '"integrations/**"',
-        '"pyproject.toml"',
-        '"plugins/**"',
-        '"scripts/**"',
-        '"src/**"',
-    ):
-        assert path in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "      plugin:" in workflow
+    assert "      push:" in workflow
+    assert "      push_to_dockerhub:" in workflow
+    assert "refs/tags/v*" not in workflow
+    assert "github.event_name" not in workflow
 
 
 def test_python_ci_validates_docker_compose_configuration():

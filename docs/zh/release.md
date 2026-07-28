@@ -47,9 +47,9 @@ abi query --type metagenomic_plasmid --what stages
 
 它不能替代全部发布表面门禁。还需分别运行 `bash docs/build_docs.sh`、
 `docker compose -f docker/docker-compose.yml config --quiet`、Docker 配置回归测试、
-全部 7 个插件的严格 contract lint、`python -m twine check dist/*`，以及适用的
-容器/真实工具验收。GitHub release workflow 会在创建 Release 前重新运行可复用
-CI 门禁。
+全部 7 个插件的严格 contract lint 和 `python -m twine check dist/*`。适用时运行
+真实工具验收；只有容器输入变化或准备发布镜像时才运行容器验收。GitHub release
+workflow 会在创建 Release 前重新运行可复用 CI 门禁。
 
 构建 wheel 后，使用 `[mcp]` extra 安装，并在可行的情况下于干净环境中对
 已安装命令进行冒烟测试：
@@ -76,12 +76,13 @@ done
 
 执行时应将干净 wheel 环境的 `bin` 目录加入 `PATH`，因为 doctor 会校验已安装的
 `abi-mcp` 入口。`integrations/` 属于发布输入，必须同时进入两种分发包和每个
-Docker `/app` 上下文；该目录变化必须经过 Docker workflow。
+Docker `/app` 上下文。该目录或其他容器输入变化时，建议在容器发布前手动运行
+Docker workflow。
 
 ## GitHub Actions
 
 - `ci.yml` 运行 lint、格式检查、mypy、测试和构建检查。
-- `docker.yml` 在相关 PR 上构建并冒烟测试插件镜像；仅 tag 或获准的手动发布推送生成带 provenance、SBOM 的镜像，PR 本地 load 明确关闭 attestation。发布镜像默认多架构，但 RNA-seq 在其 R/DESeq2 环境通过原生 arm64 构建与冒烟测试前仅发布 `linux/amd64`。
+- `docker.yml` 仅允许手动触发。它构建并冒烟测试所选插件（或全部插件），只有操作员显式启用 `push` 才发布。registry push 包含 provenance 与 SBOM；非 push 验证以稳定本地 tag load，并关闭 attestation。发布镜像默认多架构，但 RNA-seq 在其 R/DESeq2 环境通过原生 arm64 构建与冒烟测试前仅发布 `linux/amd64`。
 - `release.yml` 构建分发包、为 `v*` tag 创建 GitHub Release，并发出 published event。
 - `publish-pypi.yml` 下载 Release 原始产物，并通过 PyPI Trusted Publishing 发布。PyPI OIDC 身份绑定该文件名，因此它是必需 workflow。
 
@@ -102,7 +103,18 @@ Docker `/app` 上下文；该目录变化必须经过 Docker workflow。
 响应已发布 GitHub Release 和手动恢复输入。因此发布操作员只能发布已验证的
 `v<version>` Release，不能用手动路径绕过身份检查。
 
-合并 packaging 或容器变更前，必须看到默认 sdist→wheel 构建和所有适用 Docker 矩阵 job 成功。PR Docker 门禁必须覆盖构建、本地 load 和容器内 `abi list-types`，仅 BuildKit 初始化或 Conda 求解成功不算完成。plasmid 镜像因体积原因不进入自动 PR 构建；影响它的容器发布必须先通过手动 workflow dispatch 验证。
+合并 packaging 变更前必须通过默认 sdist→wheel 构建。Docker 不再是 PR 或 PyPI
+发布的严格门禁。容器输入变化时建议手动运行 Docker workflow；发布镜像前，该次
+运行必须覆盖构建、本地 load 和容器内 `abi list-types`，仅 BuildKit 初始化或
+Conda 求解成功不算完成。质粒镜像体积较大，需要显式选择。
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=<plugin> -f push=false -f push_to_dockerhub=false
+```
+
+tag 和 GitHub Release 均不会启动 Docker workflow。容器发布是独立且有意的
+操作员动作，不属于自动 GitHub Release → PyPI 链。
 
 ## 发布后验证
 

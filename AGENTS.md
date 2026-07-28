@@ -46,8 +46,10 @@ scripts) available in the build context.
 Before requesting review, run the checks proportional to the change. Python changes require Ruff,
 mypy, focused pytest, and the affected integration tests. Plugin changes also require strict
 `abi contract-lint`, dry-run validation, and relevant smoke tests. Docker changes require Compose
-configuration validation, Docker configuration regression tests, a representative image build, and
-`abi list-types` inside the image. Documentation changes require `bash docs/build_docs.sh`. Release
+configuration validation and Docker configuration regression tests. A representative manual image
+build plus `abi list-types` is recommended when container inputs change and required before container
+publication, but it is not a PR or PyPI release gate. Documentation changes require
+`bash docs/build_docs.sh`. Release
 changes additionally require package build, `twine check`, wheel smoke tests, and release-identity
 validation. Record every command and result in the pull request; explicitly identify checks that could
 not be run and their residual risk. See `docs/zh/development_workflow.md` for the full developer guide.
@@ -61,17 +63,16 @@ surface. A change to any of them requires `pytest tests/unit/test_docker_configu
 must exercise the default sdist-to-wheel path, not only a direct wheel build; every file forced into
 the wheel must also be present in the sdist and in each Docker `/app` build context.
 
-For pull requests, Docker builds load a single-platform image into the local daemon and must disable
-provenance and SBOM attestations; attestations are enabled only for registry pushes because the local
-Docker exporter cannot load their manifest lists. Non-push builds must use the stable
-`abi-<plugin>:latest` tag consumed by the smoke test. Keep TUNA channel mappings valid: `defaults`
-belongs under `default_channels` (`pkgs/main` and `pkgs/r`), while `conda-forge` and `bioconda` belong
-under `custom_channels`. Verify changed URLs return repository metadata before pushing. Automatic PR
-CI builds amplicon, RNA-seq, WGS, and metatranscriptomics, then runs `abi list-types`; the large plasmid
-image remains manual-only. Registry pushes are multi-platform except RNA-seq, which is `linux/amd64`
-only until its R/DESeq2 environment passes a native arm64 build and smoke test. A PR is complete only
-when all Python matrix jobs, Migration Gate, and all
-applicable Docker matrix jobs pass; Pages deployment being skipped on a PR is expected.
+The Docker workflow is manual-only and must have no pull-request, push, tag, or release trigger.
+Non-push builds load the stable `abi-<plugin>:latest` tag consumed by the smoke test and disable
+provenance and SBOM attestations; registry pushes enable attestations because they support manifest
+lists. Keep TUNA channel mappings valid: `defaults` belongs under `default_channels` (`pkgs/main` and
+`pkgs/r`), while `conda-forge` and `bioconda` belong under `custom_channels`. Verify changed URLs
+return repository metadata before pushing. Manual registry pushes are multi-platform except RNA-seq,
+which is `linux/amd64` only until its R/DESeq2 environment passes a native arm64 build and smoke test.
+A PR is complete when all Python matrix jobs and Migration Gate pass; Docker validation is recommended
+manually for affected container inputs and mandatory only before container publication. Pages
+deployment being skipped on a PR is expected.
 
 ## Release and PyPI Publishing Invariants
 
@@ -94,6 +95,7 @@ add another automatic publication trigger, restore optional bot workflows, renam
 publisher without first updating PyPI, or upload with a long-lived token. After publishing, verify the
 PyPI version, hashes/provenance,
 clean-environment installation, CLI entry points, GitHub Release, and container tag results.
+Container tag verification applies only when a container was intentionally published.
 
 ## Release-Ready Runtime Lock Invariants
 

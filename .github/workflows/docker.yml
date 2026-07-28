@@ -25,28 +25,6 @@ on:
         type: boolean
         default: false
         required: false
-  push:
-    tags:
-      - "v*"
-  pull_request:
-    branches: [main, master]
-    paths:
-      - ".dockerignore"
-      - ".github/workflows/ci.yml"
-      - ".github/workflows/docker.yml"
-      - "README.md"
-      - "config/**"
-      - "data/**"
-      - "docker/**"
-      - "environments.yaml"
-      - "envs/**"
-      - "examples/**"
-      - "golden_traces/**"
-      - "integrations/**"
-      - "plugins/**"
-      - "pyproject.toml"
-      - "scripts/**"
-      - "src/**"
 
 jobs:
   build:
@@ -72,7 +50,7 @@ jobs:
           - plugin: metatranscriptomics
             dockerfile: docker/Dockerfile.metatranscriptomics
             image-name: abi-metatranscriptomics
-          # metagenomic_plasmid is ~15 GB — manual-only, excluded from automatic CI
+          # metagenomic_plasmid is ~15 GB; select it explicitly when needed.
           - plugin: plasmid
             dockerfile: docker/Dockerfile.metagenomic_plasmid
             image-name: abi-plasmid
@@ -82,13 +60,10 @@ jobs:
 
       # ── Gate: filter matrix entries ───────────────────────────────
       # Step-level `if` CAN access `matrix.*` (unlike job-level `if`).
-      # On automatic events: skip plasmid (manual-only, ~15 GB).
-      # On workflow_dispatch: only build the requested plugin(s).
+      # The workflow is manual-only; build only the requested plugin(s).
       - name: Gate
         id: gate
-        if: |
-          (github.event_name != 'workflow_dispatch' && matrix.plugin != 'plasmid') ||
-          (github.event_name == 'workflow_dispatch' && (inputs.plugin == 'all' || inputs.plugin == matrix.plugin))
+        if: inputs.plugin == 'all' || inputs.plugin == matrix.plugin
         run: echo "Building ${{ matrix.plugin }}"
 
       - name: Set up Docker Buildx
@@ -106,11 +81,8 @@ jobs:
           PUSH=false
           PUSH_TO_DH=false
 
-          # Tag push → always push to GHCR
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            PUSH=true
-          # Manual dispatch with push checkbox
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.push }}" == "true" ]]; then
+          # Publishing is also opt-in during a manual dispatch.
+          if [[ "${{ inputs.push }}" == "true" ]]; then
             PUSH=true
             if [[ "${{ inputs.push_to_dockerhub }}" == "true" ]]; then
               PUSH_TO_DH=true
@@ -175,8 +147,8 @@ jobs:
           TAGS="${{ steps.meta-ghcr.outputs.tags }}"
           LABELS="${{ steps.meta-ghcr.outputs.labels }}"
           # Non-push builds must always be loaded under the stable local tag
-          # consumed by the smoke test. PR metadata may otherwise produce no
-          # usable tag because semver/tag rules do not match pull requests.
+          # consumed by the smoke test. Manual dispatch metadata may otherwise
+          # produce no usable tag when the selected ref is not a release tag.
           if [ "${{ steps.flags.outputs.push }}" == "false" ]; then
             TAGS="${TAGS}"$'\n'"${{ matrix.image-name }}:latest"
           fi

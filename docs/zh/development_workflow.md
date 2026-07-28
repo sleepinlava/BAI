@@ -88,7 +88,18 @@ python -m build
 python -m twine check dist/*
 ```
 
-构建一个代表性镜像，并在镜像内运行 `abi list-types`。默认 sdist 到 wheel 的构建路径必须成功，因为强制进入 wheel 的文件也必须存在于 sdist 和 Docker 上下文中。
+Docker 镜像仅允许手动构建，不再作为 PR 或 PyPI 发布的强制门禁。容器输入变化或
+准备发布镜像时，建议手动构建代表性镜像，并在镜像内运行 `abi list-types`。
+可通过 **Actions → Docker → Run workflow** 启动，或执行：
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=<plugin> -f push=false -f push_to_dockerhub=false
+```
+
+默认 sdist 到 wheel 的构建路径仍必须成功，因为强制进入 wheel 的文件也必须存在于
+sdist 和 Docker 上下文中。平台认证路线图及完整 Docker 手动策略见
+[Linux 与 macOS 支持计划](platform_support_plan.md)。
 
 ### 文档变更
 

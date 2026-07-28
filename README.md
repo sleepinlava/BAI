@@ -259,7 +259,9 @@ Set `ABI_MAMBA_ROOT` to use another root. `AUTOPLASM_MAMBA_ROOT` remains availab
 
 ### Docker
 
-Dockerfiles are provided for amplicon, RNA-seq, bacterial WGS, metatranscriptomics, and plasmid analysis. EasyMetagenome and ViWrap currently use managed local environments.
+Docker is optional. Dockerfiles are provided for amplicon, RNA-seq, bacterial
+WGS, metatranscriptomics, and plasmid analysis. EasyMetagenome and ViWrap
+currently use managed local environments.
 
 ```bash
 docker build -f docker/Dockerfile.amplicon -t abi-amplicon .
@@ -272,8 +274,17 @@ docker compose -f docker/docker-compose.yml up -d
 ```
 
 Image size depends on the platform, tool/database versions, and build cache.
-Measure the exact tag you plan to deploy. The plasmid image is intentionally
-manual-only in CI because it is substantially larger than the automatic matrix.
+Measure the exact tag you plan to deploy. CI never builds images automatically
+for pull requests, pushes, tags, or releases. A manual build is recommended
+after container inputs change and before publishing an image:
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=amplicon -f push=false -f push_to_dockerhub=false
+```
+
+See the [Linux and macOS support plan](docs/en/platform_support_plan.md) for
+cross-machine installation criteria and the manual Docker policy.
 
 ### Nextflow, Snakemake, HPC, cloud, and queued jobs
 

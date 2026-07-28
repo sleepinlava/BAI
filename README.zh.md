@@ -254,7 +254,8 @@ ABI 当前通过 `environments.yaml` 把 98 个已注册工具 ID 映射到 19 �
 
 ### Docker
 
-项目为 16S、RNA-seq、细菌 WGS、宏转录组和质粒分析提供 Dockerfile。EasyMetagenome 与 ViWrap 目前使用托管的本地环境。
+Docker 是可选组件。项目为 16S、RNA-seq、细菌 WGS、宏转录组和质粒分析提供
+Dockerfile。EasyMetagenome 与 ViWrap 目前使用托管的本地环境。
 
 ```bash
 docker build -f docker/Dockerfile.amplicon -t abi-amplicon .
@@ -267,7 +268,16 @@ docker compose -f docker/docker-compose.yml up -d
 ```
 
 镜像大小取决于平台、工具/数据库版本和构建缓存，应测量准备部署的准确 tag。
-质粒镜像明显大于自动矩阵中的其他镜像，因此 CI 中有意仅允许手动构建。
+CI 不会因 PR、push、tag 或 release 自动构建镜像。容器输入变化后以及发布镜像
+前，建议手动构建：
+
+```bash
+gh workflow run docker.yml --ref master \
+  -f plugin=amplicon -f push=false -f push_to_dockerhub=false
+```
+
+跨机器安装验收标准和 Docker 手动策略见
+[Linux 与 macOS 支持计划](docs/zh/platform_support_plan.md)。
 
 ### Nextflow、Snakemake、HPC、云端与队列任务
 
