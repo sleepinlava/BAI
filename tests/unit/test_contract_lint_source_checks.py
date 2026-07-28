@@ -124,9 +124,7 @@ class TestUnknownSourceOutputTemplate:
                 {
                     "id": "consumer",
                     "tool_id": "scapp",
-                    "inputs": {
-                        "graph": {"source": "{active_assembly_node}.plasmid_graph"}
-                    },
+                    "inputs": {"graph": {"source": "{active_assembly_node}.plasmid_graph"}},
                 },
             ]
         )
@@ -149,9 +147,7 @@ class TestUnknownSourceOutputTemplate:
                 {
                     "id": "consumer",
                     "tool_id": "scapp",
-                    "inputs": {
-                        "graph": {"source": "{active_assembly_node}.assembly_graph"}
-                    },
+                    "inputs": {"graph": {"source": "{active_assembly_node}.assembly_graph"}},
                 },
             ]
         )
@@ -199,9 +195,7 @@ class TestFormatMismatch:
                 {
                     "id": "consumer",
                     "tool_id": "blast",
-                    "inputs": {
-                        "contigs": {"source": "assembler.contigs", "format": "fasta"}
-                    },
+                    "inputs": {"contigs": {"source": "assembler.contigs", "format": "fasta"}},
                 },
             ]
         )
@@ -423,9 +417,7 @@ class TestRunContractLintWiring:
     def test_parity_check_runs_with_registry_tools(self):
         result = run_contract_lint(
             _dag([{"id": "only", "tool_id": "x", "depends_on": []}]),
-            registry_tools={
-                "x": {"id": "x", "command_template": "run {a}", "inputs": ["a", "b"]}
-            },
+            registry_tools={"x": {"id": "x", "command_template": "run {a}", "inputs": ["a", "b"]}},
         )
         checks = {f["check"] for f in result["findings"]}
         assert "unused_registry_input" in checks
@@ -455,9 +447,7 @@ class TestRunContractLintWiring:
         )
         result = run_contract_lint(
             dag,
-            registry_tools={
-                "scapp": {"id": "scapp", "command_template": "scapp -k {max_kmer}"}
-            },
+            registry_tools={"scapp": {"id": "scapp", "command_template": "scapp -k {max_kmer}"}},
         )
         assert any(f["check"] == "optional_input_in_template" for f in result["findings"])
         assert result["passed"] is False

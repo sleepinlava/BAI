@@ -90,8 +90,8 @@ def test_extract_skips_fields_and_positionals():
 
 def test_extract_sh_c_wrapper_uses_inner_script_only():
     template = (
-        "sh -c 'tmp=\"$3.stderr.tmp\"; if featureCounts -T \"$1\" -p --countReadPairs "
-        "-a \"$2\" -o \"$3\" \"$4\" 2>\"$tmp\"; then cat \"$tmp\" >&2; fi' "
+        'sh -c \'tmp="$3.stderr.tmp"; if featureCounts -T "$1" -p --countReadPairs '
+        '-a "$2" -o "$3" "$4" 2>"$tmp"; then cat "$tmp" >&2; fi\' '
         "featurecounts {threads} {annotation_gtf} {counts} {bam}"
     )
     flags = extract_template_flags(template)
@@ -151,8 +151,8 @@ def test_unresolvable_executable_is_skipped_without_finding(monkeypatch):
 
 def test_sh_c_wrapper_flags_checked_against_tool_help(monkeypatch):
     template = (
-        "sh -c 'if featureCounts -T \"$1\" -p --countReadPairs -a \"$2\" -o \"$3\" "
-        "\"$4\"; then exit 0; fi' featurecounts {threads} {annotation_gtf} {counts} {bam}"
+        'sh -c \'if featureCounts -T "$1" -p --countReadPairs -a "$2" -o "$3" '
+        '"$4"; then exit 0; fi\' featurecounts {threads} {annotation_gtf} {counts} {bam}'
     )
     registry = _registry([_tool("featurecounts", template, executable="featureCounts")])
     _patch_resolve(monkeypatch, {"featurecounts": "/fake/env/bin/featureCounts"})
@@ -165,7 +165,7 @@ def test_sh_c_wrapper_flags_checked_against_tool_help(monkeypatch):
 
 def test_sh_c_wrapper_inner_missing_flag_errors(monkeypatch):
     template = (
-        "sh -c 'featureCounts -T \"$1\" --bogus-inner-flag -a \"$2\" -o \"$3\" \"$4\"' "
+        'sh -c \'featureCounts -T "$1" --bogus-inner-flag -a "$2" -o "$3" "$4"\' '
         "featurecounts {threads} {annotation_gtf} {counts} {bam}"
     )
     registry = _registry([_tool("featurecounts", template, executable="featureCounts")])
@@ -287,8 +287,7 @@ def test_script_wrapper_with_nonliteral_path_is_skipped(monkeypatch):
 def test_abi_subcommand_wrapper_checks_subcommand_help(monkeypatch):
     template = "abi report --result-dir {result_dir} --type {type}"
     abi_help = (
-        "usage: abi report [-h] --result-dir DIR --type TYPE\n\n"
-        "  --result-dir DIR\n  --type TYPE\n"
+        "usage: abi report [-h] --result-dir DIR --type TYPE\n\n  --result-dir DIR\n  --type TYPE\n"
     )
     registry = _registry([_tool("report_markdown", template, executable="abi")])
     monkeypatch.setattr(cli_check, "resolve_executable", lambda skill: "/fake/bin/abi")
@@ -303,16 +302,16 @@ def test_abi_subcommand_wrapper_checks_subcommand_help(monkeypatch):
 def test_help_cache_key_includes_script_path(monkeypatch):
     template_a = "python /fake/scripts/a.py --input {infile}"
     template_b = "python /fake/scripts/b.py --input {infile}"
-    registry = _registry([
-        _tool("tool_a", template_a, executable="python"),
-        _tool("tool_b", template_b, executable="python"),
-    ])
+    registry = _registry(
+        [
+            _tool("tool_a", template_a, executable="python"),
+            _tool("tool_b", template_b, executable="python"),
+        ]
+    )
     monkeypatch.setattr(cli_check, "resolve_executable", lambda skill: "/usr/bin/python")
     calls = _patch_run(
         monkeypatch,
-        lambda cmd: _FakeProc(
-            stdout="" if any("b.py" in str(x) for x in cmd) else SCRIPT_HELP
-        ),
+        lambda cmd: _FakeProc(stdout="" if any("b.py" in str(x) for x in cmd) else SCRIPT_HELP),
     )
 
     findings, skipped = check_cli_flags(registry)

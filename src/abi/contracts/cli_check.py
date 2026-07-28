@@ -243,9 +243,7 @@ def check_cli_flags(registry: Any) -> Tuple[List[LintFinding], List[SkippedTool]
 
         exe_path = resolve_executable(skill)
         if exe_path is None:
-            skipped.append(
-                SkippedTool(tool_id, executable, env_name, "executable not found")
-            )
+            skipped.append(SkippedTool(tool_id, executable, env_name, "executable not found"))
             continue
 
         help_cmd = _resolve_help_target(exe_path, str(metadata["command_template"]))
@@ -264,9 +262,7 @@ def check_cli_flags(registry: Any) -> Tuple[List[LintFinding], List[SkippedTool]
             help_cache[cache_key] = _probe_help(help_cmd)
         help_text = help_cache[cache_key]
         if help_text is None:
-            skipped.append(
-                SkippedTool(tool_id, executable, env_name, "no usable --help output")
-            )
+            skipped.append(SkippedTool(tool_id, executable, env_name, "no usable --help output"))
             continue
 
         available = parse_help_flags(help_text)
@@ -274,14 +270,14 @@ def check_cli_flags(registry: Any) -> Tuple[List[LintFinding], List[SkippedTool]
             if flag not in available:
                 findings.append(
                     LintFinding(
-                    severity="error",
-                    check="cli_flag_mismatch",
-                    detail=(
-                        f"Tool '{tool_id}' command_template uses flag '{flag}' "
-                        f"which is not advertised by '{' '.join(help_cmd)}'. "
-                        f"Fix the template to match the tool's real CLI."
-                    ),
-                    location=tool_id,
-                )
+                        severity="error",
+                        check="cli_flag_mismatch",
+                        detail=(
+                            f"Tool '{tool_id}' command_template uses flag '{flag}' "
+                            f"which is not advertised by '{' '.join(help_cmd)}'. "
+                            f"Fix the template to match the tool's real CLI."
+                        ),
+                        location=tool_id,
+                    )
                 )
     return findings, skipped

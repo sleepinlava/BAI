@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.5.8] - 2026-07-28
+
+### Added
+
+- Offline RNA-seq enrichment support with GRCh37.75 gene-symbol annotation and
+  GO, Reactome, and GSEA result generation integrated into the ABI workflow.
+- SCAPP assembly-graph plasmid detection and reconstruction as distinct,
+  contract-validated metagenomic plasmid DAG stages.
+- Contract-lint checks for source keys, environment assignments, and real CLI
+  flags, plus the `abi status` command.
+
+### Changed
+
+- Airway validation metrics and biological evidence documentation now use the
+  corrected retry5 read-pair results.
+- Optional DAG nodes with unresolvable required inputs are skipped during
+  planning, and result handling rejects empty tables and stale or incomplete
+  standard rows.
+
+### Fixed
+
+- RNA enrichment previews now preserve valid adjusted P values and significant
+  term counts when generating SciPlot figures.
+- FeatureCounts now counts paired fragments, SCAPP receives the correct assembly
+  graph format, and SCAPP template inputs are wired as required dependencies.
+- Report methods sections use consistent placeholders when tool or resource
+  versions are unavailable.
+- Updated the metagenomic plasmid DAG regression expectation for the added SCAPP
+  binning node and added semantic coverage for the distinct SCAPP stages.
+
 ## [1.5.7.1] - 2026-07-25
 
 ### Added
