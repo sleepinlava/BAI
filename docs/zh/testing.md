@@ -120,8 +120,8 @@ EasyMetagenome 与 ViWrap 有契约、dry-run、集成和发布 wheel 冒烟覆�
 
 - `ci.yml`：Python 3.10–3.13 lint/format/mypy、测试、3.12 覆盖率、严格
   contract lint、文档、Compose、包构建、wheel 冒烟和 migration gate；
-- `docker.yml`：自动 amd64 构建 amplicon、RNA-seq、WGS 和宏转录组；
-  plasmid 仅手动；registry push 启用 provenance/SBOM，RNA-seq 之外为多架构；
+- `docker.yml`：仅手动构建并冒烟测试所选插件或全部插件；显式启用 `push` 后
+  才向 registry 发布并生成 provenance/SBOM，RNA-seq 之外为多架构；
 - `release.yml`：复用 CI 门禁、构建、Twine 检查、干净 wheel 冒烟并创建
   GitHub Release；
 - `publish-pypi.yml`：下载 GitHub Release 的原始产物，通过 PyPI Trusted
@@ -144,8 +144,9 @@ bash docs/build_docs.sh
 ## 提交评审前
 
 Python 变更需要 Ruff、格式、mypy、聚焦 pytest 和受影响集成测试。插件变更还需
-严格 contract lint、dry-run 和相关 smoke。Release 与 Docker 变更的额外门禁
-见[开发流程](development_workflow.md)和[发布指南](release.md)。
+严格 contract lint、dry-run 和相关 smoke。Release 变更有额外门禁；Docker
+变更需要配置检查，并建议手动构建镜像，详见
+[开发流程](development_workflow.md)和[发布指南](release.md)。
 
 在 PR 中记录所有命令和结果。无法运行真实工具、容器或集群检查时，必须明确说明
 未验证内容和残余风险。

@@ -122,8 +122,9 @@ When changing an integration:
    to `project.version`; `scripts/check_release_identity.py` enforces this.
 
 `integrations/` is a package and Docker build input. It must remain in the sdist,
-wheel, and every Docker `/app` context, and changes under it must trigger the Docker
-workflow.
+wheel, and every Docker `/app` context. Changes under it should receive a
+recommended manual Docker workflow validation before a container release; they
+do not trigger an automatic image build.
 
 ## Runtime Contract Enforcement
 

@@ -127,9 +127,9 @@ The repository intentionally keeps four workflows:
 - `ci.yml`: Python 3.10–3.13 lint/format/mypy, tests, 3.12 coverage, strict
   contract lint, docs, Compose validation, package build, wheel smoke, and a
   migration gate;
-- `docker.yml`: automatic amd64 builds for amplicon, RNA-seq, WGS, and
-  metatranscriptomics; plasmid is manual-only; registry pushes enable
-  provenance/SBOM and are multi-platform except RNA-seq;
+- `docker.yml`: manual-only builds and smoke tests for the selected plugin or
+  all plugins; an explicit `push` enables registry publication with
+  provenance/SBOM, and published images are multi-platform except RNA-seq;
 - `release.yml`: reusable CI gate, build, Twine check, clean-wheel smoke, and
   GitHub Release creation;
 - `publish-pypi.yml`: download the exact GitHub Release artifacts and publish
@@ -153,8 +153,9 @@ bash docs/build_docs.sh
 
 Python changes require Ruff, formatting, mypy, focused pytest, and affected
 integration tests. Plugin changes additionally require strict contract lint,
-dry-run validation, and relevant smoke tests. Release and Docker changes have
-the additional gates described in the
+dry-run validation, and relevant smoke tests. Release changes have additional
+gates; Docker changes have configuration checks and a recommended manual image
+build described in the
 [development workflow](development_workflow.md) and [release guide](release.md).
 
 Record commands and results in the pull request. If a real-tool, container, or

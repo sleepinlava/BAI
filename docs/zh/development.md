@@ -115,7 +115,8 @@ pytest tests/ -v --tb=short
    `project.version`；`scripts/check_release_identity.py` 会强制检查。
 
 `integrations/` 同时属于包和 Docker 构建输入，必须进入 sdist、wheel 和每个
-Docker `/app` 上下文；该目录的变化也必须触发 Docker workflow。
+Docker `/app` 上下文。该目录变化时，建议在容器发布前手动运行 Docker workflow
+验证，但不会自动触发镜像构建。
 
 ## 运行时合约执行
 
