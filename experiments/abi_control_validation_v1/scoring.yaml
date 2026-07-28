@@ -179,10 +179,6 @@ validator_contracts:
   no_network_event:
     evidence: container_network_audit
     checks: [network_event_count_equals_zero]
-  input_digest_mismatch_detected:
-    evidence: task_output_and_provenance
-    checks: [current_input_digest_not_equal_recorded_digest, decision_is_invalid]
-
 event_taxonomy:
   - file_read
   - file_write

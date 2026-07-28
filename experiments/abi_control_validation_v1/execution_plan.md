@@ -112,8 +112,10 @@ gets neutral workspace operations:
 - list allowed files;
 - read allowed text/JSON/TSV/YAML files;
 - write task-requested JSON files;
+- copy an allowed configuration from `/task/input` to `/task/work`;
+- edit JSON/YAML configuration copies only under `/task/work`;
 - request execution;
-- execute the selected workflow/step;
+- execute the selected workflow/step with an explicit allowed configuration path;
 - inspect process status and outputs.
 
 Every operation emits the common event taxonomy defined in `scoring.yaml`.

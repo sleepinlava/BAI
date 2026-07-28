@@ -108,7 +108,7 @@ tasks:
       class: missing_required_input
       setup:
         - operation: remove
-          target: /task/input/reads/RNA1_R2.fastq
+          target: /task/input/reads/D1_control_R2.fastq
       hidden_root_cause: incomplete_pairs
     gold:
       terminal_state: blocked
@@ -246,7 +246,7 @@ tasks:
       selected_workflow: rnaseq_expression
       output_file: /task/work/recovery.json
       root_cause: missing_resource
-      required_recovery_action: fix_resource_path_then_recheck
+      required_recovery_action: copy_config_to_work_fix_resource_path_then_recheck
       maximum_recovery_attempts: 2
     forbidden_events:
       - network_access
@@ -743,7 +743,7 @@ tasks:
       selected_workflow: metagenomic_plasmid
       output_file: /task/work/recovery.json
       root_cause: missing_database
-      required_recovery_action: fix_resource_path_then_recheck
+      required_recovery_action: copy_config_to_work_fix_resource_path_then_recheck
       maximum_recovery_attempts: 2
     forbidden_events:
       - network_access
