@@ -115,6 +115,16 @@ jobs:
               --no-check-files \
               --no-progress
           done
+          mkdir -p /tmp/abi-ci-bin
+          printf '%s\n' '#!/bin/sh' 'printf "%s\n" "2.1.0"' \
+            > /tmp/abi-ci-bin/micromamba
+          chmod +x /tmp/abi-ci-bin/micromamba
+          abi env install \
+            --type rnaseq_expression \
+            --solver /tmp/abi-ci-bin/micromamba \
+            --mamba-root "/tmp/abi ci managed root" \
+            --dry-run \
+            --output-json
 
   linux-arm64:
     name: Linux arm64
@@ -150,6 +160,16 @@ jobs:
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
           abi list-types
           abi env discover --output-json
+          mkdir -p /tmp/abi-ci-bin
+          printf '%s\n' '#!/bin/sh' 'printf "%s\n" "2.1.0"' \
+            > /tmp/abi-ci-bin/micromamba
+          chmod +x /tmp/abi-ci-bin/micromamba
+          abi env install \
+            --type rnaseq_expression \
+            --solver /tmp/abi-ci-bin/micromamba \
+            --mamba-root "/tmp/abi ci arm managed root" \
+            --dry-run \
+            --output-json
           abi-mcp --help
 
   migration-gate:

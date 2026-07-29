@@ -10,6 +10,18 @@ from abi.cli import app
 runner = CliRunner()
 
 
+def _fake_solver(path: Path) -> Path:
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        "#!/bin/sh\n"
+        "if [ \"${1:-}\" = \"--version\" ]; then printf '%s\\n' '2.1.0'; exit 0; fi\n"
+        "exit 99\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+    return path
+
+
 def test_env_discover_reports_explicit_linux_root_as_json(tmp_path: Path) -> None:
     root = tmp_path / "managed mamba"
     root.mkdir()
@@ -69,3 +81,62 @@ def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "does not exist" in result.output
+
+
+def test_env_install_dry_run_selects_plugin_environments_without_writing(
+    tmp_path: Path,
+) -> None:
+    solver = _fake_solver(tmp_path / "bin" / "micromamba")
+    root = tmp_path / "managed-root"
+
+    result = runner.invoke(
+        app,
+        [
+            "env",
+            "install",
+            "--type",
+            "rnaseq_expression",
+            "--solver",
+            str(solver),
+            "--mamba-root",
+            str(root),
+            "--dry-run",
+            "--output-json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["action"] == "install"
+    assert payload["dry_run"] is True
+    assert payload["solver"]["source"] == "explicit"
+    assert [row["name"] for row in payload["environments"]] == ["rnaseq"]
+    assert payload["environments"][0]["status"] == "planned_create"
+    assert root.exists() is False
+
+
+def test_env_update_dry_run_accepts_individual_environment(tmp_path: Path) -> None:
+    solver = _fake_solver(tmp_path / "bin" / "micromamba")
+
+    result = runner.invoke(
+        app,
+        [
+            "env",
+            "update",
+            "--env",
+            "wgs",
+            "--solver",
+            str(solver),
+            "--mamba-root",
+            str(tmp_path / "managed-root"),
+            "--dry-run",
+            "--output-json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["action"] == "update"
+    assert payload["environments"][0]["name"] == "wgs"
+    assert payload["environments"][0]["status"] == "planned_update"
+    assert "--prune" in payload["environments"][0]["command"]

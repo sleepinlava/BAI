@@ -31,9 +31,10 @@ Mamba root precedence is:
 3. `MAMBA_ROOT_PREFIX`.
 4. The legacy `AUTOPLASM_MAMBA_ROOT`.
 5. Populated repository-compatible roots.
-6. A global `micromamba`, `mamba`, or `conda` installation reported by
+6. A populated `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`.
+7. A global `micromamba`, `mamba`, or `conda` installation reported by
    `<solver> info --json`.
-7. `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`.
+8. An empty/default `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`.
 
 Explicit paths are authoritative and fail when missing. Named environments
 prefer `<root>/envs/<name>`, retain `<root>/<name>` compatibility, and can use
@@ -52,19 +53,32 @@ abi env doctor --tool fastp --tool samtools --output-json
 The report records Linux architecture, ABI Python, Mamba root and source,
 environment prefixes, requested tool paths, Python paths, and health issues.
 
+## Portable environment installation
+
+ABI can now create or update packaged environments without a source checkout:
+
+```bash
+abi env install --type rnaseq_expression --dry-run --output-json
+abi env install --type rnaseq_expression
+abi env update --env rnaseq --output-json
+```
+
+The installer selects `micromamba`, `mamba`, then `conda`, or honors an explicit
+`--solver`/`ABI_ENV_SOLVER`. It records the solver path and version, generated
+specification SHA-256, exact argument-vector command, target prefix, and whether the
+operation created, updated, or left an environment unchanged. Plugin selection is
+deduplicated to its assigned environments.
+
+The default writable root is `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`; explicit
+CLI and environment roots remain authoritative. Solver children retain Linux dynamic
+library variables but receive no host `PYTHONPATH`. Installation is idempotent, update
+uses pruning, failed solves do not publish an unapplied specification, and `--dry-run`
+does not create the target root.
+
+The wheel smoke test exercises this path with the packaged `environments.yaml`, proving
+that it does not depend on repository-local `envs/*.yml`.
+
 ## Remaining delivery phases
-
-### Phase 2 — portable environment installation
-
-- Add idempotent `abi env install` and `abi env update` commands.
-- Select Micromamba, Mamba, or Conda explicitly and record the solver version.
-- Use `${XDG_DATA_HOME:-~/.local/share}/abi/mamba` for user-scoped installs.
-- Preserve required Linux dynamic-library paths while blocking host
-  `PYTHONPATH` leakage.
-- Verify wheel-only operation without a repository checkout.
-
-Exit criterion: Python 3.10+ plus a supported Conda-family solver can install
-ABI and its selected plugin environments on a clean Linux machine.
 
 ### Phase 3 — plugin capability matrix
 

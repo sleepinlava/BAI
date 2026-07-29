@@ -29,8 +29,9 @@ Mamba 根目录优先级为：
 3. `MAMBA_ROOT_PREFIX`。
 4. 兼容变量 `AUTOPLASM_MAMBA_ROOT`。
 5. 已填充的仓库兼容根目录。
-6. 全局 `micromamba`、`mamba` 或 `conda` 的 `<solver> info --json` 结果。
-7. `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。
+6. 已填充的 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。
+7. 全局 `micromamba`、`mamba` 或 `conda` 的 `<solver> info --json` 结果。
+8. 空的或默认 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。
 
 显式路径具有权威性，缺失时直接失败。命名环境优先
 `<root>/envs/<name>`，兼容 `<root>/<name>`，也可使用求解器报告的前缀。
@@ -48,18 +49,30 @@ abi env doctor --tool fastp --tool samtools --output-json
 报告包含 Linux 架构、ABI Python、Mamba 根目录及来源、环境前缀、请求的工具路径、
 Python 路径和健康问题。
 
+## 可移植环境安装
+
+ABI 现在无需源码 checkout 即可创建或更新 wheel 内置的环境：
+
+```bash
+abi env install --type rnaseq_expression --dry-run --output-json
+abi env install --type rnaseq_expression
+abi env update --env rnaseq --output-json
+```
+
+安装器依次选择 `micromamba`、`mamba`、`conda`，也接受明确的
+`--solver`/`ABI_ENV_SOLVER`。报告记录求解器路径和版本、生成规范的 SHA-256、
+实际参数向量、目标前缀，以及环境是新建、更新还是保持不变。按插件选择时会对其
+分配环境去重。
+
+默认可写根目录为 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`；CLI 和环境变量
+指定的根目录仍具有权威性。求解器子进程保留 Linux 动态库变量，但不会继承宿主
+`PYTHONPATH`。安装具有幂等性，更新执行 prune；求解失败不会发布未应用的规范，
+`--dry-run` 不会创建目标根目录。
+
+wheel 冒烟测试会直接使用打包的 `environments.yaml` 运行此路径，证明它不依赖
+仓库本地 `envs/*.yml`。
+
 ## 后续交付阶段
-
-### 阶段 2——可移植环境安装
-
-- 添加幂等的 `abi env install` 与 `abi env update`。
-- 明确选择 Micromamba、Mamba 或 Conda，并记录求解器版本。
-- 用户级安装使用 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。
-- 保留 Linux 必需动态库路径，同时阻止宿主 `PYTHONPATH` 泄漏。
-- 验证不依赖源码 checkout 的纯 wheel 运行。
-
-退出标准：只有 Python 3.10+ 与受支持的 Conda 系求解器时，也能在干净 Linux
-机器安装 ABI 和所选插件环境。
 
 ### 阶段 3——插件能力矩阵
 

@@ -170,6 +170,10 @@ abi plan \
 - [ ] **L-060** 文件存在但没有执行权限时必须判失败。
 - [ ] **L-061** 动态库或解释器缺失时不能仅因主文件存在而判通过。
 - [ ] **L-062** `provenance/tool_versions.tsv` 记录全部实际使用工具及版本状态。
+- [ ] **L-063** `abi env install --type <plugin> --dry-run` 只选择插件去重后的分配环境，且不修改文件系统。
+- [ ] **L-064** 连续两次执行 `abi env install` 时已有环境保持不变，并记录求解器路径、版本、命令和规范 SHA-256。
+- [ ] **L-065** `abi env update` 会同步并 prune 所选环境；求解失败时恢复或删除未应用的规范快照。
+- [ ] **L-066** 求解器子进程保留 Linux 必需动态库变量，但不继承宿主 `PYTHONPATH`。
 
 `metagenomic_plasmid` 可执行：
 

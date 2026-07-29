@@ -33,6 +33,8 @@ Command                       Purpose
 ``agent install``             Install Claude Code, OpenCode, or Codex integration assets.
 ``agent doctor``              Diagnose one installed agent-platform integration.
 ``env discover``              Explain Linux Mamba, environment, tool, and Python paths.
+``env install``               Idempotently install selected Linux environments.
+``env update``                Reconcile Linux environments with packaged specifications.
 ``env doctor``                Diagnose Linux plugin/tool runtime availability.
 ``dispatch``                  Headless subprocess dispatch for Job Service workers.
 ``job-service``               Start the HTTP Job Service for queued operations.
@@ -2788,6 +2790,142 @@ def env_discover_command(
         typer.echo(f"Solver: {root['solver'] or 'not discovered'}")
         existing = sum(1 for row in report["environments"] if row["exists"])
         typer.echo(f"Declared environments: {existing}/{len(report['environments'])} present")
+    except Exception as exc:
+        _fail(exc)
+
+
+def _run_environment_management(
+    *,
+    action: str,
+    environment_names: Optional[List[str]],
+    analysis_type: Optional[str],
+    solver: Optional[str],
+    mamba_root: Optional[Path],
+    dry_run: bool,
+    output_json: bool,
+) -> None:
+    from abi.runtime_environment import manage_environments
+
+    report = manage_environments(
+        action=action,
+        environment_names=environment_names or (),
+        analysis_type=analysis_type,
+        solver=solver,
+        explicit_root=mamba_root,
+        dry_run=dry_run,
+    )
+    if output_json:
+        typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+    root = report["mamba_root"]
+    selected_solver = report["solver"]
+    typer.echo(f"Mamba root: {root['path']} ({root['source']})")
+    typer.echo(
+        f"Solver: {selected_solver['name']} {selected_solver['version']} "
+        f"({selected_solver['source']})"
+    )
+    for row in report["environments"]:
+        typer.echo(f"  [{row['status'].upper()}] {row['name']}: {row['prefix']}")
+
+
+@env_app.command("install")
+def env_install_command(
+    environment_names: Optional[List[str]] = typer.Option(
+        None,
+        "--env",
+        help="Managed environment name. Repeat to install multiple environments.",
+    ),
+    analysis_type: Optional[str] = typer.Option(
+        None,
+        "--type",
+        "-t",
+        help="Install all environments assigned to this plugin.",
+    ),
+    solver: Optional[str] = typer.Option(
+        None,
+        "--solver",
+        help="Authoritative micromamba, mamba, or conda executable.",
+    ),
+    mamba_root: Optional[Path] = typer.Option(
+        None,
+        "--mamba-root",
+        help="Managed environment root; missing directories are created.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Report commands and paths without changing the filesystem.",
+    ),
+    output_json: bool = typer.Option(
+        False,
+        "--output-json",
+        "--json",
+        help="Emit the complete installation report as JSON.",
+    ),
+) -> None:
+    """Idempotently install selected Linux environments."""
+
+    try:
+        _run_environment_management(
+            action="install",
+            environment_names=environment_names,
+            analysis_type=analysis_type,
+            solver=solver,
+            mamba_root=mamba_root,
+            dry_run=dry_run,
+            output_json=output_json,
+        )
+    except Exception as exc:
+        _fail(exc)
+
+
+@env_app.command("update")
+def env_update_command(
+    environment_names: Optional[List[str]] = typer.Option(
+        None,
+        "--env",
+        help="Managed environment name. Repeat to update multiple environments.",
+    ),
+    analysis_type: Optional[str] = typer.Option(
+        None,
+        "--type",
+        "-t",
+        help="Update all environments assigned to this plugin.",
+    ),
+    solver: Optional[str] = typer.Option(
+        None,
+        "--solver",
+        help="Authoritative micromamba, mamba, or conda executable.",
+    ),
+    mamba_root: Optional[Path] = typer.Option(
+        None,
+        "--mamba-root",
+        help="Managed environment root; missing directories are created.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Report commands and paths without changing the filesystem.",
+    ),
+    output_json: bool = typer.Option(
+        False,
+        "--output-json",
+        "--json",
+        help="Emit the complete update report as JSON.",
+    ),
+) -> None:
+    """Reconcile selected Linux environments with packaged ABI specifications."""
+
+    try:
+        _run_environment_management(
+            action="update",
+            environment_names=environment_names,
+            analysis_type=analysis_type,
+            solver=solver,
+            mamba_root=mamba_root,
+            dry_run=dry_run,
+            output_json=output_json,
+        )
     except Exception as exc:
         _fail(exc)
 

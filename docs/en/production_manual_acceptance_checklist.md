@@ -172,6 +172,10 @@ Expected tool path resolution order:
 - [ ] **L-060** File exists but without execute permission must be judged as failure.
 - [ ] **L-061** When dynamic libraries or interpreters are missing, it must not pass merely because the main file exists.
 - [ ] **L-062** `provenance/tool_versions.tsv` records all actually used tools and their version status.
+- [ ] **L-063** `abi env install --type <plugin> --dry-run` selects only the plugin's deduplicated assigned environments and makes no filesystem changes.
+- [ ] **L-064** Running `abi env install` twice leaves an existing environment unchanged and records the solver path, version, command, and specification SHA-256.
+- [ ] **L-065** `abi env update` reconciles and prunes the selected environment; a failed solve restores or removes the unapplied specification snapshot.
+- [ ] **L-066** Solver children retain required Linux dynamic-library variables but do not inherit host `PYTHONPATH`.
 
 `metagenomic_plasmid` can run:
 

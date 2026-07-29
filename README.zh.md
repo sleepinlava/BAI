@@ -142,7 +142,17 @@ abi --version
 # 可选功能
 pip install "abi-agent[mcp]"       # MCP 服务
 pip install "abi-agent[report]"    # 科研图形和增强报告
+
+# 检查、预演并安装某个插件需要的 Linux 工具环境
+abi env discover --output-json
+abi env install --type rnaseq_expression --dry-run --output-json
+abi env install --type rnaseq_expression
 ```
+
+环境安装仅支持 Linux，不依赖 Docker 或源码 checkout。ABI 依次选择
+`micromamba`、`mamba`、`conda`，记录求解器版本与实际命令，并默认把托管环境放在
+`${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。可以重复使用 `--env` 安装单个环境，
+用 `--solver` 明确指定求解器，并用 `abi env update` 按 wheel 内置规范更新已有环境。
 
 如需运行仓库自带示例并使用源码开发：
 

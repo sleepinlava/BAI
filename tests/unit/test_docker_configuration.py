@@ -94,7 +94,10 @@ def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
     assert "python -m pytest tests/ src/abi/sciplot/tests/" in arm_steps
     assert "python -m build" in arm_steps
     assert "abi env discover --output-json" in arm_steps
+    assert "abi env install" in arm_steps
+    assert "--dry-run" in arm_steps
     assert "linux-arm64" in parsed["jobs"]["migration-gate"]["needs"]
+    assert workflow.count("abi env install") >= 2
     assert "macos-" not in workflow.lower()
 
 

@@ -146,7 +146,19 @@ abi --version
 # Optional integrations
 pip install "abi-agent[mcp]"       # MCP server
 pip install "abi-agent[report]"    # Scientific figures and richer reports
+
+# Inspect, preview, and install the Linux tool environments needed by a plugin
+abi env discover --output-json
+abi env install --type rnaseq_expression --dry-run --output-json
+abi env install --type rnaseq_expression
 ```
+
+Environment installation is Linux-only and does not require Docker or a source checkout.
+ABI selects `micromamba`, `mamba`, then `conda`, records the solver version and exact
+commands, and defaults managed environments to
+`${XDG_DATA_HOME:-~/.local/share}/abi/mamba`. Use repeated `--env` options for individual
+environments, `--solver` to select an executable explicitly, and `abi env update` to
+reconcile an existing environment with the packaged specification.
 
 To run the bundled example and work with the source repository:
 

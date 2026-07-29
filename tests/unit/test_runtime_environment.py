@@ -67,6 +67,31 @@ def test_global_micromamba_root_is_discovered_from_solver_info(tmp_path: Path) -
     assert resolution.solver == str((bin_dir / "micromamba").resolve())
 
 
+def test_nonprobing_discovery_infers_standard_global_solver_root(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    solver_root = tmp_path / "miniconda"
+    (solver_root / "conda-meta").mkdir(parents=True)
+    solver = _executable(solver_root / "condabin" / "mamba")
+
+    def _forbidden(*args: object, **kwargs: object) -> object:
+        raise AssertionError("nonprobing discovery must not start a subprocess")
+
+    monkeypatch.setattr("abi.runtime_environment.subprocess.run", _forbidden)
+
+    resolution = discover_mamba_root(
+        environ={"PATH": str(solver.parent)},
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+        probe_solver=False,
+    )
+
+    assert resolution.path == solver_root.resolve()
+    assert resolution.source == "mamba-executable"
+    assert resolution.solver == str(solver.resolve())
+
+
 def test_empty_repository_root_does_not_shadow_global_solver(tmp_path: Path) -> None:
     project = tmp_path / "project"
     (project / ".mamba").mkdir(parents=True)
@@ -111,19 +136,44 @@ def test_incomplete_managed_prefix_does_not_shadow_global_solver(tmp_path: Path)
     assert resolution.source == "micromamba-info"
 
 
+def test_populated_user_root_precedes_global_solver(tmp_path: Path) -> None:
+    user_root = tmp_path / "xdg-data" / "abi" / "mamba"
+    (user_root / "envs" / "wgs" / "conda-meta").mkdir(parents=True)
+    solver_root = tmp_path / "global-mamba"
+    solver_root.mkdir()
+    bin_dir = tmp_path / "global-bin"
+    payload = json.dumps({"root_prefix": str(solver_root), "envs": []})
+    _executable(
+        bin_dir / "micromamba",
+        f"#!/bin/sh\nprintf '%s' '{payload}'\n",
+    )
+
+    resolution = discover_mamba_root(
+        environ={
+            "PATH": str(bin_dir),
+            "XDG_DATA_HOME": str(tmp_path / "xdg-data"),
+        },
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+    )
+
+    assert resolution.path == user_root.resolve()
+    assert resolution.source == "linux-user-data"
+
+
 def test_environment_prefix_prefers_managed_layout_and_tracks_known_prefixes(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "mamba"
     direct = root / "rnaseq"
     managed = root / "envs" / "rnaseq"
-    direct.mkdir(parents=True)
-    managed.mkdir(parents=True)
+    (direct / "conda-meta").mkdir(parents=True)
+    (managed / "conda-meta").mkdir(parents=True)
 
     assert resolve_environment_prefix(root, "rnaseq").path == managed.resolve()
 
     external = tmp_path / "named-envs" / "wgs"
-    external.mkdir(parents=True)
+    (external / "conda-meta").mkdir(parents=True)
     resolved = resolve_environment_prefix(
         root,
         "wgs",
@@ -131,6 +181,21 @@ def test_environment_prefix_prefers_managed_layout_and_tracks_known_prefixes(
     )
     assert resolved.path == external.resolve()
     assert resolved.source == "solver-prefix"
+
+
+def test_incomplete_managed_prefix_does_not_shadow_valid_direct_environment(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    (root / "envs" / "wgs").mkdir(parents=True)
+    direct = root / "wgs"
+    (direct / "conda-meta").mkdir(parents=True)
+
+    resolved = resolve_environment_prefix(root, "wgs")
+
+    assert resolved.path == direct.resolve()
+    assert resolved.source == "direct-environment"
+    assert resolved.exists is True
 
 
 def test_tool_and_python_resolution_precedence_is_explainable(tmp_path: Path) -> None:
