@@ -65,6 +65,32 @@ def test_env_doctor_resolves_requested_global_tool(tmp_path: Path) -> None:
     assert payload["healthy"] is True
     assert payload["tools"][0]["path"] == str(tool.resolve())
     assert payload["tools"][0]["source"] == "system-path"
+    assert payload["tools"][0]["capability"]["status"] == "partial"
+
+
+def test_env_doctor_rejects_declared_unsupported_plugin_cell(tmp_path: Path) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+
+    result = runner.invoke(
+        app,
+        [
+            "env",
+            "doctor",
+            "--type",
+            "viral_viwrap",
+            "--mamba-root",
+            str(root),
+            "--output-json",
+        ],
+        env={"PATH": ""},
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["plugin"]["status"] == "unsupported"
+    assert payload["plugin"]["blockers"]
+    assert any(issue.startswith("unsupported_plugin:viral_viwrap:") for issue in payload["issues"])
 
 
 def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:

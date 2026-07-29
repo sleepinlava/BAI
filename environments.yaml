@@ -1,6 +1,7 @@
 abi_version: '0.1'
 platform_support:
   active_os: linux
+  allowed_statuses: [certified, partial, unsupported]
   architectures:
     x86_64:
       core_status: certified
@@ -8,28 +9,144 @@ platform_support:
     aarch64:
       core_status: ci_configured
       evidence: native ubuntu-24.04-arm job; certification requires two consecutive releases
+  capability_profiles:
+    plugin_x86_partial: &plugin_x86_partial
+      status: partial
+      blockers:
+      - release-scoped real-tool smoke evidence is incomplete for this plugin
+      alternatives:
+      - run abi env doctor and a site-specific smoke test before production execution
+      evidence:
+      - Linux x86_64 core CI and clean-wheel installation are certified
+    plugin_arm_partial: &plugin_arm_partial
+      status: partial
+      blockers:
+      - native aarch64 environment solve and representative real-tool smoke are not recorded
+      alternatives:
+      - use Linux x86_64 until the native aarch64 cell is certified
+      evidence:
+      - native ubuntu-24.04-arm core CI and clean-wheel environment creation are configured
+    viwrap_unsupported: &viwrap_unsupported
+      status: unsupported
+      blockers:
+      - official ViWrap multi-environment installation and database bundle are not provisioned
+      alternatives:
+      - use the compatibility adapter only for non-production validation
+      - install and validate the upstream ViWrap runtime outside the ABI release scope
+      evidence:
+      - ViWrap is intentionally excluded from the strict release runtime lock
+    environment_x86_partial: &environment_x86_partial
+      status: partial
+      blockers:
+      - release-scoped solve and representative executable smoke evidence are incomplete
+      alternatives:
+      - solve the environment locally and run abi env doctor before production use
+      evidence:
+      - packaged declarative environment specification is available
+    environment_arm_partial: &environment_arm_partial
+      status: partial
+      blockers:
+      - native aarch64 solve and executable smoke evidence are not recorded
+      alternatives:
+      - use the corresponding Linux x86_64 environment
+      evidence:
+      - packaged declarative environment specification is available
   plugins:
     amplicon_16s:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
     easymetagenome:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
     metagenomic_plasmid:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
     metatranscriptomics:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
     rnaseq_expression:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
     viral_viwrap:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *viwrap_unsupported
+      aarch64: *viwrap_unsupported
     wgs_bacteria:
-      x86_64: partial
-      aarch64: pending_real_tool_validation
+      x86_64: *plugin_x86_partial
+      aarch64: *plugin_arm_partial
+  environments:
+    autoplasm-base:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-qc:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-assembly:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-annotation:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-rgi:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-abundance:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-plasmid-detect:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-plasmid-binning:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-scapp:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-integronfinder:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-checkm2:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    stats:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-visualization:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    autoplasm-nextflow:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    abi-qc:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    abi-stats:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    rnaseq:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    amplicon:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    wgs:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    easymeta-p0:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+    easymeta-humann:
+      x86_64: *environment_x86_partial
+      aarch64: *environment_arm_partial
+  tools:
+    status_source: assigned_environment
+    unassigned:
+      status: partial
+      blockers:
+      - executable is not assigned to a declarative ABI environment
+      alternatives:
+      - pin the executable path and version in site-specific provenance
+      evidence:
+      - global PATH discovery is covered by Linux runtime tests
 environments:
   autoplasm-base:
     channels:

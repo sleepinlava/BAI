@@ -78,7 +78,22 @@ checkout 或仓库本地 `envs/*.yml`。
 
 ### 阶段 3——插件能力矩阵
 
-- 在工具/环境元数据中加入 Linux 架构约束。
+打包的 `platform_support` 清单现在为每个插件及全部 21 个环境发布严格的
+`certified | partial | unsupported` Linux x86_64/aarch64 单元格；每个单元格都包含
+阻塞项、可用替代方案和证据。工具能力继承其所分配环境，避免工具与环境声明重复或
+互相矛盾：
+
+```bash
+abi env discover --output-json
+abi env doctor --type rnaseq_expression --output-json
+```
+
+x86_64 核心能力已经认证，但插件和环境单元格会保持 `partial`，直到记录发布范围内
+的完整求解及代表性真实工具 smoke 证据。ViWrap 在官方多环境运行时和数据库 bundle
+部署完成前，于两个架构上均为 `unsupported`；`abi env doctor` 和托管环境操作会拒绝
+不支持的单元格。
+
+- 保持 Linux 架构约束与工具/环境元数据同步。
 - 在 Linux x86_64 与 Linux arm64 上求解全部 `envs/*.yml`。
 - 每个插件/架构单元标记为 `certified`、`partial` 或 `unsupported`，并列出
   阻塞项与支持的替代方案。

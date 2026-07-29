@@ -145,6 +145,7 @@ pip install "abi-agent[report]"    # 科研图形和增强报告
 
 # 检查、预演并安装某个插件需要的 Linux 工具环境
 abi env discover --output-json
+abi env doctor --type rnaseq_expression --output-json
 abi env install --type rnaseq_expression --dry-run --output-json
 abi env install --type rnaseq_expression
 ```
@@ -153,6 +154,8 @@ abi env install --type rnaseq_expression
 `micromamba`、`mamba`、`conda`，记录求解器版本与实际命令，并默认把托管环境放在
 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。可以重复使用 `--env` 安装单个环境，
 用 `--solver` 明确指定求解器，并用 `abi env update` 按 wheel 内置规范更新已有环境。
+诊断报告会给出当前 Linux 架构的能力状态、阻塞项、替代方案和证据；不支持的插件或
+环境单元格会在执行前失败。
 
 如需运行仓库自带示例并使用源码开发：
 

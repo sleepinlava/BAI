@@ -265,6 +265,8 @@ def build_environment_report(
     """Build a machine-readable Linux environment discovery and health report."""
 
     env = dict(os.environ if environ is None else environ)
+    system = platform.system()
+    architecture = _normalized_architecture(platform.machine())
     root = discover_mamba_root(
         explicit_root,
         environ=env,
@@ -273,6 +275,9 @@ def build_environment_report(
     )
     assert root.path is not None
     manifest = load_environment_assignments()
+    support = manifest.get("platform_support", {})
+    if not isinstance(support, Mapping):
+        support = {}
     environments = manifest.get("environments", {})
     if not isinstance(environments, Mapping):
         environments = {}
@@ -303,6 +308,12 @@ def build_environment_report(
                 "source": prefix.source,
                 "exists": prefix.exists,
                 "python": python.to_dict(),
+                "capability": _capability_for(
+                    support,
+                    scope="environments",
+                    name=env_name,
+                    architecture=architecture,
+                ),
             }
         )
 
@@ -349,12 +360,20 @@ def build_environment_report(
                 "tool_id": tool_id,
                 "executable": executable,
                 "environment": assigned_env_name,
+                "capability": (
+                    _capability_for(
+                        support,
+                        scope="environments",
+                        name=assigned_env_name,
+                        architecture=architecture,
+                    )
+                    if assigned_env_name
+                    else _unassigned_tool_capability(support)
+                ),
                 **resolved.to_dict(),
             }
         )
 
-    system = platform.system()
-    architecture = _normalized_architecture(platform.machine())
     issues: list[str] = []
     if system != "Linux":
         issues.append(f"unsupported_platform:{system}")
@@ -363,22 +382,18 @@ def build_environment_report(
 
     plugin_status: dict[str, Any] | None = None
     if analysis_type:
-        support = manifest.get("platform_support", {})
-        plugin_matrix = support.get("plugins", {}) if isinstance(support, Mapping) else {}
-        statuses = (
-            plugin_matrix.get(analysis_type, {}) if isinstance(plugin_matrix, Mapping) else {}
-        )
-        status = (
-            statuses.get(architecture, "not_declared")
-            if isinstance(statuses, Mapping)
-            else "not_declared"
+        capability = _capability_for(
+            support,
+            scope="plugins",
+            name=analysis_type,
+            architecture=architecture,
         )
         plugin_status = {
             "analysis_type": analysis_type,
             "architecture": architecture,
-            "status": status,
+            **capability,
         }
-        if str(status).startswith("unsupported"):
+        if capability["status"] == "unsupported":
             issues.append(f"unsupported_plugin:{analysis_type}:{architecture}")
         if analysis_type not in raw_assignments:
             issues.append(f"unknown_plugin:{analysis_type}")
@@ -425,6 +440,22 @@ def manage_environments(
         environment_names,
         analysis_type=analysis_type,
     )
+    manifest = load_environment_assignments()
+    support = manifest.get("platform_support", {})
+    if isinstance(support, Mapping):
+        architecture = _normalized_architecture(platform.machine())
+        for env_name in selected:
+            capability = _capability_for(
+                support,
+                scope="environments",
+                name=env_name,
+                architecture=architecture,
+            )
+            if capability["status"] == "unsupported":
+                blockers = "; ".join(capability["blockers"]) or "no supported package set"
+                raise RuntimeEnvironmentError(
+                    f"{env_name} is unsupported on Linux {architecture}: {blockers}"
+                )
     root, root_source = _resolve_write_root(
         explicit_root,
         environ=env,
@@ -914,6 +945,45 @@ def _flatten_tool_assignments(raw: Any) -> dict[str, str]:
         for tool_name, env_name in plugin_assignments.items():
             assignments.setdefault(str(tool_name), str(env_name))
     return assignments
+
+
+def _capability_for(
+    support: Mapping[str, Any],
+    *,
+    scope: str,
+    name: str,
+    architecture: str,
+) -> dict[str, Any]:
+    matrix = support.get(scope, {})
+    entries = matrix.get(name, {}) if isinstance(matrix, Mapping) else {}
+    raw = entries.get(architecture) if isinstance(entries, Mapping) else None
+    return _normalize_capability(raw)
+
+
+def _normalize_capability(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, Mapping):
+        capability = dict(raw)
+        capability["status"] = str(capability.get("status") or "not_declared")
+        for field_name in ("blockers", "alternatives", "evidence"):
+            value = capability.get(field_name, [])
+            capability[field_name] = (
+                [str(item) for item in value]
+                if isinstance(value, Sequence) and not isinstance(value, (str, bytes))
+                else []
+            )
+        return capability
+    return {
+        "status": str(raw or "not_declared"),
+        "blockers": [],
+        "alternatives": [],
+        "evidence": [],
+    }
+
+
+def _unassigned_tool_capability(support: Mapping[str, Any]) -> dict[str, Any]:
+    policy = support.get("tools", {})
+    raw = policy.get("unassigned") if isinstance(policy, Mapping) else None
+    return _normalize_capability(raw)
 
 
 def _normalized_architecture(machine: str) -> str:

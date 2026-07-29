@@ -86,7 +86,24 @@ or repository-local `envs/*.yml`.
 
 ### Phase 3 — plugin capability matrix
 
-- Add Linux architecture constraints to tool/environment metadata.
+The packaged `platform_support` manifest now exposes strict
+`certified | partial | unsupported` cells for every plugin and all 21 environments on
+Linux x86_64 and aarch64. Each cell carries blockers, supported alternatives, and
+evidence. Tool capability is inherited from its assigned environment, so the report
+does not duplicate or contradict environment ownership:
+
+```bash
+abi env discover --output-json
+abi env doctor --type rnaseq_expression --output-json
+```
+
+Core x86_64 support is certified, but plugin and environment cells deliberately remain
+`partial` until their release-scoped solve and representative real-tool smoke evidence
+is recorded. ViWrap is `unsupported` on both architectures until its official
+multi-environment runtime and database bundle are provisioned; `abi env doctor` and
+managed environment operations reject unsupported cells.
+
+- Keep Linux architecture constraints synchronized with tool/environment metadata.
 - Solve every `envs/*.yml` on Linux x86_64 and Linux arm64.
 - Classify every plugin/architecture cell as `certified`, `partial`, or
   `unsupported`, listing blockers and supported alternatives.

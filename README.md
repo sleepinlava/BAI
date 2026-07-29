@@ -149,6 +149,7 @@ pip install "abi-agent[report]"    # Scientific figures and richer reports
 
 # Inspect, preview, and install the Linux tool environments needed by a plugin
 abi env discover --output-json
+abi env doctor --type rnaseq_expression --output-json
 abi env install --type rnaseq_expression --dry-run --output-json
 abi env install --type rnaseq_expression
 ```
@@ -158,7 +159,9 @@ ABI selects `micromamba`, `mamba`, then `conda`, records the solver version and 
 commands, and defaults managed environments to
 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`. Use repeated `--env` options for individual
 environments, `--solver` to select an executable explicitly, and `abi env update` to
-reconcile an existing environment with the packaged specification.
+reconcile an existing environment with the packaged specification. The diagnostic
+report includes the current Linux architecture capability, blockers, alternatives, and
+evidence; unsupported plugin/environment cells fail before execution.
 
 To run the bundled example and work with the source repository:
 

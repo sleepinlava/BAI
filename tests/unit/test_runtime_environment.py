@@ -11,6 +11,7 @@ from abi.runtime_environment import (
     build_environment_report,
     discover_mamba_root,
     load_environment_assignments,
+    manage_environments,
     resolve_environment_prefix,
     resolve_executable,
     resolve_python,
@@ -389,12 +390,23 @@ def test_environment_report_maps_explicit_executable_back_to_tool_id(
 def test_environment_manifest_declares_linux_only_capability_matrix() -> None:
     manifest = load_environment_assignments()
     support = manifest["platform_support"]
+    allowed_statuses = {"certified", "partial", "unsupported"}
 
     assert support["active_os"] == "linux"
     assert set(support["architectures"]) == {"x86_64", "aarch64"}
     assert support["architectures"]["x86_64"]["core_status"] == "certified"
     assert support["architectures"]["aarch64"]["core_status"] == "ci_configured"
     assert set(support["plugins"]) == set(manifest["tool_assignments"])
+    assert set(support["environments"]) == set(manifest["environments"])
+    for matrix in (support["plugins"], support["environments"]):
+        for architecture_cells in matrix.values():
+            assert set(architecture_cells) == {"x86_64", "aarch64"}
+            for cell in architecture_cells.values():
+                assert cell["status"] in allowed_statuses
+                assert isinstance(cell["blockers"], list)
+                assert isinstance(cell["alternatives"], list)
+    assert support["tools"]["status_source"] == "assigned_environment"
+    assert support["tools"]["unassigned"]["status"] == "partial"
     assert "macos" not in json.dumps(support).lower()
 
 
@@ -411,7 +423,16 @@ def test_environment_report_rejects_unsupported_plugin_architecture(
         lambda: {
             "platform_support": {
                 "active_os": "linux",
-                "plugins": {"demo": {normalized: "unsupported"}},
+                "plugins": {
+                    "demo": {
+                        normalized: {
+                            "status": "unsupported",
+                            "blockers": ["native package unavailable"],
+                            "alternatives": ["use x86_64"],
+                            "evidence": ["solver audit"],
+                        }
+                    }
+                },
             },
             "environments": {},
             "tool_assignments": {"demo": {}},
@@ -428,5 +449,92 @@ def test_environment_report_rejects_unsupported_plugin_architecture(
 
     assert report["plugin"]["analysis_type"] == "demo"
     assert report["plugin"]["status"] == "unsupported"
+    assert report["plugin"]["blockers"] == ["native package unavailable"]
+    assert report["plugin"]["alternatives"] == ["use x86_64"]
     assert f"unsupported_plugin:demo:{normalized}" in report["issues"]
     assert report["healthy"] is False
+
+
+def test_environment_and_tool_reports_inherit_architecture_capabilities(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+    architecture = __import__("platform").machine()
+    normalized = "aarch64" if architecture in {"aarch64", "arm64"} else "x86_64"
+    capability = {
+        "status": "partial",
+        "blockers": ["real-tool smoke pending"],
+        "alternatives": ["validate before production"],
+        "evidence": ["environment solve configured"],
+    }
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "platform_support": {
+                "active_os": "linux",
+                "environments": {"demo-env": {normalized: capability}},
+                "tools": {
+                    "status_source": "assigned_environment",
+                    "unassigned": {
+                        "status": "partial",
+                        "blockers": ["not assigned"],
+                        "alternatives": [],
+                        "evidence": [],
+                    },
+                },
+                "plugins": {"demo": {normalized: capability}},
+            },
+            "environments": {"demo-env": {"dependencies": ["python=3.10"]}},
+            "tool_assignments": {"demo": {"python": "demo-env"}},
+        },
+    )
+
+    report = build_environment_report(
+        explicit_root=root,
+        analysis_type="demo",
+        environ={"PATH": ""},
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+    )
+
+    environment = next(row for row in report["environments"] if row["name"] == "demo-env")
+    tool = next(row for row in report["tools"] if row["tool_id"] == "python")
+    assert environment["capability"] == capability
+    assert tool["capability"] == capability
+
+
+def test_environment_install_rejects_unsupported_architecture_before_solver_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    architecture = __import__("platform").machine()
+    normalized = "aarch64" if architecture in {"aarch64", "arm64"} else "x86_64"
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "platform_support": {
+                "active_os": "linux",
+                "environments": {
+                    "blocked-env": {
+                        normalized: {
+                            "status": "unsupported",
+                            "blockers": ["package unavailable"],
+                            "alternatives": ["use a supported architecture"],
+                        }
+                    }
+                },
+            },
+            "environments": {"blocked-env": {"dependencies": ["python=3.10"]}},
+            "tool_assignments": {},
+        },
+    )
+
+    with pytest.raises(RuntimeEnvironmentError, match="blocked-env.*unsupported"):
+        manage_environments(
+            action="install",
+            environment_names=["blocked-env"],
+            explicit_root=tmp_path / "root",
+            environ={"PATH": ""},
+        )
