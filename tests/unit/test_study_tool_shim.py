@@ -58,6 +58,34 @@ def test_tool_shim_fails_once_then_resumes(tmp_path: Path) -> None:
     assert run_tool_shim(**kwargs).exit_code == 42
     assert run_tool_shim(**kwargs).exit_code == 0
 
+    resumed = run_tool_shim(
+        tool_id="prokka",
+        arguments={"--outdir": "annotation"},
+        outputs={"annotation": tmp_path / "resumed.tsv"},
+        behavior="resume",
+        state_root=tmp_path / "state",
+        event_log=tmp_path / "events.jsonl",
+    )
+    assert resumed.exit_code == 0
+    assert resumed.evidence_label == "synthetic_control_flow_evidence_not_biological_validity"
+
+
+def test_tool_shim_zero_exit_missing_outputs_is_explicit(tmp_path: Path) -> None:
+    output = tmp_path / "plasmid_summary.tsv"
+
+    result = run_tool_shim(
+        tool_id="genomad",
+        arguments={},
+        outputs={"plasmid_summary": output},
+        behavior="exit_zero_with_missing_required_result_files",
+        state_root=tmp_path / "state",
+        event_log=tmp_path / "events.jsonl",
+    )
+
+    assert result.exit_code == 0
+    assert result.output_digests == {}
+    assert not output.exists()
+
 
 def test_selected_workflow_tools_accept_their_generated_golden_contracts(
     tmp_path: Path,
