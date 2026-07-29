@@ -1,0 +1,17 @@
+annotation:
+  genus: Escherichia
+  species: coli
+assembly:
+  memory_gb: 80
+  tool: spades
+input:
+  sample_sheet: /task/input/samples.tsv
+log_dir: /task/work/logs
+mode: dry_run
+outdir: /task/work/results
+project_name: wgs_bacteria_run
+resources:
+  amrfinder_db: /task/input/resources/amrfinder_db
+threads: 4
+typing:
+  scheme: auto

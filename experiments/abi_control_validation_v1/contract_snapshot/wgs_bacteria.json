@@ -1,0 +1,567 @@
+{
+  "dag_edges": [
+    {
+      "from": "qc_fastp",
+      "to": "assembly_spades"
+    },
+    {
+      "from": "assembly_spades",
+      "to": "annotation_prokka"
+    },
+    {
+      "from": "assembly_spades",
+      "to": "mlst"
+    },
+    {
+      "from": "annotation_prokka",
+      "to": "amr"
+    }
+  ],
+  "error_categories": [
+    "artifact_missing",
+    "contract_violation",
+    "duplicate_sample_id",
+    "empty_result",
+    "incomplete_pairs",
+    "internal_error",
+    "invalid_config",
+    "invalid_platform",
+    "invalid_sample_sheet",
+    "missing_database",
+    "missing_input",
+    "missing_resource",
+    "missing_sample_id",
+    "nonzero_exit",
+    "parse_failed",
+    "permission_required",
+    "runtime_not_supported",
+    "tool_not_found",
+    "unknown_analysis_type"
+  ],
+  "limitations": [
+    "Short-read assembly (SPAdes) may fragment genomes with extensive repetitive elements (e.g., transposases, IS elements); long-read sequencing improves assembly contiguity.",
+    "AMR gene presence does not guarantee phenotypic resistance; expression, copy number, and regulatory mutations affect resistance phenotype.",
+    "MLST typing is scheme-dependent; isolates may have novel allelic profiles not in the reference database (indicated as 'unknown' or 'nearest match').",
+    "Plasmid replicon detection via PlasmidFinder is limited to known replicon types; novel or divergent plasmid types may be missed.",
+    "Annotation (Prokka/Bakta) transfers annotations from reference databases; gene names and functions are computational predictions, not experimental validations.",
+    "This pipeline is designed for bacterial isolate WGS (single genome per sample), not metagenomic mixtures.",
+    "Database versions (AMRFinder DB, PubMLST, PlasmidFinder DB) are recorded in the resource manifest and affect results."
+  ],
+  "output_contracts": [
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read1",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read2",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}",
+      "stage": "qc_fastp",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fasta",
+      "output": "contigs_fasta",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+      "stage": "assembly_spades",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fasta",
+      "output": "scaffolds_fasta",
+      "path": "{outdir}/{category_dir}/{sample_id}/scaffolds.fasta",
+      "stage": "assembly_spades",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}",
+      "stage": "assembly_spades",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "fasta",
+      "output": "faa",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.faa",
+      "stage": "annotation_prokka",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "gff",
+      "output": "gff",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gff",
+      "stage": "annotation_prokka",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "gbk",
+      "output": "gbk",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gbk",
+      "stage": "annotation_prokka",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}",
+      "stage": "annotation_prokka",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": "50B"
+      },
+      "format": "tsv",
+      "output": "mlst_tsv",
+      "path": "{outdir}/{category_dir}/{sample_id}/mlst.tsv",
+      "stage": "mlst",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}",
+      "stage": "mlst",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": "50B"
+      },
+      "format": "tsv",
+      "output": "amr_tsv",
+      "path": "{outdir}/{category_dir}/{sample_id}/amr.tsv",
+      "stage": "amr",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}",
+      "stage": "amr",
+      "type": "directory"
+    }
+  ],
+  "platforms": [
+    "illumina"
+  ],
+  "plugin": {
+    "analysis_type": "wgs_bacteria",
+    "description": "Clinical/food/environmental bacterial isolate analysis: QC (fastp) \u2192 assembly (SPAdes) \u2192 annotation (Prokka) \u2192 MLST \u2192 AMR profiling.",
+    "display_name": "WGS Bacterial Genome Analysis"
+  },
+  "schema_version": "abi.control-validation.contract-snapshot.v1",
+  "stages": [
+    {
+      "category": "qc",
+      "id": "qc_fastp",
+      "optional": false,
+      "tool_id": "fastp"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_spades",
+      "optional": false,
+      "tool_id": "spades"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_prokka",
+      "optional": false,
+      "tool_id": "prokka"
+    },
+    {
+      "category": "typing",
+      "id": "mlst",
+      "optional": false,
+      "tool_id": "mlst"
+    },
+    {
+      "category": "amr",
+      "id": "amr",
+      "optional": false,
+      "tool_id": "amrfinderplus"
+    }
+  ],
+  "standard_tables": {
+    "amr_profile": [
+      "sample_id",
+      "gene_symbol",
+      "sequence_name",
+      "scope",
+      "element_type",
+      "element_subtype",
+      "target_class",
+      "target_subclass",
+      "method",
+      "coverage_pct",
+      "identity_pct",
+      "tool",
+      "source_file"
+    ],
+    "genome_annotation": [
+      "sample_id",
+      "feature_id",
+      "feature_type",
+      "start",
+      "end",
+      "strand",
+      "product",
+      "gene_name",
+      "ec_number",
+      "tool",
+      "source_file"
+    ],
+    "genome_assembly_stats": [
+      "sample_id",
+      "total_length",
+      "num_contigs",
+      "n50",
+      "max_contig_length",
+      "gc_content",
+      "coverage",
+      "tool",
+      "source_file"
+    ],
+    "mlst_profile": [
+      "sample_id",
+      "scheme",
+      "sequence_type",
+      "allele_1",
+      "allele_2",
+      "allele_3",
+      "allele_4",
+      "allele_5",
+      "allele_6",
+      "allele_7",
+      "clonal_complex",
+      "tool",
+      "source_file"
+    ],
+    "qc_summary": [
+      "sample_id",
+      "tool",
+      "metric",
+      "value",
+      "unit",
+      "source_file"
+    ]
+  },
+  "tools": [
+    {
+      "description": "Trim and quality-control paired-end RNA-seq reads.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check sample sheet read1/read2 paths."
+        },
+        "nonzero_exit": {
+          "hint": "Read provenance/step_logs/{step_id}.stderr.log."
+        },
+        "tool_not_found": {
+          "hint": "Install fastp in the abi-qc environment."
+        }
+      },
+      "id": "fastp",
+      "name": "fastp",
+      "outputs": {
+        "clean_read1": {
+          "format": "fastq.gz",
+          "type": "file"
+        },
+        "clean_read2": {
+          "format": "fastq.gz",
+          "type": "file"
+        },
+        "html_report": {
+          "format": "html",
+          "type": "file"
+        },
+        "json_report": {
+          "format": "json",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "read1": {
+          "formats": [
+            "fastq",
+            "fastq.gz"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "formats": [
+            "fastq",
+            "fastq.gz"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "default": 4,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "De novo genome assembly from paired-end Illumina reads using SPAdes in isolate mode.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Cleaned FASTQ files not found. Verify fastp completed successfully."
+        },
+        "tool_not_found": {
+          "hint": "SPAdes not found. Install: conda install -c bioconda spades"
+        }
+      },
+      "id": "spades",
+      "name": "SPAdes",
+      "outputs": {
+        "contigs_fasta": {
+          "format": "fasta",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        },
+        "scaffolds_fasta": {
+          "format": "fasta",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "clean_read1": {
+          "formats": [
+            "fastq",
+            "fastq.gz"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "clean_read2": {
+          "formats": [
+            "fastq",
+            "fastq.gz"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "memory_gb": {
+          "default": 80,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "threads": {
+          "default": 4,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Rapid prokaryotic genome annotation producing GFF, GenBank, and protein FASTA files.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Assembly FASTA not found. Verify SPAdes completed successfully."
+        },
+        "tool_not_found": {
+          "hint": "Prokka not found. Install: conda install -c bioconda prokka"
+        }
+      },
+      "id": "prokka",
+      "name": "Prokka",
+      "outputs": {
+        "faa": {
+          "format": "fasta",
+          "type": "file"
+        },
+        "gbk": {
+          "format": "gbk",
+          "type": "file"
+        },
+        "gff": {
+          "format": "gff",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly_fasta": {
+          "formats": [
+            "fasta"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "genus": {
+          "required": false,
+          "type": "string"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "species": {
+          "required": false,
+          "type": "string"
+        },
+        "threads": {
+          "default": 4,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Multi-locus sequence typing (MLST) for bacterial isolates using the PubMLST scheme database.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Assembly FASTA not found. Verify SPAdes completed successfully."
+        },
+        "tool_not_found": {
+          "hint": "mlst not found. Install: conda install -c bioconda mlst"
+        }
+      },
+      "id": "mlst",
+      "name": "MLST",
+      "outputs": {
+        "mlst_tsv": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly_fasta": {
+          "formats": [
+            "fasta"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "scheme": {
+          "required": false,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Identify antimicrobial resistance genes, stress response genes, and virulence factors in bacterial protein sequences.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Prokka protein FASTA or GFF not found. Verify Prokka completed successfully."
+        },
+        "tool_not_found": {
+          "hint": "AMRFinderPlus not found. Install: conda install -c bioconda ncbi-amrfinderplus"
+        }
+      },
+      "id": "amrfinderplus",
+      "name": "AMRFinderPlus",
+      "outputs": {
+        "amr_tsv": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "amrfinder_db": {
+          "required": true,
+          "type": "directory"
+        },
+        "prokka_faa": {
+          "formats": [
+            "fasta",
+            "faa"
+          ],
+          "required": true,
+          "type": "file"
+        },
+        "prokka_gff": {
+          "formats": [
+            "gff"
+          ],
+          "required": false,
+          "type": "file"
+        },
+        "threads": {
+          "default": 4,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    }
+  ]
+}

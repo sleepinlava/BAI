@@ -1,0 +1,73 @@
+{
+  "expected_valid": true,
+  "fault_operations": [],
+  "files": [
+    {
+      "path": "config.yaml",
+      "sha256": "256053ce79a6b515fbcfeec9a2314750bf636a9bfa4b73ca5d7e001ef6a80cdd"
+    },
+    {
+      "path": "reads/D1_control_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/D1_control_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/D1_treated_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/D1_treated_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/D2_control_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/D2_control_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/D2_treated_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/D2_treated_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/genes.gtf",
+      "sha256": "fc16161667db1135ab276a9855699c04bfd8fc8ce88061760ac2b98cfe63e0ff"
+    },
+    {
+      "path": "resources/go.gaf",
+      "sha256": "829a98d7e10c4f4e98ce31c76067932777fb7ba3a177379727d8edcb13224216"
+    },
+    {
+      "path": "resources/go.obo",
+      "sha256": "e39cb289f156672cdf00225d74b885286d17eb26be173dd8763178e052affdc4"
+    },
+    {
+      "path": "resources/reactome.gmt",
+      "sha256": "2891d56e83b707bdb741f155c841f7f19fd7ca46ca61880b5d32c428a7fd7287"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "919b3f5c8e714711306639c3efb239d6f6d4c2977a2d820bcb02575be0e5c8a3"
+    },
+    {
+      "path": "resources/star_index_valid/IDENTITY",
+      "sha256": "0b5e723af4dbc2e54759fa6de21c0cfb95db3138fe98c684628c084db4810fc7"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "010196f7a762a6eb3771d46ae8d8884f25531784b852cb802c90e6a295c884a5"
+    }
+  ],
+  "pre_fault_twin_sha256": "68b6e8abb957dc05e3e8476d2ed60ce3fa0c1216e13af732912c2e13ff6f90b2",
+  "schema_version": "abi.control-validation.fixture.v1",
+  "task_id": "rnaseq_t3_missing_mate"
+}

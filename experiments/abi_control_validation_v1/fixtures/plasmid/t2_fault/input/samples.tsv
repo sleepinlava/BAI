@@ -1,0 +1,2 @@
+sample_id	group	platform	read1	read2	long_reads	assembly	technology	host_reference	notes
+META1	case	illumina	/task/input/reads/META1_R1.fastq	/task/input/reads/META1_R2.fastq					

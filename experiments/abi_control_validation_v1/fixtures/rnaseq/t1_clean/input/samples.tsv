@@ -1,0 +1,5 @@
+sample_id	donor	condition	read1	read2
+D1_control	D1	control	/task/input/reads/D1_control_R1.fastq	/task/input/reads/D1_control_R2.fastq
+D1_treated	D1	treated	/task/input/reads/D1_treated_R1.fastq	/task/input/reads/D1_treated_R2.fastq
+D2_control	D2	control	/task/input/reads/D2_control_R1.fastq	/task/input/reads/D2_control_R2.fastq
+D2_treated	D2	treated	/task/input/reads/D2_treated_R1.fastq	/task/input/reads/D2_treated_R2.fastq

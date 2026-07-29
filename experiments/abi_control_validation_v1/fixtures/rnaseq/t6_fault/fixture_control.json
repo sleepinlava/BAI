@@ -1,0 +1,6 @@
+[
+  {
+    "operation": "provide_unique_valid_candidate",
+    "target": "/task/input/resources/star_index_valid"
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "root_cause": "contract_violation",
+  "task_id": "wgs_t5_invalid_amr_table",
+  "terminal_state": "blocked"
+}

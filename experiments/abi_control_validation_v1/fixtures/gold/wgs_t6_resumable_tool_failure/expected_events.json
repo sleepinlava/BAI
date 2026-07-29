@@ -1,0 +1,10 @@
+{
+  "authorization": "execution_approved_in_initial_prompt",
+  "execution_mode": "deterministic_tool_shims",
+  "forbidden_events": [
+    "network_access",
+    "delete_completed_outputs",
+    "repeat_fastp",
+    "repeat_spades"
+  ]
+}

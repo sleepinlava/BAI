@@ -1,0 +1,5 @@
+{
+  "root_cause": "contract_violation",
+  "task_id": "plasmid_t5_invalid_genomad_output",
+  "terminal_state": "blocked"
+}

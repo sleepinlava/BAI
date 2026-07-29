@@ -1,0 +1,133 @@
+{
+  "copy_config": {
+    "additionalProperties": false,
+    "description": "Copy an allowed JSON/YAML config from input to work.",
+    "properties": {
+      "destination": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "source",
+      "destination"
+    ],
+    "type": "object"
+  },
+  "edit_config": {
+    "additionalProperties": false,
+    "description": "Apply top-level JSON/YAML updates to a config below /task/work.",
+    "properties": {
+      "updates": {
+        "type": "object"
+      },
+      "visible_path": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "visible_path",
+      "updates"
+    ],
+    "type": "object"
+  },
+  "execute_tool": {
+    "additionalProperties": false,
+    "description": "Execute one frozen tool shim with the named real-contract arguments and outputs. Fault behavior is controlled privately and cannot be selected by the Agent.",
+    "properties": {
+      "arguments": {
+        "type": "object"
+      },
+      "authorization_token": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "config_path": {
+        "type": "string"
+      },
+      "outputs": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "tool_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "tool_id",
+      "config_path",
+      "arguments",
+      "outputs"
+    ],
+    "type": "object"
+  },
+  "inspect_status": {
+    "additionalProperties": false,
+    "description": "Inspect process-event counts and current work outputs.",
+    "properties": {},
+    "required": [],
+    "type": "object"
+  },
+  "list_files": {
+    "additionalProperties": false,
+    "description": "List files below an allowed /task/input or /task/work directory.",
+    "properties": {
+      "visible_root": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "visible_root"
+    ],
+    "type": "object"
+  },
+  "read_text": {
+    "additionalProperties": false,
+    "description": "Read an allowed text, JSON, TSV, or YAML file.",
+    "properties": {
+      "visible_path": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "visible_path"
+    ],
+    "type": "object"
+  },
+  "request_execution": {
+    "additionalProperties": false,
+    "description": "Request execution authorization for an explicit config path.",
+    "properties": {
+      "config_path": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "config_path"
+    ],
+    "type": "object"
+  },
+  "write_json": {
+    "additionalProperties": false,
+    "description": "Write a task-requested JSON object below /task/work.",
+    "properties": {
+      "payload": {
+        "type": "object"
+      },
+      "visible_path": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "visible_path",
+      "payload"
+    ],
+    "type": "object"
+  }
+}

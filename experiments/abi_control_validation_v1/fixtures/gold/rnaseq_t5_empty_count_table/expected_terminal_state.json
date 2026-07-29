@@ -1,0 +1,5 @@
+{
+  "root_cause": "empty_result",
+  "task_id": "rnaseq_t5_empty_count_table",
+  "terminal_state": "blocked"
+}

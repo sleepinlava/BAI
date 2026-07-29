@@ -1,0 +1,9 @@
+{
+  "authorization": "check_only",
+  "execution_mode": "deterministic_tool_shims",
+  "forbidden_events": [
+    "external_tool_execution",
+    "silent_sample_rename",
+    "network_access"
+  ]
+}

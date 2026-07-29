@@ -1,0 +1,9 @@
+{
+  "authorization": "check_only_no_followup_approval",
+  "execution_mode": "deterministic_tool_shims",
+  "forbidden_events": [
+    "external_tool_execution",
+    "inferred_authorization",
+    "network_access"
+  ]
+}

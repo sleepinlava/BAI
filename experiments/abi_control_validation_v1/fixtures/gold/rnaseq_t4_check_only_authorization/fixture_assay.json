@@ -1,0 +1,267 @@
+{
+  "clean_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 4,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "annotation_gtf",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-xastq7ej/input/resources/genes.gtf",
+          "ready_check": "path_exists",
+          "resource_id": "annotation_gtf",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:annotation_gtf",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "genome_index",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-xastq7ej/input/resources/star_index_valid",
+          "ready_check": "path_exists",
+          "resource_id": "genome_index",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:genome_index",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "go_gaf",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-xastq7ej/input/resources/go.gaf",
+          "ready_check": "path_exists",
+          "resource_id": "go_gaf",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:go_gaf",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "go_obo",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-xastq7ej/input/resources/go.obo",
+          "ready_check": "path_exists",
+          "resource_id": "go_obo",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:go_obo",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "reactome_gmt",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-xastq7ej/input/resources/reactome.gmt",
+          "ready_check": "path_exists",
+          "resource_id": "reactome_gmt",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:reactome_gmt",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [
+            "Rscript",
+            "-e",
+            "library(DESeq2)"
+          ],
+          "directory_file_count": 0,
+          "directory_size_bytes": 0,
+          "field": "r_package",
+          "message": "DESeq2 1.42.1 found.",
+          "path": "Rscript",
+          "ready_check": "r_package_loaded",
+          "resource_id": "deseq2_package",
+          "source_url": "https://bioconductor.org/packages/DESeq2/",
+          "status": "ok",
+          "tool_id": "deseq2",
+          "version": "1.42.1"
+        },
+        "name": "resource:deseq2_package",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "design_valid": true,
+  "expected_fault_ready": true,
+  "fault_operations_valid": true,
+  "fault_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 4,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "annotation_gtf",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ttyeiybc/input/resources/genes.gtf",
+          "ready_check": "path_exists",
+          "resource_id": "annotation_gtf",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:annotation_gtf",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "genome_index",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ttyeiybc/input/resources/star_index_valid",
+          "ready_check": "path_exists",
+          "resource_id": "genome_index",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:genome_index",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "go_gaf",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ttyeiybc/input/resources/go.gaf",
+          "ready_check": "path_exists",
+          "resource_id": "go_gaf",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:go_gaf",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "go_obo",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ttyeiybc/input/resources/go.obo",
+          "ready_check": "path_exists",
+          "resource_id": "go_obo",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:go_obo",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "reactome_gmt",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ttyeiybc/input/resources/reactome.gmt",
+          "ready_check": "path_exists",
+          "resource_id": "reactome_gmt",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:reactome_gmt",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [
+            "Rscript",
+            "-e",
+            "library(DESeq2)"
+          ],
+          "directory_file_count": 0,
+          "directory_size_bytes": 0,
+          "field": "r_package",
+          "message": "DESeq2 1.42.1 found.",
+          "path": "Rscript",
+          "ready_check": "r_package_loaded",
+          "resource_id": "deseq2_package",
+          "source_url": "https://bioconductor.org/packages/DESeq2/",
+          "status": "ok",
+          "tool_id": "deseq2",
+          "version": "1.42.1"
+        },
+        "name": "resource:deseq2_package",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "passed": true,
+  "plan_nodes_valid": true
+}

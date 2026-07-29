@@ -1,0 +1,5 @@
+{
+  "root_cause": "missing_database",
+  "task_id": "plasmid_t6_recover_resource_path",
+  "terminal_state": "completed"
+}

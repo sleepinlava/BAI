@@ -1,0 +1,5 @@
+{
+  "root_cause": "missing_resource",
+  "task_id": "rnaseq_t6_recover_resource_path",
+  "terminal_state": "completed"
+}

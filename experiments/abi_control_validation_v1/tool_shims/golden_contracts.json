@@ -1,0 +1,2635 @@
+{
+  "abricate": {
+    "golden_request": {
+      "abricate_db": "<abricate_db>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "annotations_tsv",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "annotations_tsv": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "abricate_db": {
+        "required": true,
+        "type": "string"
+      },
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "amrfinderplus": {
+    "golden_request": {
+      "amrfinder_db": "<amrfinder_db>",
+      "prokka_faa": "<prokka_faa>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "amr_tsv",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "amr_tsv": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "amrfinder_db": {
+        "required": true,
+        "type": "directory"
+      },
+      "prokka_faa": {
+        "formats": [
+          "fasta",
+          "faa"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "prokka_gff": {
+        "formats": [
+          "gff"
+        ],
+        "required": false,
+        "type": "file"
+      },
+      "threads": {
+        "default": 4,
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "bakta": {
+    "golden_request": {
+      "database": "<database>",
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "directory"
+      },
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "blast": {
+    "golden_request": {
+      "database": "<database>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "path"
+      },
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "bowtie2": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "read1": "<read1>",
+      "read2": "<read2>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "alignment",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "alignment": {
+        "format": "sam",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "read1": {
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "bowtie2_host_removal": {
+    "golden_request": {
+      "host_reference": "<host_reference>",
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "clean_read1",
+        "clean_read2"
+      ]
+    },
+    "outputs": {
+      "clean_read1": {
+        "type": "path"
+      },
+      "clean_read2": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "host_reference": {
+        "required": true,
+        "type": "path"
+      },
+      "read1": {
+        "required": true,
+        "type": "path"
+      },
+      "read2": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "build_count_matrix": {
+    "golden_request": {
+      "count_matrix_script": "<count_matrix_script>",
+      "expression_dir": "<expression_dir>",
+      "sample_sheet": "<sample_sheet>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "count_matrix",
+        "output_dir",
+        "sample_metadata"
+      ]
+    },
+    "outputs": {
+      "count_matrix": {
+        "description": "Gene-level count matrix (genes \u00d7 samples)",
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      },
+      "sample_metadata": {
+        "description": "Sample metadata for DESeq2",
+        "format": "tsv",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "count_matrix_script": {
+        "description": "Path to build_count_matrix.py",
+        "formats": [
+          "py"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "expression_dir": {
+        "description": "Root directory containing per-sample featureCounts output subdirectories",
+        "required": true,
+        "type": "directory"
+      },
+      "sample_sheet": {
+        "description": "Sample sheet with sample_id, group, condition columns",
+        "formats": [
+          "tsv"
+        ],
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "checkm2": {
+    "golden_request": {
+      "mag_bins": "<mag_bins>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "mag_bins": {
+        "required": true,
+        "type": "directory"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "clinker": {
+    "golden_request": {
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "genbank_files",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "genbank_files": {
+        "type": "path"
+      },
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "concoct": {
+    "golden_request": {
+      "abundance": "<abundance>",
+      "assembly": "<assembly>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "abundance": {
+        "format": "tsv",
+        "required": true,
+        "type": "file"
+      },
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "conjscan": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "copla": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "refgraph": "<refgraph>",
+      "reflist": "<reflist>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "refgraph": {
+        "required": true,
+        "type": "path"
+      },
+      "reflist": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "coverm": {
+    "golden_request": {
+      "bam": "<bam>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "abundance"
+      ]
+    },
+    "outputs": {
+      "abundance": {
+        "format": "tsv",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "bam": {
+        "format": "bam",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "das_tool": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "deseq2": {
+    "golden_request": {
+      "comparison": "<comparison>",
+      "count_matrix": "<count_matrix>",
+      "deseq2_script": "<deseq2_script>",
+      "sample_metadata": "<sample_metadata>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "de_results",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "de_results": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "alpha": {
+        "default": 0.05,
+        "type": "number"
+      },
+      "comparison": {
+        "required": true,
+        "type": "string"
+      },
+      "count_matrix": {
+        "formats": [
+          "tsv"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "deseq2_script": {
+        "formats": [
+          "R"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "design": {
+        "default": "~ condition",
+        "description": "DESeq2 design formula evaluated against sample-metadata columns. It must include condition; paired experiments may use \"~ donor + condition\".",
+        "type": "string"
+      },
+      "sample_metadata": {
+        "formats": [
+          "tsv"
+        ],
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "deseq2_plasmid": {
+    "golden_request": {
+      "abundance_table": "<abundance_table>",
+      "sample_metadata": "<sample_metadata>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "differential_plasmids"
+      ]
+    },
+    "outputs": {
+      "differential_plasmids": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "abundance_table": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_metadata": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "dna_features_viewer": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "dorado": {
+    "golden_request": {
+      "pod5": "<pod5>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "long_reads"
+      ]
+    },
+    "outputs": {
+      "long_reads": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "pod5": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "eggnog_mapper": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "fastp": {
+    "golden_request": {
+      "read1": "<read1>",
+      "read2": "<read2>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "clean_read1",
+        "clean_read2",
+        "html_report",
+        "json_report",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "clean_read1": {
+        "format": "fastq.gz",
+        "type": "file"
+      },
+      "clean_read2": {
+        "format": "fastq.gz",
+        "type": "file"
+      },
+      "html_report": {
+        "format": "html",
+        "type": "file"
+      },
+      "json_report": {
+        "format": "json",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "read1": {
+        "formats": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "formats": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "default": 4,
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "fastqc": {
+    "golden_request": {
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "read1": {
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "fastspar": {
+    "golden_request": {},
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "correlation",
+        "covariance",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "correlation": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "covariance": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "abundance_table": {
+        "format": "tsv",
+        "required": false,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "featurecounts": {
+    "golden_request": {
+      "annotation_gtf": "<annotation_gtf>",
+      "bam": "<bam>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "counts"
+      ]
+    },
+    "outputs": {
+      "counts": {
+        "format": "txt",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "annotation_gtf": {
+        "format": "gtf",
+        "required": true,
+        "type": "file"
+      },
+      "bam": {
+        "format": "bam",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "filtlong": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "genomad": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "database": "<database>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir",
+        "plasmid_summary"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      },
+      "plasmid_summary": {
+        "format": "tsv",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "database": {
+        "required": true,
+        "type": "directory"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "gplas2": {
+    "golden_request": {
+      "assembly_graph": "<assembly_graph>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "plasmid_predictions"
+      ]
+    },
+    "outputs": {
+      "plasmid_predictions": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "assembly_graph": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "gtdbtk": {
+    "golden_request": {
+      "mag_bins": "<mag_bins>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "mag_bins": {
+        "required": true,
+        "type": "directory"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "hifiadapterfilt": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "hifiasm_meta": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "sample_id": "<sample_id>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "hybridspades": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "format": "fastq",
+        "required": true,
+        "type": "file"
+      },
+      "read1": {
+        "format": "fastq",
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "format": "fastq",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "integronfinder": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "isescan": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "kraken2": {
+    "golden_request": {
+      "database": "<database>",
+      "read1": "<read1>",
+      "read2": "<read2>",
+      "sample_id": "<sample_id>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "path"
+      },
+      "read1": {
+        "required": true,
+        "type": "path"
+      },
+      "read2": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "macsyfinder": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "medaka": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "long_reads": "<long_reads>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "required": true,
+        "type": "path"
+      },
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "megahit": {
+    "golden_request": {
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "assembly",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "assembly": {
+        "format": "fasta",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "memory_bytes": {
+        "default": 96636764160,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "read1": {
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "metabat2": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "bam": "<bam>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "bam": {
+        "format": "bam",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "metaflye": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "metaphlan": {
+    "golden_request": {
+      "database": "<database>",
+      "metaphlan_input": "<metaphlan_input>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir",
+        "profile"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      },
+      "profile": {
+        "format": "tsv",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "directory"
+      },
+      "metaphlan_input": {
+        "required": true,
+        "type": "string"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "metaspades": {
+    "golden_request": {
+      "read1": "<read1>",
+      "read2": "<read2>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "read1": {
+        "required": true,
+        "type": "path"
+      },
+      "read2": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "minced": {
+    "golden_request": {
+      "host_genomes": "<host_genomes>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "host_genomes": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "minimap2": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "minimap2_preset": "<minimap2_preset>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "alignment"
+      ]
+    },
+    "outputs": {
+      "alignment": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "minimap2_preset": {
+        "required": true,
+        "type": "path"
+      },
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "minimap2_host_removal": {
+    "golden_request": {
+      "host_reference": "<host_reference>",
+      "long_reads": "<long_reads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "clean_long_reads"
+      ]
+    },
+    "outputs": {
+      "clean_long_reads": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "host_reference": {
+        "required": true,
+        "type": "path"
+      },
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "mlst": {
+    "golden_request": {
+      "assembly_fasta": "<assembly_fasta>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "mlst_tsv",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "mlst_tsv": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly_fasta": {
+        "formats": [
+          "fasta"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "scheme": {
+        "required": false,
+        "type": "string"
+      }
+    }
+  },
+  "mmseqs2": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "mob_suite": {
+    "golden_request": {
+      "database": "<database>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "path"
+      },
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "mob_typer": {
+    "golden_request": {
+      "database": "<database>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "directory"
+      },
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "multiqc": {
+    "golden_request": {
+      "multiqc_filename": "<multiqc_filename>",
+      "output_dir": "<output_dir>",
+      "project_outdir": "<project_outdir>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "multiqc_report"
+      ]
+    },
+    "outputs": {
+      "multiqc_report": {
+        "format": "html",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "multiqc_filename": {
+        "required": true,
+        "type": "string"
+      },
+      "output_dir": {
+        "required": true,
+        "type": "directory"
+      },
+      "project_outdir": {
+        "required": true,
+        "type": "directory"
+      }
+    }
+  },
+  "mummer": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "reference_plasmids": "<reference_plasmids>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "reference_plasmids": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "nanoplot": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "opera_ms": {
+    "golden_request": {
+      "long_reads": "<long_reads>",
+      "read1": "<read1>",
+      "read2": "<read2>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "long_reads": {
+        "required": true,
+        "type": "path"
+      },
+      "read1": {
+        "required": true,
+        "type": "path"
+      },
+      "read2": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "plasmaag": {
+    "golden_request": {
+      "reads_contigs_table": "<reads_contigs_table>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "reads_contigs_table": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "plasme": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "database": "<database>",
+      "sample_id": "<sample_id>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "required": true,
+        "type": "path"
+      },
+      "database": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "plasmidfinder": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "database": "<database>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "required": true,
+        "type": "path"
+      },
+      "database": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "plasmidhostfinder": {
+    "golden_request": {
+      "database": "<database>",
+      "level": "<level>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "threshold": "<threshold>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "database": {
+        "required": true,
+        "type": "path"
+      },
+      "level": {
+        "required": true,
+        "type": "path"
+      },
+      "plasmid_contigs": {
+        "required": true,
+        "type": "path"
+      },
+      "threshold": {
+        "required": true,
+        "type": "path"
+      }
+    }
+  },
+  "plasx": {
+    "golden_request": {
+      "annotations": "<annotations>",
+      "gene_calls": "<gene_calls>",
+      "model": "<model>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "annotations": {
+        "required": true,
+        "type": "path"
+      },
+      "gene_calls": {
+        "required": true,
+        "type": "path"
+      },
+      "model": {
+        "required": true,
+        "type": "path"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "platon": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "database": {
+        "required": false,
+        "type": "directory"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "prodigal": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "faa",
+        "ffn",
+        "gff",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "faa": {
+        "format": "faa",
+        "type": "file"
+      },
+      "ffn": {
+        "format": "ffn",
+        "type": "file"
+      },
+      "gff": {
+        "format": "gff",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "prokka": {
+    "golden_request": {
+      "assembly_fasta": "<assembly_fasta>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "faa",
+        "gbk",
+        "gff",
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "faa": {
+        "format": "fasta",
+        "type": "file"
+      },
+      "gbk": {
+        "format": "gbk",
+        "type": "file"
+      },
+      "gff": {
+        "format": "gff",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly_fasta": {
+        "formats": [
+          "fasta"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "genus": {
+        "required": false,
+        "type": "string"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "species": {
+        "required": false,
+        "type": "string"
+      },
+      "threads": {
+        "default": 4,
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "pycirclize": {
+    "golden_request": {
+      "annotations": "<annotations>",
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>",
+      "typing": "<typing>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "annotations": {
+        "format": "tsv",
+        "required": true,
+        "type": "file"
+      },
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "typing": {
+        "format": "tsv",
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "pyvis": {
+    "golden_request": {
+      "host_plasmid_links": "<host_plasmid_links>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "host_plasmid_links": {
+        "format": "tsv",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      }
+    }
+  },
+  "quast": {
+    "golden_request": {
+      "assembly": "<assembly>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "recycler": {
+    "golden_request": {
+      "assembly_graph": "<assembly_graph>",
+      "bam": "<bam>",
+      "plasmid_contigs": "<plasmid_contigs>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly_graph": {
+        "format": "gfa",
+        "required": true,
+        "type": "file"
+      },
+      "bam": {
+        "format": "bam",
+        "required": true,
+        "type": "file"
+      },
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "report_markdown": {
+    "golden_request": {
+      "project_outdir": "<project_outdir>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "report_md"
+      ]
+    },
+    "outputs": {
+      "report_md": {
+        "format": "markdown",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "project_outdir": {
+        "required": true,
+        "type": "directory"
+      }
+    }
+  },
+  "rgi": {
+    "golden_request": {
+      "plasmid_contigs": "<plasmid_contigs>",
+      "sample_id": "<sample_id>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "plasmid_contigs": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "sample_id": {
+        "required": true,
+        "type": "string"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "rnaseq_enrichment": {
+    "golden_request": {
+      "annotation_gtf": "<annotation_gtf>",
+      "de_results": "<de_results>",
+      "enrichment_script": "<enrichment_script>",
+      "go_gaf": "<go_gaf>",
+      "go_obo": "<go_obo>",
+      "reactome_gmt": "<reactome_gmt>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "annotated_de",
+        "enrichment_manifest",
+        "go_gsea",
+        "go_gsea_plot",
+        "go_ora",
+        "go_ora_plot",
+        "output_dir",
+        "reactome_gsea",
+        "reactome_gsea_plot",
+        "reactome_ora",
+        "reactome_ora_plot"
+      ]
+    },
+    "outputs": {
+      "annotated_de": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "enrichment_manifest": {
+        "format": "json",
+        "type": "file"
+      },
+      "go_gsea": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "go_gsea_plot": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "go_ora": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "go_ora_plot": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      },
+      "reactome_gsea": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "reactome_gsea_plot": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "reactome_ora": {
+        "format": "tsv",
+        "type": "file"
+      },
+      "reactome_ora_plot": {
+        "format": "tsv",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "annotation_gtf": {
+        "formats": [
+          "gtf"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "de_results": {
+        "formats": [
+          "tsv"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "enrichment_script": {
+        "formats": [
+          "py"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "go_gaf": {
+        "formats": [
+          "gaf.gz"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "go_obo": {
+        "formats": [
+          "obo"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "reactome_gmt": {
+        "formats": [
+          "gmt"
+        ],
+        "required": true,
+        "type": "file"
+      }
+    }
+  },
+  "samtools": {
+    "golden_request": {
+      "alignment": "<alignment>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "bam"
+      ]
+    },
+    "outputs": {
+      "bam": {
+        "format": "bam",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "alignment": {
+        "format": "sam",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "samtools_fastq": {
+    "golden_request": {
+      "bam": "<bam>",
+      "threads": "<threads>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "long_reads"
+      ]
+    },
+    "outputs": {
+      "long_reads": {
+        "type": "path"
+      }
+    },
+    "parameters": {
+      "bam": {
+        "required": true,
+        "type": "path"
+      },
+      "threads": {
+        "required": true,
+        "type": "integer"
+      }
+    }
+  },
+  "scapp": {
+    "golden_request": {
+      "assembly_graph": "<assembly_graph>",
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "scapp_predictions"
+      ]
+    },
+    "outputs": {
+      "scapp_predictions": {
+        "format": "fasta",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "assembly_graph": {
+        "format": "fastg",
+        "required": true,
+        "type": "file"
+      },
+      "max_k": {
+        "minimum": 1,
+        "type": "integer"
+      },
+      "read1": {
+        "format": "fastq.gz",
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "format": "fastq.gz",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "semibin": {
+    "golden_request": {
+      "assembly": "<assembly>",
+      "bam": "<bam>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "output_dir"
+      ]
+    },
+    "outputs": {
+      "output_dir": {
+        "type": "directory"
+      }
+    },
+    "parameters": {
+      "assembly": {
+        "format": "fasta",
+        "required": true,
+        "type": "file"
+      },
+      "bam": {
+        "format": "bam",
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "spades": {
+    "golden_request": {
+      "clean_read1": "<clean_read1>",
+      "clean_read2": "<clean_read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "contigs_fasta",
+        "output_dir",
+        "scaffolds_fasta"
+      ]
+    },
+    "outputs": {
+      "contigs_fasta": {
+        "format": "fasta",
+        "type": "file"
+      },
+      "output_dir": {
+        "type": "directory"
+      },
+      "scaffolds_fasta": {
+        "format": "fasta",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "clean_read1": {
+        "formats": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "clean_read2": {
+        "formats": [
+          "fastq",
+          "fastq.gz"
+        ],
+        "required": true,
+        "type": "file"
+      },
+      "memory_gb": {
+        "default": 80,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "threads": {
+        "default": 4,
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  },
+  "star": {
+    "golden_request": {
+      "genome_index": "<genome_index>",
+      "output_prefix": "<output_prefix>",
+      "read1": "<read1>",
+      "read2": "<read2>"
+    },
+    "golden_response": {
+      "evidence_label": "synthetic_control_flow_evidence_not_biological_validity",
+      "exit_code": 0,
+      "outputs": [
+        "bam"
+      ]
+    },
+    "outputs": {
+      "bam": {
+        "format": "bam",
+        "type": "file"
+      }
+    },
+    "parameters": {
+      "genome_index": {
+        "required": true,
+        "type": "directory"
+      },
+      "output_prefix": {
+        "required": true,
+        "type": "string"
+      },
+      "read1": {
+        "required": true,
+        "type": "file"
+      },
+      "read2": {
+        "required": true,
+        "type": "file"
+      },
+      "threads": {
+        "minimum": 1,
+        "type": "integer"
+      }
+    }
+  }
+}

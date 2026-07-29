@@ -1,0 +1,5 @@
+{
+  "root_cause": "missing_database",
+  "task_id": "plasmid_t3_missing_database",
+  "terminal_state": "blocked"
+}

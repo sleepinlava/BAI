@@ -1,0 +1,2207 @@
+{
+  "clean_input_sha256": [
+    {
+      "path": "config.yaml",
+      "sha256": "e39aa0316af3065b1b8417012c51df64f21b6b9490a0afa791fb65f0cd35087f"
+    },
+    {
+      "path": "reads/META1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/META1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/bakta_db/IDENTITY",
+      "sha256": "b9f2fb47b97dcea1b1747dbea3f4e536a1ae25da55aeae6b9e5fdf4bee07721e"
+    },
+    {
+      "path": "resources/genomad_db/IDENTITY",
+      "sha256": "0fb89e3e10f0ddfe1adf1f49aaef247e8563099a92b5e3d4a59a801d4c14c73a"
+    },
+    {
+      "path": "resources/genomad_db/genomad_db/README",
+      "sha256": "68a4010e437f00639a4c841ac331c74c135e0c027e71d286dba2dff3f800bc37"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/IDENTITY",
+      "sha256": "3771144cdd9450b9c81855ab1fc870678b4f981e300bcbe8da30d405024f0818"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/config/README",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/synthetic_replicons.fsa",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "d0e7ca6ae7529bc877a2b2ad282c353950391fcf314645ed135419f8316e255b"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "e133031b2952354c9cffd14d67fc115fc9d61e01a748a2c9c3f831294a9d9865"
+    }
+  ],
+  "compiled_plan": {
+    "analysis_type": "metagenomic_plasmid",
+    "enabled_steps": [
+      "META1_abundance_bowtie2",
+      "META1_abundance_coverm",
+      "META1_abundance_samtools",
+      "META1_annotation_bakta",
+      "META1_assembly_megahit",
+      "META1_plasmid_consensus_internal",
+      "META1_plasmid_detection_genomad",
+      "META1_qc_fastp",
+      "META1_typing_plasmidfinder",
+      "report_markdown"
+    ],
+    "mode": "auto",
+    "outdir": "/task/work/gold-plan",
+    "project_name": "plasmid_core_demo",
+    "schema_version": "abi.compiled_plan.v1",
+    "selected_tools": [
+      "bakta",
+      "bowtie2",
+      "coverm",
+      "fastp",
+      "genomad",
+      "megahit",
+      "plasmidfinder",
+      "report_markdown",
+      "samtools"
+    ],
+    "steps": [
+      {
+        "category": "qc",
+        "container_image": null,
+        "dependencies": [],
+        "env_name": "easymeta-p0",
+        "execution_kind": "external",
+        "inputs": {
+          "read1": "/task/input/reads/META1_R1.fastq",
+          "read2": "/task/input/reads/META1_R2.fastq",
+          "sample_id": "META1",
+          "threads": "2"
+        },
+        "outputs": {
+          "clean_read1": "/task/work/gold-plan/01_qc/META1/META1_R1.clean.fastq.gz",
+          "clean_read2": "/task/work/gold-plan/01_qc/META1/META1_R2.clean.fastq.gz",
+          "html_report": "/task/work/gold-plan/01_qc/META1/META1.fastp.html",
+          "json_report": "/task/work/gold-plan/01_qc/META1/META1.fastp.json",
+          "output_dir": "/task/work/gold-plan/01_qc/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_json.summary.after_filtering.total_reads > 0",
+              "output_json.summary.after_filtering.total_reads <= output_json.summary.before_filtering.total_reads"
+            ],
+            "inputs": {
+              "read1": {
+                "contract": {
+                  "extensions": [
+                    ".fastq",
+                    ".fastq.gz",
+                    ".fq",
+                    ".fq.gz"
+                  ],
+                  "min_size": "1KB"
+                },
+                "format": "fastq",
+                "source": "sample_sheet",
+                "type": "file"
+              },
+              "read2": {
+                "contract": {
+                  "extensions": [
+                    ".fastq",
+                    ".fastq.gz",
+                    ".fq",
+                    ".fq.gz"
+                  ],
+                  "min_size": "1KB"
+                },
+                "format": "fastq",
+                "source": "sample_sheet",
+                "type": "file"
+              },
+              "sample_id": {
+                "source": "sample_sheet",
+                "type": "string"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "clean_read1": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+                "type": "file"
+              },
+              "clean_read2": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+                "type": "file"
+              },
+              "html_report": {
+                "format": "html",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.html",
+                "type": "file"
+              },
+              "json_report": {
+                "contract": {
+                  "required_keys": [
+                    "summary"
+                  ],
+                  "schema": {
+                    "summary.after_filtering.total_reads": {
+                      "min": 0,
+                      "type": "integer"
+                    },
+                    "summary.before_filtering.total_reads": {
+                      "min": 0,
+                      "type": "integer"
+                    }
+                  }
+                },
+                "format": "json",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.json",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "qc_fastp",
+          "_explicit_dependencies": [],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": "20GB",
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_qc_fastp",
+        "tool_id": "fastp",
+        "validated_paths": [
+          "/task/work/gold-plan/01_qc/META1/META1_R1.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/META1/META1_R2.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/META1/META1.fastp.html",
+          "/task/work/gold-plan/01_qc/META1/META1.fastp.json",
+          "/task/work/gold-plan/01_qc/META1"
+        ]
+      },
+      {
+        "category": "assembly",
+        "container_image": null,
+        "dependencies": [],
+        "env_name": "autoplasm-assembly",
+        "execution_kind": "external",
+        "inputs": {
+          "read1": "/task/work/gold-plan/01_qc/META1/META1_R1.clean.fastq.gz",
+          "read2": "/task/work/gold-plan/01_qc/META1/META1_R2.clean.fastq.gz",
+          "threads": "2"
+        },
+        "outputs": {
+          "assembly": "/task/work/gold-plan/02_assembly/META1/final.contigs.fa",
+          "output_dir": "/task/work/gold-plan/02_assembly/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "read1": {
+                "fallback": "qc_fastp.clean_read1",
+                "format": "fastq.gz",
+                "source": "host_removal_bowtie2.clean_read1",
+                "type": "file"
+              },
+              "read2": {
+                "fallback": "qc_fastp.clean_read2",
+                "format": "fastq.gz",
+                "source": "host_removal_bowtie2.clean_read2",
+                "type": "file"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "assembly": {
+                "contract": {
+                  "min_contigs": 1,
+                  "min_size": "500B"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/final.contigs.fa",
+                "type": "file"
+              },
+              "output_dir": {
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "assembly_megahit",
+          "_explicit_dependencies": [],
+          "memory_bytes": 96636764160,
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 16,
+          "disk": null,
+          "memory": "64GB",
+          "walltime": "08:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_assembly_megahit",
+        "tool_id": "megahit",
+        "validated_paths": [
+          "/task/work/gold-plan/02_assembly/META1/final.contigs.fa",
+          "/task/work/gold-plan/02_assembly/META1"
+        ]
+      },
+      {
+        "category": "plasmid_detection",
+        "container_image": null,
+        "dependencies": [
+          "META1_assembly_megahit"
+        ],
+        "env_name": "autoplasm-plasmid-detect",
+        "execution_kind": "external",
+        "inputs": {
+          "assembly": "/task/work/gold-plan/02_assembly/META1/final.contigs.fa",
+          "database": "/task/input/resources/genomad_db",
+          "threads": "2"
+        },
+        "outputs": {
+          "output_dir": "/task/work/gold-plan/04_plasmid_detection/META1",
+          "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_plasmid.fna",
+          "plasmid_summary": "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_plasmid_summary.tsv",
+          "virus_summary": "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_virus_summary.tsv"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.plasmid_summary exists"
+            ],
+            "inputs": {
+              "assembly": {
+                "format": "fasta",
+                "source": "{active_assembly_node}.assembly",
+                "type": "file"
+              },
+              "database": {
+                "contract": {
+                  "contains": [
+                    "version.txt"
+                  ]
+                },
+                "source": "config.resources.genomad.database",
+                "type": "directory"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "plasmid_contigs": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid.fna",
+                "type": "file"
+              },
+              "plasmid_summary": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid_summary.tsv",
+                "type": "file"
+              },
+              "virus_summary": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_virus_summary.tsv",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "plasmid_detect_genomad",
+          "_explicit_dependencies": [
+            "META1_assembly_megahit"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_plasmid_detection_genomad",
+        "tool_id": "genomad",
+        "validated_paths": [
+          "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_plasmid_summary.tsv",
+          "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_plasmid.fna",
+          "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_virus_summary.tsv",
+          "/task/work/gold-plan/04_plasmid_detection/META1"
+        ]
+      },
+      {
+        "category": "plasmid_consensus",
+        "container_image": null,
+        "dependencies": [
+          "META1_plasmid_detection_genomad"
+        ],
+        "env_name": "",
+        "execution_kind": "internal_worker",
+        "inputs": {
+          "consensus_method": "intersection",
+          "genomad_summary": "/task/work/gold-plan/04_plasmid_detection/META1/contigs_summary/contigs_plasmid_summary.tsv",
+          "plasme_predictions": "",
+          "plasx_predictions": "",
+          "platon_predictions": "",
+          "scapp_predictions": "",
+          "tool_weights": {}
+        },
+        "outputs": {
+          "output_dir": "/task/work/gold-plan/04_plasmid_detection/META1",
+          "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "consensus_method": {
+                "default": "intersection",
+                "enum": [
+                  "intersection",
+                  "majority_vote",
+                  "single_tool",
+                  "weighted_vote"
+                ],
+                "type": "string"
+              },
+              "genomad_summary": {
+                "format": "tsv",
+                "source": "plasmid_detect_genomad.plasmid_summary",
+                "type": "file"
+              },
+              "plasme_predictions": {
+                "format": "tsv",
+                "required": false,
+                "source": "plasmid_detect_plasme.plasme_predictions",
+                "type": "file"
+              },
+              "plasx_predictions": {
+                "format": "tsv",
+                "required": false,
+                "source": "plasmid_detect_plasx.plasx_predictions",
+                "type": "file"
+              },
+              "platon_predictions": {
+                "required": false,
+                "source": "plasmid_detect_platon.output_dir",
+                "type": "directory"
+              },
+              "scapp_predictions": {
+                "format": "fasta",
+                "required": false,
+                "source": "plasmid_detect_scapp.scapp_predictions",
+                "type": "file"
+              },
+              "tool_weights": {
+                "default": {},
+                "description": "Per-tool weight map for weighted_vote strategy. Tools not listed receive a default weight of 1.0. Example: {genomad: 0.6, plasme: 0.25, plasx: 0.15}\n",
+                "required": false,
+                "type": "object"
+              }
+            },
+            "outputs": {
+              "plasmid_contigs": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "fasta",
+                "path": "{outdir}/04_plasmid_detection/{sample_id}/plasmid_contigs.fasta",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "plasmid_consensus",
+          "_explicit_dependencies": [
+            "META1_plasmid_detection_genomad"
+          ],
+          "_internal_handler": {
+            "execution_scope": "worker",
+            "handler_id": "metagenomic_plasmid.plasmid_consensus"
+          },
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 1,
+          "disk": null,
+          "memory": "4GB",
+          "walltime": "01:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_plasmid_consensus_internal",
+        "tool_id": "internal",
+        "validated_paths": [
+          "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta",
+          "/task/work/gold-plan/04_plasmid_detection/META1"
+        ]
+      },
+      {
+        "category": "abundance",
+        "container_image": null,
+        "dependencies": [
+          "META1_plasmid_consensus_internal"
+        ],
+        "env_name": "autoplasm-abundance",
+        "execution_kind": "external",
+        "inputs": {
+          "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta",
+          "read1": "/task/work/gold-plan/01_qc/META1/META1_R1.clean.fastq.gz",
+          "read2": "/task/work/gold-plan/01_qc/META1/META1_R2.clean.fastq.gz",
+          "sample_id": "single_sample",
+          "threads": "2"
+        },
+        "outputs": {
+          "alignment": "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.sam",
+          "output_dir": "/task/work/gold-plan/10_abundance/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "plasmid_contigs": {
+                "format": "fasta",
+                "source": "plasmid_consensus.plasmid_contigs",
+                "type": "file"
+              },
+              "read1": {
+                "fallback": "qc_fastp.clean_read1",
+                "format": "fastq.gz",
+                "source": "host_removal_bowtie2.clean_read1",
+                "type": "file"
+              },
+              "read2": {
+                "fallback": "qc_fastp.clean_read2",
+                "format": "fastq.gz",
+                "source": "host_removal_bowtie2.clean_read2",
+                "type": "file"
+              },
+              "sample_id": {
+                "type": "string"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "alignment": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "sam",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "abundance_bowtie2",
+          "_explicit_dependencies": [
+            "META1_plasmid_consensus_internal"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_abundance_bowtie2",
+        "tool_id": "bowtie2",
+        "validated_paths": [
+          "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.sam",
+          "/task/work/gold-plan/10_abundance/META1"
+        ]
+      },
+      {
+        "category": "annotation",
+        "container_image": null,
+        "dependencies": [
+          "META1_plasmid_consensus_internal"
+        ],
+        "env_name": "autoplasm-annotation",
+        "execution_kind": "external",
+        "inputs": {
+          "database": "/task/input/resources/bakta_db",
+          "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta",
+          "threads": "2"
+        },
+        "outputs": {
+          "annotations": "",
+          "output_dir": "/task/work/gold-plan/08_annotation/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "database": {
+                "source": "config.resources.bakta.database",
+                "type": "directory"
+              },
+              "plasmid_contigs": {
+                "format": "fasta",
+                "source": "plasmid_consensus.plasmid_contigs",
+                "type": "file"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "annotations": {
+                "contract": {
+                  "file_exists": true,
+                  "min_size": "0B"
+                },
+                "format": "tsv",
+                "type": "file"
+              },
+              "output_dir": {
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "annotation_bakta",
+          "_explicit_dependencies": [
+            "META1_plasmid_consensus_internal"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_annotation_bakta",
+        "tool_id": "bakta",
+        "validated_paths": [
+          "/task/work/gold-plan/08_annotation/META1"
+        ]
+      },
+      {
+        "category": "typing",
+        "container_image": null,
+        "dependencies": [
+          "META1_plasmid_consensus_internal"
+        ],
+        "env_name": "autoplasm-annotation",
+        "execution_kind": "external",
+        "inputs": {
+          "database": "/task/input/resources/plasmidfinder_valid",
+          "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta"
+        },
+        "outputs": {
+          "output_dir": "/task/work/gold-plan/06_plasmid_typing/META1",
+          "typing_results": ""
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "database": {
+                "source": "config.resources.plasmidfinder.database",
+                "type": "directory"
+              },
+              "plasmid_contigs": {
+                "format": "fasta",
+                "source": "plasmid_consensus.plasmid_contigs",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "typing_results": {
+                "contract": {
+                  "file_exists": true,
+                  "min_size": "0B"
+                },
+                "format": "tsv",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "typing_plasmidfinder",
+          "_explicit_dependencies": [
+            "META1_plasmid_consensus_internal"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": null,
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_typing_plasmidfinder",
+        "tool_id": "plasmidfinder",
+        "validated_paths": [
+          "/task/work/gold-plan/06_plasmid_typing/META1"
+        ]
+      },
+      {
+        "category": "abundance",
+        "container_image": null,
+        "dependencies": [
+          "META1_abundance_bowtie2"
+        ],
+        "env_name": "autoplasm-abundance",
+        "execution_kind": "external",
+        "inputs": {
+          "alignment": "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.sam",
+          "threads": "2"
+        },
+        "outputs": {
+          "bam": "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.bam",
+          "output_dir": "/task/work/gold-plan/10_abundance/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "alignment": {
+                "format": "sam",
+                "source": "{active_abundance_mapper}.alignment",
+                "type": "file"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "bam": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "bam",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.bam",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "abundance_samtools",
+          "_explicit_dependencies": [
+            "META1_abundance_bowtie2"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_abundance_samtools",
+        "tool_id": "samtools",
+        "validated_paths": [
+          "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.bam",
+          "/task/work/gold-plan/10_abundance/META1"
+        ]
+      },
+      {
+        "category": "abundance",
+        "container_image": null,
+        "dependencies": [
+          "META1_abundance_samtools"
+        ],
+        "env_name": "autoplasm-abundance",
+        "execution_kind": "external",
+        "inputs": {
+          "bam": "/task/work/gold-plan/10_abundance/META1/META1.plasmid_alignment.bam",
+          "threads": "2"
+        },
+        "outputs": {
+          "abundance": "/task/work/gold-plan/10_abundance/META1/META1.coverm.tsv",
+          "output_dir": "/task/work/gold-plan/10_abundance/META1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "bam": {
+                "format": "bam",
+                "source": "abundance_samtools.bam",
+                "type": "file"
+              },
+              "threads": {
+                "default": 1,
+                "type": "integer"
+              }
+            },
+            "outputs": {
+              "abundance": {
+                "contract": {
+                  "extensions": [
+                    ".tsv"
+                  ],
+                  "file_exists": true,
+                  "min_size": "0B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.coverm.tsv",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "abundance_coverm",
+          "_explicit_dependencies": [
+            "META1_abundance_samtools"
+          ],
+          "mode": "auto",
+          "sample_id": "META1",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "META1",
+        "step_id": "META1_abundance_coverm",
+        "tool_id": "coverm",
+        "validated_paths": [
+          "/task/work/gold-plan/10_abundance/META1/META1.coverm.tsv",
+          "/task/work/gold-plan/10_abundance/META1"
+        ]
+      },
+      {
+        "category": "report",
+        "container_image": null,
+        "dependencies": [
+          "META1_plasmid_consensus_internal",
+          "META1_typing_plasmidfinder",
+          "META1_annotation_bakta"
+        ],
+        "env_name": "autoplasm-base",
+        "execution_kind": "external",
+        "inputs": {
+          "project_outdir": "/task/work/gold-plan"
+        },
+        "outputs": {
+          "methods_md": "",
+          "output_dir": "/task/work/gold-plan/report",
+          "report_html": "",
+          "report_md": ""
+        },
+        "params": {
+          "_contract": {
+            "assertions": [],
+            "inputs": {
+              "project_outdir": {
+                "source": "config.outdir",
+                "type": "directory"
+              }
+            },
+            "outputs": {
+              "methods_md": {
+                "contract": {
+                  "file_exists": true,
+                  "min_size": "1KB"
+                },
+                "format": "markdown",
+                "type": "file"
+              },
+              "report_html": {
+                "contract": {
+                  "file_exists": true,
+                  "min_size": "1KB"
+                },
+                "format": "html",
+                "type": "file"
+              },
+              "report_md": {
+                "contract": {
+                  "file_exists": true,
+                  "min_size": "1KB"
+                },
+                "format": "markdown",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "report_markdown",
+          "_explicit_dependencies": [
+            "META1_plasmid_consensus_internal",
+            "META1_typing_plasmidfinder",
+            "META1_annotation_bakta"
+          ],
+          "mode": "auto",
+          "threads": 2
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 1,
+          "disk": null,
+          "memory": "2GB",
+          "walltime": "00:30:00"
+        },
+        "sample_id": null,
+        "step_id": "report_markdown",
+        "tool_id": "report_markdown",
+        "validated_paths": [
+          "/task/work/gold-plan/report"
+        ]
+      }
+    ],
+    "threads": 2,
+    "warnings": [
+      {
+        "message": "Tool 'internal' not in catalog; no environment resolved",
+        "step_id": "META1_plasmid_consensus_internal"
+      }
+    ]
+  },
+  "contract_plan_summary": {
+    "analysis_type": "metagenomic_plasmid",
+    "dag_edges": [
+      {
+        "from": "qc_fastp",
+        "to": "qc_fastqc_clean"
+      },
+      {
+        "from": "qc_fastp",
+        "to": "qc_multiqc_illumina"
+      },
+      {
+        "from": "qc_fastqc_raw",
+        "to": "qc_multiqc_illumina"
+      },
+      {
+        "from": "qc_fastqc_clean",
+        "to": "qc_multiqc_illumina"
+      },
+      {
+        "from": "long_reads_provided",
+        "to": "qc_nanoplot"
+      },
+      {
+        "from": "basecalling_dorado",
+        "to": "qc_nanoplot"
+      },
+      {
+        "from": "long_read_bam_to_fastq",
+        "to": "qc_nanoplot"
+      },
+      {
+        "from": "long_reads_provided",
+        "to": "qc_filtlong"
+      },
+      {
+        "from": "basecalling_dorado",
+        "to": "qc_filtlong"
+      },
+      {
+        "from": "long_read_bam_to_fastq",
+        "to": "qc_filtlong"
+      },
+      {
+        "from": "qc_nanoplot",
+        "to": "qc_multiqc_ont"
+      },
+      {
+        "from": "qc_filtlong",
+        "to": "qc_multiqc_ont"
+      },
+      {
+        "from": "long_reads_provided",
+        "to": "qc_hifiadapterfilt"
+      },
+      {
+        "from": "long_read_bam_to_fastq",
+        "to": "qc_hifiadapterfilt"
+      },
+      {
+        "from": "qc_hifiadapterfilt",
+        "to": "qc_multiqc_hifi"
+      },
+      {
+        "from": "qc_fastp",
+        "to": "host_removal_bowtie2"
+      },
+      {
+        "from": "qc_filtlong",
+        "to": "host_removal_minimap2_long"
+      },
+      {
+        "from": "qc_hifiadapterfilt",
+        "to": "host_removal_minimap2_long"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "assembly_megahit"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "assembly_metaspades"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "assembly_metaflye"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "assembly_hifiasm"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "assembly_opera_ms"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "assembly_opera_ms"
+      },
+      {
+        "from": "assembly_metaflye",
+        "to": "polishing_medaka"
+      },
+      {
+        "from": "assembly_megahit",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_metaspades",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_metaflye",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_hifiasm",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_opera_ms",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_provided",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "polishing_medaka",
+        "to": "assembly_qc_quast"
+      },
+      {
+        "from": "assembly_megahit",
+        "to": "contig_coverage_bowtie2"
+      },
+      {
+        "from": "assembly_metaspades",
+        "to": "contig_coverage_bowtie2"
+      },
+      {
+        "from": "assembly_opera_ms",
+        "to": "contig_coverage_bowtie2"
+      },
+      {
+        "from": "assembly_provided",
+        "to": "contig_coverage_bowtie2"
+      },
+      {
+        "from": "assembly_metaflye",
+        "to": "contig_coverage_minimap2"
+      },
+      {
+        "from": "assembly_hifiasm",
+        "to": "contig_coverage_minimap2"
+      },
+      {
+        "from": "assembly_opera_ms",
+        "to": "contig_coverage_minimap2"
+      },
+      {
+        "from": "polishing_medaka",
+        "to": "contig_coverage_minimap2"
+      },
+      {
+        "from": "contig_coverage_bowtie2",
+        "to": "contig_coverage_samtools"
+      },
+      {
+        "from": "contig_coverage_minimap2",
+        "to": "contig_coverage_samtools"
+      },
+      {
+        "from": "contig_coverage_samtools",
+        "to": "contig_coverage_coverm"
+      },
+      {
+        "from": "assembly_megahit",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_metaspades",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_metaflye",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_hifiasm",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_opera_ms",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_provided",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "polishing_medaka",
+        "to": "plasmid_detect_genomad"
+      },
+      {
+        "from": "assembly_qc_quast",
+        "to": "plasmid_detect_plasme"
+      },
+      {
+        "from": "assembly_qc_quast",
+        "to": "plasmid_detect_plasx"
+      },
+      {
+        "from": "assembly_qc_quast",
+        "to": "plasmid_detect_platon"
+      },
+      {
+        "from": "assembly_metaspades",
+        "to": "plasmid_detect_scapp"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "plasmid_detect_scapp"
+      },
+      {
+        "from": "plasmid_detect_genomad",
+        "to": "plasmid_consensus"
+      },
+      {
+        "from": "plasmid_detect_plasme",
+        "to": "plasmid_consensus"
+      },
+      {
+        "from": "plasmid_detect_plasx",
+        "to": "plasmid_consensus"
+      },
+      {
+        "from": "plasmid_detect_platon",
+        "to": "plasmid_consensus"
+      },
+      {
+        "from": "plasmid_detect_scapp",
+        "to": "plasmid_consensus"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_structure"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_binning_plasmaag"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_binning_gplas2"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_binning_mob_recon"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "typing_plasmidfinder"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "typing_mob_typer"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "typing_copla"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "host_prediction_metaphlan"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "host_prediction_metaphlan"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "host_prediction_kraken2"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "host_prediction_plasmidhostfinder"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_prodigal"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_bakta"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_amrfinderplus"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_abricate"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_isescan"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_integronfinder"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_mob_suite"
+      },
+      {
+        "from": "contig_coverage_samtools",
+        "to": "mag_metabat2"
+      },
+      {
+        "from": "mag_metabat2",
+        "to": "mag_checkm2"
+      },
+      {
+        "from": "mag_checkm2",
+        "to": "mag_gtdbtk"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "host_plasmid_link_coabundance"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "host_plasmid_link_coabundance"
+      },
+      {
+        "from": "host_prediction_metaphlan",
+        "to": "host_plasmid_link_coabundance"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "host_plasmid_link_sequence"
+      },
+      {
+        "from": "mag_gtdbtk",
+        "to": "host_plasmid_link_sequence"
+      },
+      {
+        "from": "mag_gtdbtk",
+        "to": "host_plasmid_link_crispr"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "host_plasmid_link_longread"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "host_plasmid_link_longread"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "abundance_bowtie2"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "abundance_bowtie2"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "abundance_minimap2"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "abundance_minimap2"
+      },
+      {
+        "from": "abundance_bowtie2",
+        "to": "abundance_samtools"
+      },
+      {
+        "from": "abundance_minimap2",
+        "to": "abundance_samtools"
+      },
+      {
+        "from": "abundance_samtools",
+        "to": "abundance_coverm"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "abundance_bowtie2_short"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "abundance_bowtie2_short"
+      },
+      {
+        "from": "abundance_bowtie2_short",
+        "to": "abundance_samtools_short"
+      },
+      {
+        "from": "abundance_samtools_short",
+        "to": "abundance_coverm_short"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "abundance_minimap2_long"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "abundance_minimap2_long"
+      },
+      {
+        "from": "abundance_minimap2_long",
+        "to": "abundance_samtools_long"
+      },
+      {
+        "from": "abundance_samtools_long",
+        "to": "abundance_coverm_long"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "multisample_diversity"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "multisample_differential_abundance"
+      },
+      {
+        "from": "abundance_coverm",
+        "to": "multisample_differential_deseq2"
+      },
+      {
+        "from": "abundance_coverm",
+        "to": "multisample_network_prepare"
+      },
+      {
+        "from": "multisample_network_prepare",
+        "to": "multisample_network_fastspar"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_catalog_prepare"
+      },
+      {
+        "from": "plasmid_catalog_prepare",
+        "to": "comparative_mmseqs2"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "comparative_blast"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "comparative_mummer"
+      },
+      {
+        "from": "annotation_bakta",
+        "to": "comparative_clinker"
+      },
+      {
+        "from": "annotation_bakta",
+        "to": "visualization_clinker_gene_maps"
+      },
+      {
+        "from": "comparative_clinker",
+        "to": "visualization_clinker_gene_maps"
+      },
+      {
+        "from": "annotation_bakta",
+        "to": "visualization_pycirclize"
+      },
+      {
+        "from": "typing_plasmidfinder",
+        "to": "visualization_pycirclize"
+      },
+      {
+        "from": "typing_mob_typer",
+        "to": "visualization_pycirclize"
+      },
+      {
+        "from": "host_plasmid_link_coabundance",
+        "to": "visualization_network"
+      },
+      {
+        "from": "host_plasmid_link_sequence",
+        "to": "visualization_network"
+      },
+      {
+        "from": "multisample_network_fastspar",
+        "to": "visualization_network"
+      },
+      {
+        "from": "host_removal_bowtie2",
+        "to": "assembly_hybridspades"
+      },
+      {
+        "from": "host_removal_minimap2_long",
+        "to": "assembly_hybridspades"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_binning_scapp"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "plasmid_binning_recycler"
+      },
+      {
+        "from": "contig_coverage_samtools",
+        "to": "plasmid_binning_recycler"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "typing_conjscan"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "typing_macsyfinder"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_rgi"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "annotation_eggnog_mapper"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "mag_concoct"
+      },
+      {
+        "from": "contig_coverage_samtools",
+        "to": "mag_semibin"
+      },
+      {
+        "from": "mag_metabat2",
+        "to": "mag_das_tool"
+      },
+      {
+        "from": "mag_concoct",
+        "to": "mag_das_tool"
+      },
+      {
+        "from": "annotation_bakta",
+        "to": "visualization_dna_features"
+      },
+      {
+        "from": "plasmid_consensus",
+        "to": "report_markdown"
+      },
+      {
+        "from": "plasmid_structure",
+        "to": "report_markdown"
+      },
+      {
+        "from": "plasmid_binning_plasmaag",
+        "to": "report_markdown"
+      },
+      {
+        "from": "plasmid_binning_gplas2",
+        "to": "report_markdown"
+      },
+      {
+        "from": "plasmid_binning_mob_recon",
+        "to": "report_markdown"
+      },
+      {
+        "from": "typing_plasmidfinder",
+        "to": "report_markdown"
+      },
+      {
+        "from": "typing_mob_typer",
+        "to": "report_markdown"
+      },
+      {
+        "from": "typing_copla",
+        "to": "report_markdown"
+      },
+      {
+        "from": "annotation_bakta",
+        "to": "report_markdown"
+      },
+      {
+        "from": "annotation_amrfinderplus",
+        "to": "report_markdown"
+      },
+      {
+        "from": "annotation_abricate",
+        "to": "report_markdown"
+      },
+      {
+        "from": "annotation_isescan",
+        "to": "report_markdown"
+      },
+      {
+        "from": "annotation_integronfinder",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_prediction_metaphlan",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_prediction_kraken2",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_plasmid_link_coabundance",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_plasmid_link_sequence",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_plasmid_link_crispr",
+        "to": "report_markdown"
+      },
+      {
+        "from": "host_plasmid_link_longread",
+        "to": "report_markdown"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "report_markdown"
+      },
+      {
+        "from": "multisample_diversity",
+        "to": "report_markdown"
+      },
+      {
+        "from": "multisample_differential_abundance",
+        "to": "report_markdown"
+      },
+      {
+        "from": "multisample_differential_deseq2",
+        "to": "report_markdown"
+      },
+      {
+        "from": "multisample_network_fastspar",
+        "to": "report_markdown"
+      },
+      {
+        "from": "comparative_mmseqs2",
+        "to": "report_markdown"
+      },
+      {
+        "from": "comparative_blast",
+        "to": "report_markdown"
+      },
+      {
+        "from": "comparative_mummer",
+        "to": "report_markdown"
+      },
+      {
+        "from": "comparative_clinker",
+        "to": "report_markdown"
+      },
+      {
+        "from": "visualization_clinker_gene_maps",
+        "to": "report_markdown"
+      },
+      {
+        "from": "visualization_pycirclize",
+        "to": "report_markdown"
+      },
+      {
+        "from": "visualization_network",
+        "to": "report_markdown"
+      },
+      {
+        "from": "assembly_qc_quast",
+        "to": "report_markdown"
+      },
+      {
+        "from": "contig_coverage_coverm",
+        "to": "report_markdown"
+      }
+    ],
+    "stages": [
+      {
+        "category": "basecalling",
+        "id": "long_reads_provided",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "basecalling",
+        "id": "basecalling_dorado",
+        "optional": true,
+        "tool_id": "dorado"
+      },
+      {
+        "category": "basecalling",
+        "id": "long_read_bam_to_fastq",
+        "optional": true,
+        "tool_id": "samtools_fastq"
+      },
+      {
+        "category": "qc",
+        "id": "qc_fastp",
+        "optional": false,
+        "tool_id": "fastp"
+      },
+      {
+        "category": "qc",
+        "id": "qc_fastqc_raw",
+        "optional": true,
+        "tool_id": "fastqc"
+      },
+      {
+        "category": "qc",
+        "id": "qc_fastqc_clean",
+        "optional": true,
+        "tool_id": "fastqc"
+      },
+      {
+        "category": "qc",
+        "id": "qc_multiqc_illumina",
+        "optional": true,
+        "tool_id": "multiqc"
+      },
+      {
+        "category": "qc",
+        "id": "qc_nanoplot",
+        "optional": false,
+        "tool_id": "nanoplot"
+      },
+      {
+        "category": "qc",
+        "id": "qc_filtlong",
+        "optional": false,
+        "tool_id": "filtlong"
+      },
+      {
+        "category": "qc",
+        "id": "qc_multiqc_ont",
+        "optional": true,
+        "tool_id": "multiqc"
+      },
+      {
+        "category": "qc",
+        "id": "qc_hifiadapterfilt",
+        "optional": false,
+        "tool_id": "hifiadapterfilt"
+      },
+      {
+        "category": "qc",
+        "id": "qc_multiqc_hifi",
+        "optional": true,
+        "tool_id": "multiqc"
+      },
+      {
+        "category": "host_removal",
+        "id": "host_removal_bowtie2",
+        "optional": true,
+        "tool_id": "bowtie2_host_removal"
+      },
+      {
+        "category": "host_removal",
+        "id": "host_removal_minimap2_long",
+        "optional": true,
+        "tool_id": "minimap2_host_removal"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_megahit",
+        "optional": false,
+        "tool_id": "megahit"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_metaspades",
+        "optional": true,
+        "tool_id": "metaspades"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_metaflye",
+        "optional": false,
+        "tool_id": "metaflye"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_hifiasm",
+        "optional": false,
+        "tool_id": "hifiasm_meta"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_opera_ms",
+        "optional": false,
+        "tool_id": "opera_ms"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_provided",
+        "optional": false,
+        "tool_id": "internal"
+      },
+      {
+        "category": "polishing",
+        "id": "polishing_medaka",
+        "optional": true,
+        "tool_id": "medaka"
+      },
+      {
+        "category": "assembly_qc",
+        "id": "assembly_qc_quast",
+        "optional": false,
+        "tool_id": "quast"
+      },
+      {
+        "category": "contig_coverage",
+        "id": "contig_coverage_bowtie2",
+        "optional": false,
+        "tool_id": "bowtie2"
+      },
+      {
+        "category": "contig_coverage",
+        "id": "contig_coverage_minimap2",
+        "optional": false,
+        "tool_id": "minimap2"
+      },
+      {
+        "category": "contig_coverage",
+        "id": "contig_coverage_samtools",
+        "optional": false,
+        "tool_id": "samtools"
+      },
+      {
+        "category": "contig_coverage",
+        "id": "contig_coverage_coverm",
+        "optional": false,
+        "tool_id": "coverm"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_detect_genomad",
+        "optional": false,
+        "tool_id": "genomad"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_detect_plasme",
+        "optional": true,
+        "tool_id": "plasme"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_detect_plasx",
+        "optional": true,
+        "tool_id": "plasx"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_detect_platon",
+        "optional": true,
+        "tool_id": "platon"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_detect_scapp",
+        "optional": true,
+        "tool_id": "scapp"
+      },
+      {
+        "category": "plasmid_consensus",
+        "id": "plasmid_consensus",
+        "optional": false,
+        "tool_id": "internal"
+      },
+      {
+        "category": "plasmid_detection",
+        "id": "plasmid_structure",
+        "optional": false,
+        "tool_id": "internal"
+      },
+      {
+        "category": "plasmid_binning",
+        "id": "plasmid_binning_plasmaag",
+        "optional": true,
+        "tool_id": "plasmaag"
+      },
+      {
+        "category": "plasmid_binning",
+        "id": "plasmid_binning_gplas2",
+        "optional": true,
+        "tool_id": "gplas2"
+      },
+      {
+        "category": "plasmid_binning",
+        "id": "plasmid_binning_mob_recon",
+        "optional": true,
+        "tool_id": "mob_suite"
+      },
+      {
+        "category": "typing",
+        "id": "typing_plasmidfinder",
+        "optional": false,
+        "tool_id": "plasmidfinder"
+      },
+      {
+        "category": "typing",
+        "id": "typing_mob_typer",
+        "optional": false,
+        "tool_id": "mob_typer"
+      },
+      {
+        "category": "typing",
+        "id": "typing_copla",
+        "optional": true,
+        "tool_id": "copla"
+      },
+      {
+        "category": "host_prediction",
+        "id": "host_prediction_metaphlan",
+        "optional": true,
+        "tool_id": "metaphlan"
+      },
+      {
+        "category": "host_prediction",
+        "id": "host_prediction_kraken2",
+        "optional": true,
+        "tool_id": "kraken2"
+      },
+      {
+        "category": "host_prediction",
+        "id": "host_prediction_plasmidhostfinder",
+        "optional": true,
+        "tool_id": "plasmidhostfinder"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_prodigal",
+        "optional": true,
+        "tool_id": "prodigal"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_bakta",
+        "optional": false,
+        "tool_id": "bakta"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_amrfinderplus",
+        "optional": false,
+        "tool_id": "amrfinderplus"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_abricate",
+        "optional": true,
+        "tool_id": "abricate"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_isescan",
+        "optional": true,
+        "tool_id": "isescan"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_integronfinder",
+        "optional": true,
+        "tool_id": "integronfinder"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_mob_suite",
+        "optional": true,
+        "tool_id": "mob_suite"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_metabat2",
+        "optional": true,
+        "tool_id": "metabat2"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_checkm2",
+        "optional": true,
+        "tool_id": "checkm2"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_gtdbtk",
+        "optional": true,
+        "tool_id": "gtdbtk"
+      },
+      {
+        "category": "host_plasmid_linking",
+        "id": "host_plasmid_link_coabundance",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "host_plasmid_linking",
+        "id": "host_plasmid_link_sequence",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "host_plasmid_linking",
+        "id": "host_plasmid_link_crispr",
+        "optional": true,
+        "tool_id": "minced"
+      },
+      {
+        "category": "host_plasmid_linking",
+        "id": "host_plasmid_link_longread",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_bowtie2",
+        "optional": false,
+        "tool_id": "bowtie2"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_minimap2",
+        "optional": false,
+        "tool_id": "minimap2"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_samtools",
+        "optional": false,
+        "tool_id": "samtools"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_coverm",
+        "optional": false,
+        "tool_id": "coverm"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_bowtie2_short",
+        "optional": false,
+        "tool_id": "bowtie2"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_samtools_short",
+        "optional": false,
+        "tool_id": "samtools"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_coverm_short",
+        "optional": false,
+        "tool_id": "coverm"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_minimap2_long",
+        "optional": false,
+        "tool_id": "minimap2"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_samtools_long",
+        "optional": false,
+        "tool_id": "samtools"
+      },
+      {
+        "category": "abundance",
+        "id": "abundance_coverm_long",
+        "optional": false,
+        "tool_id": "coverm"
+      },
+      {
+        "category": "diversity",
+        "id": "multisample_diversity",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "statistics",
+        "id": "multisample_differential_abundance",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "statistics",
+        "id": "multisample_differential_deseq2",
+        "optional": true,
+        "tool_id": "deseq2_plasmid"
+      },
+      {
+        "category": "network",
+        "id": "multisample_network_prepare",
+        "optional": true,
+        "tool_id": "internal"
+      },
+      {
+        "category": "network",
+        "id": "multisample_network_fastspar",
+        "optional": true,
+        "tool_id": "fastspar"
+      },
+      {
+        "category": "comparative_genomics",
+        "id": "plasmid_catalog_prepare",
+        "optional": false,
+        "tool_id": "internal"
+      },
+      {
+        "category": "comparative_genomics",
+        "id": "comparative_mmseqs2",
+        "optional": true,
+        "tool_id": "mmseqs2"
+      },
+      {
+        "category": "comparative_genomics",
+        "id": "comparative_blast",
+        "optional": true,
+        "tool_id": "blast"
+      },
+      {
+        "category": "comparative_genomics",
+        "id": "comparative_mummer",
+        "optional": true,
+        "tool_id": "mummer"
+      },
+      {
+        "category": "comparative_genomics",
+        "id": "comparative_clinker",
+        "optional": true,
+        "tool_id": "clinker"
+      },
+      {
+        "category": "visualization",
+        "id": "visualization_clinker_gene_maps",
+        "optional": true,
+        "tool_id": "clinker"
+      },
+      {
+        "category": "visualization",
+        "id": "visualization_pycirclize",
+        "optional": true,
+        "tool_id": "pycirclize"
+      },
+      {
+        "category": "visualization",
+        "id": "visualization_network",
+        "optional": true,
+        "tool_id": "pyvis"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_hybridspades",
+        "optional": true,
+        "tool_id": "hybridspades"
+      },
+      {
+        "category": "plasmid_binning",
+        "id": "plasmid_binning_scapp",
+        "optional": true,
+        "tool_id": "scapp"
+      },
+      {
+        "category": "plasmid_binning",
+        "id": "plasmid_binning_recycler",
+        "optional": true,
+        "tool_id": "recycler"
+      },
+      {
+        "category": "typing",
+        "id": "typing_conjscan",
+        "optional": true,
+        "tool_id": "conjscan"
+      },
+      {
+        "category": "typing",
+        "id": "typing_macsyfinder",
+        "optional": true,
+        "tool_id": "macsyfinder"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_rgi",
+        "optional": true,
+        "tool_id": "rgi"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_eggnog_mapper",
+        "optional": true,
+        "tool_id": "eggnog_mapper"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_concoct",
+        "optional": true,
+        "tool_id": "concoct"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_semibin",
+        "optional": true,
+        "tool_id": "semibin"
+      },
+      {
+        "category": "mag_host_genomes",
+        "id": "mag_das_tool",
+        "optional": true,
+        "tool_id": "das_tool"
+      },
+      {
+        "category": "visualization",
+        "id": "visualization_dna_features",
+        "optional": true,
+        "tool_id": "dna_features_viewer"
+      },
+      {
+        "category": "report",
+        "id": "report_markdown",
+        "optional": false,
+        "tool_id": "report_markdown"
+      }
+    ]
+  },
+  "fault_input_sha256": [
+    {
+      "path": "config.yaml",
+      "sha256": "cd36b40d02e46e8bbc6fec342dc9cd7f7c3d5e5e7a1fbb643e7d78ca1aebaeaa"
+    },
+    {
+      "path": "reads/META1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/META1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/bakta_db/IDENTITY",
+      "sha256": "b9f2fb47b97dcea1b1747dbea3f4e536a1ae25da55aeae6b9e5fdf4bee07721e"
+    },
+    {
+      "path": "resources/genomad_db/IDENTITY",
+      "sha256": "0fb89e3e10f0ddfe1adf1f49aaef247e8563099a92b5e3d4a59a801d4c14c73a"
+    },
+    {
+      "path": "resources/genomad_db/genomad_db/README",
+      "sha256": "68a4010e437f00639a4c841ac331c74c135e0c027e71d286dba2dff3f800bc37"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/IDENTITY",
+      "sha256": "3771144cdd9450b9c81855ab1fc870678b4f981e300bcbe8da30d405024f0818"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/config/README",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/synthetic_replicons.fsa",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "d0e7ca6ae7529bc877a2b2ad282c353950391fcf314645ed135419f8316e255b"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "e133031b2952354c9cffd14d67fc115fc9d61e01a748a2c9c3f831294a9d9865"
+    }
+  ],
+  "gold": {
+    "maximum_recovery_attempts": 2,
+    "output_file": "/task/work/recovery.json",
+    "required_recovery_action": "copy_config_to_work_fix_resource_path_then_recheck",
+    "root_cause": "missing_database",
+    "selected_workflow": "metagenomic_plasmid",
+    "terminal_state": "completed"
+  },
+  "hidden_root_cause": "missing_database",
+  "pre_fault_twin_sha256": "d5577b38dfa8657c1387eb381a9ab037c316701b9409953b93459960814d9900",
+  "task_id": "plasmid_t6_recover_resource_path"
+}

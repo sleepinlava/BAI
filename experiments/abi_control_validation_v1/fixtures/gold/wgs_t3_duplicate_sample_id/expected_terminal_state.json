@@ -1,0 +1,5 @@
+{
+  "root_cause": "duplicate_sample_id",
+  "task_id": "wgs_t3_duplicate_sample_id",
+  "terminal_state": "blocked"
+}

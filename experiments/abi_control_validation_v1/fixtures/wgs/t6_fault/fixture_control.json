@@ -1,0 +1,15 @@
+[
+  {
+    "operation": "mark_steps_completed",
+    "steps": [
+      "fastp",
+      "spades"
+    ]
+  },
+  {
+    "exit_code": 42,
+    "operation": "fail_tool_once",
+    "recovery_after": "resume",
+    "tool": "prokka"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "abi_version": "1.5.8",
+  "environment_count": 21,
+  "git_clean": true,
+  "git_commit": "6f05ad6b3c624df633c5c802d05d448c6246eb59",
+  "intentionally_excluded_resources": [
+    "viral_viwrap"
+  ],
+  "registered_tool_count": 99,
+  "selected_workflows": [
+    "rnaseq_expression",
+    "wgs_bacteria",
+    "metagenomic_plasmid"
+  ],
+  "strict_runtime_lock": {
+    "reason": "Formal locks require scripts/cloud/prepare_release_lock.sh on the provisioned cloud host and a clean release commit.",
+    "status": "requires_provisioned_runtime"
+  }
+}

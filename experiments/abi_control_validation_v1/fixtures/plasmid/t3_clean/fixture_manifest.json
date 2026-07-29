@@ -1,0 +1,53 @@
+{
+  "expected_valid": true,
+  "fault_operations": [],
+  "files": [
+    {
+      "path": "config.yaml",
+      "sha256": "e39aa0316af3065b1b8417012c51df64f21b6b9490a0afa791fb65f0cd35087f"
+    },
+    {
+      "path": "reads/META1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/META1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/bakta_db/IDENTITY",
+      "sha256": "b9f2fb47b97dcea1b1747dbea3f4e536a1ae25da55aeae6b9e5fdf4bee07721e"
+    },
+    {
+      "path": "resources/genomad_db/IDENTITY",
+      "sha256": "0fb89e3e10f0ddfe1adf1f49aaef247e8563099a92b5e3d4a59a801d4c14c73a"
+    },
+    {
+      "path": "resources/genomad_db/genomad_db/README",
+      "sha256": "68a4010e437f00639a4c841ac331c74c135e0c027e71d286dba2dff3f800bc37"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/IDENTITY",
+      "sha256": "3771144cdd9450b9c81855ab1fc870678b4f981e300bcbe8da30d405024f0818"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/config/README",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/plasmidfinder_valid/synthetic_replicons.fsa",
+      "sha256": "2fc784955f3a9e9f0b69efa386fa4c14831e2320933c33328469e0d15c9c66bf"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "d0e7ca6ae7529bc877a2b2ad282c353950391fcf314645ed135419f8316e255b"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "e133031b2952354c9cffd14d67fc115fc9d61e01a748a2c9c3f831294a9d9865"
+    }
+  ],
+  "pre_fault_twin_sha256": "d5577b38dfa8657c1387eb381a9ab037c316701b9409953b93459960814d9900",
+  "schema_version": "abi.control-validation.fixture.v1",
+  "task_id": "plasmid_t3_missing_database"
+}

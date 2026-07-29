@@ -1,0 +1,69 @@
+{
+  "clean_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 2,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "amrfinder_db",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-2028xbgp/input/resources/amrfinder_db",
+          "ready_check": "path_exists",
+          "resource_id": "amrfinder_db",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:amrfinder_db",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "design_valid": true,
+  "expected_fault_ready": true,
+  "fault_operations_valid": true,
+  "fault_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 2,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "",
+          "command": [],
+          "directory_file_count": 1,
+          "directory_size_bytes": 0,
+          "field": "amrfinder_db",
+          "message": "Configured resource path exists.",
+          "path": "/tmp/abi-study-check-ut0h92mr/input/resources/amrfinder_db",
+          "ready_check": "path_exists",
+          "resource_id": "amrfinder_db",
+          "source_url": "",
+          "status": "ok",
+          "tool_id": "",
+          "version": ""
+        },
+        "name": "resource:amrfinder_db",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "passed": true,
+  "plan_nodes_valid": true
+}

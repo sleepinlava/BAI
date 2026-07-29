@@ -1,0 +1,7 @@
+[
+  {
+    "behavior": "exit_zero_with_missing_required_gene_symbol_column",
+    "operation": "configure_tool_shim",
+    "tool": "amrfinderplus"
+  }
+]

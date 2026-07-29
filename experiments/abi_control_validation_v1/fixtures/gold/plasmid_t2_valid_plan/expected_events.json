@@ -1,0 +1,8 @@
+{
+  "authorization": "plan_and_dry_run_only",
+  "execution_mode": "dry_run_only",
+  "forbidden_events": [
+    "external_tool_execution",
+    "network_access"
+  ]
+}

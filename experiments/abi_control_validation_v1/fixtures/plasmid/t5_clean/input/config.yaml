@@ -1,0 +1,55 @@
+abundance:
+  enable: true
+  tool: coverm
+annotation:
+  enable: true
+  general_annotator: bakta
+assembly:
+  enable: true
+  tool: megahit
+input:
+  sample_sheet: /task/input/samples.tsv
+log_dir: /task/work/logs
+mock_tools: false
+mode: auto
+outdir: /task/work/results
+plasmid_detection:
+  enable: true
+  strategy: single_tool
+  tools:
+  - genomad
+project_name: plasmid_core_demo
+qc:
+  enable: true
+  run_fastqc: false
+  run_multiqc: false
+  tool: fastp
+resources:
+  auto_download: false
+  bakta:
+    database: /task/input/resources/bakta_db
+  genomad:
+    database: /task/input/resources/genomad_db
+  plasmidfinder:
+    database: /task/input/resources/plasmidfinder_valid
+  root: resources/autoplasm
+sample_analysis:
+  enable: false
+threads: 2
+typing:
+  enable: true
+  tools:
+  - plasmidfinder
+workflow:
+  data_profile: short_read_metagenome
+  include_nodes:
+  - qc_fastp
+  - assembly_megahit
+  - plasmid_detect_genomad
+  - plasmid_consensus
+  - annotation_bakta
+  - typing_plasmidfinder
+  - abundance_bowtie2
+  - abundance_samtools
+  - abundance_coverm
+  - report_markdown

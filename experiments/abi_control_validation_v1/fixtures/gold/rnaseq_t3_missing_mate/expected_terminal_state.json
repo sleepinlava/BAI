@@ -1,0 +1,5 @@
+{
+  "root_cause": "incomplete_pairs",
+  "task_id": "rnaseq_t3_missing_mate",
+  "terminal_state": "blocked"
+}

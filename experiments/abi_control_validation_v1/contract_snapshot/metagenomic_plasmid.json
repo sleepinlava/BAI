@@ -1,0 +1,5609 @@
+{
+  "dag_edges": [
+    {
+      "from": "qc_fastp",
+      "to": "qc_fastqc_clean"
+    },
+    {
+      "from": "qc_fastp",
+      "to": "qc_multiqc_illumina"
+    },
+    {
+      "from": "qc_fastqc_raw",
+      "to": "qc_multiqc_illumina"
+    },
+    {
+      "from": "qc_fastqc_clean",
+      "to": "qc_multiqc_illumina"
+    },
+    {
+      "from": "long_reads_provided",
+      "to": "qc_nanoplot"
+    },
+    {
+      "from": "basecalling_dorado",
+      "to": "qc_nanoplot"
+    },
+    {
+      "from": "long_read_bam_to_fastq",
+      "to": "qc_nanoplot"
+    },
+    {
+      "from": "long_reads_provided",
+      "to": "qc_filtlong"
+    },
+    {
+      "from": "basecalling_dorado",
+      "to": "qc_filtlong"
+    },
+    {
+      "from": "long_read_bam_to_fastq",
+      "to": "qc_filtlong"
+    },
+    {
+      "from": "qc_nanoplot",
+      "to": "qc_multiqc_ont"
+    },
+    {
+      "from": "qc_filtlong",
+      "to": "qc_multiqc_ont"
+    },
+    {
+      "from": "long_reads_provided",
+      "to": "qc_hifiadapterfilt"
+    },
+    {
+      "from": "long_read_bam_to_fastq",
+      "to": "qc_hifiadapterfilt"
+    },
+    {
+      "from": "qc_hifiadapterfilt",
+      "to": "qc_multiqc_hifi"
+    },
+    {
+      "from": "qc_fastp",
+      "to": "host_removal_bowtie2"
+    },
+    {
+      "from": "qc_filtlong",
+      "to": "host_removal_minimap2_long"
+    },
+    {
+      "from": "qc_hifiadapterfilt",
+      "to": "host_removal_minimap2_long"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "assembly_megahit"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "assembly_metaspades"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "assembly_metaflye"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "assembly_hifiasm"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "assembly_opera_ms"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "assembly_opera_ms"
+    },
+    {
+      "from": "assembly_metaflye",
+      "to": "polishing_medaka"
+    },
+    {
+      "from": "assembly_megahit",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_metaspades",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_metaflye",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_hifiasm",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_opera_ms",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_provided",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "polishing_medaka",
+      "to": "assembly_qc_quast"
+    },
+    {
+      "from": "assembly_megahit",
+      "to": "contig_coverage_bowtie2"
+    },
+    {
+      "from": "assembly_metaspades",
+      "to": "contig_coverage_bowtie2"
+    },
+    {
+      "from": "assembly_opera_ms",
+      "to": "contig_coverage_bowtie2"
+    },
+    {
+      "from": "assembly_provided",
+      "to": "contig_coverage_bowtie2"
+    },
+    {
+      "from": "assembly_metaflye",
+      "to": "contig_coverage_minimap2"
+    },
+    {
+      "from": "assembly_hifiasm",
+      "to": "contig_coverage_minimap2"
+    },
+    {
+      "from": "assembly_opera_ms",
+      "to": "contig_coverage_minimap2"
+    },
+    {
+      "from": "polishing_medaka",
+      "to": "contig_coverage_minimap2"
+    },
+    {
+      "from": "contig_coverage_bowtie2",
+      "to": "contig_coverage_samtools"
+    },
+    {
+      "from": "contig_coverage_minimap2",
+      "to": "contig_coverage_samtools"
+    },
+    {
+      "from": "contig_coverage_samtools",
+      "to": "contig_coverage_coverm"
+    },
+    {
+      "from": "assembly_megahit",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_metaspades",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_metaflye",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_hifiasm",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_opera_ms",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_provided",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "polishing_medaka",
+      "to": "plasmid_detect_genomad"
+    },
+    {
+      "from": "assembly_qc_quast",
+      "to": "plasmid_detect_plasme"
+    },
+    {
+      "from": "assembly_qc_quast",
+      "to": "plasmid_detect_plasx"
+    },
+    {
+      "from": "assembly_qc_quast",
+      "to": "plasmid_detect_platon"
+    },
+    {
+      "from": "assembly_metaspades",
+      "to": "plasmid_detect_scapp"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "plasmid_detect_scapp"
+    },
+    {
+      "from": "plasmid_detect_genomad",
+      "to": "plasmid_consensus"
+    },
+    {
+      "from": "plasmid_detect_plasme",
+      "to": "plasmid_consensus"
+    },
+    {
+      "from": "plasmid_detect_plasx",
+      "to": "plasmid_consensus"
+    },
+    {
+      "from": "plasmid_detect_platon",
+      "to": "plasmid_consensus"
+    },
+    {
+      "from": "plasmid_detect_scapp",
+      "to": "plasmid_consensus"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_structure"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_binning_plasmaag"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_binning_gplas2"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_binning_mob_recon"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "typing_plasmidfinder"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "typing_mob_typer"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "typing_copla"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "host_prediction_metaphlan"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "host_prediction_metaphlan"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "host_prediction_kraken2"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "host_prediction_plasmidhostfinder"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_prodigal"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_bakta"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_amrfinderplus"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_abricate"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_isescan"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_integronfinder"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_mob_suite"
+    },
+    {
+      "from": "contig_coverage_samtools",
+      "to": "mag_metabat2"
+    },
+    {
+      "from": "mag_metabat2",
+      "to": "mag_checkm2"
+    },
+    {
+      "from": "mag_checkm2",
+      "to": "mag_gtdbtk"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "host_plasmid_link_coabundance"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "host_plasmid_link_coabundance"
+    },
+    {
+      "from": "host_prediction_metaphlan",
+      "to": "host_plasmid_link_coabundance"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "host_plasmid_link_sequence"
+    },
+    {
+      "from": "mag_gtdbtk",
+      "to": "host_plasmid_link_sequence"
+    },
+    {
+      "from": "mag_gtdbtk",
+      "to": "host_plasmid_link_crispr"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "host_plasmid_link_longread"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "host_plasmid_link_longread"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "abundance_bowtie2"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "abundance_bowtie2"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "abundance_minimap2"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "abundance_minimap2"
+    },
+    {
+      "from": "abundance_bowtie2",
+      "to": "abundance_samtools"
+    },
+    {
+      "from": "abundance_minimap2",
+      "to": "abundance_samtools"
+    },
+    {
+      "from": "abundance_samtools",
+      "to": "abundance_coverm"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "abundance_bowtie2_short"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "abundance_bowtie2_short"
+    },
+    {
+      "from": "abundance_bowtie2_short",
+      "to": "abundance_samtools_short"
+    },
+    {
+      "from": "abundance_samtools_short",
+      "to": "abundance_coverm_short"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "abundance_minimap2_long"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "abundance_minimap2_long"
+    },
+    {
+      "from": "abundance_minimap2_long",
+      "to": "abundance_samtools_long"
+    },
+    {
+      "from": "abundance_samtools_long",
+      "to": "abundance_coverm_long"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "multisample_diversity"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "multisample_differential_abundance"
+    },
+    {
+      "from": "abundance_coverm",
+      "to": "multisample_differential_deseq2"
+    },
+    {
+      "from": "abundance_coverm",
+      "to": "multisample_network_prepare"
+    },
+    {
+      "from": "multisample_network_prepare",
+      "to": "multisample_network_fastspar"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_catalog_prepare"
+    },
+    {
+      "from": "plasmid_catalog_prepare",
+      "to": "comparative_mmseqs2"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "comparative_blast"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "comparative_mummer"
+    },
+    {
+      "from": "annotation_bakta",
+      "to": "comparative_clinker"
+    },
+    {
+      "from": "annotation_bakta",
+      "to": "visualization_clinker_gene_maps"
+    },
+    {
+      "from": "comparative_clinker",
+      "to": "visualization_clinker_gene_maps"
+    },
+    {
+      "from": "annotation_bakta",
+      "to": "visualization_pycirclize"
+    },
+    {
+      "from": "typing_plasmidfinder",
+      "to": "visualization_pycirclize"
+    },
+    {
+      "from": "typing_mob_typer",
+      "to": "visualization_pycirclize"
+    },
+    {
+      "from": "host_plasmid_link_coabundance",
+      "to": "visualization_network"
+    },
+    {
+      "from": "host_plasmid_link_sequence",
+      "to": "visualization_network"
+    },
+    {
+      "from": "multisample_network_fastspar",
+      "to": "visualization_network"
+    },
+    {
+      "from": "host_removal_bowtie2",
+      "to": "assembly_hybridspades"
+    },
+    {
+      "from": "host_removal_minimap2_long",
+      "to": "assembly_hybridspades"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_binning_scapp"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "plasmid_binning_recycler"
+    },
+    {
+      "from": "contig_coverage_samtools",
+      "to": "plasmid_binning_recycler"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "typing_conjscan"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "typing_macsyfinder"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_rgi"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "annotation_eggnog_mapper"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "mag_concoct"
+    },
+    {
+      "from": "contig_coverage_samtools",
+      "to": "mag_semibin"
+    },
+    {
+      "from": "mag_metabat2",
+      "to": "mag_das_tool"
+    },
+    {
+      "from": "mag_concoct",
+      "to": "mag_das_tool"
+    },
+    {
+      "from": "annotation_bakta",
+      "to": "visualization_dna_features"
+    },
+    {
+      "from": "plasmid_consensus",
+      "to": "report_markdown"
+    },
+    {
+      "from": "plasmid_structure",
+      "to": "report_markdown"
+    },
+    {
+      "from": "plasmid_binning_plasmaag",
+      "to": "report_markdown"
+    },
+    {
+      "from": "plasmid_binning_gplas2",
+      "to": "report_markdown"
+    },
+    {
+      "from": "plasmid_binning_mob_recon",
+      "to": "report_markdown"
+    },
+    {
+      "from": "typing_plasmidfinder",
+      "to": "report_markdown"
+    },
+    {
+      "from": "typing_mob_typer",
+      "to": "report_markdown"
+    },
+    {
+      "from": "typing_copla",
+      "to": "report_markdown"
+    },
+    {
+      "from": "annotation_bakta",
+      "to": "report_markdown"
+    },
+    {
+      "from": "annotation_amrfinderplus",
+      "to": "report_markdown"
+    },
+    {
+      "from": "annotation_abricate",
+      "to": "report_markdown"
+    },
+    {
+      "from": "annotation_isescan",
+      "to": "report_markdown"
+    },
+    {
+      "from": "annotation_integronfinder",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_prediction_metaphlan",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_prediction_kraken2",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_plasmid_link_coabundance",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_plasmid_link_sequence",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_plasmid_link_crispr",
+      "to": "report_markdown"
+    },
+    {
+      "from": "host_plasmid_link_longread",
+      "to": "report_markdown"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "report_markdown"
+    },
+    {
+      "from": "multisample_diversity",
+      "to": "report_markdown"
+    },
+    {
+      "from": "multisample_differential_abundance",
+      "to": "report_markdown"
+    },
+    {
+      "from": "multisample_differential_deseq2",
+      "to": "report_markdown"
+    },
+    {
+      "from": "multisample_network_fastspar",
+      "to": "report_markdown"
+    },
+    {
+      "from": "comparative_mmseqs2",
+      "to": "report_markdown"
+    },
+    {
+      "from": "comparative_blast",
+      "to": "report_markdown"
+    },
+    {
+      "from": "comparative_mummer",
+      "to": "report_markdown"
+    },
+    {
+      "from": "comparative_clinker",
+      "to": "report_markdown"
+    },
+    {
+      "from": "visualization_clinker_gene_maps",
+      "to": "report_markdown"
+    },
+    {
+      "from": "visualization_pycirclize",
+      "to": "report_markdown"
+    },
+    {
+      "from": "visualization_network",
+      "to": "report_markdown"
+    },
+    {
+      "from": "assembly_qc_quast",
+      "to": "report_markdown"
+    },
+    {
+      "from": "contig_coverage_coverm",
+      "to": "report_markdown"
+    }
+  ],
+  "error_categories": [
+    "artifact_missing",
+    "contract_violation",
+    "duplicate_sample_id",
+    "empty_result",
+    "incomplete_pairs",
+    "internal_error",
+    "invalid_config",
+    "invalid_platform",
+    "invalid_sample_sheet",
+    "missing_database",
+    "missing_input",
+    "missing_resource",
+    "missing_sample_id",
+    "nonzero_exit",
+    "parse_failed",
+    "permission_required",
+    "runtime_not_supported",
+    "tool_not_found",
+    "unknown_analysis_type"
+  ],
+  "limitations": [
+    "Plasmid detection via geNomad uses a score threshold (default 0.7); low-score contigs may be missed or incorrectly classified.",
+    "Assembly from metagenomic short reads can produce chimeric contigs that confound plasmid length estimates.",
+    "AMR gene presence does not guarantee phenotypic resistance; expression level, copy number, and host background all influence resistance phenotype.",
+    "Plasmid abundance estimates via CoverM depend on read mapping rates and contig coverage evenness; highly repetitive plasmid sequences may inflate abundance.",
+    "Host prediction from metagenomic data is correlative and should be validated with culture-based or Hi-C experiments before publication claims.",
+    "Taxonomic profiling (MetaPhlAn, Kraken2) is database-dependent; organisms absent from the reference database cannot be detected.",
+    "Mobile element detection (ISEScan, IntegronFinder) has false-positive rates that increase in low-complexity or repeat-rich regions.",
+    "This pipeline does not distinguish between chromosomal and plasmid-borne copies of identical genes (e.g., AMR genes present in both locations).",
+    "Database versions (geNomad DB, Bakta DB, AMRFinder DB, Kraken2 DB) are recorded in the resource manifest but change over time; results are valid only for the versions listed.",
+    "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs."
+  ],
+  "output_contracts": [
+    {
+      "contract": {
+        "exempt": true,
+        "reason": "Passthrough of user-provided long reads; no new file is produced"
+      },
+      "format": "fastq",
+      "output": "long_reads",
+      "path": null,
+      "stage": "long_reads_provided",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".fastq"
+        ],
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "fastq",
+      "output": "long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.dorado.fastq",
+      "stage": "basecalling_dorado",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".fastq"
+        ],
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "fastq",
+      "output": "long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.bam.fastq",
+      "stage": "long_read_bam_to_fastq",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read1",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read2",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "html",
+      "output": "html_report",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.html",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "required_keys": [
+          "summary"
+        ],
+        "schema": {
+          "summary.after_filtering.total_reads": {
+            "min": 0,
+            "type": "integer"
+          },
+          "summary.before_filtering.total_reads": {
+            "min": 0,
+            "type": "integer"
+          }
+        }
+      },
+      "format": "json",
+      "output": "json_report",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.json",
+      "stage": "qc_fastp",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": 1024
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_fastqc_raw",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": 1024
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_fastqc_clean",
+      "type": "directory"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_multiqc_illumina",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".html"
+        ],
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "multiqc_report",
+      "path": "{outdir}/{category_dir}/multiqc_illumina_report.html",
+      "stage": "qc_multiqc_illumina",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_nanoplot",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq",
+      "output": "filtered_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.filtlong.fastq",
+      "stage": "qc_filtlong",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq",
+      "output": "analysis_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.filtlong.fastq",
+      "stage": "qc_filtlong",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_multiqc_ont",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".html"
+        ],
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "multiqc_report",
+      "path": "{outdir}/{category_dir}/multiqc_ont_report.html",
+      "stage": "qc_multiqc_ont",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "filtered_hifi_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.hifiadapterfilt.fastq.gz",
+      "stage": "qc_hifiadapterfilt",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq.gz",
+      "output": "filtered_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.hifiadapterfilt.fastq.gz",
+      "stage": "qc_hifiadapterfilt",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq.gz",
+      "output": "analysis_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.hifiadapterfilt.fastq.gz",
+      "stage": "qc_hifiadapterfilt",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "qc_multiqc_hifi",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".html"
+        ],
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "multiqc_report",
+      "path": "{outdir}/{category_dir}/multiqc_hifi_report.html",
+      "stage": "qc_multiqc_hifi",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read1",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.host_removed.1.fastq.gz",
+      "stage": "host_removal_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq.gz",
+      "output": "clean_read2",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.host_removed.2.fastq.gz",
+      "stage": "host_removal_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq.gz",
+      "output": "host_reads",
+      "path": null,
+      "stage": "host_removal_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "log",
+      "output": "alignment_rate",
+      "path": null,
+      "stage": "host_removal_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "1KB"
+      },
+      "format": "fastq",
+      "output": "clean_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.host_removed.fastq",
+      "stage": "host_removal_minimap2_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq",
+      "output": "analysis_long_reads",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.host_removed.fastq",
+      "stage": "host_removal_minimap2_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastq",
+      "output": "host_reads",
+      "path": null,
+      "stage": "host_removal_minimap2_long",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/final.contigs.fa",
+      "stage": "assembly_megahit",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_megahit",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+      "stage": "assembly_metaspades",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fastg",
+      "output": "assembly_graph",
+      "path": "{outdir}/{category_dir}/{sample_id}/assembly_graph.fastg",
+      "stage": "assembly_metaspades",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_metaspades",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/assembly.fasta",
+      "stage": "assembly_metaflye",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "gfa",
+      "output": "assembly_graph",
+      "path": "{outdir}/{category_dir}/{sample_id}/assembly_graph.gfa",
+      "stage": "assembly_metaflye",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_metaflye",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.hifiasm.fasta",
+      "stage": "assembly_hifiasm",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "gfa",
+      "output": "assembly_graph",
+      "path": null,
+      "stage": "assembly_hifiasm",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_hifiasm",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+      "stage": "assembly_opera_ms",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_opera_ms",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "exempt": true,
+        "reason": "Passthrough of user-provided assembly FASTA; no new file is produced"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": null,
+      "stage": "assembly_provided",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".fasta"
+        ],
+        "file_exists": true,
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/consensus.fasta",
+      "stage": "polishing_medaka",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "polishing_medaka",
+      "type": "directory"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_qc_quast",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "quast_report",
+      "path": "{outdir}/{category_dir}/{sample_id}/report.tsv",
+      "stage": "assembly_qc_quast",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+      "stage": "contig_coverage_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+      "stage": "contig_coverage_minimap2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "bam",
+      "output": "bam",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.contig_alignment.bam",
+      "stage": "contig_coverage_samtools",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "coverage_table",
+      "path": null,
+      "stage": "contig_coverage_coverm",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "tsv",
+      "output": "abundance_tsv",
+      "path": null,
+      "stage": "contig_coverage_coverm",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "50B"
+      },
+      "format": "tsv",
+      "output": "plasmid_summary",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid_summary.tsv",
+      "stage": "plasmid_detect_genomad",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "50B"
+      },
+      "format": "fasta",
+      "output": "plasmid_contigs",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid.fna",
+      "stage": "plasmid_detect_genomad",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "50B"
+      },
+      "format": "tsv",
+      "output": "virus_summary",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_virus_summary.tsv",
+      "stage": "plasmid_detect_genomad",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "plasme_predictions",
+      "path": null,
+      "stage": "plasmid_detect_plasme",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "plasx_predictions",
+      "path": null,
+      "stage": "plasmid_detect_plasx",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "plasmid_detect_platon",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "fasta",
+      "output": "scapp_predictions",
+      "path": "{outdir}/{category_dir}/{sample_id}/scapp/assembly_graph.confident_cycs.fasta",
+      "stage": "plasmid_detect_scapp",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "fasta",
+      "output": "plasmid_contigs",
+      "path": "{outdir}/04_plasmid_detection/{sample_id}/plasmid_contigs.fasta",
+      "stage": "plasmid_consensus",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "plasmid_bins",
+      "path": null,
+      "stage": "plasmid_binning_plasmaag",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "plasmid_bins",
+      "path": null,
+      "stage": "plasmid_binning_gplas2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "plasmid_binning_mob_recon",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "typing_results",
+      "path": null,
+      "stage": "typing_plasmidfinder",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "typing_results",
+      "path": null,
+      "stage": "typing_mob_typer",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "typing_results",
+      "path": null,
+      "stage": "typing_copla",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "taxonomy_profile",
+      "path": null,
+      "stage": "host_prediction_metaphlan",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "kraken_report",
+      "path": null,
+      "stage": "host_prediction_kraken2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "host_predictions",
+      "path": null,
+      "stage": "host_prediction_plasmidhostfinder",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "gff",
+      "output": "gene_calls",
+      "path": null,
+      "stage": "annotation_prodigal",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "faa",
+      "output": "protein_seqs",
+      "path": null,
+      "stage": "annotation_prodigal",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "ffn",
+      "output": "nucleotide_seqs",
+      "path": null,
+      "stage": "annotation_prodigal",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "annotation_bakta",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "annotations",
+      "path": null,
+      "stage": "annotation_bakta",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "arg_vf_results",
+      "path": null,
+      "stage": "annotation_amrfinderplus",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "screening_results",
+      "path": null,
+      "stage": "annotation_abricate",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "is_results",
+      "path": null,
+      "stage": "annotation_isescan",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "integron_results",
+      "path": null,
+      "stage": "annotation_integronfinder",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "annotation_mob_suite",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "mag_bins",
+      "path": null,
+      "stage": "mag_metabat2",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "quality_report",
+      "path": null,
+      "stage": "mag_checkm2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "taxonomy",
+      "path": null,
+      "stage": "mag_gtdbtk",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "coabundance_links",
+      "path": null,
+      "stage": "host_plasmid_link_coabundance",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "sequence_similarity_links",
+      "path": null,
+      "stage": "host_plasmid_link_sequence",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "crispr_links",
+      "path": null,
+      "stage": "host_plasmid_link_crispr",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "longread_bridge_links",
+      "path": null,
+      "stage": "host_plasmid_link_longread",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+      "stage": "abundance_bowtie2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+      "stage": "abundance_minimap2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_size": "100B"
+      },
+      "format": "bam",
+      "output": "bam",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.bam",
+      "stage": "abundance_samtools",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "abundance",
+      "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.coverm.tsv",
+      "stage": "abundance_coverm",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".sam"
+        ],
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.sam",
+      "stage": "abundance_bowtie2_short",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/short",
+      "stage": "abundance_bowtie2_short",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".bam"
+        ],
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "bam",
+      "output": "bam",
+      "path": "{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.bam",
+      "stage": "abundance_samtools_short",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/short",
+      "stage": "abundance_samtools_short",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "abundance",
+      "path": "{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.coverm.tsv",
+      "stage": "abundance_coverm_short",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "tsv",
+      "output": "tpm_table",
+      "path": "{outdir}/{category_dir}/{sample_id}/short/{sample_id}.short.tpm.tsv",
+      "stage": "abundance_coverm_short",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/short",
+      "stage": "abundance_coverm_short",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".sam"
+        ],
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "sam",
+      "output": "alignment",
+      "path": "{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.sam",
+      "stage": "abundance_minimap2_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/long",
+      "stage": "abundance_minimap2_long",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".bam"
+        ],
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "bam",
+      "output": "bam",
+      "path": "{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.bam",
+      "stage": "abundance_samtools_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/long",
+      "stage": "abundance_samtools_long",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "abundance",
+      "path": "{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.coverm.tsv",
+      "stage": "abundance_coverm_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "tsv",
+      "output": "tpm_table",
+      "path": "{outdir}/{category_dir}/{sample_id}/long/{sample_id}.long.tpm.tsv",
+      "stage": "abundance_coverm_long",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": "{outdir}/{category_dir}/{sample_id}/long",
+      "stage": "abundance_coverm_long",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "diversity_metrics",
+      "path": null,
+      "stage": "multisample_diversity",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "differential_abundance_results",
+      "path": null,
+      "stage": "multisample_differential_abundance",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "differential_plasmids",
+      "path": "{outdir}/{category_dir}/differential_plasmids.tsv",
+      "stage": "multisample_differential_deseq2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "network_input",
+      "path": "{outdir}/{category_dir}/fastspar_input.tsv",
+      "stage": "multisample_network_prepare",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "correlation",
+      "path": null,
+      "stage": "multisample_network_fastspar",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "tsv",
+      "output": "covariance",
+      "path": null,
+      "stage": "multisample_network_fastspar",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".fasta"
+        ],
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "fasta",
+      "output": "combined_plasmids",
+      "path": "{outdir}/{category_dir}/plasmid_catalog_input.fasta",
+      "stage": "plasmid_catalog_prepare",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "extensions": [
+          ".tsv"
+        ],
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "clusters",
+      "path": "{outdir}/{category_dir}/plasmid_catalog_cluster.tsv",
+      "stage": "comparative_mmseqs2",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": "fasta",
+      "output": "representatives",
+      "path": "{outdir}/{category_dir}/plasmid_catalog_rep_seq.fasta",
+      "stage": "comparative_mmseqs2",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "blast_results",
+      "path": null,
+      "stage": "comparative_blast",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "0B"
+      },
+      "format": "tsv",
+      "output": "coords",
+      "path": null,
+      "stage": "comparative_mummer",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "clinker_html",
+      "path": null,
+      "stage": "comparative_clinker",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "gene_maps",
+      "path": null,
+      "stage": "visualization_clinker_gene_maps",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "100B"
+      },
+      "format": "png",
+      "output": "circular_maps",
+      "path": null,
+      "stage": "visualization_pycirclize",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "network_html",
+      "path": null,
+      "stage": "visualization_network",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "min_contigs": 1,
+        "min_size": "500B"
+      },
+      "format": "fasta",
+      "output": "assembly",
+      "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+      "stage": "assembly_hybridspades",
+      "type": "file"
+    },
+    {
+      "contract": {},
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "assembly_hybridspades",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "plasmid_binning_scapp",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "plasmid_binning_recycler",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "typing_conjscan",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "typing_macsyfinder",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "annotation_rgi",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "annotation_eggnog_mapper",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "mag_concoct",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "mag_semibin",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "mag_das_tool",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "min_files": 1
+      },
+      "format": null,
+      "output": "output_dir",
+      "path": null,
+      "stage": "visualization_dna_features",
+      "type": "directory"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "markdown",
+      "output": "report_md",
+      "path": null,
+      "stage": "report_markdown",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "html",
+      "output": "report_html",
+      "path": null,
+      "stage": "report_markdown",
+      "type": "file"
+    },
+    {
+      "contract": {
+        "file_exists": true,
+        "min_size": "1KB"
+      },
+      "format": "markdown",
+      "output": "methods_md",
+      "path": null,
+      "stage": "report_markdown",
+      "type": "file"
+    }
+  ],
+  "platforms": [
+    "illumina",
+    "ont",
+    "pacbio_hifi",
+    "hybrid",
+    "assembly"
+  ],
+  "plugin": {
+    "analysis_type": "metagenomic_plasmid",
+    "description": "AutoPlasm adapter using the existing plasmid-analysis planner and executor.",
+    "display_name": "Metagenomic Plasmid Analysis"
+  },
+  "schema_version": "abi.control-validation.contract-snapshot.v1",
+  "stages": [
+    {
+      "category": "basecalling",
+      "id": "long_reads_provided",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "basecalling",
+      "id": "basecalling_dorado",
+      "optional": true,
+      "tool_id": "dorado"
+    },
+    {
+      "category": "basecalling",
+      "id": "long_read_bam_to_fastq",
+      "optional": true,
+      "tool_id": "samtools_fastq"
+    },
+    {
+      "category": "qc",
+      "id": "qc_fastp",
+      "optional": false,
+      "tool_id": "fastp"
+    },
+    {
+      "category": "qc",
+      "id": "qc_fastqc_raw",
+      "optional": true,
+      "tool_id": "fastqc"
+    },
+    {
+      "category": "qc",
+      "id": "qc_fastqc_clean",
+      "optional": true,
+      "tool_id": "fastqc"
+    },
+    {
+      "category": "qc",
+      "id": "qc_multiqc_illumina",
+      "optional": true,
+      "tool_id": "multiqc"
+    },
+    {
+      "category": "qc",
+      "id": "qc_nanoplot",
+      "optional": false,
+      "tool_id": "nanoplot"
+    },
+    {
+      "category": "qc",
+      "id": "qc_filtlong",
+      "optional": false,
+      "tool_id": "filtlong"
+    },
+    {
+      "category": "qc",
+      "id": "qc_multiqc_ont",
+      "optional": true,
+      "tool_id": "multiqc"
+    },
+    {
+      "category": "qc",
+      "id": "qc_hifiadapterfilt",
+      "optional": false,
+      "tool_id": "hifiadapterfilt"
+    },
+    {
+      "category": "qc",
+      "id": "qc_multiqc_hifi",
+      "optional": true,
+      "tool_id": "multiqc"
+    },
+    {
+      "category": "host_removal",
+      "id": "host_removal_bowtie2",
+      "optional": true,
+      "tool_id": "bowtie2_host_removal"
+    },
+    {
+      "category": "host_removal",
+      "id": "host_removal_minimap2_long",
+      "optional": true,
+      "tool_id": "minimap2_host_removal"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_megahit",
+      "optional": false,
+      "tool_id": "megahit"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_metaspades",
+      "optional": true,
+      "tool_id": "metaspades"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_metaflye",
+      "optional": false,
+      "tool_id": "metaflye"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_hifiasm",
+      "optional": false,
+      "tool_id": "hifiasm_meta"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_opera_ms",
+      "optional": false,
+      "tool_id": "opera_ms"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_provided",
+      "optional": false,
+      "tool_id": "internal"
+    },
+    {
+      "category": "polishing",
+      "id": "polishing_medaka",
+      "optional": true,
+      "tool_id": "medaka"
+    },
+    {
+      "category": "assembly_qc",
+      "id": "assembly_qc_quast",
+      "optional": false,
+      "tool_id": "quast"
+    },
+    {
+      "category": "contig_coverage",
+      "id": "contig_coverage_bowtie2",
+      "optional": false,
+      "tool_id": "bowtie2"
+    },
+    {
+      "category": "contig_coverage",
+      "id": "contig_coverage_minimap2",
+      "optional": false,
+      "tool_id": "minimap2"
+    },
+    {
+      "category": "contig_coverage",
+      "id": "contig_coverage_samtools",
+      "optional": false,
+      "tool_id": "samtools"
+    },
+    {
+      "category": "contig_coverage",
+      "id": "contig_coverage_coverm",
+      "optional": false,
+      "tool_id": "coverm"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_detect_genomad",
+      "optional": false,
+      "tool_id": "genomad"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_detect_plasme",
+      "optional": true,
+      "tool_id": "plasme"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_detect_plasx",
+      "optional": true,
+      "tool_id": "plasx"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_detect_platon",
+      "optional": true,
+      "tool_id": "platon"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_detect_scapp",
+      "optional": true,
+      "tool_id": "scapp"
+    },
+    {
+      "category": "plasmid_consensus",
+      "id": "plasmid_consensus",
+      "optional": false,
+      "tool_id": "internal"
+    },
+    {
+      "category": "plasmid_detection",
+      "id": "plasmid_structure",
+      "optional": false,
+      "tool_id": "internal"
+    },
+    {
+      "category": "plasmid_binning",
+      "id": "plasmid_binning_plasmaag",
+      "optional": true,
+      "tool_id": "plasmaag"
+    },
+    {
+      "category": "plasmid_binning",
+      "id": "plasmid_binning_gplas2",
+      "optional": true,
+      "tool_id": "gplas2"
+    },
+    {
+      "category": "plasmid_binning",
+      "id": "plasmid_binning_mob_recon",
+      "optional": true,
+      "tool_id": "mob_suite"
+    },
+    {
+      "category": "typing",
+      "id": "typing_plasmidfinder",
+      "optional": false,
+      "tool_id": "plasmidfinder"
+    },
+    {
+      "category": "typing",
+      "id": "typing_mob_typer",
+      "optional": false,
+      "tool_id": "mob_typer"
+    },
+    {
+      "category": "typing",
+      "id": "typing_copla",
+      "optional": true,
+      "tool_id": "copla"
+    },
+    {
+      "category": "host_prediction",
+      "id": "host_prediction_metaphlan",
+      "optional": true,
+      "tool_id": "metaphlan"
+    },
+    {
+      "category": "host_prediction",
+      "id": "host_prediction_kraken2",
+      "optional": true,
+      "tool_id": "kraken2"
+    },
+    {
+      "category": "host_prediction",
+      "id": "host_prediction_plasmidhostfinder",
+      "optional": true,
+      "tool_id": "plasmidhostfinder"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_prodigal",
+      "optional": true,
+      "tool_id": "prodigal"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_bakta",
+      "optional": false,
+      "tool_id": "bakta"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_amrfinderplus",
+      "optional": false,
+      "tool_id": "amrfinderplus"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_abricate",
+      "optional": true,
+      "tool_id": "abricate"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_isescan",
+      "optional": true,
+      "tool_id": "isescan"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_integronfinder",
+      "optional": true,
+      "tool_id": "integronfinder"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_mob_suite",
+      "optional": true,
+      "tool_id": "mob_suite"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_metabat2",
+      "optional": true,
+      "tool_id": "metabat2"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_checkm2",
+      "optional": true,
+      "tool_id": "checkm2"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_gtdbtk",
+      "optional": true,
+      "tool_id": "gtdbtk"
+    },
+    {
+      "category": "host_plasmid_linking",
+      "id": "host_plasmid_link_coabundance",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "host_plasmid_linking",
+      "id": "host_plasmid_link_sequence",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "host_plasmid_linking",
+      "id": "host_plasmid_link_crispr",
+      "optional": true,
+      "tool_id": "minced"
+    },
+    {
+      "category": "host_plasmid_linking",
+      "id": "host_plasmid_link_longread",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_bowtie2",
+      "optional": false,
+      "tool_id": "bowtie2"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_minimap2",
+      "optional": false,
+      "tool_id": "minimap2"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_samtools",
+      "optional": false,
+      "tool_id": "samtools"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_coverm",
+      "optional": false,
+      "tool_id": "coverm"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_bowtie2_short",
+      "optional": false,
+      "tool_id": "bowtie2"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_samtools_short",
+      "optional": false,
+      "tool_id": "samtools"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_coverm_short",
+      "optional": false,
+      "tool_id": "coverm"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_minimap2_long",
+      "optional": false,
+      "tool_id": "minimap2"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_samtools_long",
+      "optional": false,
+      "tool_id": "samtools"
+    },
+    {
+      "category": "abundance",
+      "id": "abundance_coverm_long",
+      "optional": false,
+      "tool_id": "coverm"
+    },
+    {
+      "category": "diversity",
+      "id": "multisample_diversity",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "statistics",
+      "id": "multisample_differential_abundance",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "statistics",
+      "id": "multisample_differential_deseq2",
+      "optional": true,
+      "tool_id": "deseq2_plasmid"
+    },
+    {
+      "category": "network",
+      "id": "multisample_network_prepare",
+      "optional": true,
+      "tool_id": "internal"
+    },
+    {
+      "category": "network",
+      "id": "multisample_network_fastspar",
+      "optional": true,
+      "tool_id": "fastspar"
+    },
+    {
+      "category": "comparative_genomics",
+      "id": "plasmid_catalog_prepare",
+      "optional": false,
+      "tool_id": "internal"
+    },
+    {
+      "category": "comparative_genomics",
+      "id": "comparative_mmseqs2",
+      "optional": true,
+      "tool_id": "mmseqs2"
+    },
+    {
+      "category": "comparative_genomics",
+      "id": "comparative_blast",
+      "optional": true,
+      "tool_id": "blast"
+    },
+    {
+      "category": "comparative_genomics",
+      "id": "comparative_mummer",
+      "optional": true,
+      "tool_id": "mummer"
+    },
+    {
+      "category": "comparative_genomics",
+      "id": "comparative_clinker",
+      "optional": true,
+      "tool_id": "clinker"
+    },
+    {
+      "category": "visualization",
+      "id": "visualization_clinker_gene_maps",
+      "optional": true,
+      "tool_id": "clinker"
+    },
+    {
+      "category": "visualization",
+      "id": "visualization_pycirclize",
+      "optional": true,
+      "tool_id": "pycirclize"
+    },
+    {
+      "category": "visualization",
+      "id": "visualization_network",
+      "optional": true,
+      "tool_id": "pyvis"
+    },
+    {
+      "category": "assembly",
+      "id": "assembly_hybridspades",
+      "optional": true,
+      "tool_id": "hybridspades"
+    },
+    {
+      "category": "plasmid_binning",
+      "id": "plasmid_binning_scapp",
+      "optional": true,
+      "tool_id": "scapp"
+    },
+    {
+      "category": "plasmid_binning",
+      "id": "plasmid_binning_recycler",
+      "optional": true,
+      "tool_id": "recycler"
+    },
+    {
+      "category": "typing",
+      "id": "typing_conjscan",
+      "optional": true,
+      "tool_id": "conjscan"
+    },
+    {
+      "category": "typing",
+      "id": "typing_macsyfinder",
+      "optional": true,
+      "tool_id": "macsyfinder"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_rgi",
+      "optional": true,
+      "tool_id": "rgi"
+    },
+    {
+      "category": "annotation",
+      "id": "annotation_eggnog_mapper",
+      "optional": true,
+      "tool_id": "eggnog_mapper"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_concoct",
+      "optional": true,
+      "tool_id": "concoct"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_semibin",
+      "optional": true,
+      "tool_id": "semibin"
+    },
+    {
+      "category": "mag_host_genomes",
+      "id": "mag_das_tool",
+      "optional": true,
+      "tool_id": "das_tool"
+    },
+    {
+      "category": "visualization",
+      "id": "visualization_dna_features",
+      "optional": true,
+      "tool_id": "dna_features_viewer"
+    },
+    {
+      "category": "report",
+      "id": "report_markdown",
+      "optional": false,
+      "tool_id": "report_markdown"
+    }
+  ],
+  "standard_tables": {
+    "abundance": [
+      "sample_id",
+      "feature_id",
+      "contig_id",
+      "coverage",
+      "tpm",
+      "rpkm",
+      "mapped_reads",
+      "length_bp",
+      "tool",
+      "source_file"
+    ],
+    "alignment_summary": [
+      "sample_id",
+      "tool",
+      "artifact_type",
+      "record_count",
+      "mapped_records",
+      "unmapped_records",
+      "size_bytes",
+      "source_file"
+    ],
+    "amr_genes": [
+      "sample_id",
+      "contig_id",
+      "gene",
+      "drug_class",
+      "identity",
+      "coverage",
+      "tool",
+      "source_file"
+    ],
+    "analysis_status": [
+      "module",
+      "status",
+      "reason",
+      "sample_count",
+      "eligible_sample_count",
+      "group_counts",
+      "threshold"
+    ],
+    "annotations": [
+      "sample_id",
+      "contig_id",
+      "start",
+      "end",
+      "strand",
+      "gene",
+      "product",
+      "drug_class",
+      "category",
+      "tool",
+      "evidence",
+      "identity",
+      "coverage",
+      "source_file"
+    ],
+    "artifacts": [
+      "sample_id",
+      "tool",
+      "artifact_type",
+      "path",
+      "size_bytes",
+      "description"
+    ],
+    "assembly_qc": [
+      "sample_id",
+      "assembler",
+      "contig_count",
+      "n50",
+      "total_length",
+      "max_contig",
+      "gc_content",
+      "source_file",
+      "warnings"
+    ],
+    "assembly_summary": [
+      "sample_id",
+      "tool",
+      "metric",
+      "value",
+      "unit",
+      "source_file"
+    ],
+    "bin_to_contig": [
+      "sample_id",
+      "bin_id",
+      "contig_id",
+      "membership_score",
+      "tool",
+      "source_file"
+    ],
+    "comparative_hits": [
+      "sample_id",
+      "query_id",
+      "subject_id",
+      "identity",
+      "coverage",
+      "e_value",
+      "bit_score",
+      "alignment_length",
+      "tool",
+      "evidence",
+      "source_file"
+    ],
+    "differential_abundance": [
+      "feature_id",
+      "contig_id",
+      "group_a",
+      "group_b",
+      "mean_a",
+      "mean_b",
+      "log2_fold_change",
+      "statistic",
+      "p_value",
+      "q_value",
+      "method",
+      "warnings"
+    ],
+    "differential_plasmids": [
+      "plasmid_id",
+      "group_a",
+      "group_b",
+      "log2_fold_change",
+      "p_value",
+      "q_value",
+      "method",
+      "warnings"
+    ],
+    "host_plasmid_links": [
+      "sample_id",
+      "plasmid_id",
+      "host_id",
+      "evidence_type",
+      "evidence_level",
+      "score",
+      "is_prediction",
+      "source_file"
+    ],
+    "host_predictions": [
+      "sample_id",
+      "contig_id",
+      "host_taxon",
+      "method",
+      "confidence",
+      "evidence",
+      "tool",
+      "source_file"
+    ],
+    "host_profile": [
+      "sample_id",
+      "taxon_name",
+      "taxon_id",
+      "rank",
+      "relative_abundance",
+      "tool",
+      "source_file"
+    ],
+    "mag_quality": [
+      "sample_id",
+      "bin_id",
+      "completeness",
+      "contamination",
+      "taxonomy",
+      "tool",
+      "source_file"
+    ],
+    "mge_elements": [
+      "sample_id",
+      "contig_id",
+      "element_id",
+      "element_type",
+      "start",
+      "end",
+      "tool",
+      "source_file"
+    ],
+    "network_edges": [
+      "source",
+      "target",
+      "correlation",
+      "covariance",
+      "p_value",
+      "q_value",
+      "method",
+      "evidence",
+      "warnings",
+      "source_file"
+    ],
+    "network_nodes": [
+      "node_id",
+      "node_type",
+      "sample_count",
+      "mean_abundance",
+      "degree",
+      "evidence",
+      "source_file"
+    ],
+    "plasmid_abundance": [
+      "sample_id",
+      "plasmid_id",
+      "coverage",
+      "rpkm",
+      "tpm",
+      "raw_count",
+      "mapper",
+      "source_file"
+    ],
+    "plasmid_annotation": [
+      "sample_id",
+      "contig_id",
+      "gene_id",
+      "start",
+      "end",
+      "strand",
+      "gene",
+      "product",
+      "functional_label",
+      "tool",
+      "source_file"
+    ],
+    "plasmid_bins": [
+      "sample_id",
+      "bin_id",
+      "method",
+      "contig_count",
+      "total_length_bp",
+      "confidence",
+      "evidence",
+      "source_file"
+    ],
+    "plasmid_catalog": [
+      "cluster_id",
+      "representative_id",
+      "member_id",
+      "sample_id",
+      "length_bp",
+      "circularity",
+      "identity",
+      "coverage",
+      "method",
+      "source_file"
+    ],
+    "plasmid_consensus": [
+      "sample_id",
+      "contig_id",
+      "final_plasmid_call",
+      "decision_strategy",
+      "support_tools",
+      "support_count",
+      "total_tools",
+      "confidence_score",
+      "weighted_score",
+      "weight_threshold",
+      "tool_weights",
+      "contig_length",
+      "evidence",
+      "warnings"
+    ],
+    "plasmid_predictions": [
+      "sample_id",
+      "contig_id",
+      "tool",
+      "evidence_level",
+      "score",
+      "confidence",
+      "contig_length",
+      "circularity",
+      "evidence",
+      "warnings",
+      "source_file"
+    ],
+    "plasmid_structure": [
+      "sample_id",
+      "plasmid_id",
+      "length_bp",
+      "is_circular",
+      "terminal_overlap_bp",
+      "method",
+      "warnings",
+      "source_file"
+    ],
+    "plasmid_typing": [
+      "sample_id",
+      "contig_id",
+      "typing_scheme",
+      "type_id",
+      "mobility",
+      "confidence",
+      "tool",
+      "evidence",
+      "source_file"
+    ],
+    "qc_summary": [
+      "sample_id",
+      "tool",
+      "metric",
+      "value",
+      "unit",
+      "source_file"
+    ],
+    "sample_diversity": [
+      "sample_id",
+      "comparison_sample_id",
+      "metric",
+      "value",
+      "method",
+      "group",
+      "source_file",
+      "warnings"
+    ],
+    "sample_qc": [
+      "sample_id",
+      "tool",
+      "raw_reads",
+      "clean_reads",
+      "q30",
+      "gc_content",
+      "filter_rate",
+      "source_file",
+      "warnings"
+    ],
+    "visualization_outputs": [
+      "sample_id",
+      "output_type",
+      "path",
+      "tool",
+      "description"
+    ]
+  },
+  "tools": [
+    {
+      "description": "Basecall ONT POD5 signal into FASTQ before downstream read analysis.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check the POD5 file or directory path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect stderr and verify the selected model is available."
+        },
+        "tool_not_found": {
+          "hint": "Install Dorado in the autoplasm-qc environment."
+        }
+      },
+      "id": "dorado",
+      "name": "Dorado",
+      "outputs": {
+        "long_reads": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "pod5": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "24:00:00"
+      }
+    },
+    {
+      "description": "Convert a supplied long-read BAM into FASTQ for the read workflow.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check the BAM input path."
+        },
+        "nonzero_exit": {
+          "hint": "Validate the BAM with samtools quickcheck and inspect stderr."
+        },
+        "tool_not_found": {
+          "hint": "Install samtools in the autoplasm-abundance environment."
+        }
+      },
+      "id": "samtools_fastq",
+      "name": "samtools fastq",
+      "outputs": {
+        "long_reads": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "bam": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Trim and quality-control paired-end metagenomic reads.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check sample sheet read1/read2 paths."
+        },
+        "nonzero_exit": {
+          "hint": "Read the fastp stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install fastp in the autoplasm-qc environment."
+        }
+      },
+      "id": "fastp",
+      "name": "fastp",
+      "outputs": {
+        "clean_read1": {
+          "format": "fastq.gz",
+          "type": "file"
+        },
+        "clean_read2": {
+          "format": "fastq.gz",
+          "type": "file"
+        },
+        "html_report": {
+          "format": "html",
+          "type": "file"
+        },
+        "json_report": {
+          "format": "json",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "read1": {
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Generate read-level QC summaries for paired short reads.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check paired FASTQ paths before running FastQC."
+        },
+        "parse_failed": {
+          "hint": "Check the FastQC output directory layout."
+        },
+        "tool_not_found": {
+          "hint": "Install fastqc in the autoplasm-qc environment."
+        }
+      },
+      "id": "fastqc",
+      "name": "FastQC",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "read1": {
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Aggregate QC outputs into a single report directory.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Run read QC before MultiQC aggregation."
+        },
+        "tool_not_found": {
+          "hint": "Install multiqc in the autoplasm-qc environment."
+        }
+      },
+      "id": "multiqc",
+      "name": "MultiQC",
+      "outputs": {
+        "multiqc_report": {
+          "format": "html",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "multiqc_filename": {
+          "required": true,
+          "type": "string"
+        },
+        "output_dir": {
+          "required": true,
+          "type": "directory"
+        },
+        "project_outdir": {
+          "required": true,
+          "type": "directory"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Run NanoPlot as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install NanoPlot in the autoplasm-qc environment."
+        }
+      },
+      "id": "nanoplot",
+      "name": "NanoPlot",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Run Filtlong as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install filtlong in the autoplasm-qc environment."
+        }
+      },
+      "id": "filtlong",
+      "name": "Filtlong",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Run HiFiAdapterFilt as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install hifiadapterfilt.sh in the autoplasm-qc environment."
+        }
+      },
+      "id": "hifiadapterfilt",
+      "name": "HiFiAdapterFilt",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Assemble paired-end metagenomic reads into contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check cleaned read paths from the QC step."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect the MEGAHIT stderr log and assembly output directory."
+        },
+        "tool_not_found": {
+          "hint": "Install megahit in the autoplasm-assembly environment."
+        }
+      },
+      "id": "megahit",
+      "name": "MEGAHIT",
+      "outputs": {
+        "assembly": {
+          "format": "fasta",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "memory_bytes": {
+          "default": 96636764160,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "read1": {
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Run metaSPAdes as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install metaspades.py in the autoplasm-assembly environment."
+        }
+      },
+      "id": "metaspades",
+      "name": "metaSPAdes",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "read1": {
+          "required": true,
+          "type": "path"
+        },
+        "read2": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Run metaFlye as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install flye in the autoplasm-assembly environment."
+        }
+      },
+      "id": "metaflye",
+      "name": "metaFlye",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Run hifiasm as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install hifiasm in the autoplasm-assembly environment."
+        }
+      },
+      "id": "hifiasm_meta",
+      "name": "hifiasm",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Run OPERA-MS as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install OPERA-MS.pl in the autoplasm-assembly environment."
+        }
+      },
+      "id": "opera_ms",
+      "name": "OPERA-MS",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "read1": {
+          "required": true,
+          "type": "path"
+        },
+        "read2": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Summarize metagenomic assembly quality metrics.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check that the assembly step wrote the expected FASTA."
+        },
+        "tool_not_found": {
+          "hint": "Install metaquast.py in the autoplasm-assembly environment."
+        }
+      },
+      "id": "quast",
+      "name": "metaQUAST",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Optionally polish an ONT metaFlye assembly with the corresponding reads.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check the filtered ONT reads and metaFlye assembly paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs and verify model compatibility."
+        },
+        "tool_not_found": {
+          "hint": "Install medaka in the autoplasm-assembly environment."
+        }
+      },
+      "id": "medaka",
+      "name": "Medaka",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "required": true,
+          "type": "path"
+        },
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Detect plasmid-like sequences from assembled contigs.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Configure the geNomad database resource path."
+        },
+        "missing_input": {
+          "hint": "Check assembly FASTA path."
+        },
+        "parse_failed": {
+          "hint": "Check geNomad plasmid summary TSV output."
+        }
+      },
+      "id": "genomad",
+      "name": "geNomad",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        },
+        "plasmid_summary": {
+          "format": "tsv",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "database": {
+          "required": true,
+          "type": "directory"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run PLASMe as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install PLASMe.py in the autoplasm-plasmid-detect environment."
+        }
+      },
+      "id": "plasme",
+      "name": "PLASMe",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "required": true,
+          "type": "path"
+        },
+        "database": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run PlasX as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install plasx in the autoplasm-plasmid-detect environment."
+        }
+      },
+      "id": "plasx",
+      "name": "PlasX",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "annotations": {
+          "required": true,
+          "type": "path"
+        },
+        "gene_calls": {
+          "required": true,
+          "type": "path"
+        },
+        "model": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run PlasmidFinder as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install the plasmidfinder Python module in the autoplasm-annotation environment."
+        }
+      },
+      "id": "plasmidfinder",
+      "name": "PlasmidFinder",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "required": true,
+          "type": "path"
+        },
+        "database": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Run PlasMAAG as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install plasmaag in the autoplasm-plasmid-binning environment."
+        }
+      },
+      "id": "plasmaag",
+      "name": "PlasMAAG",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "reads_contigs_table": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Run gplas2 as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install gplas2 in the autoplasm-plasmid-binning environment."
+        }
+      },
+      "id": "gplas2",
+      "name": "gplas2",
+      "outputs": {
+        "plasmid_predictions": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "assembly_graph": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Run MOB-typer as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install mob_typer in the autoplasm-annotation environment."
+        }
+      },
+      "id": "mob_typer",
+      "name": "MOB-typer",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "directory"
+        },
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Run COPLA as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install copla in the autoplasm-annotation environment."
+        }
+      },
+      "id": "copla",
+      "name": "COPLA",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "refgraph": {
+          "required": true,
+          "type": "path"
+        },
+        "reflist": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Run PlasmidHostFinder as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install plasmidhostfinder.py in the autoplasm-annotation environment."
+        }
+      },
+      "id": "plasmidhostfinder",
+      "name": "PlasmidHostFinder",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "path"
+        },
+        "level": {
+          "required": true,
+          "type": "path"
+        },
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "threshold": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Gene calling on plasmid contigs \u2014 predicts protein-coding genes.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs path from plasmid consensus step."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Prodigal stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install prodigal in the autoplasm-annotation environment."
+        }
+      },
+      "id": "prodigal",
+      "name": "Prodigal",
+      "outputs": {
+        "faa": {
+          "format": "faa",
+          "type": "file"
+        },
+        "ffn": {
+          "format": "ffn",
+          "type": "file"
+        },
+        "gff": {
+          "format": "gff",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Annotate predicted plasmid contigs.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Configure the Bakta database path."
+        },
+        "missing_input": {
+          "hint": "Check plasmid_contigs output from plasmid detection."
+        },
+        "parse_failed": {
+          "hint": "Check Bakta TSV outputs."
+        }
+      },
+      "id": "bakta",
+      "name": "Bakta",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "directory"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Screen plasmid contigs against curated gene databases.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "parse_failed": {
+          "hint": "Check ABRicate TSV output."
+        },
+        "tool_not_found": {
+          "hint": "Install abricate in the autoplasm-annotation environment."
+        }
+      },
+      "id": "abricate",
+      "name": "ABRicate",
+      "outputs": {
+        "annotations_tsv": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "abricate_db": {
+          "required": true,
+          "type": "string"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Detect antimicrobial resistance features in plasmid contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "tool_not_found": {
+          "hint": "Install amrfinder in the autoplasm-annotation environment."
+        }
+      },
+      "id": "amrfinderplus",
+      "name": "AMRFinderPlus",
+      "outputs": {
+        "amrfinder_tsv": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "string"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run MOB-suite as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install mob_recon in the autoplasm-annotation environment."
+        }
+      },
+      "id": "mob_suite",
+      "name": "MOB-suite",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "path"
+        },
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Detect insertion sequences in plasmid contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "tool_not_found": {
+          "hint": "Install isescan.py in the autoplasm-annotation environment."
+        }
+      },
+      "id": "isescan",
+      "name": "ISEScan",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Detect integrons and related mobile elements in plasmid contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "tool_not_found": {
+          "hint": "Install integron_finder in the autoplasm-integronfinder environment."
+        }
+      },
+      "id": "integronfinder",
+      "name": "IntegronFinder",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Remove host-mapping Illumina read pairs when a host reference is supplied.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check paired reads and the host reference FASTA."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect stderr and the generated host index files."
+        },
+        "tool_not_found": {
+          "hint": "Install Bowtie2 in the autoplasm-abundance environment."
+        }
+      },
+      "id": "bowtie2_host_removal",
+      "name": "Bowtie2 host removal",
+      "outputs": {
+        "clean_read1": {
+          "type": "path"
+        },
+        "clean_read2": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "host_reference": {
+          "required": true,
+          "type": "path"
+        },
+        "read1": {
+          "required": true,
+          "type": "path"
+        },
+        "read2": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Retain unmapped ONT or HiFi reads when a host reference is supplied.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check long reads and the host reference FASTA."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect stderr and validate the host reference."
+        },
+        "tool_not_found": {
+          "hint": "Install minimap2 and samtools in the autoplasm-abundance environment."
+        }
+      },
+      "id": "minimap2_host_removal",
+      "name": "minimap2 host removal",
+      "outputs": {
+        "clean_long_reads": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "host_reference": {
+          "required": true,
+          "type": "path"
+        },
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Build a plasmid contig index and align paired reads for abundance estimation.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs and paired read paths."
+        },
+        "tool_not_found": {
+          "hint": "Install bowtie2 in the autoplasm-abundance environment."
+        }
+      },
+      "id": "bowtie2",
+      "name": "bowtie2",
+      "outputs": {
+        "alignment": {
+          "format": "sam",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "read1": {
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Run minimap2 as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install minimap2 in the autoplasm-abundance environment."
+        }
+      },
+      "id": "minimap2",
+      "name": "minimap2",
+      "outputs": {
+        "alignment": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "required": true,
+          "type": "path"
+        },
+        "minimap2_preset": {
+          "required": true,
+          "type": "path"
+        },
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Sort read alignments before abundance quantification.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check bowtie2/minimap2 alignment output."
+        },
+        "tool_not_found": {
+          "hint": "Install samtools in the autoplasm-abundance environment."
+        }
+      },
+      "id": "samtools",
+      "name": "samtools",
+      "outputs": {
+        "bam": {
+          "format": "bam",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "alignment": {
+          "format": "sam",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Estimate coverage and abundance for plasmid contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check sorted BAM path."
+        },
+        "parse_failed": {
+          "hint": "Check CoverM TSV output."
+        },
+        "tool_not_found": {
+          "hint": "Install coverm in the autoplasm-abundance environment."
+        }
+      },
+      "id": "coverm",
+      "name": "CoverM",
+      "outputs": {
+        "abundance": {
+          "format": "tsv",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "bam": {
+          "format": "bam",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Run Kraken2 as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install kraken2 in the stats environment."
+        }
+      },
+      "id": "kraken2",
+      "name": "Kraken2",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "path"
+        },
+        "read1": {
+          "required": true,
+          "type": "path"
+        },
+        "read2": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Estimate source community taxonomy from read inputs.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Configure the MetaPhlAn database directory."
+        },
+        "tool_not_found": {
+          "hint": "Install metaphlan in the stats environment."
+        }
+      },
+      "id": "metaphlan",
+      "name": "MetaPhlAn",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        },
+        "profile": {
+          "format": "tsv",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "directory"
+        },
+        "metaphlan_input": {
+          "required": true,
+          "type": "string"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Infer sparse correlation networks from plasmid abundance tables.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check the plasmid abundance table path."
+        },
+        "tool_not_found": {
+          "hint": "Install fastspar in the stats environment."
+        }
+      },
+      "id": "fastspar",
+      "name": "FastSpar",
+      "outputs": {
+        "correlation": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "covariance": {
+          "format": "tsv",
+          "type": "file"
+        },
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "abundance_table": {
+          "format": "tsv",
+          "required": false,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Test plasmid count differences between adequately replicated sample groups.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_abundance.tsv and the sample-sheet group column."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect stderr and verify integer-like raw counts and group replication."
+        },
+        "tool_not_found": {
+          "hint": "Install R, DESeq2, and Rscript in the stats environment."
+        }
+      },
+      "id": "deseq2_plasmid",
+      "name": "DESeq2 plasmid differential abundance",
+      "outputs": {
+        "differential_plasmids": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "abundance_table": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_metadata": {
+          "required": true,
+          "type": "path"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run BLAST+ as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install blastn in the autoplasm-annotation environment."
+        }
+      },
+      "id": "blast",
+      "name": "BLAST+",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "database": {
+          "required": true,
+          "type": "path"
+        },
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run MMseqs2 as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install mmseqs in the autoplasm-annotation environment."
+        }
+      },
+      "id": "mmseqs2",
+      "name": "MMseqs2",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "threads": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run MUMmer/nucmer as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install nucmer in the autoplasm-annotation environment."
+        }
+      },
+      "id": "mummer",
+      "name": "MUMmer/nucmer",
+      "outputs": {
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "required": true,
+          "type": "path"
+        },
+        "reference_plasmids": {
+          "required": true,
+          "type": "path"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Run clinker as registered by the metagenomic_plasmid plugin.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check planned input paths and prerequisite upstream steps."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect provenance/step_logs for stderr and rerun after fixing inputs or environment."
+        },
+        "tool_not_found": {
+          "hint": "Install clinker in the autoplasm-visualization environment."
+        }
+      },
+      "id": "clinker",
+      "name": "clinker",
+      "outputs": {
+        "genbank_files": {
+          "type": "path"
+        },
+        "output_dir": {
+          "type": "path"
+        }
+      },
+      "parameters": {
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Render the AutoPlasm markdown report from ABI result artifacts.",
+      "failure_handling": {
+        "artifact_missing": {
+          "hint": "Run plan or dry-run before report generation."
+        },
+        "nonzero_exit": {
+          "hint": "Check report inputs under tables/ and provenance/."
+        }
+      },
+      "id": "report_markdown",
+      "name": "AutoPlasm Markdown report",
+      "outputs": {
+        "report_md": {
+          "format": "markdown",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "project_outdir": {
+          "required": true,
+          "type": "directory"
+        }
+      },
+      "resources": {
+        "cpu": 1,
+        "memory": "2GB",
+        "walltime": "00:30:00"
+      }
+    },
+    {
+      "description": "Metagenomic binning of assembled contigs using coverage and composition.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check assembly FASTA and sorted BAM paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect MetaBAT2 stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install metabat2 in the stats environment."
+        }
+      },
+      "id": "metabat2",
+      "name": "MetaBAT2",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "bam": {
+          "format": "bam",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Quality assessment of metagenomic bins (completeness, contamination).",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check MAG bins directory path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect CheckM2 log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install CheckM2 in the isolated autoplasm-checkm2 environment."
+        }
+      },
+      "id": "checkm2",
+      "name": "CheckM2",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "mag_bins": {
+          "required": true,
+          "type": "directory"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Taxonomic classification of MAGs against the GTDB reference tree.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Configure GTDB-Tk database with 'gtdbtk db download'."
+        },
+        "missing_input": {
+          "hint": "Check MAG bins directory path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect GTDB-Tk log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install gtdbtk in the stats environment."
+        }
+      },
+      "id": "gtdbtk",
+      "name": "GTDB-Tk",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "mag_bins": {
+          "required": true,
+          "type": "directory"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "CRISPR spacer discovery for host-plasmid linkage evidence.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check host genome and plasmid contig paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect MinCED stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install minced in the autoplasm-annotation environment."
+        }
+      },
+      "id": "minced",
+      "name": "MinCED",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "host_genomes": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Generate circular plasmid maps from annotations and typing data.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check annotations TSV, typing TSV, and plasmid contig paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Python stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install pycirclize in the autoplasm-visualization environment."
+        }
+      },
+      "id": "pycirclize",
+      "name": "pyCirclize",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "annotations": {
+          "format": "tsv",
+          "required": true,
+          "type": "file"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "typing": {
+          "format": "tsv",
+          "required": true,
+          "type": "file"
+        }
+      },
+      "resources": {
+        "cpu": 2,
+        "memory": "4GB",
+        "walltime": "00:30:00"
+      }
+    },
+    {
+      "description": "Generate interactive host-plasmid interaction network graphs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check host-plasmid links TSV path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Python stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install pyvis in the autoplasm-visualization environment."
+        }
+      },
+      "id": "pyvis",
+      "name": "pyvis",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "host_plasmid_links": {
+          "format": "tsv",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 2,
+        "memory": "4GB",
+        "walltime": "00:30:00"
+      }
+    },
+    {
+      "description": "Plasmid contig detection and typing from assembled contigs.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Configure Platon database path in resources."
+        },
+        "missing_input": {
+          "hint": "Check assembly FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Platon stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install platon in the autoplasm-plasmid-detect environment."
+        }
+      },
+      "id": "platon",
+      "name": "Platon",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "database": {
+          "required": false,
+          "type": "directory"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Plasmid detection from the SPAdes assembly graph using SCAPP confident cycles.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check the SPAdes FASTG assembly graph and paired-end read paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect SCAPP stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install SCAPP in the autoplasm-scapp environment."
+        }
+      },
+      "id": "scapp",
+      "name": "SCAPP",
+      "outputs": {
+        "scapp_predictions": {
+          "format": "fasta",
+          "type": "file"
+        }
+      },
+      "parameters": {
+        "assembly_graph": {
+          "format": "fastg",
+          "required": true,
+          "type": "file"
+        },
+        "max_k": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "read1": {
+          "format": "fastq.gz",
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "format": "fastq.gz",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Plasmid reconstruction from assembly graph cycles.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check assembly graph, plasmid contigs, and BAM paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Recycler stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install Recycler in the autoplasm-plasmid-binning environment."
+        }
+      },
+      "id": "recycler",
+      "name": "Recycler",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly_graph": {
+          "format": "gfa",
+          "required": true,
+          "type": "file"
+        },
+        "bam": {
+          "format": "bam",
+          "required": true,
+          "type": "file"
+        },
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Detection of conjugative systems in plasmid sequences via MacSyFinder.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect MacSyFinder stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install MacSyFinder + CONJscan in the autoplasm-annotation environment."
+        }
+      },
+      "id": "conjscan",
+      "name": "CONJscan",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Macromolecular system detection in plasmid sequences.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect MacSyFinder stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install MacSyFinder in the autoplasm-annotation environment."
+        }
+      },
+      "id": "macsyfinder",
+      "name": "MacSyFinder",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      }
+    },
+    {
+      "description": "Resistance Gene Identifier against the CARD database.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Download CARD database with 'rgi load --card_json'."
+        },
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect RGI stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install rgi in the autoplasm-rgi environment."
+        }
+      },
+      "id": "rgi",
+      "name": "RGI/CARD",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Functional annotation of plasmid CDS against eggNOG orthologous groups.",
+      "failure_handling": {
+        "missing_database": {
+          "hint": "Download eggNOG database with 'download_eggnog_data.py'."
+        },
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect eggNOG-mapper stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install eggnog-mapper in the autoplasm-annotation environment."
+        }
+      },
+      "id": "eggnog_mapper",
+      "name": "eggNOG-mapper",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 8,
+        "memory": "16GB",
+        "walltime": "04:00:00"
+      }
+    },
+    {
+      "description": "Composition and coverage based metagenomic binning.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check assembly FASTA and coverage TSV paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect CONCOCT stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install concoct in the stats environment."
+        }
+      },
+      "id": "concoct",
+      "name": "CONCOCT",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "abundance": {
+          "format": "tsv",
+          "required": true,
+          "type": "file"
+        },
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Deep learning-based metagenomic binning with semi-supervised learning.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check assembly FASTA and BAM paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect SemiBin stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install SemiBin in the stats environment."
+        }
+      },
+      "id": "semibin",
+      "name": "SemiBin",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "bam": {
+          "format": "bam",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Meta-binner aggregator: selects optimal bins from multiple binning tools.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Ensure MetaBAT2 and CONCOCT have completed."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect DAS Tool stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install das_tool in the stats environment."
+        }
+      },
+      "id": "das_tool",
+      "name": "DAS Tool",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "assembly": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 4,
+        "memory": "4GB",
+        "walltime": "01:00:00"
+      }
+    },
+    {
+      "description": "Hybrid short + long read metagenomic assembly via SPAdes meta mode.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check read1, read2, and long_reads paths."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect SPAdes log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install spades in the autoplasm-assembly environment."
+        }
+      },
+      "id": "hybridspades",
+      "name": "hybridSPAdes",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "long_reads": {
+          "format": "fastq",
+          "required": true,
+          "type": "file"
+        },
+        "read1": {
+          "format": "fastq",
+          "required": true,
+          "type": "file"
+        },
+        "read2": {
+          "format": "fastq",
+          "required": true,
+          "type": "file"
+        },
+        "threads": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "resources": {
+        "cpu": 16,
+        "memory": "64GB",
+        "walltime": "08:00:00"
+      }
+    },
+    {
+      "description": "Generate linear DNA feature maps from annotated plasmid contigs.",
+      "failure_handling": {
+        "missing_input": {
+          "hint": "Check plasmid_contigs FASTA path."
+        },
+        "nonzero_exit": {
+          "hint": "Inspect Python stderr log in provenance/step_logs."
+        },
+        "tool_not_found": {
+          "hint": "Install dna_features_viewer + biopython in the autoplasm-visualization environment."
+        }
+      },
+      "id": "dna_features_viewer",
+      "name": "dna-features-viewer",
+      "outputs": {
+        "output_dir": {
+          "type": "directory"
+        }
+      },
+      "parameters": {
+        "plasmid_contigs": {
+          "format": "fasta",
+          "required": true,
+          "type": "file"
+        },
+        "sample_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "resources": {
+        "cpu": 2,
+        "memory": "4GB",
+        "walltime": "00:30:00"
+      }
+    }
+  ]
+}

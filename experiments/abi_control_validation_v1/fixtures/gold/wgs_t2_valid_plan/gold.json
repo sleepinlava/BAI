@@ -1,0 +1,951 @@
+{
+  "clean_input_sha256": [
+    {
+      "path": "config.yaml",
+      "sha256": "41a2fd22d4d1c88dc1210e9d1acf268b4b86ed953ddad6570b7067eecff4dc97"
+    },
+    {
+      "path": "reads/ISO1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/ISO2_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO2_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/amrfinder_db/IDENTITY",
+      "sha256": "a0f9709f7a190a93f9054dc7e18925cda3e5dcfe1da98e8a41092367374d4a49"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "e25fa665da8dc94816e339924bfc221bc3edb63b478d6e8b2675345056b89d68"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "c7b8da2cb8f673d28b824b67bd7e4fa79dec30a6a33ac05a79b64fc747fadffb"
+    }
+  ],
+  "compiled_plan": {
+    "analysis_type": "wgs_bacteria",
+    "enabled_steps": [
+      "ISO1_amr_amrfinderplus",
+      "ISO1_annotation_prokka",
+      "ISO1_assembly_spades",
+      "ISO1_qc_fastp",
+      "ISO1_typing_mlst",
+      "ISO2_amr_amrfinderplus",
+      "ISO2_annotation_prokka",
+      "ISO2_assembly_spades",
+      "ISO2_qc_fastp",
+      "ISO2_typing_mlst"
+    ],
+    "mode": "dry_run",
+    "outdir": "/task/work/gold-plan",
+    "project_name": "wgs_bacteria_run",
+    "schema_version": "abi.compiled_plan.v1",
+    "selected_tools": [
+      "amrfinderplus",
+      "fastp",
+      "mlst",
+      "prokka",
+      "spades"
+    ],
+    "steps": [
+      {
+        "category": "qc",
+        "container_image": null,
+        "dependencies": [],
+        "env_name": "easymeta-p0",
+        "execution_kind": "external",
+        "inputs": {
+          "read1": "/task/input/reads/ISO1_R1.fastq",
+          "read2": "/task/input/reads/ISO1_R2.fastq"
+        },
+        "outputs": {
+          "clean_read1": "/task/work/gold-plan/01_qc/ISO1/ISO1_R1.clean.fastq.gz",
+          "clean_read2": "/task/work/gold-plan/01_qc/ISO1/ISO1_R2.clean.fastq.gz",
+          "output_dir": "/task/work/gold-plan/01_qc/ISO1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "read1": {
+                "format": "fastq.gz",
+                "source": "sample_sheet",
+                "type": "file"
+              },
+              "read2": {
+                "format": "fastq.gz",
+                "source": "sample_sheet",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "clean_read1": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+                "type": "file"
+              },
+              "clean_read2": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "qc_fastp",
+          "_explicit_dependencies": [],
+          "mode": "dry_run",
+          "sample_id": "ISO1",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": "20GB",
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "ISO1",
+        "step_id": "ISO1_qc_fastp",
+        "tool_id": "fastp",
+        "validated_paths": [
+          "/task/work/gold-plan/01_qc/ISO1/ISO1_R1.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/ISO1/ISO1_R2.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/ISO1"
+        ]
+      },
+      {
+        "category": "assembly",
+        "container_image": null,
+        "dependencies": [
+          "ISO1_qc_fastp"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "clean_read1": "/task/work/gold-plan/01_qc/ISO1/ISO1_R1.clean.fastq.gz",
+          "clean_read2": "/task/work/gold-plan/01_qc/ISO1/ISO1_R2.clean.fastq.gz"
+        },
+        "outputs": {
+          "contigs_fasta": "/task/work/gold-plan/02_assembly/ISO1/contigs.fasta",
+          "output_dir": "/task/work/gold-plan/02_assembly/ISO1",
+          "scaffolds_fasta": "/task/work/gold-plan/02_assembly/ISO1/scaffolds.fasta"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "clean_read1": {
+                "format": "fastq.gz",
+                "source": "qc_fastp.clean_read1",
+                "type": "file"
+              },
+              "clean_read2": {
+                "format": "fastq.gz",
+                "source": "qc_fastp.clean_read2",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "contigs_fasta": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              },
+              "scaffolds_fasta": {
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/scaffolds.fasta",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "assembly_spades",
+          "_explicit_dependencies": [
+            "ISO1_qc_fastp"
+          ],
+          "memory_gb": 80,
+          "mode": "dry_run",
+          "sample_id": "ISO1",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 16,
+          "disk": null,
+          "memory": "64GB",
+          "walltime": "08:00:00"
+        },
+        "sample_id": "ISO1",
+        "step_id": "ISO1_assembly_spades",
+        "tool_id": "spades",
+        "validated_paths": [
+          "/task/work/gold-plan/02_assembly/ISO1/contigs.fasta",
+          "/task/work/gold-plan/02_assembly/ISO1/scaffolds.fasta",
+          "/task/work/gold-plan/02_assembly/ISO1"
+        ]
+      },
+      {
+        "category": "annotation",
+        "container_image": null,
+        "dependencies": [
+          "ISO1_assembly_spades"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "assembly_fasta": "/task/work/gold-plan/02_assembly/ISO1/contigs.fasta",
+          "genus": "Escherichia",
+          "species": "coli"
+        },
+        "outputs": {
+          "faa": "/task/work/gold-plan/03_annotation/ISO1/ISO1.faa",
+          "gbk": "/task/work/gold-plan/03_annotation/ISO1/ISO1.gbk",
+          "gff": "/task/work/gold-plan/03_annotation/ISO1/ISO1.gff",
+          "output_dir": "/task/work/gold-plan/03_annotation/ISO1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "assembly_fasta": {
+                "format": "fasta",
+                "source": "assembly_spades.contigs_fasta",
+                "type": "file"
+              },
+              "genus": {
+                "type": "string"
+              },
+              "species": {
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "faa": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.faa",
+                "type": "file"
+              },
+              "gbk": {
+                "format": "gbk",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gbk",
+                "type": "file"
+              },
+              "gff": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "gff",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gff",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "annotation_prokka",
+          "_explicit_dependencies": [
+            "ISO1_assembly_spades"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO1",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "ISO1",
+        "step_id": "ISO1_annotation_prokka",
+        "tool_id": "prokka",
+        "validated_paths": [
+          "/task/work/gold-plan/03_annotation/ISO1/ISO1.faa",
+          "/task/work/gold-plan/03_annotation/ISO1/ISO1.gff",
+          "/task/work/gold-plan/03_annotation/ISO1/ISO1.gbk",
+          "/task/work/gold-plan/03_annotation/ISO1"
+        ]
+      },
+      {
+        "category": "typing",
+        "container_image": null,
+        "dependencies": [
+          "ISO1_assembly_spades"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "assembly_fasta": "/task/work/gold-plan/02_assembly/ISO1/contigs.fasta",
+          "scheme": "auto"
+        },
+        "outputs": {
+          "mlst_tsv": "/task/work/gold-plan/04_mlst/ISO1/mlst.tsv",
+          "output_dir": "/task/work/gold-plan/04_mlst/ISO1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "assembly_fasta": {
+                "format": "fasta",
+                "source": "assembly_spades.contigs_fasta",
+                "type": "file"
+              },
+              "scheme": {
+                "default": "auto",
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "mlst_tsv": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/mlst.tsv",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "mlst",
+          "_explicit_dependencies": [
+            "ISO1_assembly_spades"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO1",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": null,
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "ISO1",
+        "step_id": "ISO1_typing_mlst",
+        "tool_id": "mlst",
+        "validated_paths": [
+          "/task/work/gold-plan/04_mlst/ISO1/mlst.tsv",
+          "/task/work/gold-plan/04_mlst/ISO1"
+        ]
+      },
+      {
+        "category": "amr",
+        "container_image": null,
+        "dependencies": [
+          "ISO1_annotation_prokka"
+        ],
+        "env_name": "autoplasm-annotation",
+        "execution_kind": "external",
+        "inputs": {
+          "amrfinder_db": "/task/input/resources/amrfinder_db",
+          "prokka_faa": "/task/work/gold-plan/03_annotation/ISO1/ISO1.faa",
+          "prokka_gff": "/task/work/gold-plan/03_annotation/ISO1/ISO1.gff"
+        },
+        "outputs": {
+          "amr_tsv": "/task/work/gold-plan/05_amr/ISO1/amr.tsv",
+          "output_dir": "/task/work/gold-plan/05_amr/ISO1"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "amrfinder_db": {
+                "type": "directory"
+              },
+              "prokka_faa": {
+                "format": "fasta",
+                "source": "annotation_prokka.faa",
+                "type": "file"
+              },
+              "prokka_gff": {
+                "format": "gff",
+                "source": "annotation_prokka.gff",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "amr_tsv": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/amr.tsv",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "amr",
+          "_explicit_dependencies": [
+            "ISO1_annotation_prokka"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO1",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "ISO1",
+        "step_id": "ISO1_amr_amrfinderplus",
+        "tool_id": "amrfinderplus",
+        "validated_paths": [
+          "/task/work/gold-plan/05_amr/ISO1/amr.tsv",
+          "/task/work/gold-plan/05_amr/ISO1"
+        ]
+      },
+      {
+        "category": "qc",
+        "container_image": null,
+        "dependencies": [],
+        "env_name": "easymeta-p0",
+        "execution_kind": "external",
+        "inputs": {
+          "read1": "/task/input/reads/ISO2_R1.fastq",
+          "read2": "/task/input/reads/ISO2_R2.fastq"
+        },
+        "outputs": {
+          "clean_read1": "/task/work/gold-plan/01_qc/ISO2/ISO2_R1.clean.fastq.gz",
+          "clean_read2": "/task/work/gold-plan/01_qc/ISO2/ISO2_R2.clean.fastq.gz",
+          "output_dir": "/task/work/gold-plan/01_qc/ISO2"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "read1": {
+                "format": "fastq.gz",
+                "source": "sample_sheet",
+                "type": "file"
+              },
+              "read2": {
+                "format": "fastq.gz",
+                "source": "sample_sheet",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "clean_read1": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+                "type": "file"
+              },
+              "clean_read2": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fastq.gz",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "qc_fastp",
+          "_explicit_dependencies": [],
+          "mode": "dry_run",
+          "sample_id": "ISO2",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": "20GB",
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "ISO2",
+        "step_id": "ISO2_qc_fastp",
+        "tool_id": "fastp",
+        "validated_paths": [
+          "/task/work/gold-plan/01_qc/ISO2/ISO2_R1.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/ISO2/ISO2_R2.clean.fastq.gz",
+          "/task/work/gold-plan/01_qc/ISO2"
+        ]
+      },
+      {
+        "category": "assembly",
+        "container_image": null,
+        "dependencies": [
+          "ISO2_qc_fastp"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "clean_read1": "/task/work/gold-plan/01_qc/ISO2/ISO2_R1.clean.fastq.gz",
+          "clean_read2": "/task/work/gold-plan/01_qc/ISO2/ISO2_R2.clean.fastq.gz"
+        },
+        "outputs": {
+          "contigs_fasta": "/task/work/gold-plan/02_assembly/ISO2/contigs.fasta",
+          "output_dir": "/task/work/gold-plan/02_assembly/ISO2",
+          "scaffolds_fasta": "/task/work/gold-plan/02_assembly/ISO2/scaffolds.fasta"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "clean_read1": {
+                "format": "fastq.gz",
+                "source": "qc_fastp.clean_read1",
+                "type": "file"
+              },
+              "clean_read2": {
+                "format": "fastq.gz",
+                "source": "qc_fastp.clean_read2",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "contigs_fasta": {
+                "contract": {
+                  "min_size": "1KB"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/contigs.fasta",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              },
+              "scaffolds_fasta": {
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/scaffolds.fasta",
+                "type": "file"
+              }
+            }
+          },
+          "_dag_node_id": "assembly_spades",
+          "_explicit_dependencies": [
+            "ISO2_qc_fastp"
+          ],
+          "memory_gb": 80,
+          "mode": "dry_run",
+          "sample_id": "ISO2",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 16,
+          "disk": null,
+          "memory": "64GB",
+          "walltime": "08:00:00"
+        },
+        "sample_id": "ISO2",
+        "step_id": "ISO2_assembly_spades",
+        "tool_id": "spades",
+        "validated_paths": [
+          "/task/work/gold-plan/02_assembly/ISO2/contigs.fasta",
+          "/task/work/gold-plan/02_assembly/ISO2/scaffolds.fasta",
+          "/task/work/gold-plan/02_assembly/ISO2"
+        ]
+      },
+      {
+        "category": "annotation",
+        "container_image": null,
+        "dependencies": [
+          "ISO2_assembly_spades"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "assembly_fasta": "/task/work/gold-plan/02_assembly/ISO2/contigs.fasta",
+          "genus": "Escherichia",
+          "species": "coli"
+        },
+        "outputs": {
+          "faa": "/task/work/gold-plan/03_annotation/ISO2/ISO2.faa",
+          "gbk": "/task/work/gold-plan/03_annotation/ISO2/ISO2.gbk",
+          "gff": "/task/work/gold-plan/03_annotation/ISO2/ISO2.gff",
+          "output_dir": "/task/work/gold-plan/03_annotation/ISO2"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "assembly_fasta": {
+                "format": "fasta",
+                "source": "assembly_spades.contigs_fasta",
+                "type": "file"
+              },
+              "genus": {
+                "type": "string"
+              },
+              "species": {
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "faa": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "fasta",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.faa",
+                "type": "file"
+              },
+              "gbk": {
+                "format": "gbk",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gbk",
+                "type": "file"
+              },
+              "gff": {
+                "contract": {
+                  "min_size": "100B"
+                },
+                "format": "gff",
+                "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.gff",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "annotation_prokka",
+          "_explicit_dependencies": [
+            "ISO2_assembly_spades"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO2",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "ISO2",
+        "step_id": "ISO2_annotation_prokka",
+        "tool_id": "prokka",
+        "validated_paths": [
+          "/task/work/gold-plan/03_annotation/ISO2/ISO2.faa",
+          "/task/work/gold-plan/03_annotation/ISO2/ISO2.gff",
+          "/task/work/gold-plan/03_annotation/ISO2/ISO2.gbk",
+          "/task/work/gold-plan/03_annotation/ISO2"
+        ]
+      },
+      {
+        "category": "typing",
+        "container_image": null,
+        "dependencies": [
+          "ISO2_assembly_spades"
+        ],
+        "env_name": "wgs",
+        "execution_kind": "external",
+        "inputs": {
+          "assembly_fasta": "/task/work/gold-plan/02_assembly/ISO2/contigs.fasta",
+          "scheme": "auto"
+        },
+        "outputs": {
+          "mlst_tsv": "/task/work/gold-plan/04_mlst/ISO2/mlst.tsv",
+          "output_dir": "/task/work/gold-plan/04_mlst/ISO2"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "assembly_fasta": {
+                "format": "fasta",
+                "source": "assembly_spades.contigs_fasta",
+                "type": "file"
+              },
+              "scheme": {
+                "default": "auto",
+                "type": "string"
+              }
+            },
+            "outputs": {
+              "mlst_tsv": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/mlst.tsv",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "mlst",
+          "_explicit_dependencies": [
+            "ISO2_assembly_spades"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO2",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 4,
+          "disk": null,
+          "memory": "8GB",
+          "walltime": "02:00:00"
+        },
+        "sample_id": "ISO2",
+        "step_id": "ISO2_typing_mlst",
+        "tool_id": "mlst",
+        "validated_paths": [
+          "/task/work/gold-plan/04_mlst/ISO2/mlst.tsv",
+          "/task/work/gold-plan/04_mlst/ISO2"
+        ]
+      },
+      {
+        "category": "amr",
+        "container_image": null,
+        "dependencies": [
+          "ISO2_annotation_prokka"
+        ],
+        "env_name": "autoplasm-annotation",
+        "execution_kind": "external",
+        "inputs": {
+          "amrfinder_db": "/task/input/resources/amrfinder_db",
+          "prokka_faa": "/task/work/gold-plan/03_annotation/ISO2/ISO2.faa",
+          "prokka_gff": "/task/work/gold-plan/03_annotation/ISO2/ISO2.gff"
+        },
+        "outputs": {
+          "amr_tsv": "/task/work/gold-plan/05_amr/ISO2/amr.tsv",
+          "output_dir": "/task/work/gold-plan/05_amr/ISO2"
+        },
+        "params": {
+          "_contract": {
+            "assertions": [
+              "output_files.output_dir exists"
+            ],
+            "inputs": {
+              "amrfinder_db": {
+                "type": "directory"
+              },
+              "prokka_faa": {
+                "format": "fasta",
+                "source": "annotation_prokka.faa",
+                "type": "file"
+              },
+              "prokka_gff": {
+                "format": "gff",
+                "source": "annotation_prokka.gff",
+                "type": "file"
+              }
+            },
+            "outputs": {
+              "amr_tsv": {
+                "contract": {
+                  "min_size": "50B"
+                },
+                "format": "tsv",
+                "path": "{outdir}/{category_dir}/{sample_id}/amr.tsv",
+                "type": "file"
+              },
+              "output_dir": {
+                "path": "{outdir}/{category_dir}/{sample_id}",
+                "type": "directory"
+              }
+            }
+          },
+          "_dag_node_id": "amr",
+          "_explicit_dependencies": [
+            "ISO2_annotation_prokka"
+          ],
+          "mode": "dry_run",
+          "sample_id": "ISO2",
+          "threads": 4
+        },
+        "resources": {
+          "accelerator": null,
+          "cpu": 8,
+          "disk": null,
+          "memory": "16GB",
+          "walltime": "04:00:00"
+        },
+        "sample_id": "ISO2",
+        "step_id": "ISO2_amr_amrfinderplus",
+        "tool_id": "amrfinderplus",
+        "validated_paths": [
+          "/task/work/gold-plan/05_amr/ISO2/amr.tsv",
+          "/task/work/gold-plan/05_amr/ISO2"
+        ]
+      }
+    ],
+    "threads": 4,
+    "warnings": []
+  },
+  "contract_plan_summary": {
+    "analysis_type": "wgs_bacteria",
+    "dag_edges": [
+      {
+        "from": "qc_fastp",
+        "to": "assembly_spades"
+      },
+      {
+        "from": "assembly_spades",
+        "to": "annotation_prokka"
+      },
+      {
+        "from": "assembly_spades",
+        "to": "mlst"
+      },
+      {
+        "from": "annotation_prokka",
+        "to": "amr"
+      }
+    ],
+    "stages": [
+      {
+        "category": "qc",
+        "id": "qc_fastp",
+        "optional": false,
+        "tool_id": "fastp"
+      },
+      {
+        "category": "assembly",
+        "id": "assembly_spades",
+        "optional": false,
+        "tool_id": "spades"
+      },
+      {
+        "category": "annotation",
+        "id": "annotation_prokka",
+        "optional": false,
+        "tool_id": "prokka"
+      },
+      {
+        "category": "typing",
+        "id": "mlst",
+        "optional": false,
+        "tool_id": "mlst"
+      },
+      {
+        "category": "amr",
+        "id": "amr",
+        "optional": false,
+        "tool_id": "amrfinderplus"
+      }
+    ]
+  },
+  "fault_input_sha256": [
+    {
+      "path": "config.yaml",
+      "sha256": "41a2fd22d4d1c88dc1210e9d1acf268b4b86ed953ddad6570b7067eecff4dc97"
+    },
+    {
+      "path": "reads/ISO1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/ISO2_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO2_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/amrfinder_db/IDENTITY",
+      "sha256": "a0f9709f7a190a93f9054dc7e18925cda3e5dcfe1da98e8a41092367374d4a49"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "e25fa665da8dc94816e339924bfc221bc3edb63b478d6e8b2675345056b89d68"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "c7b8da2cb8f673d28b824b67bd7e4fa79dec30a6a33ac05a79b64fc747fadffb"
+    }
+  ],
+  "gold": {
+    "expected_plan_reference": "/grader/gold/wgs_t2_valid_plan/compiled_plan.json",
+    "output_file": "/task/work/plan_summary.json",
+    "required_nodes": [
+      "qc_fastp",
+      "assembly_spades",
+      "annotation_prokka",
+      "mlst",
+      "amr"
+    ],
+    "selected_workflow": "wgs_bacteria",
+    "terminal_state": "completed"
+  },
+  "hidden_root_cause": null,
+  "pre_fault_twin_sha256": "01b6f3604d20a6e624b09ce0a7aea77e247cc4159d0dfb705a58c13573598296",
+  "task_id": "wgs_t2_valid_plan"
+}

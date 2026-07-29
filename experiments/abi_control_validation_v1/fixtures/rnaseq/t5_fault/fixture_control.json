@@ -1,0 +1,7 @@
+[
+  {
+    "behavior": "exit_zero_with_empty_gene_counts",
+    "operation": "configure_tool_shim",
+    "tool": "build_count_matrix"
+  }
+]

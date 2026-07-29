@@ -1,0 +1,3 @@
+sample_id	group	platform	read1	read2	organism
+ISO1	case	illumina	/task/input/reads/ISO1_R1.fastq	/task/input/reads/ISO1_R2.fastq	Staphylococcus_aureus
+ISO2	control	illumina	/task/input/reads/ISO2_R1.fastq	/task/input/reads/ISO2_R2.fastq	Staphylococcus_aureus

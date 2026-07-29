@@ -1,0 +1,32 @@
+study_id: abi_control_validation_v1
+status: generated_not_frozen
+primary_question: When model, task, workflow knowledge, underlying tools, data, environment,
+  and budget are held constant, does ABI's executable control layer improve controlled
+  valid completion compared with an information-matched advisory interface?
+conditions:
+- matched_advisory
+- abi_full
+- abi_no_runtime_contracts
+sampling:
+  temperature: 0.2
+  top_p: 0.95
+  seeds:
+  - 1103
+  - 2207
+  - 3313
+  - 4421
+  - 5531
+  replicates_per_cell: 5
+  rationale: Low but non-zero sampling makes the five seeded repetitions meaningful
+    while keeping tool-use behavior concentrated. The serving engine must attest that
+    it honors the supplied seed.
+randomization:
+  block: task_id_x_model_id_x_replicate_id
+  randomize_condition_order_within_block: true
+  randomization_seed: 20260728
+  share_session_between_conditions: false
+  share_workspace_between_conditions: false
+stopping:
+  run_once_after_freeze: true
+  optional_stopping_based_on_results: false
+  failed_trial_policy: apply_preregistered_exclusion_only

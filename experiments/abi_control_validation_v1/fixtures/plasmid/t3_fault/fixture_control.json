@@ -1,0 +1,7 @@
+[
+  {
+    "key": "resources.genomad.database",
+    "operation": "retain_configured_path",
+    "target": "/task/input/config.yaml"
+  }
+]

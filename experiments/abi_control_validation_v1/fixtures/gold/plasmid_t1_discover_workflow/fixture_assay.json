@@ -1,0 +1,237 @@
+{
+  "clean_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 0,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "aaa9c6174b58fbb80efeb34fa513db3f6626096b28a573025799d885bb0e3989",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "aaa9c6174b58fbb80efeb34fa513db3f6626096b28a573025799d885bb0e3989",
+          "command": [
+            "genomad",
+            "download-database",
+            "/tmp/abi-study-check-zimtfb_z/input/resources/genomad_db"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 2,
+          "directory_size_bytes": 79,
+          "field": "database",
+          "id": "genomad",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-zimtfb_z/input/resources/genomad_db",
+          "ready_check": "genomad_db directory found",
+          "resource_id": "genomad",
+          "source": "https://portal.nersc.gov/genomad/",
+          "source_url": "https://portal.nersc.gov/genomad/",
+          "status": "ok",
+          "tool_id": "genomad",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:genomad",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "ed5f4b40b39f11dac738d117fd5beebfc15f5a803c83b2f85388da3b58922e7b",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "ed5f4b40b39f11dac738d117fd5beebfc15f5a803c83b2f85388da3b58922e7b",
+          "command": [
+            "bakta_db",
+            "download",
+            "--output",
+            "/tmp/abi-study-check-zimtfb_z/input/resources/bakta_db",
+            "--type",
+            "light"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 1,
+          "directory_size_bytes": 22,
+          "field": "database",
+          "id": "bakta",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-zimtfb_z/input/resources/bakta_db",
+          "ready_check": "non-empty database directory found",
+          "resource_id": "bakta",
+          "source": "https://bakta.readthedocs.io/en/latest/cli/database.html",
+          "source_url": "https://bakta.readthedocs.io/en/latest/cli/database.html",
+          "status": "ok",
+          "tool_id": "bakta",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:bakta",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "678dd9a3768f10ab41dc4274972838dd1883659b4fa24ea9320124ad3f187b3c",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "678dd9a3768f10ab41dc4274972838dd1883659b4fa24ea9320124ad3f187b3c",
+          "command": [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--single-branch",
+            "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+            "/tmp/abi-study-check-zimtfb_z/input/resources/plasmidfinder_valid"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 3,
+          "directory_size_bytes": 152,
+          "field": "database",
+          "id": "plasmidfinder",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-zimtfb_z/input/resources/plasmidfinder_valid",
+          "ready_check": "PlasmidFinder config and fsa files found",
+          "resource_id": "plasmidfinder",
+          "source": "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+          "source_url": "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+          "status": "ok",
+          "tool_id": "plasmidfinder",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:plasmidfinder",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "design_valid": true,
+  "expected_fault_ready": true,
+  "fault_operations_valid": true,
+  "fault_preflight": {
+    "checks": [
+      {
+        "name": "inputs",
+        "sample_count": 0,
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "aaa9c6174b58fbb80efeb34fa513db3f6626096b28a573025799d885bb0e3989",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "aaa9c6174b58fbb80efeb34fa513db3f6626096b28a573025799d885bb0e3989",
+          "command": [
+            "genomad",
+            "download-database",
+            "/tmp/abi-study-check-o92ekbuv/input/resources/genomad_db"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 2,
+          "directory_size_bytes": 79,
+          "field": "database",
+          "id": "genomad",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-o92ekbuv/input/resources/genomad_db",
+          "ready_check": "genomad_db directory found",
+          "resource_id": "genomad",
+          "source": "https://portal.nersc.gov/genomad/",
+          "source_url": "https://portal.nersc.gov/genomad/",
+          "status": "ok",
+          "tool_id": "genomad",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:genomad",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "ed5f4b40b39f11dac738d117fd5beebfc15f5a803c83b2f85388da3b58922e7b",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "ed5f4b40b39f11dac738d117fd5beebfc15f5a803c83b2f85388da3b58922e7b",
+          "command": [
+            "bakta_db",
+            "download",
+            "--output",
+            "/tmp/abi-study-check-o92ekbuv/input/resources/bakta_db",
+            "--type",
+            "light"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 1,
+          "directory_size_bytes": 22,
+          "field": "database",
+          "id": "bakta",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-o92ekbuv/input/resources/bakta_db",
+          "ready_check": "non-empty database directory found",
+          "resource_id": "bakta",
+          "source": "https://bakta.readthedocs.io/en/latest/cli/database.html",
+          "source_url": "https://bakta.readthedocs.io/en/latest/cli/database.html",
+          "status": "ok",
+          "tool_id": "bakta",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:bakta",
+        "status": "pass"
+      },
+      {
+        "details": {
+          "checksum": "678dd9a3768f10ab41dc4274972838dd1883659b4fa24ea9320124ad3f187b3c",
+          "checksum_method": "sha256:directory-manifest-v1",
+          "checksum_sha256": "678dd9a3768f10ab41dc4274972838dd1883659b4fa24ea9320124ad3f187b3c",
+          "command": [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--single-branch",
+            "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+            "/tmp/abi-study-check-o92ekbuv/input/resources/plasmidfinder_valid"
+          ],
+          "date": "2026-07-29",
+          "directory_file_count": 3,
+          "directory_size_bytes": 152,
+          "field": "database",
+          "id": "plasmidfinder",
+          "last_checked_at": "2026-07-29T16:25:28",
+          "license": "",
+          "message": "",
+          "mock": false,
+          "path": "/tmp/abi-study-check-o92ekbuv/input/resources/plasmidfinder_valid",
+          "ready_check": "PlasmidFinder config and fsa files found",
+          "resource_id": "plasmidfinder",
+          "source": "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+          "source_url": "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git",
+          "status": "ok",
+          "tool_id": "plasmidfinder",
+          "validated_at": "2026-07-29T16:25:28",
+          "version": ""
+        },
+        "name": "resource:plasmidfinder",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "status": "pass",
+    "warnings": []
+  },
+  "passed": true,
+  "plan_nodes_valid": true
+}

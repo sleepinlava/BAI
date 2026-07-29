@@ -1,0 +1,1095 @@
+{
+  "analysis_type": "rnaseq_expression",
+  "enabled_steps": [
+    "D1_control_alignment_star",
+    "D1_control_expression_featurecounts",
+    "D1_control_qc_fastp",
+    "D1_treated_alignment_star",
+    "D1_treated_expression_featurecounts",
+    "D1_treated_qc_fastp",
+    "D2_control_alignment_star",
+    "D2_control_expression_featurecounts",
+    "D2_control_qc_fastp",
+    "D2_treated_alignment_star",
+    "D2_treated_expression_featurecounts",
+    "D2_treated_qc_fastp",
+    "build_matrix",
+    "de_deseq2"
+  ],
+  "mode": "dry_run",
+  "outdir": "/task/work/gold-plan",
+  "project_name": "rnaseq_expression_run",
+  "schema_version": "abi.compiled_plan.v1",
+  "selected_tools": [
+    "build_count_matrix",
+    "deseq2",
+    "fastp",
+    "featurecounts",
+    "star"
+  ],
+  "steps": [
+    {
+      "category": "qc",
+      "container_image": null,
+      "dependencies": [],
+      "env_name": "easymeta-p0",
+      "execution_kind": "external",
+      "inputs": {
+        "read1": "/task/input/reads/D1_control_R1.fastq",
+        "read2": "/task/input/reads/D1_control_R2.fastq"
+      },
+      "outputs": {
+        "clean_read1": "/task/work/gold-plan/01_qc/D1_control/D1_control_R1.clean.fastq.gz",
+        "clean_read2": "/task/work/gold-plan/01_qc/D1_control/D1_control_R2.clean.fastq.gz",
+        "output_dir": "/task/work/gold-plan/01_qc/D1_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "read1": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "clean_read1": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+              "type": "file"
+            },
+            "clean_read2": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "qc_fastp",
+        "_explicit_dependencies": [],
+        "mode": "dry_run",
+        "sample_id": "D1_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": "20GB",
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D1_control",
+      "step_id": "D1_control_qc_fastp",
+      "tool_id": "fastp",
+      "validated_paths": [
+        "/task/work/gold-plan/01_qc/D1_control/D1_control_R1.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D1_control/D1_control_R2.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D1_control"
+      ]
+    },
+    {
+      "category": "alignment",
+      "container_image": null,
+      "dependencies": [
+        "D1_control_qc_fastp"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "genome_index": "/task/input/resources/star_index_valid",
+        "read1": "/task/work/gold-plan/01_qc/D1_control/D1_control_R1.clean.fastq.gz",
+        "read2": "/task/work/gold-plan/01_qc/D1_control/D1_control_R2.clean.fastq.gz"
+      },
+      "outputs": {
+        "bam": "/task/work/gold-plan/02_alignment/D1_control/D1_control.Aligned.sortedByCoord.out.bam",
+        "output_dir": "/task/work/gold-plan/02_alignment/D1_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "genome_index": {
+              "type": "directory"
+            },
+            "read1": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read1",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read2",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "bam": {
+              "contract": {
+                "min_size": "1B"
+              },
+              "format": "bam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.Aligned.sortedByCoord.out.bam",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "alignment_star",
+        "_explicit_dependencies": [
+          "D1_control_qc_fastp"
+        ],
+        "mode": "dry_run",
+        "output_prefix": "/task/work/gold-plan/02_alignment/D1_control/D1_control.",
+        "sample_id": "D1_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 8,
+        "disk": null,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      },
+      "sample_id": "D1_control",
+      "step_id": "D1_control_alignment_star",
+      "tool_id": "star",
+      "validated_paths": [
+        "/task/work/gold-plan/02_alignment/D1_control/D1_control.Aligned.sortedByCoord.out.bam",
+        "/task/work/gold-plan/02_alignment/D1_control"
+      ]
+    },
+    {
+      "category": "expression",
+      "container_image": null,
+      "dependencies": [
+        "D1_control_alignment_star"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "annotation_gtf": "/task/input/resources/genes.gtf",
+        "bam": "/task/work/gold-plan/02_alignment/D1_control/D1_control.Aligned.sortedByCoord.out.bam"
+      },
+      "outputs": {
+        "counts": "/task/work/gold-plan/03_expression/D1_control/D1_control.featureCounts.txt",
+        "output_dir": "/task/work/gold-plan/03_expression/D1_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "annotation_gtf": {
+              "format": "gtf",
+              "type": "file"
+            },
+            "bam": {
+              "format": "bam",
+              "source": "alignment_star.bam",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "counts": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.featureCounts.txt",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "quant_featurecounts",
+        "_explicit_dependencies": [
+          "D1_control_alignment_star"
+        ],
+        "mode": "dry_run",
+        "sample_id": "D1_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": null,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D1_control",
+      "step_id": "D1_control_expression_featurecounts",
+      "tool_id": "featurecounts",
+      "validated_paths": [
+        "/task/work/gold-plan/03_expression/D1_control/D1_control.featureCounts.txt",
+        "/task/work/gold-plan/03_expression/D1_control"
+      ]
+    },
+    {
+      "category": "qc",
+      "container_image": null,
+      "dependencies": [],
+      "env_name": "easymeta-p0",
+      "execution_kind": "external",
+      "inputs": {
+        "read1": "/task/input/reads/D1_treated_R1.fastq",
+        "read2": "/task/input/reads/D1_treated_R2.fastq"
+      },
+      "outputs": {
+        "clean_read1": "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R1.clean.fastq.gz",
+        "clean_read2": "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R2.clean.fastq.gz",
+        "output_dir": "/task/work/gold-plan/01_qc/D1_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "read1": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "clean_read1": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+              "type": "file"
+            },
+            "clean_read2": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "qc_fastp",
+        "_explicit_dependencies": [],
+        "mode": "dry_run",
+        "sample_id": "D1_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": "20GB",
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D1_treated",
+      "step_id": "D1_treated_qc_fastp",
+      "tool_id": "fastp",
+      "validated_paths": [
+        "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R1.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R2.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D1_treated"
+      ]
+    },
+    {
+      "category": "alignment",
+      "container_image": null,
+      "dependencies": [
+        "D1_treated_qc_fastp"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "genome_index": "/task/input/resources/star_index_valid",
+        "read1": "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R1.clean.fastq.gz",
+        "read2": "/task/work/gold-plan/01_qc/D1_treated/D1_treated_R2.clean.fastq.gz"
+      },
+      "outputs": {
+        "bam": "/task/work/gold-plan/02_alignment/D1_treated/D1_treated.Aligned.sortedByCoord.out.bam",
+        "output_dir": "/task/work/gold-plan/02_alignment/D1_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "genome_index": {
+              "type": "directory"
+            },
+            "read1": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read1",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read2",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "bam": {
+              "contract": {
+                "min_size": "1B"
+              },
+              "format": "bam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.Aligned.sortedByCoord.out.bam",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "alignment_star",
+        "_explicit_dependencies": [
+          "D1_treated_qc_fastp"
+        ],
+        "mode": "dry_run",
+        "output_prefix": "/task/work/gold-plan/02_alignment/D1_treated/D1_treated.",
+        "sample_id": "D1_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 8,
+        "disk": null,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      },
+      "sample_id": "D1_treated",
+      "step_id": "D1_treated_alignment_star",
+      "tool_id": "star",
+      "validated_paths": [
+        "/task/work/gold-plan/02_alignment/D1_treated/D1_treated.Aligned.sortedByCoord.out.bam",
+        "/task/work/gold-plan/02_alignment/D1_treated"
+      ]
+    },
+    {
+      "category": "expression",
+      "container_image": null,
+      "dependencies": [
+        "D1_treated_alignment_star"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "annotation_gtf": "/task/input/resources/genes.gtf",
+        "bam": "/task/work/gold-plan/02_alignment/D1_treated/D1_treated.Aligned.sortedByCoord.out.bam"
+      },
+      "outputs": {
+        "counts": "/task/work/gold-plan/03_expression/D1_treated/D1_treated.featureCounts.txt",
+        "output_dir": "/task/work/gold-plan/03_expression/D1_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "annotation_gtf": {
+              "format": "gtf",
+              "type": "file"
+            },
+            "bam": {
+              "format": "bam",
+              "source": "alignment_star.bam",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "counts": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.featureCounts.txt",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "quant_featurecounts",
+        "_explicit_dependencies": [
+          "D1_treated_alignment_star"
+        ],
+        "mode": "dry_run",
+        "sample_id": "D1_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": null,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D1_treated",
+      "step_id": "D1_treated_expression_featurecounts",
+      "tool_id": "featurecounts",
+      "validated_paths": [
+        "/task/work/gold-plan/03_expression/D1_treated/D1_treated.featureCounts.txt",
+        "/task/work/gold-plan/03_expression/D1_treated"
+      ]
+    },
+    {
+      "category": "qc",
+      "container_image": null,
+      "dependencies": [],
+      "env_name": "easymeta-p0",
+      "execution_kind": "external",
+      "inputs": {
+        "read1": "/task/input/reads/D2_control_R1.fastq",
+        "read2": "/task/input/reads/D2_control_R2.fastq"
+      },
+      "outputs": {
+        "clean_read1": "/task/work/gold-plan/01_qc/D2_control/D2_control_R1.clean.fastq.gz",
+        "clean_read2": "/task/work/gold-plan/01_qc/D2_control/D2_control_R2.clean.fastq.gz",
+        "output_dir": "/task/work/gold-plan/01_qc/D2_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "read1": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "clean_read1": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+              "type": "file"
+            },
+            "clean_read2": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "qc_fastp",
+        "_explicit_dependencies": [],
+        "mode": "dry_run",
+        "sample_id": "D2_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": "20GB",
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D2_control",
+      "step_id": "D2_control_qc_fastp",
+      "tool_id": "fastp",
+      "validated_paths": [
+        "/task/work/gold-plan/01_qc/D2_control/D2_control_R1.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D2_control/D2_control_R2.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D2_control"
+      ]
+    },
+    {
+      "category": "alignment",
+      "container_image": null,
+      "dependencies": [
+        "D2_control_qc_fastp"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "genome_index": "/task/input/resources/star_index_valid",
+        "read1": "/task/work/gold-plan/01_qc/D2_control/D2_control_R1.clean.fastq.gz",
+        "read2": "/task/work/gold-plan/01_qc/D2_control/D2_control_R2.clean.fastq.gz"
+      },
+      "outputs": {
+        "bam": "/task/work/gold-plan/02_alignment/D2_control/D2_control.Aligned.sortedByCoord.out.bam",
+        "output_dir": "/task/work/gold-plan/02_alignment/D2_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "genome_index": {
+              "type": "directory"
+            },
+            "read1": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read1",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read2",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "bam": {
+              "contract": {
+                "min_size": "1B"
+              },
+              "format": "bam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.Aligned.sortedByCoord.out.bam",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "alignment_star",
+        "_explicit_dependencies": [
+          "D2_control_qc_fastp"
+        ],
+        "mode": "dry_run",
+        "output_prefix": "/task/work/gold-plan/02_alignment/D2_control/D2_control.",
+        "sample_id": "D2_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 8,
+        "disk": null,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      },
+      "sample_id": "D2_control",
+      "step_id": "D2_control_alignment_star",
+      "tool_id": "star",
+      "validated_paths": [
+        "/task/work/gold-plan/02_alignment/D2_control/D2_control.Aligned.sortedByCoord.out.bam",
+        "/task/work/gold-plan/02_alignment/D2_control"
+      ]
+    },
+    {
+      "category": "expression",
+      "container_image": null,
+      "dependencies": [
+        "D2_control_alignment_star"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "annotation_gtf": "/task/input/resources/genes.gtf",
+        "bam": "/task/work/gold-plan/02_alignment/D2_control/D2_control.Aligned.sortedByCoord.out.bam"
+      },
+      "outputs": {
+        "counts": "/task/work/gold-plan/03_expression/D2_control/D2_control.featureCounts.txt",
+        "output_dir": "/task/work/gold-plan/03_expression/D2_control"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "annotation_gtf": {
+              "format": "gtf",
+              "type": "file"
+            },
+            "bam": {
+              "format": "bam",
+              "source": "alignment_star.bam",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "counts": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.featureCounts.txt",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "quant_featurecounts",
+        "_explicit_dependencies": [
+          "D2_control_alignment_star"
+        ],
+        "mode": "dry_run",
+        "sample_id": "D2_control",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": null,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D2_control",
+      "step_id": "D2_control_expression_featurecounts",
+      "tool_id": "featurecounts",
+      "validated_paths": [
+        "/task/work/gold-plan/03_expression/D2_control/D2_control.featureCounts.txt",
+        "/task/work/gold-plan/03_expression/D2_control"
+      ]
+    },
+    {
+      "category": "qc",
+      "container_image": null,
+      "dependencies": [],
+      "env_name": "easymeta-p0",
+      "execution_kind": "external",
+      "inputs": {
+        "read1": "/task/input/reads/D2_treated_R1.fastq",
+        "read2": "/task/input/reads/D2_treated_R2.fastq"
+      },
+      "outputs": {
+        "clean_read1": "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R1.clean.fastq.gz",
+        "clean_read2": "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R2.clean.fastq.gz",
+        "output_dir": "/task/work/gold-plan/01_qc/D2_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "read1": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "sample_sheet",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "clean_read1": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+              "type": "file"
+            },
+            "clean_read2": {
+              "contract": {
+                "min_size": "1KB"
+              },
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "qc_fastp",
+        "_explicit_dependencies": [],
+        "mode": "dry_run",
+        "sample_id": "D2_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": "20GB",
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D2_treated",
+      "step_id": "D2_treated_qc_fastp",
+      "tool_id": "fastp",
+      "validated_paths": [
+        "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R1.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R2.clean.fastq.gz",
+        "/task/work/gold-plan/01_qc/D2_treated"
+      ]
+    },
+    {
+      "category": "alignment",
+      "container_image": null,
+      "dependencies": [
+        "D2_treated_qc_fastp"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "genome_index": "/task/input/resources/star_index_valid",
+        "read1": "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R1.clean.fastq.gz",
+        "read2": "/task/work/gold-plan/01_qc/D2_treated/D2_treated_R2.clean.fastq.gz"
+      },
+      "outputs": {
+        "bam": "/task/work/gold-plan/02_alignment/D2_treated/D2_treated.Aligned.sortedByCoord.out.bam",
+        "output_dir": "/task/work/gold-plan/02_alignment/D2_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "genome_index": {
+              "type": "directory"
+            },
+            "read1": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read1",
+              "type": "file"
+            },
+            "read2": {
+              "format": "fastq.gz",
+              "source": "qc_fastp.clean_read2",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "bam": {
+              "contract": {
+                "min_size": "1B"
+              },
+              "format": "bam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.Aligned.sortedByCoord.out.bam",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "alignment_star",
+        "_explicit_dependencies": [
+          "D2_treated_qc_fastp"
+        ],
+        "mode": "dry_run",
+        "output_prefix": "/task/work/gold-plan/02_alignment/D2_treated/D2_treated.",
+        "sample_id": "D2_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 8,
+        "disk": null,
+        "memory": "32GB",
+        "walltime": "04:00:00"
+      },
+      "sample_id": "D2_treated",
+      "step_id": "D2_treated_alignment_star",
+      "tool_id": "star",
+      "validated_paths": [
+        "/task/work/gold-plan/02_alignment/D2_treated/D2_treated.Aligned.sortedByCoord.out.bam",
+        "/task/work/gold-plan/02_alignment/D2_treated"
+      ]
+    },
+    {
+      "category": "expression",
+      "container_image": null,
+      "dependencies": [
+        "D2_treated_alignment_star"
+      ],
+      "env_name": "abi-stats",
+      "execution_kind": "external",
+      "inputs": {
+        "annotation_gtf": "/task/input/resources/genes.gtf",
+        "bam": "/task/work/gold-plan/02_alignment/D2_treated/D2_treated.Aligned.sortedByCoord.out.bam"
+      },
+      "outputs": {
+        "counts": "/task/work/gold-plan/03_expression/D2_treated/D2_treated.featureCounts.txt",
+        "output_dir": "/task/work/gold-plan/03_expression/D2_treated"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "annotation_gtf": {
+              "format": "gtf",
+              "type": "file"
+            },
+            "bam": {
+              "format": "bam",
+              "source": "alignment_star.bam",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "counts": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.featureCounts.txt",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/{category_dir}/{sample_id}",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "quant_featurecounts",
+        "_explicit_dependencies": [
+          "D2_treated_alignment_star"
+        ],
+        "mode": "dry_run",
+        "sample_id": "D2_treated",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 4,
+        "disk": null,
+        "memory": "8GB",
+        "walltime": "02:00:00"
+      },
+      "sample_id": "D2_treated",
+      "step_id": "D2_treated_expression_featurecounts",
+      "tool_id": "featurecounts",
+      "validated_paths": [
+        "/task/work/gold-plan/03_expression/D2_treated/D2_treated.featureCounts.txt",
+        "/task/work/gold-plan/03_expression/D2_treated"
+      ]
+    },
+    {
+      "category": "preprocessing",
+      "container_image": null,
+      "dependencies": [
+        "D1_control_expression_featurecounts",
+        "D1_treated_expression_featurecounts",
+        "D2_control_expression_featurecounts",
+        "D2_treated_expression_featurecounts"
+      ],
+      "env_name": "rnaseq",
+      "execution_kind": "external",
+      "inputs": {
+        "count_matrix_script": "plugins/rnaseq_expression/scripts/build_count_matrix.py",
+        "expression_dir": "/task/work/gold-plan/03_expression",
+        "sample_sheet": "/task/input/samples.tsv"
+      },
+      "outputs": {
+        "count_matrix": "/task/work/gold-plan/04_differential_expression/count_matrix.tsv",
+        "output_dir": "/task/work/gold-plan/04_differential_expression",
+        "sample_metadata": "/task/work/gold-plan/04_differential_expression/sample_metadata.tsv"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "count_matrix_script": {
+              "format": "py",
+              "path": "plugins/rnaseq_expression/scripts/build_count_matrix.py",
+              "type": "file"
+            },
+            "expression_dir": {
+              "path": "{outdir}/03_expression",
+              "type": "directory"
+            },
+            "sample_sheet": {
+              "format": "tsv",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "count_matrix": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/04_differential_expression/count_matrix.tsv",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/04_differential_expression",
+              "type": "directory"
+            },
+            "sample_metadata": {
+              "contract": {
+                "min_size": "20B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/04_differential_expression/sample_metadata.tsv",
+              "type": "file"
+            }
+          }
+        },
+        "_dag_node_id": "build_matrix",
+        "_explicit_dependencies": [
+          "D1_control_expression_featurecounts",
+          "D1_treated_expression_featurecounts",
+          "D2_control_expression_featurecounts",
+          "D2_treated_expression_featurecounts"
+        ],
+        "mode": "dry_run",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 1,
+        "disk": null,
+        "memory": "1GB",
+        "walltime": "00:15:00"
+      },
+      "sample_id": null,
+      "step_id": "build_matrix",
+      "tool_id": "build_count_matrix",
+      "validated_paths": [
+        "/task/work/gold-plan/04_differential_expression/count_matrix.tsv",
+        "/task/work/gold-plan/04_differential_expression/sample_metadata.tsv",
+        "/task/work/gold-plan/04_differential_expression"
+      ]
+    },
+    {
+      "category": "differential_expression",
+      "container_image": null,
+      "dependencies": [
+        "build_matrix"
+      ],
+      "env_name": "rnaseq",
+      "execution_kind": "external",
+      "inputs": {
+        "count_matrix": "/task/work/gold-plan/04_differential_expression/count_matrix.tsv",
+        "deseq2_script": "plugins/rnaseq_expression/scripts/run_deseq2.R",
+        "sample_metadata": "/task/work/gold-plan/04_differential_expression/sample_metadata.tsv"
+      },
+      "outputs": {
+        "de_results": "/task/work/gold-plan/04_differential_expression/deseq2_results.tsv",
+        "output_dir": "/task/work/gold-plan/04_differential_expression"
+      },
+      "params": {
+        "_contract": {
+          "assertions": [
+            "output_files.output_dir exists"
+          ],
+          "inputs": {
+            "count_matrix": {
+              "format": "tsv",
+              "source": "build_matrix.count_matrix",
+              "type": "file"
+            },
+            "deseq2_script": {
+              "format": "R",
+              "path": "plugins/rnaseq_expression/scripts/run_deseq2.R",
+              "type": "file"
+            },
+            "sample_metadata": {
+              "format": "tsv",
+              "source": "build_matrix.sample_metadata",
+              "type": "file"
+            }
+          },
+          "outputs": {
+            "de_results": {
+              "contract": {
+                "min_size": "100B"
+              },
+              "format": "tsv",
+              "path": "{outdir}/04_differential_expression/deseq2_results.tsv",
+              "type": "file"
+            },
+            "output_dir": {
+              "path": "{outdir}/04_differential_expression",
+              "type": "directory"
+            }
+          }
+        },
+        "_dag_node_id": "de_deseq2",
+        "_explicit_dependencies": [
+          "build_matrix"
+        ],
+        "alpha": 0.05,
+        "comparison": "treated_vs_control",
+        "design": "~ donor + condition",
+        "mode": "dry_run",
+        "threads": 4
+      },
+      "resources": {
+        "accelerator": null,
+        "cpu": 1,
+        "disk": null,
+        "memory": "8GB",
+        "walltime": "01:00:00"
+      },
+      "sample_id": null,
+      "step_id": "de_deseq2",
+      "tool_id": "deseq2",
+      "validated_paths": [
+        "/task/work/gold-plan/04_differential_expression/deseq2_results.tsv",
+        "/task/work/gold-plan/04_differential_expression"
+      ]
+    }
+  ],
+  "threads": 4,
+  "warnings": []
+}
