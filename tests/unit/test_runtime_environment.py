@@ -116,7 +116,7 @@ def test_empty_repository_root_does_not_shadow_global_solver(tmp_path: Path) -> 
 
 def test_incomplete_managed_prefix_does_not_shadow_global_solver(tmp_path: Path) -> None:
     project = tmp_path / "project"
-    (project / ".mamba" / "envs" / "interrupted").mkdir(parents=True)
+    (project / ".mamba" / "envs" / "interrupted" / "bin").mkdir(parents=True)
     solver_root = tmp_path / "global-mamba"
     solver_root.mkdir()
     bin_dir = tmp_path / "global-bin"
@@ -187,7 +187,7 @@ def test_incomplete_managed_prefix_does_not_shadow_valid_direct_environment(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "mamba"
-    (root / "envs" / "wgs").mkdir(parents=True)
+    (root / "envs" / "wgs" / "bin").mkdir(parents=True)
     direct = root / "wgs"
     (direct / "conda-meta").mkdir(parents=True)
 

@@ -88,6 +88,8 @@ jobs:
         run: |
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          wheel_smoke_dir="$(mktemp -d)"
+          cd "$wheel_smoke_dir"
           abi list-types
           autoplasm --help
           for platform in claude-code opencode codex; do
@@ -100,7 +102,7 @@ jobs:
           done
           abi dry-run \
             --type metagenomic_plasmid \
-            --config examples/config_minimal.yaml \
+            --config "$GITHUB_WORKSPACE/examples/config_minimal.yaml" \
             --profile dry_run \
             --outdir /tmp/abi-ci-metagenomic_plasmid \
             --log-dir /tmp/abi-ci-metagenomic_plasmid-log \
@@ -116,15 +118,32 @@ jobs:
               --no-progress
           done
           mkdir -p /tmp/abi-ci-bin
-          printf '%s\n' '#!/bin/sh' 'printf "%s\n" "2.1.0"' \
+          printf '%s\n' \
+            '#!/bin/sh' \
+            'set -eu' \
+            'if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then printf "%s\n" "2.1.0"; exit 0; fi' \
+            'if [ "${1:-}" != "create" ]; then exit 91; fi' \
+            'prefix=""' \
+            'spec=""' \
+            'while [ "$#" -gt 0 ]; do' \
+            '  case "$1" in' \
+            '    --prefix) shift; prefix="$1" ;;' \
+            '    --file) shift; spec="$1" ;;' \
+            '  esac' \
+            '  shift' \
+            'done' \
+            'test -n "$prefix"' \
+            'test -f "$spec"' \
+            'mkdir -p "$prefix/conda-meta"' \
             > /tmp/abi-ci-bin/micromamba
           chmod +x /tmp/abi-ci-bin/micromamba
           abi env install \
             --type rnaseq_expression \
             --solver /tmp/abi-ci-bin/micromamba \
             --mamba-root "/tmp/abi ci managed root" \
-            --dry-run \
-            --output-json
+            --output-json > /tmp/abi-ci-env-report.json
+          spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-env-report.json"))["environments"][0]["spec_path"])')"
+          test -f "$spec_path"
 
   linux-arm64:
     name: Linux arm64
@@ -158,18 +177,37 @@ jobs:
           python -m build
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          wheel_smoke_dir="$(mktemp -d)"
+          cd "$wheel_smoke_dir"
           abi list-types
           abi env discover --output-json
           mkdir -p /tmp/abi-ci-bin
-          printf '%s\n' '#!/bin/sh' 'printf "%s\n" "2.1.0"' \
+          printf '%s\n' \
+            '#!/bin/sh' \
+            'set -eu' \
+            'if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then printf "%s\n" "2.1.0"; exit 0; fi' \
+            'if [ "${1:-}" != "create" ]; then exit 91; fi' \
+            'prefix=""' \
+            'spec=""' \
+            'while [ "$#" -gt 0 ]; do' \
+            '  case "$1" in' \
+            '    --prefix) shift; prefix="$1" ;;' \
+            '    --file) shift; spec="$1" ;;' \
+            '  esac' \
+            '  shift' \
+            'done' \
+            'test -n "$prefix"' \
+            'test -f "$spec"' \
+            'mkdir -p "$prefix/conda-meta"' \
             > /tmp/abi-ci-bin/micromamba
           chmod +x /tmp/abi-ci-bin/micromamba
           abi env install \
             --type rnaseq_expression \
             --solver /tmp/abi-ci-bin/micromamba \
             --mamba-root "/tmp/abi ci arm managed root" \
-            --dry-run \
-            --output-json
+            --output-json > /tmp/abi-ci-arm-env-report.json
+          spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-arm-env-report.json"))["environments"][0]["spec_path"])')"
+          test -f "$spec_path"
           abi-mcp --help
 
   migration-gate:

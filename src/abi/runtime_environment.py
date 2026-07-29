@@ -444,20 +444,21 @@ def manage_environments(
             if existing_spec is None
             else ("matches" if existing_spec == spec_bytes else "differs")
         )
+        already_installed = _is_environment_prefix(prefix)
+        solver_action = "update" if action == "update" and already_installed else "install"
         command = _environment_solver_command(
             solver_report["name"],
             solver_report["executable"],
-            action=action,
+            action=solver_action,
             prefix=prefix,
             spec_path=spec_path,
         )
 
-        already_installed = _is_environment_prefix(prefix)
         executed = False
         if action == "install" and already_installed:
             status = "unchanged"
         elif dry_run:
-            status = f"planned_{'create' if action == 'install' else 'update'}"
+            status = f"planned_{'create' if solver_action == 'install' else 'update'}"
         else:
             spec_path.parent.mkdir(parents=True, exist_ok=True)
             previous_spec = existing_spec
@@ -474,7 +475,7 @@ def manage_environments(
                 if completed.returncode != 0:
                     detail = completed.stderr.strip() or completed.stdout.strip() or "no output"
                     raise RuntimeEnvironmentError(
-                        f"{solver_report['name']} {action} failed for {env_name}: {detail}"
+                        f"{solver_report['name']} {solver_action} failed for {env_name}: {detail}"
                     )
                 if not _is_environment_prefix(prefix):
                     raise RuntimeEnvironmentError(
@@ -679,7 +680,7 @@ def _environment_solver_command(
     if solver_name == "micromamba":
         command = [
             executable,
-            operation,
+            *(["env", operation] if action == "update" else [operation]),
             "--yes",
             "--prefix",
             str(prefix),
@@ -832,7 +833,7 @@ def _environment_prefix_count(root: Path) -> int:
 def _is_environment_prefix(path: Path) -> bool:
     """Return whether a directory has markers of a usable Conda environment."""
 
-    return path.is_dir() and ((path / "conda-meta").is_dir() or (path / "bin").is_dir())
+    return path.is_dir() and (path / "conda-meta").is_dir()
 
 
 def _load_plugin_tool_metadata(analysis_type: str) -> dict[str, Mapping[str, Any]]:

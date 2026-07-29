@@ -18,6 +18,10 @@ if [ "${1:-}" = "--version" ]; then
   printf '%s\n' '2.1.0'
   exit 0
 fi
+operation="${1:-}"
+if [ "$operation" = "env" ]; then
+  operation="${2:-}"
+fi
 if [ -n "${ABI_TEST_COMMAND_LOG:-}" ]; then
   printf '%s\n' "$*" >> "$ABI_TEST_COMMAND_LOG"
 fi
@@ -29,6 +33,10 @@ while [ "$#" -gt 0 ]; do
   fi
   shift
 done
+if [ "$operation" = "update" ] && [ ! -d "$prefix/conda-meta" ]; then
+  printf '%s\n' 'No prefix found. Environment must first be created.' >&2
+  exit 7
+fi
 mkdir -p "$prefix/conda-meta"
 printf '%s\n' "$MAMBA_ROOT_PREFIX" > "$ABI_TEST_ROOT_LOG"
 printf '%s\n' "${PYTHONPATH-unset}" > "$ABI_TEST_PYTHONPATH_LOG"
@@ -160,11 +168,15 @@ def test_update_creates_missing_environment_then_updates_it(tmp_path: Path) -> N
     assert second["environments"][0]["status"] == "updated"
     commands = command_log.read_text(encoding="utf-8").splitlines()
     assert len(commands) == 2
-    assert all(command.startswith("update --yes --prefix ") for command in commands)
+    assert commands[0].startswith("create --yes --prefix ")
+    assert commands[1].startswith("env update --yes --prefix ")
+    assert "--prune" not in commands[0]
+    assert commands[1].endswith("--prune")
 
 
 def test_conda_update_uses_documented_noninteractive_command_surface(tmp_path: Path) -> None:
     solver = _version_only_solver(tmp_path / "bin" / "conda")
+    (tmp_path / "managed-root" / "envs" / "wgs" / "conda-meta").mkdir(parents=True)
 
     report = manage_environments(
         action="update",

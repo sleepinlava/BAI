@@ -72,11 +72,14 @@ deduplicated to its assigned environments.
 The default writable root is `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`; explicit
 CLI and environment roots remain authoritative. Solver children retain Linux dynamic
 library variables but receive no host `PYTHONPATH`. Installation is idempotent, update
-uses pruning, failed solves do not publish an unapplied specification, and `--dry-run`
-does not create the target root.
+uses pruning, and an update request creates the environment first when its prefix is
+missing. Failed solves do not publish an unapplied specification, incomplete prefixes
+without `conda-meta/` are not accepted, and `--dry-run` does not create the target root.
 
-The wheel smoke test exercises this path with the packaged `environments.yaml`, proving
-that it does not depend on repository-local `envs/*.yml`.
+The x86_64 and arm64 wheel smoke tests change to an isolated temporary directory, then
+execute environment creation with a strict test solver and the packaged
+`environments.yaml`. This proves that the path does not fall back to a source checkout
+or repository-local `envs/*.yml`.
 
 ## Remaining delivery phases
 

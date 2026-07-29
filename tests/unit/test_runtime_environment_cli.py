@@ -115,7 +115,7 @@ def test_env_install_dry_run_selects_plugin_environments_without_writing(
     assert root.exists() is False
 
 
-def test_env_update_dry_run_accepts_individual_environment(tmp_path: Path) -> None:
+def test_env_update_dry_run_plans_create_when_environment_is_missing(tmp_path: Path) -> None:
     solver = _fake_solver(tmp_path / "bin" / "micromamba")
 
     result = runner.invoke(
@@ -138,5 +138,5 @@ def test_env_update_dry_run_accepts_individual_environment(tmp_path: Path) -> No
     payload = json.loads(result.stdout)
     assert payload["action"] == "update"
     assert payload["environments"][0]["name"] == "wgs"
-    assert payload["environments"][0]["status"] == "planned_update"
-    assert "--prune" in payload["environments"][0]["command"]
+    assert payload["environments"][0]["status"] == "planned_create"
+    assert "--prune" not in payload["environments"][0]["command"]
