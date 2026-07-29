@@ -180,12 +180,16 @@ Large or generated runtime state is ignored:
 
 Tool execution resolves environments via ``abi.config.resolved_mamba_root()``
 with this priority:
-1. ``ABI_MAMBA_ROOT`` env var (explicit override)
-2. ``AUTOPLASM_MAMBA_ROOT`` env var (legacy compat)
-3. ``PROJECT_ROOT / ".mamba"`` (default local install)
-4. ``PROJECT_ROOT.parent / "abi-envs"`` (sibling dir)
+
+1. Explicit CLI/API root
+2. ``ABI_MAMBA_ROOT`` and ``MAMBA_ROOT_PREFIX``
+3. ``AUTOPLASM_MAMBA_ROOT`` (legacy compatibility)
+4. Populated repository-compatible roots
+5. Global Micromamba/Mamba/Conda metadata
+6. Linux user data root
+
 The ``env_name`` for each tool is resolved at runtime from ``environments.yaml``.
-The current manifest declares 19 Conda environments and 98 tool-to-environment
+The current manifest declares 21 Conda environments and 99 tool-to-environment
 assignments; code and documentation should derive these inventories from the
 manifest rather than duplicating them.
 

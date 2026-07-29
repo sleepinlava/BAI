@@ -99,7 +99,7 @@ gh workflow run docker.yml --ref master \
 
 默认 sdist 到 wheel 的构建路径仍必须成功，因为强制进入 wheel 的文件也必须存在于
 sdist 和 Docker 上下文中。平台认证路线图及完整 Docker 手动策略见
-[Linux 与 macOS 支持计划](platform_support_plan.md)。
+[Linux 支持与交付计划](linux_support_plan.md)。
 
 ### 文档变更
 

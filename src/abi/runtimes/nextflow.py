@@ -15,6 +15,7 @@ from abi.dag import ABIDAG, infer_dag, process_name
 from abi.execution_policy import ExecutionPolicy, ResourceOverride
 from abi.exporters import NextflowExporter
 from abi.results import ABIResultWriter
+from abi.runtime_environment import resolve_environment_prefix
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.schemas import ABIError
 from abi.timeouts import (
@@ -258,7 +259,9 @@ def resolve_nextflow_bin(
     if env_value:
         candidates.append(Path(env_value))
     root = Path(mamba_root or resolved_mamba_root())
-    candidates.append(root / "envs" / "autoplasm-nextflow" / "bin" / "nextflow")
+    prefix = resolve_environment_prefix(root, "autoplasm-nextflow")
+    assert prefix.path is not None
+    candidates.append(prefix.path / "bin" / "nextflow")
     path_value = shutil.which("nextflow")
     if path_value:
         candidates.append(Path(path_value))

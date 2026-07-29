@@ -20,6 +20,7 @@ def test_resolved_mamba_root_prefers_most_populated_parent(monkeypatch, tmp_path
     (parent_envs / "wgs").mkdir()
 
     monkeypatch.delenv("ABI_MAMBA_ROOT", raising=False)
+    monkeypatch.delenv("MAMBA_ROOT_PREFIX", raising=False)
     monkeypatch.delenv("AUTOPLASM_MAMBA_ROOT", raising=False)
     monkeypatch.setattr(abi_config, "PROJECT_ROOT", project)
     monkeypatch.setattr(engine_config, "PROJECT_ROOT", project)

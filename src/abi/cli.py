@@ -32,6 +32,8 @@ Command                       Purpose
 ``install-skills``            Install ABI agent skills into ~/.claude/skills/.
 ``agent install``             Install Claude Code, OpenCode, or Codex integration assets.
 ``agent doctor``              Diagnose one installed agent-platform integration.
+``env discover``              Explain Linux Mamba, environment, tool, and Python paths.
+``env doctor``                Diagnose Linux plugin/tool runtime availability.
 ``dispatch``                  Headless subprocess dispatch for Job Service workers.
 ``job-service``               Start the HTTP Job Service for queued operations.
 ``job submit``                Submit a job to the ABI Job Service.
@@ -128,6 +130,8 @@ job_app = typer.Typer(help="Submit and inspect queued ABI Job Service operations
 app.add_typer(job_app, name="job")
 agent_app = typer.Typer(help="Install and diagnose ABI integrations for agent platforms.")
 app.add_typer(agent_app, name="agent")
+env_app = typer.Typer(help="Discover and diagnose Linux runtime environments.")
+app.add_typer(env_app, name="env")
 
 
 @app.callback(invoke_without_command=True)
@@ -2747,6 +2751,101 @@ def doctor_command(
                 f" -- {'HEALTHY' if report.passed else 'UNHEALTHY'}"
             )
         if not report.passed:
+            raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        _fail(exc)
+
+
+@env_app.command("discover")
+def env_discover_command(
+    mamba_root: Optional[Path] = typer.Option(
+        None,
+        "--mamba-root",
+        help="Authoritative Mamba root. A missing explicit root is an error.",
+    ),
+    output_json: bool = typer.Option(
+        False,
+        "--output-json",
+        "--json",
+        help="Emit the complete discovery report as JSON.",
+    ),
+) -> None:
+    """Discover the Linux Mamba root, environment prefixes, and Python paths."""
+
+    try:
+        from abi.runtime_environment import build_environment_report
+
+        report = build_environment_report(explicit_root=mamba_root)
+        if output_json:
+            typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+            return
+        root = report["mamba_root"]
+        typer.echo(f"Platform: {report['platform']['system']} {report['platform']['architecture']}")
+        typer.echo(f"ABI Python: {report['platform']['python']}")
+        typer.echo(f"Mamba root: {root['path']} ({root['source']})")
+        typer.echo(f"Solver: {root['solver'] or 'not discovered'}")
+        existing = sum(1 for row in report["environments"] if row["exists"])
+        typer.echo(f"Declared environments: {existing}/{len(report['environments'])} present")
+    except Exception as exc:
+        _fail(exc)
+
+
+@env_app.command("doctor")
+def env_doctor_command(
+    analysis_type: Optional[str] = typer.Option(
+        None,
+        "--type",
+        "-t",
+        help="Plugin whose Linux capability and assigned tools should be checked.",
+    ),
+    mamba_root: Optional[Path] = typer.Option(
+        None,
+        "--mamba-root",
+        help="Authoritative Mamba root. A missing explicit root is an error.",
+    ),
+    tools: Optional[List[str]] = typer.Option(
+        None,
+        "--tool",
+        help="Tool executable to resolve. Repeat to check multiple tools.",
+    ),
+    output_json: bool = typer.Option(
+        False,
+        "--output-json",
+        "--json",
+        help="Emit the complete diagnostic report as JSON.",
+    ),
+) -> None:
+    """Diagnose Linux environments, requested tools, and interpreter paths."""
+
+    try:
+        from abi.runtime_environment import build_environment_report
+
+        report = build_environment_report(
+            explicit_root=mamba_root,
+            tool_names=tools or (),
+            analysis_type=analysis_type,
+        )
+        if output_json:
+            typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        else:
+            root = report["mamba_root"]
+            status = "HEALTHY" if report["healthy"] else "UNHEALTHY"
+            typer.echo(f"Linux runtime: {status}")
+            typer.echo(f"Mamba root: {root['path']} ({root['source']})")
+            if report["plugin"]:
+                plugin = report["plugin"]
+                typer.echo(
+                    f"Plugin: {plugin['analysis_type']} "
+                    f"{plugin['architecture']} ({plugin['status']})"
+                )
+            for row in report["tools"]:
+                marker = "OK" if row["exists"] else "MISSING"
+                typer.echo(f"  [{marker}] {row['tool']}: {row['path'] or '-'} ({row['source']})")
+            for issue in report["issues"]:
+                typer.echo(f"  [ISSUE] {issue}")
+        if not report["healthy"]:
             raise typer.Exit(code=1)
     except typer.Exit:
         raise

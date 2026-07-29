@@ -60,6 +60,12 @@ import yaml
 
 from abi.config import PROJECT_ROOT, resolved_mamba_root
 from abi.errors import ConfigError, MissingTemplateParamError, ToolError
+from abi.runtime_environment import (
+    resolve_environment_prefix,
+)
+from abi.runtime_environment import (
+    resolve_executable as resolve_runtime_executable,
+)
 from abi.timeouts import DEFAULT_TOOL_TIMEOUT_SECONDS, timeout_from_env_or_value
 
 _logger = logging.getLogger("abi.tools")
@@ -918,16 +924,15 @@ class GenericCommandSkill(ToolSkill):
         """Path to the conda environment directory.
 
         Supports two layouts:
-        1. Direct: ``{mamba_root}/{env_name}`` (e.g. mamba env create -p ...)
-        2. Managed: ``{mamba_root}/envs/{env_name}`` (standard conda convention)
+        1. Managed: ``{mamba_root}/envs/{env_name}`` (standard conda convention)
+        2. Direct: ``{mamba_root}/{env_name}`` (e.g. mamba env create -p ...)
 
-        The direct layout is checked first; the managed layout is the fallback.
-        / 支持两种布局，优先检查直接路径。
+        The shared Linux runtime resolver owns this precedence.
+        / 由统一 Linux 运行时解析器管理优先级。
         """
-        direct = self.mamba_root / self.env_name
-        if direct.exists():
-            return direct
-        return self.mamba_root / "envs" / self.env_name
+        resolution = resolve_environment_prefix(self.mamba_root, self.env_name)
+        assert resolution.path is not None
+        return resolution.path
 
     @property
     def env_bin(self) -> Path:
@@ -1015,20 +1020,12 @@ class GenericCommandSkill(ToolSkill):
         """
         if self.metadata.get("mock_tools"):
             return True
-        executable_path = Path(self.executable)
-        # Absolute path or path with directory: check directly / 绝对路径或含目录：直接检查
-        if executable_path.is_absolute() or executable_path.parent != Path("."):
-            return executable_path.exists()
-        # Simple name: search in conda env's bin first, then system PATH.
-        # / 简单名称：先在 conda env 中搜索，然后搜索系统 PATH。
-        if self.env_bin.exists() and shutil.which(self.executable, path=str(self.env_bin)):
-            return True
-        for directory in self.extra_path_dirs():
-            if shutil.which(self.executable, path=str(directory)):
-                return True
-        # Fall back to full system PATH (some tools like Rscript may only
-        # exist outside the conda env). / 回退到完整系统 PATH。
-        return shutil.which(self.executable) is not None
+        resolution = resolve_runtime_executable(
+            self.executable,
+            env_prefix=self.env_prefix,
+            extra_dirs=self.extra_path_dirs(),
+        )
+        return resolution.path is not None
 
     def plan(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Return a lightweight plan dict describing this step.

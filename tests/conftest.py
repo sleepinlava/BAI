@@ -79,6 +79,7 @@ def _isolate_mamba_root_env(monkeypatch):
     """
     for var in (
         "ABI_MAMBA_ROOT",
+        "MAMBA_ROOT_PREFIX",
         "AUTOPLASM_MAMBA_ROOT",
         "ABI_RESOURCE_ROOT",
         "AUTOPLASM_RESOURCE_ROOT",

@@ -1,4 +1,35 @@
 abi_version: '0.1'
+platform_support:
+  active_os: linux
+  architectures:
+    x86_64:
+      core_status: certified
+      evidence: required ubuntu Python matrix, wheel smoke, CLI/MCP tests
+    aarch64:
+      core_status: ci_configured
+      evidence: native ubuntu-24.04-arm job; certification requires two consecutive releases
+  plugins:
+    amplicon_16s:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    easymetagenome:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    metagenomic_plasmid:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    metatranscriptomics:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    rnaseq_expression:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    viral_viwrap:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
+    wgs_bacteria:
+      x86_64: partial
+      aarch64: pending_real_tool_validation
 environments:
   autoplasm-base:
     channels:

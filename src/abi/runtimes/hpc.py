@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -12,12 +11,13 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any, Mapping
 
-from abi.config import PROJECT_ROOT
+from abi.config import resolved_mamba_root
 from abi.contracts.step_contract import compute_file_checksum, load_checksums
 from abi.dag import ABIDAG, infer_dag
 from abi.execution_policy import ResourceOverride, resolve_resources_v2
 from abi.internal import internal_handler_spec, run_plugin_preflight
 from abi.results import ABIResultWriter
+from abi.runtime_environment import resolve_environment_prefix
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.schemas import ABIError
 from abi.step_runner import StepExecutionResult, execute_step, write_step_payload
@@ -289,16 +289,17 @@ class HpcRuntime:
         return [f"${{JOB_{_safe_name(dependency)}}}" for dependency in binding.dependencies]
 
     def _render_env(self, config: Mapping[str, Any], container: str | None) -> list[str]:
-        mamba_root = str(
-            self.options.mamba_root
-            or config.get("mamba_root")
-            or os.environ.get("ABI_MAMBA_ROOT")
-            or PROJECT_ROOT / ".mamba"
+        mamba_root = Path(
+            self.options.mamba_root or config.get("mamba_root") or resolved_mamba_root()
         )
-        lines = [f"export ABI_MAMBA_ROOT={shlex_quote(mamba_root)}"]
-        abi_bin = Path(mamba_root) / "envs" / "abi-base" / "bin"
+        lines = [f"export ABI_MAMBA_ROOT={shlex_quote(str(mamba_root))}"]
+        abi_prefix = resolve_environment_prefix(mamba_root, "abi-base")
         configured_env = str(config.get("env_name", "abi-base"))
-        configured_bin = Path(mamba_root) / "envs" / configured_env / "bin"
+        configured_prefix = resolve_environment_prefix(mamba_root, configured_env)
+        assert abi_prefix.path is not None
+        assert configured_prefix.path is not None
+        abi_bin = abi_prefix.path / "bin"
+        configured_bin = configured_prefix.path / "bin"
         lines.append(f'export PATH="{abi_bin}:{configured_bin}:$PATH"')
         if container:
             runtime = self.options.container_runtime or "apptainer"

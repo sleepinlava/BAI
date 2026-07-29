@@ -60,53 +60,11 @@ def write_yaml(data: Mapping[str, Any], path: str | Path) -> Path:
 
 
 def resolved_mamba_root() -> Path:
-    """Return the local mamba root used by ABI-managed tool environments.
+    """Return the Mamba root selected by the shared Linux runtime resolver."""
 
-    Resolution order:
-    1. ``ABI_MAMBA_ROOT`` env var (explicit override)
-    2. ``AUTOPLASM_MAMBA_ROOT`` env var (legacy compat)
-    3. Best populated local candidate among ``PROJECT_ROOT / ".mamba"``,
-       ``PROJECT_ROOT.parent / ".mamba"``, and ``PROJECT_ROOT.parent / "abi-envs"``.
+    from abi.runtime_environment import resolved_mamba_root as resolve
 
-    Env overrides that point at non-existent or empty directories fall through
-    to local candidates so one misconfigured export cannot silently break tool
-    discovery.
-    """
-    for var in ("ABI_MAMBA_ROOT", "AUTOPLASM_MAMBA_ROOT"):
-        env_override = os.environ.get(var)
-        if env_override:
-            candidate = Path(env_override)
-            envs_dir = candidate / "envs"
-            if envs_dir.is_dir() and any(envs_dir.iterdir()):
-                return candidate
-            # Fall through to local candidates on empty/missing override.
-    default = PROJECT_ROOT / ".mamba"
-    parent_default = PROJECT_ROOT.parent / ".mamba"
-    sibling = PROJECT_ROOT.parent / "abi-envs"
-    return _best_mamba_root_candidate([default, parent_default, sibling], fallback=default)
-
-
-def _best_mamba_root_candidate(candidates: list[Path], *, fallback: Path) -> Path:
-    """Return the candidate with the most managed env prefixes.
-
-    Cloud rebuild scripts commonly place all envs in ``PROJECT_ROOT.parent / ".mamba"``
-    while an older project-local ``.mamba`` may still contain a single stale env.
-    Picking the most populated candidate keeps local installs working but avoids
-    silently resolving to an incomplete root on shared disks.
-    """
-    scored: list[tuple[int, int, Path]] = []
-    for index, candidate in enumerate(candidates):
-        envs_dir = candidate / "envs"
-        if envs_dir.is_dir():
-            env_count = sum(1 for child in envs_dir.iterdir() if child.is_dir())
-            if env_count:
-                scored.append((env_count, -index, candidate))
-    if scored:
-        return max(scored)[2]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return fallback
+    return resolve(project_root=PROJECT_ROOT)
 
 
 def deep_merge(base: Dict[str, Any], override: Mapping[str, Any]) -> Dict[str, Any]:

@@ -246,11 +246,13 @@ abi report --result-dir results/my-run --type metatranscriptomics
 
 ### 本地与 Conda 环境
 
-ABI 当前通过 `environments.yaml` 把 98 个已注册工具 ID 映射到 19 个
-声明的 Conda 环境。自动化应直接读取该清单，不要依赖复制出来的数量。默认从
-仓库内的 `.mamba/envs/<env_name>/bin` 解析工具。
+ABI 当前通过 `environments.yaml` 把 99 个已注册工具 ID 映射到 21 个
+声明的 Conda 环境。自动化应直接读取该清单，不要依赖复制出来的数量。ABI 会依次
+检查显式覆盖、已填充的仓库根目录、全局 Conda 系安装，最后使用 Linux 用户数据
+目录。
 
-可以设置 `ABI_MAMBA_ROOT` 使用其他根目录；`AUTOPLASM_MAMBA_ROOT` 继续用于向后兼容。
+使用 `abi env discover --output-json` 检查所选根目录和 Python 路径。可以设置
+`ABI_MAMBA_ROOT` 作为权威覆盖；`AUTOPLASM_MAMBA_ROOT` 继续用于向后兼容。
 
 ### Docker
 
@@ -277,7 +279,7 @@ gh workflow run docker.yml --ref master \
 ```
 
 跨机器安装验收标准和 Docker 手动策略见
-[Linux 与 macOS 支持计划](docs/zh/platform_support_plan.md)。
+[Linux 支持与交付计划](docs/zh/linux_support_plan.md)。
 
 ### Nextflow、Snakemake、HPC、云端与队列任务
 

@@ -115,10 +115,47 @@ jobs:
               --no-check-files \
               --no-progress
           done
+
+  linux-arm64:
+    name: Linux arm64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-wqy-zenhei
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,report]"
+
+      - name: Verify native architecture
+        run: |
+          python -c "import platform; assert platform.machine() in {'aarch64', 'arm64'}, platform.machine()"
+
+      - name: Run Linux arm64 tests
+        run: |
+          python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+            --strict-markers -m "not requires_tools"
+
+      - name: Build and smoke-test wheel
+        run: |
+          python -m build
+          wheels=(dist/*.whl)
+          python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          abi list-types
+          abi env discover --output-json
+          abi-mcp --help
+
   migration-gate:
     name: Migration Gate
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, linux-arm64]
     steps:
       - uses: actions/checkout@v4
 

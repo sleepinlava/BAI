@@ -17,6 +17,7 @@ import yaml
 from abi.config import PROJECT_ROOT, resolved_mamba_root
 from abi.plugins import get_plugin
 from abi.resources import check_resources
+from abi.runtime_environment import resolve_environment_prefix
 from abi.tool_catalog import ToolCatalog
 
 DEFAULT_ANALYSIS_TYPES = (
@@ -257,15 +258,17 @@ def build_conda_lock(
     declared = environment_spec.get("environments", {})
     declared_envs = set(declared) if isinstance(declared, Mapping) else set()
     env_root = mamba_root / "envs"
-    present_envs = (
+    managed_envs = (
         {p.name for p in env_root.iterdir() if p.is_dir()} if env_root.is_dir() else set()
     )
+    direct_envs = {name for name in declared_envs if (mamba_root / name).is_dir()}
+    present_envs = managed_envs | direct_envs
     env_names = sorted(declared_envs | present_envs)
     conda = _resolve_conda_executable(conda_executable)
 
     environments: dict[str, Any] = {}
     for env_name in env_names:
-        prefix = env_root / env_name
+        prefix = _env_prefix(mamba_root, env_name)
         packages: list[dict[str, Any]] = []
         package_error = ""
         if include_packages and prefix.is_dir() and conda:
@@ -686,10 +689,9 @@ def _assigned_env(assignments: Any, plugin: str, tool_id: str) -> str:
 
 
 def _env_prefix(mamba_root: Path, env_name: str) -> Path:
-    direct = mamba_root / env_name
-    if direct.exists():
-        return direct
-    return mamba_root / "envs" / env_name
+    resolution = resolve_environment_prefix(mamba_root, env_name)
+    assert resolution.path is not None
+    return resolution.path
 
 
 def _extra_path_dirs(

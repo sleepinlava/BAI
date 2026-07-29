@@ -106,7 +106,9 @@ class TestPreflightEnabledOptionalTools:
 
 class TestGenomadResourceIntegrity:
     def test_directory_without_genomad_db_is_not_ready(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(tmp_path / ".mamba"))
+        mamba_root = tmp_path / ".mamba"
+        mamba_root.mkdir()
+        monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
         database = tmp_path / "genomad"
         database.mkdir()
         config = {"resources": {"genomad": {"database": str(database)}}}
@@ -116,7 +118,9 @@ class TestGenomadResourceIntegrity:
         assert rows[0]["resource_status"] == "missing"
 
     def test_directory_with_genomad_db_is_ready(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(tmp_path / ".mamba"))
+        mamba_root = tmp_path / ".mamba"
+        mamba_root.mkdir()
+        monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
         database = tmp_path / "genomad"
         (database / "genomad_db").mkdir(parents=True)
         config = {"resources": {"genomad": {"database": str(database)}}}

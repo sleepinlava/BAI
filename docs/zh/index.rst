@@ -124,7 +124,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    :caption: 开发规范
 
    development_workflow
-   platform_support_plan
+   linux_support_plan
    development
    plugin_development_guide
    testing

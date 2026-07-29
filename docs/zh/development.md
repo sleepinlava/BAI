@@ -163,12 +163,16 @@ Docker `/app` 上下文。该目录变化时，建议在容器发布前手动运
 - Nextflow 与 Snakemake 工作目录
 
 工具执行通过 ``abi.config.resolved_mamba_root()`` 解析环境，优先级如下：
-1. ``ABI_MAMBA_ROOT`` 环境变量（显式覆盖）
-2. ``AUTOPLASM_MAMBA_ROOT`` 环境变量（旧版兼容）
-3. ``PROJECT_ROOT / ".mamba"``（默认本地安装）
-4. ``PROJECT_ROOT.parent / "abi-envs"``（同级目录）
+
+1. CLI/API 显式根目录
+2. ``ABI_MAMBA_ROOT`` 和 ``MAMBA_ROOT_PREFIX``
+3. ``AUTOPLASM_MAMBA_ROOT``（旧版兼容）
+4. 已填充的仓库兼容根目录
+5. 全局 Micromamba/Mamba/Conda 元数据
+6. Linux 用户数据根目录
+
 每个工具的 ``env_name`` 在运行时从 ``environments.yaml`` 解析。当前清单声明
-20 个 Conda 环境和 99 个工具→环境映射；代码和文档应从清单派生这些清单，
+21 个 Conda 环境和 99 个工具→环境映射；代码和文档应从清单派生这些清单，
 不要复制一份独立维护。
 
 ### 并行执行

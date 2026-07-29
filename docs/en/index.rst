@@ -128,7 +128,7 @@ a regression test, and run checks proportional to the affected release surface.
    :caption: Development Standards
 
    development_workflow
-   platform_support_plan
+   linux_support_plan
    development
    plugin_development_guide
    testing

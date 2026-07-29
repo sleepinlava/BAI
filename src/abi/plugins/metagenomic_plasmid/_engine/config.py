@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
@@ -296,44 +295,8 @@ def write_resolved_config(config: Mapping[str, Any]) -> Path:
 
 
 def resolved_mamba_root() -> Path:
-    """Return the local mamba root used by ABI-managed tool environments.
+    """Return the Mamba root selected by the shared Linux runtime resolver."""
 
-    Resolution order:
-    1. ``ABI_MAMBA_ROOT`` env var (explicit override)
-    2. ``AUTOPLASM_MAMBA_ROOT`` env var (legacy compat)
-    3. Best populated local candidate among project-local, parent, and sibling
-       mamba roots.
+    from abi.runtime_environment import resolved_mamba_root as resolve
 
-    Env overrides that point at non-existent or empty directories fall through
-    to local candidates so one misconfigured export cannot silently break tool
-    discovery.
-    """
-    for var in ("ABI_MAMBA_ROOT", "AUTOPLASM_MAMBA_ROOT"):
-        env_override = os.environ.get(var)
-        if env_override:
-            candidate = Path(env_override)
-            envs_dir = candidate / "envs"
-            if envs_dir.is_dir() and any(envs_dir.iterdir()):
-                return candidate
-            # Fall through on empty/missing override.
-    default = PROJECT_ROOT / ".mamba"
-    parent_default = PROJECT_ROOT.parent / ".mamba"
-    sibling = PROJECT_ROOT.parent / "abi-envs"
-    return _best_mamba_root_candidate([default, parent_default, sibling], fallback=default)
-
-
-def _best_mamba_root_candidate(candidates: list[Path], *, fallback: Path) -> Path:
-    """Return the candidate with the most managed env prefixes."""
-    scored: list[tuple[int, int, Path]] = []
-    for index, candidate in enumerate(candidates):
-        envs_dir = candidate / "envs"
-        if envs_dir.is_dir():
-            env_count = sum(1 for child in envs_dir.iterdir() if child.is_dir())
-            if env_count:
-                scored.append((env_count, -index, candidate))
-    if scored:
-        return max(scored)[2]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return fallback
+    return resolve(project_root=PROJECT_ROOT)

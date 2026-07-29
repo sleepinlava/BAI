@@ -154,18 +154,20 @@ abi plan \
 Expected tool path resolution order:
 
 1. Explicitly specified absolute path or path with directory component;
-2. `$ABI_MAMBA_ROOT/<env>/bin`;
-3. `$ABI_MAMBA_ROOT/envs/<env>/bin`;
-4. System `PATH`.
+2. `$ABI_MAMBA_ROOT/envs/<env>/bin`;
+3. `$ABI_MAMBA_ROOT/<env>/bin` compatibility layout;
+4. Registry-declared resource directories;
+5. System `PATH` when policy permits.
 
-- [ ] **L-050** After setting `ABI_MAMBA_ROOT`, confirm it has the highest priority.
-- [ ] **L-051** When the environment variable is not set, check the repository `.mamba`.
-- [ ] **L-052** When `.mamba` does not exist, check the sibling directory `abi-envs` fallback.
+- [ ] **L-050** Explicit CLI/API root wins; an invalid explicit root fails.
+- [ ] **L-051** `ABI_MAMBA_ROOT` and `MAMBA_ROOT_PREFIX` are authoritative and invalid values fail.
+- [ ] **L-052** Without overrides, check populated repository roots, global solver metadata, then the Linux user data root.
 - [ ] **L-053** Record env name, executable name, and actual resolved path for each tool.
 - [ ] **L-054** Actual file exists and passes `test -x <path>`.
 - [ ] **L-055** Execute the tool version command; version meets the production baseline.
 - [ ] **L-056** Place a fake tool with the same name on system `PATH`; confirm mamba environment tool takes priority.
 - [ ] **L-057** Remove the tool from the environment; confirm system `PATH` fallback behavior is as expected.
+- [ ] **L-058** `abi env discover/doctor --output-json` records every path and discovery source.
 - [ ] **L-058** Explicitly configuring a nonexistent tool path must report missing.
 - [ ] **L-059** File exists but without execute permission must be judged as failure.
 - [ ] **L-060** When dynamic libraries or interpreters are missing, it must not pass merely because the main file exists.

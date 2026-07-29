@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import shlex
-import shutil
 import string
 import subprocess
 from dataclasses import asdict, dataclass, field
@@ -18,6 +17,7 @@ from abi.plugins.metagenomic_plasmid._engine.timeouts import (
     DEFAULT_TOOL_TIMEOUT_SECONDS,
     timeout_from_env_or_value,
 )
+from abi.runtime_environment import resolve_environment_prefix, resolve_executable
 from abi.tools import _derive_composite_params
 
 OPTIONAL_TEMPLATE_FIELDS = {"abundance_label", "metaphlan_long_reads_flag"}
@@ -109,7 +109,9 @@ class GenericCommandSkill(ToolSkill):
 
     @property
     def env_prefix(self) -> Path:
-        return self.mamba_root / "envs" / self.env_name
+        resolution = resolve_environment_prefix(self.mamba_root, self.env_name)
+        assert resolution.path is not None
+        return resolution.path
 
     @property
     def env_bin(self) -> Path:
@@ -127,12 +129,8 @@ class GenericCommandSkill(ToolSkill):
     def check_installation(self) -> bool:
         if self.metadata.get("mock_tools"):
             return True
-        executable_path = Path(self.executable)
-        if executable_path.is_absolute() or executable_path.parent != Path("."):
-            return executable_path.exists()
-        if not self.env_bin.exists():
-            return False
-        return shutil.which(self.executable, path=str(self.env_bin)) is not None
+        resolution = resolve_executable(self.executable, env_prefix=self.env_prefix)
+        return resolution.path is not None
 
     def plan(self, params: Dict[str, Any]) -> Dict[str, Any]:
         selected = self.select_params(params, mode=str(params.get("mode", "auto")))

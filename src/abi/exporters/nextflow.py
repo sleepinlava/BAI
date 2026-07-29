@@ -13,6 +13,7 @@ from abi.dag import ABIDAG, StepBinding, infer_dag
 from abi.errors import ToolError
 from abi.execution_policy import ExecutionPolicy
 from abi.internal import internal_handler_spec
+from abi.runtime_environment import resolve_environment_prefix
 from abi.tools import ToolRegistry, _disk_to_nextflow, _memory_to_nextflow
 
 
@@ -520,7 +521,9 @@ def _tool_env_lines(step: Any, registry: ToolRegistry, *, mamba_root: Path) -> l
     env_name = str(metadata.get("env_name", ""))
     if not env_name:
         return []
-    env_bin = mamba_root / "envs" / env_name / "bin"
+    prefix = resolve_environment_prefix(mamba_root, env_name)
+    assert prefix.path is not None
+    env_bin = prefix.path / "bin"
     return [f"export PATH={shlex.quote(str(env_bin))}:$PATH"]
 
 

@@ -81,6 +81,23 @@ def test_python_ci_validates_docker_compose_configuration():
     assert "docker compose -f docker/docker-compose.yml config --quiet" in workflow
 
 
+def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    parsed = yaml.load(workflow, Loader=yaml.BaseLoader)
+    arm_job = parsed["jobs"]["linux-arm64"]
+    arm_steps = "\n".join(
+        str(step.get("run", "")) for step in arm_job["steps"] if isinstance(step, dict)
+    )
+
+    assert arm_job["runs-on"] == "ubuntu-24.04-arm"
+    assert "platform.machine()" in arm_steps
+    assert "python -m pytest tests/ src/abi/sciplot/tests/" in arm_steps
+    assert "python -m build" in arm_steps
+    assert "abi env discover --output-json" in arm_steps
+    assert "linux-arm64" in parsed["jobs"]["migration-gate"]["needs"]
+    assert "macos-" not in workflow.lower()
+
+
 def test_local_docker_export_disables_registry_attestations():
     workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
 

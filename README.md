@@ -250,12 +250,15 @@ commands such as `agent`, `job`, and `install-skills`.
 
 ### Local and Conda environments
 
-ABI currently maps 98 registered tool IDs to 19 declared Conda environments
+ABI currently maps 99 registered tool IDs to 21 declared Conda environments
 through `environments.yaml`. Treat that manifest as the source of truth rather
-than copying the counts into automation. By default, repository-local
-environments are resolved from `.mamba/envs/<env_name>/bin`.
+than copying the counts into automation. ABI checks explicit overrides,
+populated repository roots, global Conda-family installations, and finally the
+Linux user data directory.
 
-Set `ABI_MAMBA_ROOT` to use another root. `AUTOPLASM_MAMBA_ROOT` remains available for backward compatibility.
+Use `abi env discover --output-json` to inspect the selected root and Python
+paths. Set `ABI_MAMBA_ROOT` for an authoritative override;
+`AUTOPLASM_MAMBA_ROOT` remains available for backward compatibility.
 
 ### Docker
 
@@ -283,7 +286,7 @@ gh workflow run docker.yml --ref master \
   -f plugin=amplicon -f push=false -f push_to_dockerhub=false
 ```
 
-See the [Linux and macOS support plan](docs/en/platform_support_plan.md) for
+See the [Linux support plan](docs/en/linux_support_plan.md) for
 cross-machine installation criteria and the manual Docker policy.
 
 ### Nextflow, Snakemake, HPC, cloud, and queued jobs
