@@ -94,6 +94,11 @@ x86_64 核心能力已经认证，但插件和环境单元格会保持 `partial`
 部署完成前，于两个架构上均为 `unsupported`；`abi env doctor` 和托管环境操作会拒绝
 不支持的单元格。
 
+带日期的 [2026-07-29 x86_64 检查点](../evidence/linux_x86_64_capability_20260729.json)
+记录了 21 个规范环境中 18 个完成前缀，以及通过的代表性版本 smoke；
+`autoplasm-rgi`、`autoplasm-scapp`、`autoplasm-checkm2` 缺失。远端 checkout 早于
+当前矩阵，因此该检查点用于识别 blocker，不认证当前规范或任何 aarch64 单元格。
+
 - 保持 Linux 架构约束与工具/环境元数据同步。
 - 在 Linux x86_64 与 Linux arm64 上求解全部 `envs/*.yml`。
 - 每个插件/架构单元标记为 `certified`、`partial` 或 `unsupported`，并列出

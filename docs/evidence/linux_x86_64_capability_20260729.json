@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-07-29",
+  "scope": "read_only_cloud_checkpoint",
+  "platform": {
+    "system": "Linux",
+    "architecture": "x86_64"
+  },
+  "solver": {
+    "name": "mamba",
+    "version": "2.8.1"
+  },
+  "abi_checkout_commit": "5816f8fb",
+  "environment_root": "/root/autodl-tmp/.mamba",
+  "declared_environment_count": 21,
+  "completed_environment_count": 18,
+  "missing_environments": [
+    "autoplasm-checkm2",
+    "autoplasm-rgi",
+    "autoplasm-scapp"
+  ],
+  "representative_smokes": [
+    {"plugin": "rnaseq_expression", "tool": "STAR", "version": "2.7.11b", "status": "passed"},
+    {"plugin": "rnaseq_expression", "tool": "featureCounts", "version": "2.1.1", "status": "passed"},
+    {"plugin": "rnaseq_expression", "tool": "Rscript", "version": "4.5.3", "status": "passed"},
+    {"plugin": "wgs_bacteria", "tool": "fastp", "version": "1.3.5", "status": "passed"},
+    {"plugin": "wgs_bacteria", "tool": "SPAdes", "version": "4.3.0", "status": "passed"},
+    {"plugin": "wgs_bacteria", "tool": "MLST", "version": "2.35.0", "status": "passed"},
+    {"plugin": "amplicon_16s", "tool": "vsearch", "version": "2.31.0", "status": "passed"},
+    {"plugin": "amplicon_16s", "tool": "cutadapt", "version": "5.2", "status": "passed"},
+    {"plugin": "metatranscriptomics", "tool": "fastp", "version": "1.3.5", "status": "passed"},
+    {"plugin": "metatranscriptomics", "tool": "STAR", "version": "2.7.11b", "status": "passed"},
+    {"plugin": "metatranscriptomics", "tool": "featureCounts", "version": "2.1.1", "status": "passed"},
+    {"plugin": "easymetagenome", "tool": "Kraken2", "version": "2.17.1", "status": "passed"},
+    {"plugin": "easymetagenome", "tool": "HUMAnN", "version": "3.9", "status": "passed"},
+    {"plugin": "metagenomic_plasmid", "tool": "MEGAHIT", "version": "1.2.9", "status": "passed"},
+    {"plugin": "metagenomic_plasmid", "tool": "Bakta", "version": "1.12.0", "status": "passed"},
+    {"plugin": "metagenomic_plasmid", "tool": "MultiQC", "version": "1.35", "status": "passed"},
+    {"plugin": "metagenomic_plasmid", "tool": "MOB-recon", "version": "3.1.9", "status": "passed"},
+    {"plugin": "runtime", "tool": "Nextflow", "version": "26.04.4", "status": "passed"}
+  ],
+  "limitations": [
+    "The cloud checkout predates the current capability-matrix implementation.",
+    "This checkpoint proves completed prefixes and representative version commands, not a fresh solve of the current environment specifications.",
+    "Version commands require the selected environment bin directory on PATH; direct executable paths alone do not model the runtime context.",
+    "No Linux aarch64 environment solve or representative real-tool smoke is included.",
+    "No plugin cell is promoted to certified by this checkpoint alone."
+  ]
+}

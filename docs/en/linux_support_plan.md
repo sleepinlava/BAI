@@ -105,6 +105,12 @@ is recorded. ViWrap is `unsupported` on both architectures until its official
 multi-environment runtime and database bundle are provisioned; `abi env doctor` and
 managed environment operations reject unsupported cells.
 
+The dated [2026-07-29 x86_64 checkpoint](../evidence/linux_x86_64_capability_20260729.json)
+records 18/21 completed canonical prefixes and passing representative version smokes.
+`autoplasm-rgi`, `autoplasm-scapp`, and `autoplasm-checkm2` were missing. The remote
+checkout predates the current matrix, so the checkpoint identifies blockers but does
+not certify the current specifications or any aarch64 cell.
+
 - Keep Linux architecture constraints synchronized with tool/environment metadata.
 - Solve every `envs/*.yml` on Linux x86_64 and Linux arm64.
 - Classify every plugin/architecture cell as `certified`, `partial`, or

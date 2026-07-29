@@ -18,6 +18,19 @@ platform_support:
       - run abi env doctor and a site-specific smoke test before production execution
       evidence:
       - Linux x86_64 core CI and clean-wheel installation are certified
+      - representative cloud tool version smokes passed on 2026-07-29
+      evidence_artifact: docs/evidence/linux_x86_64_capability_20260729.json
+    plasmid_x86_partial: &plasmid_x86_partial
+      status: partial
+      blockers:
+      - canonical autoplasm-rgi, autoplasm-scapp, and autoplasm-checkm2 prefixes are missing
+      - current-checkout full solve and representative end-to-end smoke are not recorded
+      alternatives:
+      - run only validated subpaths that do not require the missing environments
+      - provision the three missing environments before full production execution
+      evidence:
+      - representative available-tool version smokes passed on 2026-07-29
+      evidence_artifact: docs/evidence/linux_x86_64_capability_20260729.json
     plugin_arm_partial: &plugin_arm_partial
       status: partial
       blockers:
@@ -43,6 +56,18 @@ platform_support:
       - solve the environment locally and run abi env doctor before production use
       evidence:
       - packaged declarative environment specification is available
+      - completed canonical prefix observed in the 2026-07-29 cloud read-only audit
+      evidence_artifact: docs/evidence/linux_x86_64_capability_20260729.json
+    environment_x86_missing: &environment_x86_missing
+      status: partial
+      blockers:
+      - no completed canonical prefix was observed in the 2026-07-29 cloud audit
+      - current-checkout solve and executable smoke are not recorded
+      alternatives:
+      - provision this environment before selecting dependent workflow nodes
+      evidence:
+      - packaged declarative environment specification is available
+      evidence_artifact: docs/evidence/linux_x86_64_capability_20260729.json
     environment_arm_partial: &environment_arm_partial
       status: partial
       blockers:
@@ -59,7 +84,7 @@ platform_support:
       x86_64: *plugin_x86_partial
       aarch64: *plugin_arm_partial
     metagenomic_plasmid:
-      x86_64: *plugin_x86_partial
+      x86_64: *plasmid_x86_partial
       aarch64: *plugin_arm_partial
     metatranscriptomics:
       x86_64: *plugin_x86_partial
@@ -87,7 +112,7 @@ platform_support:
       x86_64: *environment_x86_partial
       aarch64: *environment_arm_partial
     autoplasm-rgi:
-      x86_64: *environment_x86_partial
+      x86_64: *environment_x86_missing
       aarch64: *environment_arm_partial
     autoplasm-abundance:
       x86_64: *environment_x86_partial
@@ -99,13 +124,13 @@ platform_support:
       x86_64: *environment_x86_partial
       aarch64: *environment_arm_partial
     autoplasm-scapp:
-      x86_64: *environment_x86_partial
+      x86_64: *environment_x86_missing
       aarch64: *environment_arm_partial
     autoplasm-integronfinder:
       x86_64: *environment_x86_partial
       aarch64: *environment_arm_partial
     autoplasm-checkm2:
-      x86_64: *environment_x86_partial
+      x86_64: *environment_x86_missing
       aarch64: *environment_arm_partial
     stats:
       x86_64: *environment_x86_partial
