@@ -54,7 +54,7 @@ def get_agent_guide() -> str:
     This function produces a compact text block that teaches any LLM agent
     how to use ABI correctly on the first attempt. It covers:
 
-    - The safe lifecycle: list-types → plan → dry-run → inspect → run
+    - The canonical discovery, preparation, execution, and validation lifecycle
     - JSON envelope contract (success / confirmation_required / error)
     - The confirmation gate for ``run``
     - Transport methods (CLI JSON, MCP, OpenAI tools)
@@ -69,19 +69,22 @@ def get_agent_guide() -> str:
     # 返回给未经训练的 LLM agent 的基本操作指南。
     # 将返回的文本注入 system prompt 即可让 agent 在首次尝试时正确操作 ABI。
     """
+    from abi.agent.context import CANONICAL_LIFECYCLE
+
+    lifecycle_lines = []
+    for phase, steps, optional_steps in CANONICAL_LIFECYCLE:
+        optional = f" (optional: {', '.join(optional_steps)})" if optional_steps else ""
+        lifecycle_lines.append(f"  {phase}: {' -> '.join(steps)}{optional}\n")
+
+    lifecycle = "".join(lifecycle_lines)
     return (
         "ABI (Agent-Bioinformatics Interface) Operating Guide\n"
         "=====================================================\n"
         "\n"
-        "Safe call order (do not skip steps):\n"
-        "  1. list_types    — discover installed analysis plugins\n"
-        "  2. plan          — build execution plan, write execution_plan.json\n"
-        "  3. dry_run       — render commands + provenance, NO real tools run\n"
-        "  4. inspect       — check provenance for failures before execution\n"
-        "  5. run           — execute (REQUIRES user confirmation)\n"
-        "  6. report        — regenerate reports from completed runs\n"
-        "\n"
-        "JSON envelope contract (every command returns one of three):\n"
+        "Canonical lifecycle:\n"
+        + lifecycle
+        + "\n"
+        + "JSON envelope contract (every command returns one of three):\n"
         '  success               — "result" holds the payload\n'
         "  confirmation_required — user must approve before proceeding (run only)\n"
         '  error                 — "error_code" + "diagnostic_hints" for recovery\n'
@@ -96,7 +99,8 @@ def get_agent_guide() -> str:
         "  - NEVER call abi_run without explicit user confirmation.\n"
         "  - Read tables/*.tsv for structured results, NOT raw tool stdout.\n"
         "  - On error, inspect error_code and diagnostic_hints before retrying.\n"
-        "  - Call dry_run before run to validate the workflow.\n"
+        "  - Call plan, check, and dry_run before requesting execution.\n"
+        "  - After run, inspect and validate_result before generating the report.\n"
         "  - Use abi install-skills to register ABI skills for Claude Code.\n"
         "  - Do NOT claim biological validity from dry_run alone; use real outputs,\n"
         "    resource manifests, benchmarks, and docs/workflow_validation.md.\n"

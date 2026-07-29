@@ -11,12 +11,10 @@ Use this skill when the task involves the `abi` CLI for bioinformatics analysis.
 
 Always preserve the ABI control path:
 
-1. **Discover** available plugins.
-2. **Plan** the execution.
-3. **Dry-run** to validate commands and provenance.
-4. **Inspect** provenance before real execution.
-5. **Run** only after explicit user confirmation.
-6. **Report** results from standard tables.
+1. **Discover** with `list-types`, and use `query` when metadata is needed.
+2. **Prepare** with `plan`, `check`, `dry-run`, and pre-run `inspect`.
+3. **Request authorization**, then **run** only after explicit confirmation.
+4. **Validate** with post-run `inspect`, `validate-result`, and `report`.
 
 Do NOT hand-run bioinformatics tools directly. Always go through `abi` so that commands, provenance, and standard tables are recorded.
 
@@ -59,7 +57,14 @@ abi doctor-agent --type <analysis_type>
 
 Prints a condensed operating guide. Paste this into your system prompt to understand the plugin's capabilities, standard tables, and safe call order.
 
-### Step 3: Plan
+### Step 3: Query plugin metadata (optional)
+
+```bash
+abi query --type <analysis_type> --what stages --output-json
+abi query --type <analysis_type> --what tools --output-json
+```
+
+### Step 4: Plan
 
 ```bash
 abi plan \
@@ -72,7 +77,15 @@ abi plan \
 
 Writes `execution_plan.json` to the output directory. The plan encodes every step: tool_id, inputs, params, outputs.
 
-### Step 4: Dry-run (safe validation)
+### Step 5: Check and dry-run (safe validation)
+
+```bash
+abi check \
+  --type <analysis_type> \
+  --config <config.yaml> \
+  --sample-sheet <samples.tsv> \
+  --output-json
+```
 
 ```bash
 abi dry-run \
@@ -85,7 +98,7 @@ abi dry-run \
 
 Renders all commands and provenance artifacts WITHOUT executing external tools. Every step is marked `dry_run` in the provenance. This is the safest way to validate a complete workflow.
 
-### Step 5: Inspect provenance
+### Step 6: Inspect the pre-run evidence
 
 ```bash
 abi inspect --result-dir <output_dir> --output-json
@@ -96,7 +109,7 @@ Reads `provenance/commands.tsv` and `provenance/resolved_inputs.tsv` to surface:
 - Missing or placeholder inputs
 - Overall run status
 
-### Step 6: Run (REQUIRES USER CONFIRMATION)
+### Step 7: Request authorization and run
 
 ```bash
 abi run \
@@ -110,7 +123,12 @@ abi run \
 
 **CRITICAL**: Without `--confirm-execution`, the command returns `confirmation_required` status (exit code 2). This is a deliberate safety gate. Always present the confirmation prompt to the user before re-invoking with `--confirm-execution`.
 
-### Step 7: Report
+### Step 8: Inspect, validate, and report
+
+```bash
+abi inspect --result-dir <output_dir> --output-json
+abi validate-result --type <analysis_type> --result-dir <output_dir> --output-json
+```
 
 ```bash
 abi report --result-dir <output_dir> --output-json

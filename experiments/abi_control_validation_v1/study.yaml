@@ -12,9 +12,9 @@ primary_question: >-
 
 canonical_lifecycle_to_freeze:
   discovery: [list_types, query]
-  preparation: [plan, check, dry_run, inspect_preview]
+  preparation: [plan, check, dry_run, inspect]
   execution: [request_authorization, run]
-  validation: [inspect, validate_result, report]
+  validation: [inspect, abi_validate_result, report]
 
 workflows:
   - rnaseq_expression

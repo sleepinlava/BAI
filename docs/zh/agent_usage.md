@@ -140,7 +140,9 @@ abi_query({"analysis_type": "rnaseq_expression", "what": "tools"})
 
 `abi_export_agent_context` 会返回插件说明、标准表格、重要产物、权限、错误码和恢复规则。构建计划前应先读取这些信息。
 
-其中的 `safe_sequence` 是用于兼容的精简基线。进行生物学执行时，应遵循下文扩展序列，包括运行前预检和运行后结果验证。
+其中的 `canonical_lifecycle` 是规范的分阶段契约；`safe_sequence`
+是将同一生命周期展开为 ABI 工具调用的兼容表示，授权动作则由
+`execution_requires_confirmation` 表示。
 
 ### 3. 准备配置与样本元数据
 

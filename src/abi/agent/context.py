@@ -39,14 +39,52 @@ from abi.diagnostics import ERROR_CODES
 from abi.permissions import TOOL_PERMISSIONS, PermissionLevel
 from abi.tool_descriptors import ABI_AGENT_TOOLS, export_json
 
-__all__ = ["build_agent_context", "render_doctor_agent"]
+__all__ = [
+    "CANONICAL_LIFECYCLE",
+    "SAFE_SEQUENCE",
+    "build_agent_context",
+    "render_doctor_agent",
+]
 
 
 # Recommended safe call order for the agent lifecycle.
 # An agent should never skip a step in this sequence without good reason.
 # 推荐的 agent 生命周期安全调用顺序。
 # Agent 不应无故跳过此序列中的任何步骤。
-SAFE_SEQUENCE = ["list_types", "plan", "dry_run", "inspect", "run", "report"]
+CANONICAL_LIFECYCLE = (
+    ("discovery", ("list_types", "query"), ("query",)),
+    ("preparation", ("plan", "check", "dry_run", "inspect"), ()),
+    ("execution", ("request_authorization", "run"), ()),
+    ("validation", ("inspect", "abi_validate_result", "report"), ()),
+)
+
+# Flattened tool-call path for clients that cannot consume structured phases.
+# request_authorization is an orchestrator action, represented separately by
+# execution_requires_confirmation rather than as a callable ABI tool.
+SAFE_SEQUENCE = [
+    "list_types",
+    "query",
+    "plan",
+    "check",
+    "dry_run",
+    "inspect",
+    "run",
+    "inspect",
+    "abi_validate_result",
+    "report",
+]
+
+
+def _canonical_lifecycle_payload() -> List[Dict[str, Any]]:
+    return [
+        {
+            "phase": phase,
+            "steps": list(steps),
+            "optional_steps": list(optional_steps),
+        }
+        for phase, steps, optional_steps in CANONICAL_LIFECYCLE
+    ]
+
 
 # Key output artifacts the agent should know about.
 # These are the canonical locations for results; agents should reference these
@@ -131,6 +169,7 @@ def build_agent_context(plugin: Any) -> Dict[str, Any]:
         "display_name": plugin.display_name,
         "description": plugin.description,
         "safe_sequence": list(SAFE_SEQUENCE),
+        "canonical_lifecycle": _canonical_lifecycle_payload(),
         "execution_requires_confirmation": True,
         "unsafe_tools": sorted(execution_tools),
         "default_exported_tools": [tool["name"] for tool in tools],
@@ -168,19 +207,28 @@ def render_doctor_agent(plugin: Any) -> str:
     lines: List[str] = [
         f"ABI agent guide for {context['analysis_type']}",
         "",
-        "Safe call order:",
-        "  " + " -> ".join(context["safe_sequence"]),
-        "",
-        "Rules:",
-        "  - Use CLI JSON, MCP, HTTP jobs, or OpenAI descriptors as transports.",
-        "  - Treat ABIAgentInterface as the business boundary.",
-        "  - Never execute abi_run without explicit user approval.",
-        "  - Read tables/*.tsv for results instead of raw tool outputs.",
-        "  - Use error_code and diagnostic_hints for recovery.",
-        "  - Treat dry_run as planning evidence, not biological validation.",
-        "",
-        "Standard tables:",
+        "Canonical lifecycle / Safe call order:",
     ]
+    for phase in context["canonical_lifecycle"]:
+        steps = " -> ".join(phase["steps"])
+        optional = (
+            f" (optional: {', '.join(phase['optional_steps'])})" if phase["optional_steps"] else ""
+        )
+        lines.append(f"  {phase['phase']}: {steps}{optional}")
+    lines.extend(
+        [
+            "",
+            "Rules:",
+            "  - Use CLI JSON, MCP, HTTP jobs, or OpenAI descriptors as transports.",
+            "  - Treat ABIAgentInterface as the business boundary.",
+            "  - Never execute abi_run without explicit user approval.",
+            "  - Read tables/*.tsv for results instead of raw tool outputs.",
+            "  - Use error_code and diagnostic_hints for recovery.",
+            "  - Treat dry_run as planning evidence, not biological validation.",
+            "",
+            "Standard tables:",
+        ]
+    )
     lines.extend(f"  - {name}" for name in context["standard_tables"])
     lines.extend(
         [

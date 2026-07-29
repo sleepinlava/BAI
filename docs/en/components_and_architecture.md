@@ -14,7 +14,11 @@ CLI / JSON / MCP / HTTP / provider tool descriptors
 ABIAgentInterface
         |
         v
-Core lifecycle: query -> plan -> check -> dry-run -> run -> inspect -> report
+Core lifecycle:
+  discovery: list-types -> query (optional)
+  preparation: plan -> check -> dry-run -> inspect
+  execution: request authorization -> run
+  validation: inspect -> validate-result -> report
         |
         v
 Analysis plugin + declarative DAG + tool registry

@@ -1,0 +1,4 @@
+runs/pilot/*
+runs/confirmatory/*
+!runs/pilot/.gitkeep
+!runs/confirmatory/.gitkeep

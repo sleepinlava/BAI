@@ -14,7 +14,11 @@ CLI / JSON / MCP / HTTP / 模型工具描述
 ABIAgentInterface
         |
         v
-核心生命周期：query -> plan -> check -> dry-run -> run -> inspect -> report
+核心生命周期：
+  发现：list-types -> query（可选）
+  准备：plan -> check -> dry-run -> inspect
+  执行：请求授权 -> run
+  验证：inspect -> validate-result -> report
         |
         v
 分析插件 + 声明式 DAG + 工具注册表

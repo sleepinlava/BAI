@@ -17,14 +17,16 @@ Callers never need to parse free-text messages; they inspect ``status`` and bran
 
 # Lifecycle methods (safe call order) / 生命周期方法（安全调用顺序）
 
-The recommended progression from discovery to execution is:
+The canonical progression is:
 
-    1. list_types()       — discover installed analysis plugins
-    2. plan()             — resolve config + inputs, persist execution_plan.json
-    3. dry_run()          — render commands & provenance without executing external tools
-    4. inspect()          — summarize run health from an existing result directory
-    5. report()           — regenerate reports from a completed run
-    6. run()              — execute (requires confirm_execution=true)
+    Discovery:  list_types() -> query() (query is optional)
+    Preparation: plan() -> check() -> dry_run() -> inspect()
+    Execution: request authorization -> run()
+    Validation: inspect() -> abi_validate_result() -> report()
+
+``run()`` requires ``confirm_execution=true``. The two inspection calls serve
+different states: the first reviews the dry-run preview and the second reviews
+the completed or failed real run.
 
 Additional utility methods:
 

@@ -56,3 +56,61 @@ The primary model uses:
 
 The optional robustness model uses a preregistered six-task subset and is reported only
 in Supplementary Information.
+
+## Harness commands
+
+Generate the Phase 0–5 artifacts from production plugin contracts:
+
+```bash
+abi-study build-artifacts \
+  --study-root experiments/abi_control_validation_v1 \
+  --repo-root . \
+  --out experiments/abi_control_validation_v1
+```
+
+Prepare one isolated trial:
+
+```bash
+abi-study run \
+  --study experiments/abi_control_validation_v1/study.yaml \
+  --tasks experiments/abi_control_validation_v1/tasks.yaml \
+  --fixtures experiments/abi_control_validation_v1/fixtures \
+  --interface-root experiments/abi_control_validation_v1 \
+  --task rnaseq_t3_missing_mate \
+  --condition abi_full \
+  --model primary \
+  --seed 1103 \
+  --artifact-root experiments/abi_control_validation_v1/runs/pilot/example
+```
+
+`run` prepares the frozen request, condition-specific interface, and isolated
+workspace. A frozen model adapter must consume `request.json` and write
+`transcript.jsonl`, `final_response.json`, and optional `usage.json`. This boundary
+prevents an unfrozen provider or serving template from silently entering the study.
+
+The adapter exposes the operations declared in
+`interface/operation_schemas.json` through one neutral dispatcher. For example:
+
+```bash
+abi-study invoke \
+  --trial-root experiments/abi_control_validation_v1/runs/pilot/example \
+  --operation abi_call \
+  --arguments '{"tool_name":"check","arguments":{"analysis_type":"rnaseq_expression","config_path":"/task/input/config.yaml","sample_sheet":"/task/input/samples.tsv"}}'
+```
+
+`abi_call` is mounted only for ABI conditions and delegates discovery, planning,
+preflight, dry-run, and validation to the production `ABIAgentInterface`. All
+conditions receive identical low-level workspace and biological shim operations.
+Shim fault behavior, runtime-contract switches, and initial authorization state are
+kept under the orchestrator-only `.study_authority` directory; they are never mounted
+as Agent-visible inputs. The Agent cannot select a shim's clean or fault behavior.
+
+Grade a completed trial:
+
+```bash
+abi-study grade \
+  --study experiments/abi_control_validation_v1/study.yaml \
+  --tasks experiments/abi_control_validation_v1/tasks.yaml \
+  --trial-root experiments/abi_control_validation_v1/runs/pilot/example \
+  --out experiments/abi_control_validation_v1/runs/pilot/example/trial_record.json
+```

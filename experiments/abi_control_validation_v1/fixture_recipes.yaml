@@ -33,9 +33,26 @@ recipes:
       star_index:
         path: /task/input/resources/star_index_valid
         identity: synthetic-star-index-v1
+        config_key: resources.genome_index
       annotation_gtf:
         path: /task/input/resources/genes.gtf
         identity: synthetic-gtf-v1
+        config_key: resources.annotation_gtf
+      go_obo:
+        path: /task/input/resources/go.obo
+        identity: synthetic-go-obo-v1
+        config_key: resources.go_obo
+      go_gaf:
+        path: /task/input/resources/go.gaf
+        identity: synthetic-go-gaf-v1
+        config_key: resources.go_gaf
+      reactome_gmt:
+        path: /task/input/resources/reactome.gmt
+        identity: synthetic-reactome-gmt-v1
+        config_key: resources.reactome_gmt
+    config_overrides:
+      differential_expression.design: "~ donor + condition"
+      differential_expression.comparison: "treated_vs_control"
     clean_gold:
       plan_command: >-
         abi plan --type rnaseq_expression --config /task/input/config.yaml
@@ -66,6 +83,11 @@ recipes:
       - organism
     fixed_values:
       organism: Staphylococcus_aureus
+    resource_shims:
+      amrfinder_db:
+        path: /task/input/resources/amrfinder_db
+        identity: synthetic-amrfinder-db-v1
+        config_key: resources.amrfinder_db
     clean_gold:
       plan_command: >-
         abi plan --type wgs_bacteria --config /task/input/config.yaml
@@ -75,6 +97,7 @@ recipes:
   plasmid_base_v1:
     workflow: metagenomic_plasmid
     generator: short_read_metagenome_project
+    preflight_resource_ids: [genomad, bakta, plasmidfinder]
     sources:
       read1: examples/fixtures/tiny_R1.fastq
       read2: examples/fixtures/tiny_R2.fastq
@@ -90,12 +113,17 @@ recipes:
       genomad:
         path: /task/input/resources/genomad_db
         identity: synthetic-genomad-db-v1
+        config_key: resources.genomad.database
+        required_files: [genomad_db/README]
       bakta:
         path: /task/input/resources/bakta_db
         identity: synthetic-bakta-db-v1
+        config_key: resources.bakta.database
       plasmidfinder:
         path: /task/input/resources/plasmidfinder_valid
         identity: synthetic-plasmidfinder-db-v1
+        config_key: resources.plasmidfinder.database
+        required_files: [config/README, synthetic_replicons.fsa]
     clean_gold:
       plan_command: >-
         abi plan --type metagenomic_plasmid --config /task/input/config.yaml

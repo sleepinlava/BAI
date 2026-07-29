@@ -103,8 +103,9 @@ def test_agent_interface_doctor_agent_returns_short_guide():
 
     assert payload["status"] == "success"
     assert payload["result"]["analysis_type"] == "metatranscriptomics"
-    assert "Safe call order" in payload["result"]["text"]
-    assert "run -> report" in payload["result"]["text"]
+    assert "Canonical lifecycle" in payload["result"]["text"]
+    assert "request_authorization -> run" in payload["result"]["text"]
+    assert "abi_validate_result -> report" in payload["result"]["text"]
 
 
 def test_agent_interface_dispatch_accepts_cli_style_tool_aliases():

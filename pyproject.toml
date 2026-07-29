@@ -71,6 +71,7 @@ dev = [
 
 [project.scripts]
 abi = "abi.cli:main"
+abi-study = "abi.study.cli:main"
 abi-mcp = "abi.mcp.server:main"
 abi-sciplot = "abi.sciplot.cli:main"
 autoplasm = "abi.autoplasm.cli:main"

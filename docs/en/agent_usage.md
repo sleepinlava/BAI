@@ -151,7 +151,10 @@ abi_query({"analysis_type": "rnaseq_expression", "what": "tools"})
 
 `abi_export_agent_context` returns the plugin description, standard tables, important artifacts, permissions, error codes, and recovery rules. Use it before constructing a plan.
 
-Its `safe_sequence` field is a compact compatibility baseline. For a biological run, follow the expanded sequence below, including preflight checks and post-run result validation.
+Its `canonical_lifecycle` field is the normative phased contract. The
+`safe_sequence` field is the same lifecycle flattened to callable ABI tools;
+the authorization action remains represented by
+`execution_requires_confirmation`.
 
 ### 3. Prepare configuration and sample metadata
 
