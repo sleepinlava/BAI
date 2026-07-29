@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.5.10] - 2026-07-29
+
+### Fixed
+
+- MCP SDK compatibility: pinned `mcp>=1.28,<2` to avoid `FastMCP→MCPServer`
+  rename in v2.0.0 (2026-07-28) which removed `mcp.server.fastmcp`.
+  `mcp` 2.0.0 was pulled by CI via `pip install [mcp]`, causing
+  `abi_mcp_runtime` health check to fail with
+  `RuntimeError: The optional MCP SDK is not installed`.
+- Restored `docs/en/paper_outline.md` that was inadvertently deleted alongside
+  gitignored diagram files in the same commit, fixing Sphinx build toctree error.
+- Added `--no-check-files` to the metagenomic_plasmid smoke-test dry-run step;
+  the missing flag caused `missing_input` errors because sample-sheet fixture
+  paths were relative to the repo root but the dry-run was run from a temp
+  directory, unlike all other plugin smoke tests in the same job which already
+  had the flag.
+
+### Known Gaps
+
+- **MCP SDK >=2.0.0**: `src/abi/mcp/server.py` imports `FastMCP` from the
+  removed `mcp.server.fastmcp`. The upstream rename to `MCPServer` and module
+  move to `mcp.server.mcpserver` requires a code migration before unpinning.
+  Documented in `docs/en/development.md` and `docs/zh/development.md`.
+
 ## [1.5.9] - 2026-07-29
 
 ### Added
