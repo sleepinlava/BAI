@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.5.9] - 2026-07-29
+
+### Added
+
+- Linux runtime environment discovery, doctor, bootstrap, and reconciliation
+  commands with deterministic Conda/Mamba prefix and executable resolution.
+- Explicit x86_64 and aarch64 capability matrices for all 21 environments and
+  seven built-in workflows, plus auditable Linux capability evidence.
+- A release-time wheel verifier that exercises installed ABI distributions
+  across Python 3.10 through 3.13 and validates every declared Linux cell.
+- A frozen, executable control-validation study with provenance-bound fixtures,
+  contracts, scoring, and evidence manifests for plasmid, RNA-seq, and WGS.
+
+### Changed
+
+- Docker builds are manual-only and documented as an optional, recommended
+  deployment path rather than a PR, PyPI, or routine release gate.
+- Runtime readiness now fails closed for incomplete Conda prefixes, ambiguous
+  tool ownership, unsupported architectures, and unresolved required resources.
+- CI and GitHub Release workflows attach machine-readable Linux capability
+  evidence generated from the built wheel.
+
+### Fixed
+
+- Environment reconciliation no longer treats partial Mamba directories as
+  usable environments and reports actionable alternatives for unsupported
+  Linux workflow cells.
+- Provenance validation now binds generated study artifacts to their declared
+  inputs, contracts, and immutable runtime evidence.
+
 ## [1.5.8] - 2026-07-28
 
 ### Added
