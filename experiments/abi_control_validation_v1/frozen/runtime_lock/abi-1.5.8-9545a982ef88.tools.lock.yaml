@@ -1,0 +1,2170 @@
+lockfile_version: 1
+kind: abi-tools-lock
+generated_at: '2026-07-29T09:59:10+00:00'
+project_root: /root/autodl-tmp/abi-study-freeze-6f05ad6
+mamba_root: /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba
+resource_root: /root/autodl-tmp/resources
+summary:
+  registered_tools: 99
+  present_tools: 89
+  missing_tools: 10
+  blocking_missing_tools: 1
+  release_blocking_missing_tools: 0
+  release_requires_all_tools: false
+tools:
+- plugin: amplicon_16s
+  tool_id: cutadapt
+  name: cutadapt
+  category: qc
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: cutadapt
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/cutadapt
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: cutadapt
+    version: '5.2'
+    build_string: py310h7c10099_1
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: diversity_metrics
+  name: Diversity Metrics
+  category: diversity
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: pandas
+    version: 2.3.3
+    build_string: py310h0158d43_2
+    channel: conda-forge
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  - name: scipy
+    version: 1.15.2
+    build_string: py310h1d65ade_0
+    channel: conda-forge
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: phylogeny_combine
+  name: Combine ASV FASTA files
+  category: phylogeny
+  required: false
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: cat
+  resolved_path: /usr/bin/cat
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: phylogeny_mafft
+  name: Phylogeny Alignment (MAFFT)
+  category: phylogeny
+  required: false
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: mafft
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/mafft
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mafft
+    version: '7.526'
+    build_string: h4bc722e_0
+    channel: conda-forge
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: phylogeny_tree
+  name: Phylogeny Tree (FastTree)
+  category: phylogeny
+  required: false
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: fasttree
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/fasttree
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fasttree
+    version: 2.2.0
+    build_string: h7b50bb2_1
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: vsearch_denoise
+  name: vsearch UNOISE3 denoise
+  category: denoising
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: vsearch
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/vsearch
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: vsearch
+    version: 2.31.0
+    build_string: hd2be7a0_0
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: vsearch_derep
+  name: vsearch dereplicate
+  category: preprocessing
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: vsearch
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/vsearch
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: vsearch
+    version: 2.31.0
+    build_string: hd2be7a0_0
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: vsearch_mergepairs
+  name: vsearch merge pairs
+  category: preprocessing
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: vsearch
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/vsearch
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: vsearch
+    version: 2.31.0
+    build_string: hd2be7a0_0
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: vsearch_otu
+  name: vsearch OTU clustering
+  category: clustering
+  required: false
+  default_enabled: false
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: vsearch
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/vsearch
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: vsearch
+    version: 2.31.0
+    build_string: hd2be7a0_0
+    channel: bioconda
+  version_command: ''
+- plugin: amplicon_16s
+  tool_id: vsearch_taxonomy
+  name: vsearch SINTAX taxonomy
+  category: taxonomy
+  required: true
+  default_enabled: true
+  env_name: amplicon
+  env_prefix: /root/autodl-tmp/.mamba/envs/amplicon
+  env_present: true
+  executable: vsearch
+  resolved_path: /root/autodl-tmp/.mamba/envs/amplicon/bin/vsearch
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: vsearch
+    version: 2.31.0
+    build_string: hd2be7a0_0
+    channel: bioconda
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: bracken
+  name: Bracken
+  category: taxonomy
+  required: true
+  default_enabled: false
+  env_name: easymeta-p0
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-p0
+  env_present: true
+  executable: bracken
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-p0/bin/bracken
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bracken
+    version: '3.1'
+    build_string: h9948957_0
+    channel: bioconda
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: fastp
+  name: fastp
+  category: preprocessing
+  required: true
+  default_enabled: false
+  env_name: easymeta-p0
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-p0
+  env_present: true
+  executable: fastp
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-p0/bin/fastp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastp
+    version: 1.3.5
+    build_string: h43da1c4_0
+    channel: bioconda
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: humann4
+  name: HUMAnN 4
+  category: functional
+  required: true
+  default_enabled: false
+  env_name: easymeta-humann
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-humann
+  env_present: true
+  executable: humann
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-humann/bin/humann
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: humann
+    version: '3.9'
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: humann_join_tables
+  name: HUMAnN Join Tables
+  category: functional_summary
+  required: true
+  default_enabled: false
+  env_name: easymeta-humann
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-humann
+  env_present: true
+  executable: humann_join_tables
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-humann/bin/humann_join_tables
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: humann
+    version: '3.9'
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: humann_regroup_table
+  name: HUMAnN Regroup Table
+  category: functional_summary
+  required: true
+  default_enabled: false
+  env_name: easymeta-humann
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-humann
+  env_present: true
+  executable: humann_regroup_table
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-humann/bin/humann_regroup_table
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: humann
+    version: '3.9'
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: humann_renorm_table
+  name: HUMAnN Renormalize Table
+  category: functional_summary
+  required: true
+  default_enabled: false
+  env_name: easymeta-humann
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-humann
+  env_present: true
+  executable: humann_renorm_table
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-humann/bin/humann_renorm_table
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: humann
+    version: '3.9'
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: humann_split_stratified_table
+  name: HUMAnN Split Stratified Table
+  category: functional_summary
+  required: true
+  default_enabled: false
+  env_name: easymeta-humann
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-humann
+  env_present: true
+  executable: humann_split_stratified_table
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-humann/bin/humann_split_stratified_table
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: humann
+    version: '3.9'
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: kneaddata
+  name: KneadData
+  category: host_removal
+  required: true
+  default_enabled: false
+  env_name: easymeta-p0
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-p0
+  env_present: true
+  executable: kneaddata
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-p0/bin/kneaddata
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: kneaddata
+    version: 0.12.4
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: kraken2
+  name: Kraken2
+  category: taxonomy
+  required: true
+  default_enabled: false
+  env_name: easymeta-p0
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-p0
+  env_present: true
+  executable: kraken2
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-p0/bin/kraken2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: kraken2
+    version: 2.17.1
+    build_string: pl5321h077b44d_0
+    channel: bioconda
+  version_command: ''
+- plugin: easymetagenome
+  tool_id: seqkit
+  name: SeqKit
+  category: input_validation
+  required: true
+  default_enabled: false
+  env_name: easymeta-p0
+  env_prefix: /root/autodl-tmp/.mamba/envs/easymeta-p0
+  env_present: true
+  executable: seqkit
+  resolved_path: /root/autodl-tmp/.mamba/envs/easymeta-p0/bin/seqkit
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: seqkit
+    version: 2.13.0
+    build_string: he881be0_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: abricate
+  name: ABRicate
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: abricate
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/abricate
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: abricate
+    version: 1.4.0
+    build_string: h05cac1d_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: amrfinderplus
+  name: AMRFinderPlus
+  category: annotation
+  required: false
+  default_enabled: true
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: amrfinder
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/amrfinder
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: ncbi-amrfinderplus
+    version: 4.2.7
+    build_string: hf69ffd2_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: bakta
+  name: Bakta
+  category: annotation
+  required: false
+  default_enabled: true
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: bakta
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/bakta
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bakta
+    version: 1.12.0
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: bakta --version
+- plugin: metagenomic_plasmid
+  tool_id: blast
+  name: BLAST+
+  category: comparative_genomics
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: blastn
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/blastn
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: blast
+    version: 2.17.0
+    build_string: h66d330f_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: bowtie2
+  name: bowtie2
+  category: abundance
+  required: true
+  default_enabled: true
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: bowtie2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/bowtie2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bowtie2
+    version: 2.5.5
+    build_string: ha27dd3b_0
+    channel: bioconda
+  version_command: bowtie2 --version
+- plugin: metagenomic_plasmid
+  tool_id: bowtie2_host_removal
+  name: Bowtie2 host removal
+  category: host_removal
+  required: false
+  default_enabled: false
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: bowtie2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/bowtie2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bowtie2
+    version: 2.5.5
+    build_string: ha27dd3b_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: checkm2
+  name: CheckM2
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: autoplasm-checkm2
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: checkm2
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/checkm2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: checkm2
+    version: 1.1.0
+    build_string: pyh7e72e81_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: clinker
+  name: clinker
+  category: comparative_genomics
+  required: false
+  default_enabled: false
+  env_name: autoplasm-visualization
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-visualization
+  env_present: true
+  executable: clinker
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-visualization/bin/clinker
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: clinker
+    version: 0.0.32
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: concoct
+  name: CONCOCT
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: concoct
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning/bin/concoct
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: concoct
+    version: 1.1.0
+    build_string: py310hc45f43b_8
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: conjscan
+  name: CONJscan
+  category: typing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: macsyfinder
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/conjscan
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: copla
+  name: COPLA
+  category: typing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: copla
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/COPLA
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: coverm
+  name: CoverM
+  category: abundance
+  required: false
+  default_enabled: true
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: coverm
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/coverm
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: coverm
+    version: 0.7.0
+    build_string: hcb7b614_4
+    channel: bioconda
+  version_command: coverm --version
+- plugin: metagenomic_plasmid
+  tool_id: das_tool
+  name: DAS Tool
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: DAS_Tool
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: deseq2_plasmid
+  name: DESeq2 plasmid differential abundance
+  category: statistics
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: Rscript
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/Rscript
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bioconductor-deseq2
+    version: 1.50.2
+    build_string: r45ha27e39d_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: dna_features_viewer
+  name: dna-features-viewer
+  category: visualization
+  required: false
+  default_enabled: false
+  env_name: autoplasm-visualization
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-visualization
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-visualization/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: dna-features-viewer
+    version: 3.1.5
+    build_string: pypi_0
+    channel: pypi
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: dorado
+  name: Dorado
+  category: basecalling
+  required: false
+  default_enabled: false
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: dorado
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: eggnog_mapper
+  name: eggNOG-mapper
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: emapper.py
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/emapper.py
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: eggnog-mapper
+    version: 2.1.13
+    build_string: pyhdfd78af_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: fastp
+  name: fastp
+  category: qc
+  required: true
+  default_enabled: true
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: fastp
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/fastp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastp
+    version: 1.3.5
+    build_string: h43da1c4_0
+    channel: bioconda
+  version_command: fastp --version
+- plugin: metagenomic_plasmid
+  tool_id: fastqc
+  name: FastQC
+  category: qc
+  required: false
+  default_enabled: false
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: fastqc
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/fastqc
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastqc
+    version: 0.12.1
+    build_string: hdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: fastspar
+  name: FastSpar
+  category: network
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: fastspar
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/fastspar
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastspar
+    version: 1.0.0
+    build_string: h1b620e3_6
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: filtlong
+  name: Filtlong
+  category: qc
+  required: false
+  default_enabled: true
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: filtlong
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/filtlong
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: filtlong
+    version: 0.3.1
+    build_string: h077b44d_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: genomad
+  name: geNomad
+  category: plasmid_detection
+  required: true
+  default_enabled: true
+  env_name: autoplasm-plasmid-detect
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect
+  env_present: true
+  executable: genomad
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect/bin/genomad
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: genomad
+    version: 1.12.0
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: genomad --version
+- plugin: metagenomic_plasmid
+  tool_id: gplas2
+  name: gplas2
+  category: plasmid_binning
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: gplas2
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/gplas2
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: gtdbtk
+  name: GTDB-Tk
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: gtdbtk
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/gtdbtk
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: gtdbtk
+    version: 2.7.2
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: hifiadapterfilt
+  name: HiFiAdapterFilt
+  category: qc
+  required: false
+  default_enabled: true
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: hifiadapterfilt.sh
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/hifiadapterfilt.sh
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: hifiadapterfilt
+    version: 3.0.0
+    build_string: hdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: hifiasm_meta
+  name: hifiasm
+  category: assembly
+  required: false
+  default_enabled: true
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: hifiasm
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/hifiasm
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: hifiasm
+    version: 0.25.0
+    build_string: h5ca1c30_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: hybridspades
+  name: hybridSPAdes
+  category: assembly
+  required: false
+  default_enabled: false
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: spades.py
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/spades.py
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: spades
+    version: 4.3.0
+    build_string: hde4eca7_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: integronfinder
+  name: IntegronFinder
+  category: annotation
+  required: false
+  default_enabled: true
+  env_name: autoplasm-integronfinder
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-integronfinder
+  env_present: true
+  executable: integron_finder
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-integronfinder/bin/integron_finder
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: integron_finder
+    version: 2.0.6
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: isescan
+  name: ISEScan
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: isescan.py
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: kraken2
+  name: Kraken2
+  category: host_prediction
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: kraken2
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/kraken2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: kraken2
+    version: 2.17.1
+    build_string: pl5321h077b44d_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: macsyfinder
+  name: MacSyFinder
+  category: typing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: macsyfinder
+  resolved_path: /root/autodl-tmp/abi/resources/autoplasm/macsyfinder/bin/macsyfinder
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/macsyfinder
+  - /root/autodl-tmp/abi/resources/autoplasm/macsyfinder/bin
+  - /root/autodl-tmp/abi/resources/autoplasm/macsyfinder/share
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: medaka
+  name: Medaka
+  category: polishing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: medaka_consensus
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/medaka_consensus
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: medaka
+    version: 2.2.1
+    build_string: py310h237e959_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: megahit
+  name: MEGAHIT
+  category: assembly
+  required: true
+  default_enabled: true
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: megahit
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/megahit
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: megahit
+    version: 1.2.9
+    build_string: haf24da9_8
+    channel: bioconda
+  version_command: megahit --version
+- plugin: metagenomic_plasmid
+  tool_id: metabat2
+  name: MetaBAT2
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: metabat2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning/bin/metabat2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: metabat2
+    version: 2.18_23_gc869c52
+    build_string: h61f4f8f_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: metaflye
+  name: metaFlye
+  category: assembly
+  required: true
+  default_enabled: true
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: flye
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/flye
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: flye
+    version: 2.9.6
+    build_string: py310h5850263_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: metaphlan
+  name: MetaPhlAn
+  category: host_prediction
+  required: false
+  default_enabled: false
+  env_name: stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/stats
+  env_present: true
+  executable: metaphlan
+  resolved_path: /root/autodl-tmp/.mamba/envs/stats/bin/metaphlan
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: metaphlan
+    version: 4.2.4
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: metaspades
+  name: metaSPAdes
+  category: assembly
+  required: false
+  default_enabled: false
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: metaspades.py
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/metaspades.py
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: spades
+    version: 4.3.0
+    build_string: hde4eca7_0
+    channel: bioconda
+  version_command: metaspades.py --version
+- plugin: metagenomic_plasmid
+  tool_id: minced
+  name: MinCED
+  category: host_plasmid_linking
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: minced
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/minced
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: minced
+    version: 0.4.2
+    build_string: hdfd78af_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: minimap2
+  name: minimap2
+  category: abundance
+  required: true
+  default_enabled: true
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: minimap2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/minimap2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: minimap2
+    version: '2.31'
+    build_string: h118bc1c_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: minimap2_host_removal
+  name: minimap2 host removal
+  category: host_removal
+  required: false
+  default_enabled: false
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: minimap2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/minimap2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: minimap2
+    version: '2.31'
+    build_string: h118bc1c_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: mmseqs2
+  name: MMseqs2
+  category: comparative_genomics
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: mmseqs
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/mmseqs
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mmseqs2
+    version: 18.8cc5c
+    build_string: hd6d6fdc_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: mob_suite
+  name: MOB-suite
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: mob_recon
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/mob_recon
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mob_suite
+    version: 3.1.9
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: mob_typer
+  name: MOB-typer
+  category: typing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: mob_typer
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/mob_typer
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mob_suite
+    version: 3.1.9
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: multiqc
+  name: MultiQC
+  category: qc
+  required: false
+  default_enabled: true
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: multiqc
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/multiqc
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: multiqc
+    version: '1.35'
+    build_string: pyhdfd78af_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: mummer
+  name: MUMmer/nucmer
+  category: comparative_genomics
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-detect
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect
+  env_present: true
+  executable: nucmer
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect/bin/nucmer
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mummer
+    version: '3.23'
+    build_string: pl5321h503566f_21
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: nanoplot
+  name: NanoPlot
+  category: qc
+  required: false
+  default_enabled: true
+  env_name: autoplasm-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-qc
+  env_present: true
+  executable: NanoPlot
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-qc/bin/NanoPlot
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: nanoplot
+    version: 1.46.2
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: opera_ms
+  name: OPERA-MS
+  category: assembly
+  required: false
+  default_enabled: false
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: OPERA-MS.pl
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: plasmaag
+  name: PlasMAAG
+  category: plasmid_binning
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: plasmaag
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/PlasmidHostFinder
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: plasme
+  name: PLASMe
+  category: plasmid_detection
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-detect
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect/bin/python
+  script_path: /root/autodl-tmp/resources/autoplasm/PLASMe/PLASMe.py
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/PLASMe
+  matching_packages:
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: plasmidfinder
+  name: PlasmidFinder
+  category: typing
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: plasmidfinder
+    version: 3.0.3
+    build_string: pypi_0
+    channel: pypi
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: python -c "import importlib.metadata as m; print(m.version('plasmidfinder'))"
+- plugin: metagenomic_plasmid
+  tool_id: plasmidhostfinder
+  name: PlasmidHostFinder
+  category: host_prediction
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: plasmidhostfinder.py
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/plasmidhostfinder
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: plasx
+  name: PlasX
+  category: plasmid_detection
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-detect
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect
+  env_present: true
+  executable: plasx
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect/bin/plasx
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/PlasX
+  matching_packages:
+  - name: plasx
+    version: 0.0.0
+    build_string: pypi_0
+    channel: pypi
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: platon
+  name: Platon
+  category: plasmid_detection
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-detect
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect
+  env_present: true
+  executable: platon
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-detect/bin/platon
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/platon
+  - /root/autodl-tmp/abi/resources/autoplasm/platon/bin
+  matching_packages: []
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: prodigal
+  name: Prodigal
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-annotation
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-annotation
+  env_present: true
+  executable: prodigal
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-annotation/bin/prodigal
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: prodigal
+    version: 2.6.3
+    build_string: h577a1d6_11
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: pycirclize
+  name: pyCirclize
+  category: visualization
+  required: false
+  default_enabled: false
+  env_name: autoplasm-visualization
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-visualization
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-visualization/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: pycirclize
+    version: 1.10.1
+    build_string: pypi_0
+    channel: pypi
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: pyvis
+  name: pyvis
+  category: visualization
+  required: false
+  default_enabled: false
+  env_name: autoplasm-visualization
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-visualization
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-visualization/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  - name: pyvis
+    version: 0.3.2
+    build_string: pyhd8ed1ab_1
+    channel: conda-forge
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: quast
+  name: metaQUAST
+  category: assembly_qc
+  required: false
+  default_enabled: true
+  env_name: autoplasm-assembly
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-assembly
+  env_present: true
+  executable: metaquast.py
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-assembly/bin/metaquast.py
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: quast
+    version: 5.3.0
+    build_string: py310pl5321h5140242_1
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: recycler
+  name: Recycler
+  category: plasmid_binning
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning/bin/python
+  script_path: /root/autodl-tmp/resources/autoplasm/Recycler/bin/recycle.py
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs:
+  - /root/autodl-tmp/abi/resources/autoplasm/Recycler
+  - /root/autodl-tmp/abi/resources/autoplasm/Recycler/bin
+  matching_packages:
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: report_markdown
+  name: AutoPlasm Markdown report
+  category: report
+  required: false
+  default_enabled: true
+  env_name: autoplasm-base
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-base
+  env_present: true
+  executable: abi
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-base/bin/abi
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: python -c "import abi; print(abi.__version__)"
+- plugin: metagenomic_plasmid
+  tool_id: rgi
+  name: RGI/CARD
+  category: annotation
+  required: false
+  default_enabled: false
+  env_name: autoplasm-rgi
+  env_prefix: /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba/envs/autoplasm-rgi
+  env_present: true
+  executable: rgi
+  resolved_path: /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba/envs/autoplasm-rgi/bin/rgi
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: rgi
+    version: 6.0.5
+    build_string: pyh05cac1d_0
+    channel: <unknown>
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: samtools
+  name: samtools
+  category: abundance
+  required: true
+  default_enabled: true
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: samtools
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/samtools
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: samtools
+    version: 1.23.1
+    build_string: ha83d96e_0
+    channel: bioconda
+  version_command: samtools --version
+- plugin: metagenomic_plasmid
+  tool_id: samtools_fastq
+  name: samtools fastq
+  category: basecalling
+  required: false
+  default_enabled: false
+  env_name: autoplasm-abundance
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-abundance
+  env_present: true
+  executable: samtools
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-abundance/bin/samtools
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: samtools
+    version: 1.23.1
+    build_string: ha83d96e_0
+    channel: bioconda
+  version_command: ''
+- plugin: metagenomic_plasmid
+  tool_id: scapp
+  name: SCAPP
+  category: plasmid_detection
+  required: false
+  default_enabled: false
+  env_name: autoplasm-scapp
+  env_prefix: /root/autodl-tmp/.mamba/envs/scapp
+  env_present: true
+  executable: scapp
+  resolved_path: /root/autodl-tmp/.mamba/envs/scapp/bin/scapp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: python -c "import importlib.metadata as m; print(m.version('scapp'))"
+- plugin: metagenomic_plasmid
+  tool_id: semibin
+  name: SemiBin
+  category: mag_host_genomes
+  required: false
+  default_enabled: false
+  env_name: autoplasm-plasmid-binning
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning
+  env_present: true
+  executable: SemiBin2
+  resolved_path: /root/autodl-tmp/.mamba/envs/autoplasm-plasmid-binning/bin/SemiBin2
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: semibin
+    version: 2.3.0
+    build_string: pyhdfd78af_0
+    channel: bioconda
+  version_command: ''
+- plugin: metatranscriptomics
+  tool_id: fastp
+  name: fastp
+  category: qc
+  required: true
+  default_enabled: true
+  env_name: abi-qc
+  env_prefix: /root/autodl-tmp/.mamba/envs/abi-qc
+  env_present: true
+  executable: fastp
+  resolved_path: /root/autodl-tmp/.mamba/envs/abi-qc/bin/fastp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastp
+    version: 1.3.5
+    build_string: h43da1c4_0
+    channel: bioconda
+  version_command: ''
+- plugin: metatranscriptomics
+  tool_id: featurecounts
+  name: featureCounts
+  category: expression
+  required: true
+  default_enabled: true
+  env_name: abi-stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/abi-stats
+  env_present: true
+  executable: featureCounts
+  resolved_path: /root/autodl-tmp/.mamba/envs/abi-stats/bin/featureCounts
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: subread
+    version: 2.1.1
+    build_string: h577a1d6_0
+    channel: bioconda
+  version_command: ''
+- plugin: metatranscriptomics
+  tool_id: star
+  name: STAR
+  category: alignment
+  required: true
+  default_enabled: true
+  env_name: abi-stats
+  env_prefix: /root/autodl-tmp/.mamba/envs/abi-stats
+  env_present: true
+  executable: STAR
+  resolved_path: /root/autodl-tmp/.mamba/envs/abi-stats/bin/STAR
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: star
+    version: 2.7.11b
+    build_string: h5ca1c30_8
+    channel: bioconda
+  version_command: ''
+- plugin: rnaseq_expression
+  tool_id: build_count_matrix
+  name: Build Count Matrix
+  category: preprocessing
+  required: true
+  default_enabled: true
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: python --version
+- plugin: rnaseq_expression
+  tool_id: deseq2
+  name: DESeq2
+  category: differential_expression
+  required: true
+  default_enabled: true
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: Rscript
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/Rscript
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: bioconductor-deseq2
+    version: 1.50.2
+    build_string: r45ha27e39d_0
+    channel: bioconda
+  version_command: Rscript -e "cat(as.character(packageVersion('DESeq2')))"
+- plugin: rnaseq_expression
+  tool_id: fastp
+  name: fastp
+  category: qc
+  required: true
+  default_enabled: true
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: fastp
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/fastp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastp
+    version: 1.3.5
+    build_string: h43da1c4_0
+    channel: bioconda
+  version_command: fastp --version
+- plugin: rnaseq_expression
+  tool_id: featurecounts
+  name: featureCounts
+  category: expression
+  required: true
+  default_enabled: true
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: featureCounts
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/featureCounts
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: subread
+    version: 2.1.1
+    build_string: h577a1d6_0
+    channel: bioconda
+  version_command: featureCounts -v
+- plugin: rnaseq_expression
+  tool_id: rnaseq_enrichment
+  name: Offline RNA-seq Enrichment
+  category: enrichment
+  required: false
+  default_enabled: false
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: python
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/python
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: python
+    version: 3.10.20
+    build_string: h267e890_1_cpython
+    channel: conda-forge
+  version_command: ''
+- plugin: rnaseq_expression
+  tool_id: star
+  name: STAR
+  category: alignment
+  required: true
+  default_enabled: true
+  env_name: rnaseq
+  env_prefix: /root/autodl-tmp/.mamba/envs/rnaseq
+  env_present: true
+  executable: STAR
+  resolved_path: /root/autodl-tmp/.mamba/envs/rnaseq/bin/STAR
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: star
+    version: 2.7.11b
+    build_string: h5ca1c30_8
+    channel: bioconda
+  version_command: STAR --version
+- plugin: viral_viwrap
+  tool_id: viwrap
+  name: ViWrap
+  category: viral_analysis
+  required: true
+  default_enabled: false
+  env_name: autoplasm-base
+  env_prefix: /root/autodl-tmp/.mamba/envs/autoplasm-base
+  env_present: true
+  executable: ViWrap
+  resolved_path: ''
+  script_path: ''
+  script_present: true
+  status: missing
+  blocking: true
+  extra_path_dirs: []
+  matching_packages: []
+  version_command: ViWrap -h
+- plugin: wgs_bacteria
+  tool_id: amrfinderplus
+  name: AMRFinderPlus
+  category: amr
+  required: true
+  default_enabled: true
+  env_name: wgs
+  env_prefix: /root/autodl-tmp/.mamba/envs/wgs
+  env_present: true
+  executable: amrfinder
+  resolved_path: /root/autodl-tmp/.mamba/envs/wgs/bin/amrfinder
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: ncbi-amrfinderplus
+    version: 4.2.7
+    build_string: hf69ffd2_0
+    channel: bioconda
+  version_command: amrfinder --version
+- plugin: wgs_bacteria
+  tool_id: fastp
+  name: fastp
+  category: qc
+  required: true
+  default_enabled: true
+  env_name: wgs
+  env_prefix: /root/autodl-tmp/.mamba/envs/wgs
+  env_present: true
+  executable: fastp
+  resolved_path: /root/autodl-tmp/.mamba/envs/wgs/bin/fastp
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: fastp
+    version: 1.3.5
+    build_string: h43da1c4_0
+    channel: bioconda
+  version_command: fastp --version
+- plugin: wgs_bacteria
+  tool_id: mlst
+  name: MLST
+  category: typing
+  required: true
+  default_enabled: true
+  env_name: wgs
+  env_prefix: /root/autodl-tmp/.mamba/envs/wgs
+  env_present: true
+  executable: mlst
+  resolved_path: /root/autodl-tmp/.mamba/envs/wgs/bin/mlst
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: mlst
+    version: 2.35.0
+    build_string: hdfd78af_0
+    channel: bioconda
+  version_command: mlst --version
+- plugin: wgs_bacteria
+  tool_id: prokka
+  name: Prokka
+  category: annotation
+  required: true
+  default_enabled: true
+  env_name: wgs
+  env_prefix: /root/autodl-tmp/.mamba/envs/wgs
+  env_present: true
+  executable: prokka
+  resolved_path: /root/autodl-tmp/.mamba/envs/wgs/bin/prokka
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: prokka
+    version: 1.15.6
+    build_string: pl5321hdfd78af_0
+    channel: bioconda
+  version_command: prokka --version
+- plugin: wgs_bacteria
+  tool_id: spades
+  name: SPAdes
+  category: assembly
+  required: true
+  default_enabled: true
+  env_name: wgs
+  env_prefix: /root/autodl-tmp/.mamba/envs/wgs
+  env_present: true
+  executable: spades.py
+  resolved_path: /root/autodl-tmp/.mamba/envs/wgs/bin/spades.py
+  script_path: ''
+  script_present: true
+  status: ok
+  blocking: false
+  extra_path_dirs: []
+  matching_packages:
+  - name: spades
+    version: 4.3.0
+    build_string: hde4eca7_0
+    channel: bioconda
+  version_command: spades.py --version

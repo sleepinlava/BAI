@@ -1,0 +1,42 @@
+lockfile_version: 1
+kind: abi-runtime-lock
+generated_at: '2026-07-29T09:59:10+00:00'
+platform:
+  system: Linux
+  release: 5.15.0-78-generic
+  machine: x86_64
+  python: 3.10.20
+project:
+  version: 1.5.8
+  git_commit: 9545a982ef8870db3447e7d25a013db75046d611
+  git_dirty: false
+  git_error: ''
+release:
+  analysis_types:
+  - amplicon_16s
+  - easymetagenome
+  - metagenomic_plasmid
+  - metatranscriptomics
+  - rnaseq_expression
+  - wgs_bacteria
+  require_all_tools: false
+  blocking_missing_tools: 0
+  not_ready_resources: 0
+summary:
+  conda:
+    declared_envs: 21
+    present_envs: 21
+    missing_envs: []
+    extra_envs: []
+  tools:
+    registered_tools: 99
+    present_tools: 89
+    missing_tools: 10
+    blocking_missing_tools: 1
+    release_blocking_missing_tools: 0
+    release_requires_all_tools: false
+  resources:
+    ok: 39
+    incomplete: 1
+    not_configured: 5
+    missing: 1

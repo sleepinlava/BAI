@@ -1,0 +1,1143 @@
+lockfile_version: 1
+kind: abi-resources-lock
+generated_at: '2026-07-29T09:59:10+00:00'
+project_root: /root/autodl-tmp/abi-study-freeze-6f05ad6
+mamba_root: /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba
+resource_root: /root/autodl-tmp/resources
+db_profile: full
+summary:
+  release_required_resources: 16
+  release_not_ready_resources: 0
+  release_resource_audit_errors: 0
+  release_requires_all_tools: false
+analyses:
+  amplicon_16s:
+    status_counts:
+      ok: 2
+    resources:
+    - resource_id: diversity_script
+      tool_id: ''
+      field: diversity_script
+      path: /root/autodl-tmp/abi-study-freeze-6f05ad6/scripts/amplicon_diversity.py
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 1
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - diversity_metrics
+      release_required: true
+    - resource_id: taxonomy_db
+      tool_id: vsearch_taxonomy
+      field: taxonomy_db
+      path: /root/autodl-tmp/resources/autoplasm/amplicon_taxonomy/rdp_16s_v16.fa
+      status: ok
+      version: ''
+      source_url: https://www.drive5.com/sintax/
+      checksum: ''
+      command: []
+      ready_check: sintax_fasta_valid
+      directory_file_count: 0
+      directory_size_bytes: 21255794
+      message: 'Taxonomy DB ready: 13212 SINTAX-annotated sequences.'
+      consumer_tools:
+      - vsearch_taxonomy
+      release_required: true
+    error: ''
+  easymetagenome:
+    status_counts:
+      ok: 5
+    resources:
+    - resource_id: host_db
+      tool_id: ''
+      field: host_db
+      path: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 10
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - kneaddata
+      release_required: true
+    - resource_id: humann_nucleotide_db
+      tool_id: ''
+      field: humann_nucleotide_db
+      path: /root/autodl-tmp/resources/autoplasm/humann/chocophlan
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 12774
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - humann4
+      release_required: true
+    - resource_id: humann_protein_db
+      tool_id: ''
+      field: humann_protein_db
+      path: /root/autodl-tmp/resources/autoplasm/humann/uniref
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 2
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - humann4
+      release_required: true
+    - resource_id: kraken2_db
+      tool_id: ''
+      field: kraken2_db
+      path: /root/autodl-tmp/resources/autoplasm/kraken2
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 20
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - bracken
+      - kraken2
+      release_required: true
+    - resource_id: metaphlan_db
+      tool_id: ''
+      field: metaphlan_db
+      path: /root/autodl-tmp/resources/autoplasm/metaphlan
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 13
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - humann4
+      release_required: true
+    error: ''
+  metagenomic_plasmid:
+    status_counts:
+      ok: 26
+      incomplete: 1
+      not_configured: 2
+      missing: 1
+    resources:
+    - resource_id: genomad
+      tool_id: genomad
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/genomad/genomad_db
+      status: ok
+      version: ''
+      source_url: https://portal.nersc.gov/genomad/
+      checksum: bd591dd26c4de1b27901fa86d0dc453e860692201f7fb337ad45a8b5919eec24
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - genomad
+      - download-database
+      - /root/autodl-tmp/resources/autoplasm/genomad/genomad_db
+      ready_check: genomad_db directory found
+      directory_file_count: 35
+      directory_size_bytes: 2887936181
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: genomad
+      source: https://portal.nersc.gov/genomad/
+      license: ''
+      checksum_sha256: bd591dd26c4de1b27901fa86d0dc453e860692201f7fb337ad45a8b5919eec24
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: true
+    - resource_id: bakta
+      tool_id: bakta
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/bakta/db
+      status: ok
+      version: ''
+      source_url: https://bakta.readthedocs.io/en/latest/cli/database.html
+      checksum: d88d78cc0dc4f2b0f68e5e0626f4b7a3f3bb5d6879b1ed18adad21ba66e1d754
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - bakta_db
+      - download
+      - --output
+      - /root/autodl-tmp/resources/autoplasm/bakta/db
+      - --type
+      - light
+      ready_check: non-empty database directory found
+      directory_file_count: 209
+      directory_size_bytes: 89344082702
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: bakta
+      source: https://bakta.readthedocs.io/en/latest/cli/database.html
+      license: ''
+      checksum_sha256: d88d78cc0dc4f2b0f68e5e0626f4b7a3f3bb5d6879b1ed18adad21ba66e1d754
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: true
+    - resource_id: mob_suite
+      tool_id: mob_suite
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/mob_suite/data
+      status: incomplete
+      version: ''
+      source_url: https://github.com/phac-nml/mob-suite
+      checksum: 45f9355d757e953313100c4d66adc02c7f80f7f8d1d2a00668d328996170a328
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - mob_init
+      - --database_directory
+      - /root/autodl-tmp/resources/autoplasm/mob_suite/data
+      ready_check: 'MOB-suite database incomplete: rep.dna.fas, mob.proteins.faa,
+        mpf.proteins.faa, orit.fas, clusters.txt, host_range_literature_plasmidDB.txt,
+        ncbi_plasmid_full_seqs.fas.msh, taxa.sqlite, BLAST index'
+      directory_file_count: 14
+      directory_size_bytes: 4416412
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: mob_suite
+      source: https://github.com/phac-nml/mob-suite
+      license: ''
+      checksum_sha256: 45f9355d757e953313100c4d66adc02c7f80f7f8d1d2a00668d328996170a328
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasmidfinder
+      tool_id: plasmidfinder
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/plasmidfinder_db
+      status: ok
+      version: ''
+      source_url: https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git
+      checksum: bfc57233a44039c82acc28bcc0966f969b151738f715bb96f4982efc5010cfd6
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git
+      - /root/autodl-tmp/resources/autoplasm/plasmidfinder_db
+      ready_check: ready sentinel found
+      directory_file_count: 150
+      directory_size_bytes: 168832103
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasmidfinder
+      source: https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git
+      license: ''
+      checksum_sha256: bfc57233a44039c82acc28bcc0966f969b151738f715bb96f4982efc5010cfd6
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: metaphlan
+      tool_id: metaphlan
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/metaphlan
+      status: ok
+      version: ''
+      source_url: https://github.com/biobakery/MetaPhlAn
+      checksum: 37a7a1dc816a1b16c035de0a3fa2045ce2db1279f4e9806528ebc023f5244fe6
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - metaphlan
+      - --install
+      - --db_dir
+      - /root/autodl-tmp/resources/autoplasm/metaphlan
+      ready_check: ready sentinel found
+      directory_file_count: 13
+      directory_size_bytes: 40176531180
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: metaphlan
+      source: https://github.com/biobakery/MetaPhlAn
+      license: ''
+      checksum_sha256: 37a7a1dc816a1b16c035de0a3fa2045ce2db1279f4e9806528ebc023f5244fe6
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: amrfinderplus
+      tool_id: amrfinderplus
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/amrfinderplus/latest
+      status: ok
+      version: ''
+      source_url: https://github.com/ncbi/amr
+      checksum: 12829b2b125d7718345bff80f103098c188fb49d97473834e03e98b000d54986
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - amrfinder_update
+      - -d
+      - /root/autodl-tmp/resources/autoplasm/amrfinderplus/latest
+      ready_check: AMRFinderPlus database found (AMR_CDS/AMR.LIB)
+      directory_file_count: 162
+      directory_size_bytes: 251050760
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: amrfinderplus
+      source: https://github.com/ncbi/amr
+      license: ''
+      checksum_sha256: 12829b2b125d7718345bff80f103098c188fb49d97473834e03e98b000d54986
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: true
+    - resource_id: card
+      tool_id: rgi
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/card
+      status: ok
+      version: ''
+      source_url: https://card.mcmaster.ca/download
+      checksum: 08b4fb7723ed3782934f41156087f231b1eef2304932e8eb359d1caf081cf422
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 21
+      directory_size_bytes: 139384082
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: card
+      source: https://card.mcmaster.ca/download
+      license: ''
+      checksum_sha256: 08b4fb7723ed3782934f41156087f231b1eef2304932e8eb359d1caf081cf422
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: kraken2
+      tool_id: kraken2
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/kraken2
+      status: ok
+      version: standard_20260226
+      source_url: https://benlangmead.github.io/aws-indexes/k2
+      checksum: 7b00154f89aef4ee85fa54cbdb32a2d405b230f7c71b5c2748ee447410b05045
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - aria2c
+      - -x
+      - '8'
+      - -s
+      - '8'
+      - --continue=true
+      - --max-tries=3
+      - https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20260226.tar.gz
+      ready_check: ready sentinel found
+      directory_file_count: 20
+      directory_size_bytes: 104554221215
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: kraken2
+      source: https://benlangmead.github.io/aws-indexes/k2
+      license: ''
+      checksum_sha256: 7b00154f89aef4ee85fa54cbdb32a2d405b230f7c71b5c2748ee447410b05045
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: gtdbtk
+      tool_id: gtdbtk
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/gtdbtk/release232
+      status: ok
+      version: ''
+      source_url: https://data.gtdb.ecogenomic.org/
+      checksum: ce2f3be35184cbfa12c0cf0e9c5107f3f5494df457d7d423b7a2cf5d13a1e9d6
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - gtdbtk
+      - db
+      - download
+      ready_check: GTDB-Tk marker database found
+      directory_file_count: 265
+      directory_size_bytes: 100507057921
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: gtdbtk
+      source: https://data.gtdb.ecogenomic.org/
+      license: ''
+      checksum_sha256: ce2f3be35184cbfa12c0cf0e9c5107f3f5494df457d7d423b7a2cf5d13a1e9d6
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: checkm2
+      tool_id: checkm2
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/checkm2
+      status: ok
+      version: ''
+      source_url: https://github.com/chklovski/CheckM2
+      checksum: 47ff28809dc9927e593ccb67c9d7ace3fd0fb7620570e4872aa85de841ac648e
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - checkm2
+      - download
+      - --path
+      - /root/autodl-tmp/resources/autoplasm/checkm2
+      ready_check: ready sentinel found
+      directory_file_count: 4
+      directory_size_bytes: 4817596437
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: checkm2
+      source: https://github.com/chklovski/CheckM2
+      license: ''
+      checksum_sha256: 47ff28809dc9927e593ccb67c9d7ace3fd0fb7620570e4872aa85de841ac648e
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: eggnog_mapper
+      tool_id: eggnog_mapper
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/eggnog_mapper
+      status: ok
+      version: ''
+      source_url: https://eggnog-mapper.embl.de/
+      checksum: 8c6489b1a369a6775fc6a18df52919fa9f329c27a0d7a4a0215e5578a0a4b8f8
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - download_eggnog_data.py
+      - -y
+      - --data_dir
+      - /root/autodl-tmp/resources/autoplasm/eggnog_mapper
+      ready_check: ready sentinel found
+      directory_file_count: 6
+      directory_size_bytes: 51013857720
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: eggnog_mapper
+      source: https://eggnog-mapper.embl.de/
+      license: ''
+      checksum_sha256: 8c6489b1a369a6775fc6a18df52919fa9f329c27a0d7a4a0215e5578a0a4b8f8
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: abricate
+      tool_id: abricate
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/abricate
+      status: ok
+      version: ''
+      source_url: https://github.com/tseemann/abricate#databases
+      checksum: 793ff85988e450f3b078cd906b52dd21b56b18c67bccd0d0f9b65dc7bfa738da
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 98
+      directory_size_bytes: 118570639
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: abricate
+      source: https://github.com/tseemann/abricate#databases
+      license: ''
+      checksum_sha256: 793ff85988e450f3b078cd906b52dd21b56b18c67bccd0d0f9b65dc7bfa738da
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasme
+      tool_id: plasme
+      field: database
+      path: /root/autodl-tmp/resources/autoplasm/PLASMe/DB
+      status: ok
+      version: ''
+      source_url: https://github.com/ccb-hms/PLASMe
+      checksum: c8a3d51f2d095cfbe35368658bc8a173f89570aaee1ec732b616098351f939a0
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 46
+      directory_size_bytes: 16939193456
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasme
+      source: https://github.com/ccb-hms/PLASMe
+      license: ''
+      checksum_sha256: c8a3d51f2d095cfbe35368658bc8a173f89570aaee1ec732b616098351f939a0
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasx_annotations
+      tool_id: plasx
+      field: annotations
+      path: /root/autodl-tmp/resources/autoplasm/plasx
+      status: ok
+      version: latest
+      source_url: https://github.com/michaelgoldman/PlasX
+      checksum: d9ca564ee51003eab13ca18dd7f9a953a398dc5eb4528c1c287d3080f05ac82e
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 36
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasx_annotations
+      source: https://github.com/michaelgoldman/PlasX
+      license: ''
+      checksum_sha256: d9ca564ee51003eab13ca18dd7f9a953a398dc5eb4528c1c287d3080f05ac82e
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasx_model
+      tool_id: plasx
+      field: model
+      path: /root/autodl-tmp/resources/autoplasm/plasx_model
+      status: ok
+      version: latest
+      source_url: https://github.com/michaelgoldman/PlasX
+      checksum: 122d01c39525d3b411dbc26c9c1e9357afae812d07b6760debcef1917f30ac9a
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 24
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasx_model
+      source: https://github.com/michaelgoldman/PlasX
+      license: ''
+      checksum_sha256: 122d01c39525d3b411dbc26c9c1e9357afae812d07b6760debcef1917f30ac9a
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: copla_refgraph
+      tool_id: copla
+      field: refgraph
+      path: /root/autodl-tmp/resources/autoplasm/copla
+      status: ok
+      version: latest
+      source_url: https://github.com/BeatrizBonete/COPLA
+      checksum: 6aac3fa797688b2863472b96a8b53e428c5620097f8199b22e2dd92a96a5d041
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 30
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: copla_refgraph
+      source: https://github.com/BeatrizBonete/COPLA
+      license: ''
+      checksum_sha256: 6aac3fa797688b2863472b96a8b53e428c5620097f8199b22e2dd92a96a5d041
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: copla_reflist
+      tool_id: copla
+      field: reflist
+      path: /root/autodl-tmp/resources/autoplasm/copla_reflist
+      status: ok
+      version: latest
+      source_url: https://github.com/BeatrizBonete/COPLA
+      checksum: 4d8183a21851c9296fc8a2c2815e5b5544a05297e5475f13144b95928e78b66b
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command: []
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 28
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: copla_reflist
+      source: https://github.com/BeatrizBonete/COPLA
+      license: ''
+      checksum_sha256: 4d8183a21851c9296fc8a2c2815e5b5544a05297e5475f13144b95928e78b66b
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: blast
+      tool_id: blast
+      field: database
+      path: BLAST_DB_NOT_CONFIGURED
+      status: not_configured
+      version: ''
+      source_url: https://ftp.ncbi.nlm.nih.gov/blast/db/
+      checksum: ''
+      checksum_method: ''
+      date: '2026-07-29'
+      command: []
+      ready_check: path missing
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: blast
+      source: https://ftp.ncbi.nlm.nih.gov/blast/db/
+      license: ''
+      checksum_sha256: ''
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasmidhostfinder
+      tool_id: plasmidhostfinder
+      field: database
+      path: PLASMIDHOSTFINDER_DB_NOT_CONFIGURED
+      status: not_configured
+      version: ''
+      source_url: https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git
+      checksum: ''
+      checksum_method: ''
+      date: '2026-07-29'
+      command: []
+      ready_check: path missing
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasmidhostfinder
+      source: https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git
+      license: ''
+      checksum_sha256: ''
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasme_tool
+      tool_id: plasme
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/PLASMe
+      status: ok
+      version: latest
+      source_url: https://github.com/ccb-hms/PLASMe.git
+      checksum: 56801f998a269fe1c1679d63b0473e8c93f6990b1ffdcafc5880fcc2b5d5bc2e
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/ccb-hms/PLASMe.git
+      - /root/autodl-tmp/resources/autoplasm/PLASMe
+      ready_check: ready sentinel found
+      directory_file_count: 83
+      directory_size_bytes: 16964155345
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasme_tool
+      source: https://github.com/ccb-hms/PLASMe.git
+      license: ''
+      checksum_sha256: 56801f998a269fe1c1679d63b0473e8c93f6990b1ffdcafc5880fcc2b5d5bc2e
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasx_tool
+      tool_id: plasx
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/PlasX
+      status: ok
+      version: latest
+      source_url: https://github.com/michaelgoldman/PlasX.git
+      checksum: 9bbbd04412677778005a67e47628362f663b7470d5348624d3ca153fc381f6c0
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/michaelgoldman/PlasX.git
+      - /root/autodl-tmp/resources/autoplasm/PlasX
+      ready_check: ready sentinel found
+      directory_file_count: 121
+      directory_size_bytes: 6463443192
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasx_tool
+      source: https://github.com/michaelgoldman/PlasX.git
+      license: ''
+      checksum_sha256: 9bbbd04412677778005a67e47628362f663b7470d5348624d3ca153fc381f6c0
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: platon_tool
+      tool_id: platon
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/platon
+      status: ok
+      version: latest
+      source_url: https://github.com/oschwengers/platon.git
+      checksum: 17d983ea20ce662c2e5843bb836876470b9ac3f528db261cf14b7c92296dfee3
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/oschwengers/platon.git
+      - /root/autodl-tmp/resources/autoplasm/platon
+      ready_check: ready sentinel found
+      directory_file_count: 158
+      directory_size_bytes: 2923473108
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: platon_tool
+      source: https://github.com/oschwengers/platon.git
+      license: ''
+      checksum_sha256: 17d983ea20ce662c2e5843bb836876470b9ac3f528db261cf14b7c92296dfee3
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: macsyfinder_tool
+      tool_id: macsyfinder
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/macsyfinder
+      status: ok
+      version: latest
+      source_url: macsyfinder
+      checksum: 26c98bf297a642f8c3833285746dd421916c16c9868f72c4b5db782833b5d861
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - pip
+      - install
+      - macsyfinder
+      - --target
+      - /root/autodl-tmp/resources/autoplasm/macsyfinder
+      ready_check: ready sentinel found
+      directory_file_count: 5959
+      directory_size_bytes: 180972060
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: macsyfinder_tool
+      source: macsyfinder
+      license: ''
+      checksum_sha256: 26c98bf297a642f8c3833285746dd421916c16c9868f72c4b5db782833b5d861
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasmaag_tool
+      tool_id: plasmaag
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/PlasmidHostFinder
+      status: ok
+      version: latest
+      source_url: https://github.com/wanyuac/PlasmidHostFinder.git
+      checksum: 05ded9cca48920922475065aea730cd1e21c1b1849f9a30b8bfc650a6cf65a86
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/wanyuac/PlasmidHostFinder.git
+      - /root/autodl-tmp/resources/autoplasm/PlasmidHostFinder
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 28
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasmaag_tool
+      source: https://github.com/wanyuac/PlasmidHostFinder.git
+      license: ''
+      checksum_sha256: 05ded9cca48920922475065aea730cd1e21c1b1849f9a30b8bfc650a6cf65a86
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: gplas2_tool
+      tool_id: gplas2
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/gplas2
+      status: ok
+      version: latest
+      source_url: https://github.com/simonrolph/gplas2.git
+      checksum: 5ee94f9ae162965e1d78f594d3ac58e2d742284cb8b10a453676b4107ffdf288
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/simonrolph/gplas2.git
+      - /root/autodl-tmp/resources/autoplasm/gplas2
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 24
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: gplas2_tool
+      source: https://github.com/simonrolph/gplas2.git
+      license: ''
+      checksum_sha256: 5ee94f9ae162965e1d78f594d3ac58e2d742284cb8b10a453676b4107ffdf288
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: scapp_tool
+      tool_id: scapp
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/SCAPP
+      status: missing
+      version: latest
+      source_url: https://github.com/Shamir-Lab/SCAPP.git
+      checksum: ''
+      checksum_method: ''
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/Shamir-Lab/SCAPP.git
+      - /root/autodl-tmp/resources/autoplasm/SCAPP
+      ready_check: path missing
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: scapp_tool
+      source: https://github.com/Shamir-Lab/SCAPP.git
+      license: ''
+      checksum_sha256: ''
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: recycler_tool
+      tool_id: recycler
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/Recycler
+      status: ok
+      version: latest
+      source_url: https://github.com/Shamir-Lab/Recycler.git
+      checksum: 7d34bd47665aee7aa18f2891c49a095e296617f4de0075f723693d819f553e49
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://github.com/Shamir-Lab/Recycler.git
+      - /root/autodl-tmp/resources/autoplasm/Recycler
+      ready_check: ready sentinel found
+      directory_file_count: 67
+      directory_size_bytes: 34358636
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: recycler_tool
+      source: https://github.com/Shamir-Lab/Recycler.git
+      license: ''
+      checksum_sha256: 7d34bd47665aee7aa18f2891c49a095e296617f4de0075f723693d819f553e49
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: copla_tool
+      tool_id: copla
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/COPLA
+      status: ok
+      version: latest
+      source_url: https://zenodo.org/records/10059131/files/COPLA_DB.tar.gz
+      checksum: bcfd8578f2c1f0ae9ecdc2612e527cab8a04ada19c0e85a191c23a00944939b4
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - wget
+      - -O
+      - /root/autodl-tmp/resources/autoplasm/COPLA/copla
+      - https://zenodo.org/records/10059131/files/COPLA_DB.tar.gz
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 22
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: copla_tool
+      source: https://zenodo.org/records/10059131/files/COPLA_DB.tar.gz
+      license: ''
+      checksum_sha256: bcfd8578f2c1f0ae9ecdc2612e527cab8a04ada19c0e85a191c23a00944939b4
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: plasmidhostfinder_tool
+      tool_id: plasmidhostfinder
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/plasmidhostfinder
+      status: ok
+      version: latest
+      source_url: https://bitbucket.org/genomicepidemiology/plasmidhostfinder.git
+      checksum: 0c03d637a5e092356796007c46d3583d7c7823d9799f13fd9fd9ecca2f116178
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - git
+      - clone
+      - --depth
+      - '1'
+      - --single-branch
+      - https://bitbucket.org/genomicepidemiology/plasmidhostfinder.git
+      - /root/autodl-tmp/resources/autoplasm/plasmidhostfinder
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 46
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: plasmidhostfinder_tool
+      source: https://bitbucket.org/genomicepidemiology/plasmidhostfinder.git
+      license: ''
+      checksum_sha256: 0c03d637a5e092356796007c46d3583d7c7823d9799f13fd9fd9ecca2f116178
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    - resource_id: conjscan_tool
+      tool_id: conjscan
+      field: install_path
+      path: /root/autodl-tmp/resources/autoplasm/conjscan
+      status: ok
+      version: latest
+      source_url: https://github.com/ruizhang84/conjscan/archive/refs/heads/master.tar.gz
+      checksum: 16f7896feb149569f0865fd1441e282a42d21a9d2f0d4d8479e3921ebe9a5328
+      checksum_method: sha256:directory-manifest-v1
+      date: '2026-07-29'
+      command:
+      - wget
+      - -O
+      - /root/autodl-tmp/resources/autoplasm/conjscan/conjscan
+      - https://github.com/ruizhang84/conjscan/archive/refs/heads/master.tar.gz
+      ready_check: ready sentinel found
+      directory_file_count: 2
+      directory_size_bytes: 28
+      message: ''
+      last_checked_at: '2026-07-29T18:00:45'
+      mock: false
+      id: conjscan_tool
+      source: https://github.com/ruizhang84/conjscan/archive/refs/heads/master.tar.gz
+      license: ''
+      checksum_sha256: 16f7896feb149569f0865fd1441e282a42d21a9d2f0d4d8479e3921ebe9a5328
+      validated_at: '2026-07-29T18:00:45'
+      consumer_tools: []
+      release_required: false
+    error: ''
+  metatranscriptomics:
+    status_counts:
+      ok: 2
+    resources:
+    - resource_id: annotation_gtf
+      tool_id: ''
+      field: annotation_gtf
+      path: /root/autodl-tmp/resources/NC_000913.3.gtf
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 1
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - featurecounts
+      release_required: true
+    - resource_id: genome_index
+      tool_id: ''
+      field: genome_index
+      path: /root/autodl-tmp/resources/star_index
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 17
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - star
+      release_required: true
+    error: ''
+  rnaseq_expression:
+    status_counts:
+      ok: 3
+      not_configured: 3
+    resources:
+    - resource_id: annotation_gtf
+      tool_id: ''
+      field: annotation_gtf
+      path: /root/autodl-tmp/resources/NC_000913.3.gtf
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 1
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - featurecounts
+      - rnaseq_enrichment
+      release_required: true
+    - resource_id: genome_index
+      tool_id: ''
+      field: genome_index
+      path: /root/autodl-tmp/resources/star_index
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 17
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - star
+      release_required: true
+    - resource_id: go_gaf
+      tool_id: ''
+      field: go_gaf
+      path: GO_GAF_NOT_CONFIGURED
+      status: not_configured
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: Resource path is not configured.
+      consumer_tools:
+      - rnaseq_enrichment
+      release_required: false
+    - resource_id: go_obo
+      tool_id: ''
+      field: go_obo
+      path: GO_OBO_NOT_CONFIGURED
+      status: not_configured
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: Resource path is not configured.
+      consumer_tools:
+      - rnaseq_enrichment
+      release_required: false
+    - resource_id: reactome_gmt
+      tool_id: ''
+      field: reactome_gmt
+      path: REACTOME_GMT_NOT_CONFIGURED
+      status: not_configured
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: Resource path is not configured.
+      consumer_tools:
+      - rnaseq_enrichment
+      release_required: false
+    - resource_id: deseq2_package
+      tool_id: deseq2
+      field: r_package
+      path: /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba/envs/rnaseq/bin/Rscript
+      status: ok
+      version: 1.50.2
+      source_url: https://bioconductor.org/packages/DESeq2/
+      checksum: ''
+      command:
+      - /root/autodl-tmp/abi-study-runtime-0ccc941/.mamba/envs/rnaseq/bin/Rscript
+      - -e
+      - library(DESeq2)
+      ready_check: r_package_loaded
+      directory_file_count: 0
+      directory_size_bytes: 0
+      message: DESeq2 1.50.2 found.
+      consumer_tools: []
+      release_required: true
+    error: ''
+  wgs_bacteria:
+    status_counts:
+      ok: 1
+    resources:
+    - resource_id: amrfinder_db
+      tool_id: ''
+      field: amrfinder_db
+      path: /root/autodl-tmp/resources/autoplasm/amrfinderplus/latest
+      status: ok
+      version: ''
+      source_url: ''
+      checksum: ''
+      command: []
+      ready_check: path_exists
+      directory_file_count: 162
+      directory_size_bytes: 0
+      message: Configured resource path exists.
+      consumer_tools:
+      - amrfinderplus
+      release_required: true
+    error: ''

@@ -107,9 +107,9 @@ budget:
 environment:
   isolation: one_fresh_oci_container_per_trial
   base_image_digest: TO_BE_FROZEN
-  abi_version: TO_BE_FROZEN
-  abi_git_commit: TO_BE_FROZEN
-  runtime_lock_sha256: TO_BE_FROZEN
+  abi_version: 1.5.8
+  abi_git_commit: 9545a982ef8870db3447e7d25a013db75046d611
+  runtime_lock_sha256: 0b22444c2cc32bdf5ca66f313687c04811ed23f559125640837118a24364be52
   contract_snapshot_sha256: TO_BE_FROZEN
   network: disabled
   user: non_root

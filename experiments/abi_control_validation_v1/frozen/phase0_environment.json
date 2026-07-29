@@ -2,7 +2,7 @@
   "abi_version": "1.5.8",
   "environment_count": 21,
   "git_clean": true,
-  "git_commit": "6f05ad6b3c624df633c5c802d05d448c6246eb59",
+  "git_commit": "9545a982ef8870db3447e7d25a013db75046d611",
   "intentionally_excluded_resources": [
     "viral_viwrap"
   ],
@@ -13,7 +13,21 @@
     "metagenomic_plasmid"
   ],
   "strict_runtime_lock": {
-    "reason": "Formal locks require scripts/cloud/prepare_release_lock.sh on the provisioned cloud host and a clean release commit.",
-    "status": "requires_provisioned_runtime"
+    "analysis_types": [
+      "amplicon_16s",
+      "easymetagenome",
+      "metagenomic_plasmid",
+      "metatranscriptomics",
+      "rnaseq_expression",
+      "wgs_bacteria"
+    ],
+    "blocking_missing_tools": 0,
+    "checksum_manifest": "runtime_lock/abi-1.5.8-9545a982ef88.sha256",
+    "checksum_manifest_sha256": "7c94e48355d412ce19e32d0a67492ed9b28cbbca6e75c70506266eeec8267a25",
+    "generator": "scripts/cloud/prepare_release_lock.sh",
+    "not_ready_resources": 0,
+    "runtime_summary": "runtime_lock/abi-1.5.8-9545a982ef88.runtime.lock.yaml",
+    "runtime_summary_sha256": "0b22444c2cc32bdf5ca66f313687c04811ed23f559125640837118a24364be52",
+    "status": "created_and_verified"
   }
 }
