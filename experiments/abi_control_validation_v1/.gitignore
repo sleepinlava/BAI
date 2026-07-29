@@ -2,3 +2,10 @@ runs/pilot/*
 runs/confirmatory/*
 !runs/pilot/.gitkeep
 !runs/confirmatory/.gitkeep
+
+# The repository-wide data/archive rules are appropriate for real datasets but
+# these tiny deterministic study inputs and frozen read-only archives are part
+# of the reproducibility package.
+!fixtures/**/*.fastq
+!fixtures/**/resource_manifest.json
+!fixtures/archives/*.tar.gz

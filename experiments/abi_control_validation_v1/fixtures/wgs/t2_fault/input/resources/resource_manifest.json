@@ -1,0 +1,6 @@
+{
+  "amrfinder_db": {
+    "identity": "synthetic-amrfinder-db-v1",
+    "path": "/task/input/resources/amrfinder_db"
+  }
+}
