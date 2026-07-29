@@ -51,6 +51,9 @@ def build_study_artifacts(
 ) -> dict[str, Any]:
     study = yaml.safe_load((study_root / "study.yaml").read_text(encoding="utf-8"))
     workflows = list(study["workflows"])
+    # Capture the source identity before generated artifacts make an in-repository
+    # output directory appear dirty.
+    audit = _audit(repo_root, workflows)
     snapshots = output_root / "contract_snapshot"
     cards = output_root / "advisory_cards"
     validators = output_root / "validators"
@@ -163,7 +166,6 @@ def build_study_artifacts(
         )
     else:
         fixtures_summary = {"status": "reused_existing"}
-    audit = _audit(repo_root, workflows)
     (frozen / "phase0_environment.json").write_text(
         json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
