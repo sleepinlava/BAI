@@ -461,7 +461,7 @@ def _managed_environment_count(root: Path) -> int:
     envs_dir = root / "envs"
     if not envs_dir.is_dir():
         return 0
-    return sum(1 for child in envs_dir.iterdir() if child.is_dir())
+    return sum(1 for child in envs_dir.iterdir() if _is_environment_prefix(child))
 
 
 def _environment_prefix_count(root: Path) -> int:
@@ -473,9 +473,15 @@ def _environment_prefix_count(root: Path) -> int:
     for child in root.iterdir():
         if child.name == "envs" or not child.is_dir():
             continue
-        if (child / "conda-meta").is_dir() or (child / "bin").is_dir():
+        if _is_environment_prefix(child):
             count += 1
     return count
+
+
+def _is_environment_prefix(path: Path) -> bool:
+    """Return whether a directory has markers of a usable Conda environment."""
+
+    return path.is_dir() and ((path / "conda-meta").is_dir() or (path / "bin").is_dir())
 
 
 def _load_plugin_tool_metadata(analysis_type: str) -> dict[str, Mapping[str, Any]]:

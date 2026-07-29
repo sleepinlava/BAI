@@ -89,6 +89,28 @@ def test_empty_repository_root_does_not_shadow_global_solver(tmp_path: Path) -> 
     assert resolution.source == "micromamba-info"
 
 
+def test_incomplete_managed_prefix_does_not_shadow_global_solver(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    (project / ".mamba" / "envs" / "interrupted").mkdir(parents=True)
+    solver_root = tmp_path / "global-mamba"
+    solver_root.mkdir()
+    bin_dir = tmp_path / "global-bin"
+    payload = json.dumps({"root_prefix": str(solver_root), "envs": []})
+    _executable(
+        bin_dir / "micromamba",
+        f"#!/bin/sh\nprintf '%s' '{payload}'\n",
+    )
+
+    resolution = discover_mamba_root(
+        environ={"PATH": str(bin_dir)},
+        project_root=project,
+        home=tmp_path / "home",
+    )
+
+    assert resolution.path == solver_root.resolve()
+    assert resolution.source == "micromamba-info"
+
+
 def test_environment_prefix_prefers_managed_layout_and_tracks_known_prefixes(
     tmp_path: Path,
 ) -> None:

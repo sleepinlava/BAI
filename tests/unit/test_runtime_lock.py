@@ -14,10 +14,10 @@ def test_resolved_mamba_root_prefers_most_populated_parent(monkeypatch, tmp_path
 
     project = tmp_path / "abi"
     project.mkdir()
-    (project / ".mamba" / "envs" / "autoplasm-base").mkdir(parents=True)
+    (project / ".mamba" / "envs" / "autoplasm-base" / "conda-meta").mkdir(parents=True)
     parent_envs = tmp_path / ".mamba" / "envs"
-    (parent_envs / "rnaseq").mkdir(parents=True)
-    (parent_envs / "wgs").mkdir()
+    (parent_envs / "rnaseq" / "conda-meta").mkdir(parents=True)
+    (parent_envs / "wgs" / "conda-meta").mkdir(parents=True)
 
     monkeypatch.delenv("ABI_MAMBA_ROOT", raising=False)
     monkeypatch.delenv("MAMBA_ROOT_PREFIX", raising=False)
