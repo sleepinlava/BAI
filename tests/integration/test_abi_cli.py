@@ -541,10 +541,14 @@ def test_abi_export_agent_context_outputs_machine_readable_guidance():
     assert context["analysis_type"] == "metatranscriptomics"
     assert context["safe_sequence"] == [
         "list_types",
+        "query",
         "plan",
+        "check",
         "dry_run",
         "inspect",
         "run",
+        "inspect",
+        "abi_validate_result",
         "report",
     ]
     assert context["execution_requires_confirmation"] is True
