@@ -122,9 +122,11 @@ x86_64 核心能力已经认证，但插件和环境单元格会保持 `partial`
 - 含空格路径和符号链接；
 - 运行时锁可复现性与溯源断言。
 
-x86_64 与原生 arm64 wheel job 现在会断言打包的 21 环境矩阵、runner 架构、严格
-状态词汇和 ViWrap fail-closed 单元格。release workflow 在源码 checkout 外重复
-这些检查，并把 `abi-linux-capability-v<version>.json` 附加到 GitHub Release；
+每个 x86_64 Python 3.10–3.13 job 现在都会同时执行 editable 安装、默认
+sdist→wheel 构建、wheel 重装，并在离开源码 checkout 后运行共享能力验证器。原生
+arm64 wheel job 使用同一验证器。它验证每个插件/环境架构单元格、严格状态词汇与
+支撑字段，以及 ViWrap fail-closed doctor 行为。release workflow 在源码 checkout
+外重复验证，并把 `abi-linux-capability-v<version>.json` 附加到 GitHub Release；
 PyPI publisher 仍只选择 wheel 与 sdist。
 
 常规 CI 使用小型代表环境；大型数据库和长时间真实工具流程放入定时或人工批准

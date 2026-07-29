@@ -75,20 +75,13 @@ jobs:
               --no-check-files \
               --no-progress
           done
-          mkdir -p /tmp/abi-release-managed-root
           capability_report="$GITHUB_WORKSPACE/dist/abi-linux-capability-${GITHUB_REF_NAME}.json"
-          /tmp/abi-wheel-smoke/bin/abi env discover \
+          /tmp/abi-wheel-smoke/bin/python \
+            "$GITHUB_WORKSPACE/scripts/verify_linux_wheel_capabilities.py" \
+            --abi /tmp/abi-wheel-smoke/bin/abi \
             --mamba-root /tmp/abi-release-managed-root \
-            --output-json > "$capability_report"
-          CAPABILITY_REPORT="$capability_report" /tmp/abi-wheel-smoke/bin/python -c 'import json,os; p=json.load(open(os.environ["CAPABILITY_REPORT"])); assert p["platform"]["normalized_architecture"] == "x86_64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
-          if /tmp/abi-wheel-smoke/bin/abi env doctor \
-            --type viral_viwrap \
-            --mamba-root /tmp/abi-release-managed-root \
-            --output-json > /tmp/abi-release-viral-viwrap.json; then
-            echo "viral_viwrap must remain unsupported"
-            exit 1
-          fi
-          /tmp/abi-wheel-smoke/bin/python -c 'import json; p=json.load(open("/tmp/abi-release-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
+            --architecture x86_64 \
+            --output "$capability_report"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

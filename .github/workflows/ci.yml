@@ -67,6 +67,25 @@ jobs:
             --cov-report=json:coverage.json --cov-fail-under=75
           python scripts/check_module_coverage.py --coverage coverage.json
 
+      - name: Build distribution on Python ${{ matrix.python-version }}
+        run: |
+          pip install build
+          python -m build
+
+      - name: Smoke-test wheel on Python ${{ matrix.python-version }}
+        run: |
+          wheels=(dist/*.whl)
+          python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          abi_executable="$(command -v abi)"
+          wheel_smoke_dir="$(mktemp -d)"
+          cd "$wheel_smoke_dir"
+          abi list-types
+          python "$GITHUB_WORKSPACE/scripts/verify_linux_wheel_capabilities.py" \
+            --abi "$abi_executable" \
+            --mamba-root "/tmp/abi-ci-python-${{ matrix.python-version }}-root" \
+            --architecture "x86_64" \
+            --output "/tmp/abi-ci-python-${{ matrix.python-version }}-capabilities.json"
+
       - name: Build docs (Sphinx)
         if: matrix.python-version == '3.12'
         run: |
@@ -76,12 +95,6 @@ jobs:
       - name: Validate Docker Compose configuration
         if: matrix.python-version == '3.12'
         run: docker compose -f docker/docker-compose.yml config --quiet
-
-      - name: Verify package builds
-        if: matrix.python-version == '3.12'
-        run: |
-          pip install build
-          python -m build
 
       - name: Smoke-test wheel (all plugins)
         if: matrix.python-version == '3.12'
@@ -145,17 +158,6 @@ jobs:
             --output-json > /tmp/abi-ci-env-report.json
           spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-env-report.json"))["environments"][0]["spec_path"])')"
           test -f "$spec_path"
-          abi env discover \
-            --mamba-root "/tmp/abi ci managed root" \
-            --output-json > /tmp/abi-ci-capabilities.json
-          python -c 'import json; p=json.load(open("/tmp/abi-ci-capabilities.json")); assert p["platform"]["normalized_architecture"] == "x86_64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
-          if abi env doctor --type viral_viwrap \
-            --mamba-root "/tmp/abi ci managed root" \
-            --output-json > /tmp/abi-ci-viral-viwrap.json; then
-            echo "viral_viwrap must remain unsupported"
-            exit 1
-          fi
-          python -c 'import json; p=json.load(open("/tmp/abi-ci-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
 
   linux-arm64:
     name: Linux arm64
@@ -189,6 +191,7 @@ jobs:
           python -m build
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          abi_executable="$(command -v abi)"
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
           abi list-types
@@ -220,17 +223,11 @@ jobs:
             --output-json > /tmp/abi-ci-arm-env-report.json
           spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-arm-env-report.json"))["environments"][0]["spec_path"])')"
           test -f "$spec_path"
-          abi env discover \
+          python "$GITHUB_WORKSPACE/scripts/verify_linux_wheel_capabilities.py" \
+            --abi "$abi_executable" \
             --mamba-root "/tmp/abi ci arm managed root" \
-            --output-json > /tmp/abi-ci-arm-capabilities.json
-          python -c 'import json; p=json.load(open("/tmp/abi-ci-arm-capabilities.json")); assert p["platform"]["normalized_architecture"] == "aarch64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
-          if abi env doctor --type viral_viwrap \
-            --mamba-root "/tmp/abi ci arm managed root" \
-            --output-json > /tmp/abi-ci-arm-viral-viwrap.json; then
-            echo "viral_viwrap must remain unsupported"
-            exit 1
-          fi
-          python -c 'import json; p=json.load(open("/tmp/abi-ci-arm-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
+            --architecture "aarch64" \
+            --output /tmp/abi-ci-arm-capabilities.json
           abi-mcp --help
 
   migration-gate:

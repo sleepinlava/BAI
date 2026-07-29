@@ -93,7 +93,7 @@ def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
     assert "platform.machine()" in arm_steps
     assert "python -m pytest tests/ src/abi/sciplot/tests/" in arm_steps
     assert "python -m build" in arm_steps
-    assert "abi env discover" in arm_steps
+    assert "verify_linux_wheel_capabilities.py" in arm_steps
     assert '--mamba-root "/tmp/abi ci arm managed root"' in arm_steps
     assert "abi env install" in arm_steps
     assert "--dry-run" not in arm_steps
@@ -108,14 +108,28 @@ def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
 def test_wheel_ci_validates_packaged_linux_capability_matrix_and_fail_closed_policy():
     workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
-    assert workflow.count("abi env discover") >= 2
-    assert workflow.count("--mamba-root") >= 4
-    assert '"normalized_architecture"] == "x86_64"' in workflow
-    assert '"normalized_architecture"] == "aarch64"' in workflow
-    assert workflow.count('"allowed_statuses"] == ["certified", "partial", "unsupported"]') >= 2
-    assert workflow.count('len(p["support"]["environments"]) == 21') >= 2
-    assert workflow.count("abi env doctor --type viral_viwrap") >= 2
-    assert workflow.count('"status"] == "unsupported"') >= 2
+    assert workflow.count("verify_linux_wheel_capabilities.py") == 2
+    assert '--architecture "x86_64"' in workflow
+    assert '--architecture "aarch64"' in workflow
+    assert "abi env doctor --type viral_viwrap" not in workflow
+    assert '"allowed_statuses"] == ["certified", "partial", "unsupported"]' not in workflow
+
+
+def test_x86_ci_builds_and_installs_wheel_on_every_supported_python():
+    workflow = yaml.load(
+        (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    test_job = workflow["jobs"]["test"]
+    steps = {step.get("name"): step for step in test_job["steps"] if isinstance(step, dict)}
+
+    build = steps["Build distribution on Python ${{ matrix.python-version }}"]
+    smoke = steps["Smoke-test wheel on Python ${{ matrix.python-version }}"]
+    assert "if" not in build
+    assert "if" not in smoke
+    assert "python -m build" in build["run"]
+    assert 'python -m pip install --force-reinstall "${wheels[0]}[mcp]"' in smoke["run"]
+    assert "verify_linux_wheel_capabilities.py" in smoke["run"]
 
 
 def test_local_docker_export_disables_registry_attestations():

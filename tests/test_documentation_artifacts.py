@@ -85,8 +85,9 @@ def test_release_workflow_uses_full_gate_and_clean_wheel_smoke() -> None:
     assert "--type metagenomic_plasmid" in release_workflow
     assert '--config "$GITHUB_WORKSPACE/examples/config_minimal.yaml"' in release_workflow
     assert "abi-linux-capability-${GITHUB_REF_NAME}.json" in release_workflow
-    assert "/tmp/abi-wheel-smoke/bin/abi env discover" in release_workflow
-    assert '"allowed_statuses"] == ["certified", "partial", "unsupported"]' in release_workflow
+    assert "verify_linux_wheel_capabilities.py" in release_workflow
+    assert "--architecture x86_64" in release_workflow
+    assert "/tmp/abi-wheel-smoke/bin/abi env discover" not in release_workflow
     assert "files: dist/*" in release_workflow
     assert "uses: ./.github/workflows/publish-pypi.yml" not in release_workflow
     for plugin in (

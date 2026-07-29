@@ -84,8 +84,9 @@ run is recommended before a container release.
 
 ## GitHub Actions
 
-- `ci.yml` runs lint, format check, mypy, tests, build checks, native arm64
-  validation, and installed-wheel capability-matrix assertions.
+- `ci.yml` runs lint, format check, mypy, tests, default builds and installed
+  wheel checks on Python 3.10–3.13, native arm64 validation, and the shared
+  installed-wheel capability verifier.
 - `docker.yml` is manual-only. It builds and smoke-tests a selected plugin (or
   all plugins) and publishes only when the operator explicitly enables `push`.
   Registry pushes include provenance and SBOM; non-push validation loads a

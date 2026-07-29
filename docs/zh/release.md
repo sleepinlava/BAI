@@ -81,8 +81,8 @@ Docker workflow。
 
 ## GitHub Actions
 
-- `ci.yml` 运行 lint、格式检查、mypy、测试、构建检查、原生 arm64 验证和已安装
-  wheel 的能力矩阵断言。
+- `ci.yml` 运行 lint、格式检查、mypy、测试、Python 3.10–3.13 默认构建与 wheel
+  安装检查、原生 arm64 验证，以及共享的已安装 wheel 能力验证器。
 - `docker.yml` 仅允许手动触发。它构建并冒烟测试所选插件（或全部插件），只有操作员显式启用 `push` 才发布。registry push 包含 provenance 与 SBOM；非 push 验证以稳定本地 tag load，并关闭 attestation。发布镜像默认多架构，但 RNA-seq 在其 R/DESeq2 环境通过原生 arm64 构建与冒烟测试前仅发布 `linux/amd64`。
 - `release.yml` 构建分发包，在源码 checkout 外执行 wheel smoke，附加由该已安装
   wheel 生成的 `abi-linux-capability-v<version>.json`，为 `v*` tag 创建 GitHub

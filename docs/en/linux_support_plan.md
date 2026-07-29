@@ -135,9 +135,12 @@ The required CI matrix will cover:
 - paths containing spaces and symlinks;
 - runtime-lock reproducibility and provenance assertions.
 
-The x86_64 and native arm64 wheel jobs now assert the packaged 21-environment
-matrix, the runner architecture, the strict status vocabulary, and ViWrap's
-fail-closed cell. The release workflow repeats those checks outside the source
+Every x86_64 Python 3.10–3.13 job now performs both editable installation and a
+default sdist-to-wheel build, reinstalls that wheel, leaves the source checkout,
+and runs the shared capability verifier. The native arm64 wheel job runs the
+same verifier. It validates every plugin/environment architecture cell, the
+strict status vocabulary and supporting fields, and ViWrap's fail-closed
+doctor behavior. The release workflow repeats the verifier outside the source
 checkout and attaches `abi-linux-capability-v<version>.json` to the GitHub
 Release; the PyPI publisher continues to select only wheel and sdist files.
 
