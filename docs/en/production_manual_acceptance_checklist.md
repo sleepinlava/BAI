@@ -168,10 +168,10 @@ Expected tool path resolution order:
 - [ ] **L-056** Place a fake tool with the same name on system `PATH`; confirm mamba environment tool takes priority.
 - [ ] **L-057** Remove the tool from the environment; confirm system `PATH` fallback behavior is as expected.
 - [ ] **L-058** `abi env discover/doctor --output-json` records every path and discovery source.
-- [ ] **L-058** Explicitly configuring a nonexistent tool path must report missing.
-- [ ] **L-059** File exists but without execute permission must be judged as failure.
-- [ ] **L-060** When dynamic libraries or interpreters are missing, it must not pass merely because the main file exists.
-- [ ] **L-061** `provenance/tool_versions.tsv` records all actually used tools and their version status.
+- [ ] **L-059** Explicitly configuring a nonexistent tool path must report missing.
+- [ ] **L-060** File exists but without execute permission must be judged as failure.
+- [ ] **L-061** When dynamic libraries or interpreters are missing, it must not pass merely because the main file exists.
+- [ ] **L-062** `provenance/tool_versions.tsv` records all actually used tools and their version status.
 
 `metagenomic_plasmid` can run:
 

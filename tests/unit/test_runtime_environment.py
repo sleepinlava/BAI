@@ -67,6 +67,28 @@ def test_global_micromamba_root_is_discovered_from_solver_info(tmp_path: Path) -
     assert resolution.solver == str((bin_dir / "micromamba").resolve())
 
 
+def test_empty_repository_root_does_not_shadow_global_solver(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    (project / ".mamba").mkdir(parents=True)
+    solver_root = tmp_path / "global-mamba"
+    solver_root.mkdir()
+    bin_dir = tmp_path / "global-bin"
+    payload = json.dumps({"root_prefix": str(solver_root), "envs": []})
+    _executable(
+        bin_dir / "micromamba",
+        f"#!/bin/sh\nprintf '%s' '{payload}'\n",
+    )
+
+    resolution = discover_mamba_root(
+        environ={"PATH": str(bin_dir)},
+        project_root=project,
+        home=tmp_path / "home",
+    )
+
+    assert resolution.path == solver_root.resolve()
+    assert resolution.source == "micromamba-info"
+
+
 def test_environment_prefix_prefers_managed_layout_and_tracks_known_prefixes(
     tmp_path: Path,
 ) -> None:
@@ -114,6 +136,18 @@ def test_tool_and_python_resolution_precedence_is_explainable(tmp_path: Path) ->
     assert internal_python.source == "abi-python"
 
 
+def test_explicit_executable_must_have_execute_permission(tmp_path: Path) -> None:
+    tool = tmp_path / "bin" / "tool"
+    tool.parent.mkdir()
+    tool.write_text("#!/bin/sh\n", encoding="utf-8")
+    tool.chmod(0o644)
+
+    resolution = resolve_executable(str(tool), environ={"PATH": ""})
+
+    assert resolution.path is None
+    assert resolution.source == "non-executable-explicit-executable"
+
+
 def test_environment_report_finds_assigned_and_global_tools(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -148,6 +182,114 @@ def test_environment_report_finds_assigned_and_global_tools(
     assert rows["custom-tool"]["path"] == str(global_tool.resolve())
     assert rows["custom-tool"]["source"] == "system-path"
     assert report["healthy"] is True
+
+
+def test_environment_report_prefers_selected_plugin_assignment_for_shared_tool(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    selected = _executable(root / "envs" / "selected-env" / "bin" / "fastp")
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "environments": {
+                "first-env": {"dependencies": ["fastp"]},
+                "selected-env": {"dependencies": ["fastp"]},
+            },
+            "tool_assignments": {
+                "first": {"fastp": "first-env"},
+                "selected": {"fastp": "selected-env"},
+            },
+        },
+    )
+
+    report = build_environment_report(
+        explicit_root=root,
+        analysis_type="selected",
+        tool_names=["fastp"],
+        environ={"PATH": ""},
+    )
+
+    tool = report["tools"][0]
+    assert tool["environment"] == "selected-env"
+    assert tool["source"] == "environment"
+    assert tool["path"] == str(selected.resolve())
+
+
+def test_environment_report_uses_registry_executable_and_resource_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+    resource_bin = tmp_path / "resources" / "custom" / "bin"
+    executable = _executable(resource_bin / "featureCounts")
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "environments": {"rnaseq": {"dependencies": []}},
+            "tool_assignments": {"rnaseq_expression": {"featurecounts": "rnaseq"}},
+        },
+    )
+    monkeypatch.setattr(
+        "abi.runtime_environment._load_plugin_tool_metadata",
+        lambda analysis_type: {
+            "featurecounts": {
+                "id": "featurecounts",
+                "executable": "featureCounts",
+                "extra_path_dirs": ["{resource_root}/custom/bin"],
+            }
+        },
+    )
+
+    report = build_environment_report(
+        explicit_root=root,
+        analysis_type="rnaseq_expression",
+        environ={"ABI_RESOURCE_ROOT": str(tmp_path / "resources"), "PATH": ""},
+    )
+
+    tool = report["tools"][0]
+    assert tool["tool_id"] == "featurecounts"
+    assert tool["executable"] == "featureCounts"
+    assert tool["environment"] == "rnaseq"
+    assert tool["source"] == "resource-path"
+    assert tool["path"] == str(executable.resolve())
+    assert report["healthy"] is True
+
+
+def test_environment_report_maps_explicit_executable_back_to_tool_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    executable = _executable(root / "envs" / "wgs" / "bin" / "spades.py")
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "environments": {"wgs": {"dependencies": []}},
+            "tool_assignments": {"wgs_bacteria": {"spades": "wgs"}},
+        },
+    )
+    monkeypatch.setattr(
+        "abi.runtime_environment._load_plugin_tool_metadata",
+        lambda analysis_type: {
+            "spades": {"id": "spades", "executable": "spades.py"},
+        },
+    )
+
+    report = build_environment_report(
+        explicit_root=root,
+        analysis_type="wgs_bacteria",
+        tool_names=["spades.py"],
+        environ={"PATH": ""},
+    )
+
+    tool = report["tools"][0]
+    assert tool["tool"] == "spades.py"
+    assert tool["tool_id"] == "spades"
+    assert tool["environment"] == "wgs"
+    assert tool["path"] == str(executable.resolve())
 
 
 def test_environment_manifest_declares_linux_only_capability_matrix() -> None:

@@ -97,11 +97,13 @@ def discover_mamba_root(
         project.parent / ".mamba",
         project.parent / "abi-envs",
     )
-    existing = [candidate for candidate in compatibility if candidate.exists()]
-    if existing:
+    populated = [
+        candidate for candidate in compatibility if _environment_prefix_count(candidate) > 0
+    ]
+    if populated:
         selected = max(
-            existing,
-            key=lambda path: (_managed_environment_count(path), -compatibility.index(path)),
+            populated,
+            key=lambda path: (_environment_prefix_count(path), -compatibility.index(path)),
         )
         return MambaRootResolution(selected.resolve(), "repository-compatibility")
 
@@ -178,8 +180,10 @@ def resolve_executable(
     env = dict(os.environ if environ is None else environ)
     requested = Path(executable).expanduser()
     if requested.is_absolute() or requested.parent != Path("."):
-        if requested.is_file():
+        if requested.is_file() and os.access(requested, os.X_OK):
             return PathResolution(requested.resolve(), "explicit-executable")
+        if requested.is_file():
+            return PathResolution(None, "non-executable-explicit-executable")
         return PathResolution(None, "missing-explicit-executable")
 
     if env_prefix is not None:
@@ -285,19 +289,46 @@ def build_environment_report(
 
     raw_assignments = manifest.get("tool_assignments", {})
     assignments = _flatten_tool_assignments(raw_assignments)
+    plugin_assignments: Mapping[str, Any] = {}
+    plugin_tools: dict[str, Mapping[str, Any]] = {}
+    if analysis_type and isinstance(raw_assignments, Mapping):
+        candidate = raw_assignments.get(analysis_type, {})
+        if isinstance(candidate, Mapping):
+            plugin_assignments = candidate
+            assignments.update(
+                {
+                    str(tool_name): str(env_name)
+                    for tool_name, env_name in plugin_assignments.items()
+                }
+            )
+        plugin_tools = _load_plugin_tool_metadata(analysis_type)
     requested_tools = list(dict.fromkeys(str(name) for name in tool_names))
-    if analysis_type and not requested_tools and isinstance(raw_assignments, Mapping):
-        plugin_assignments = raw_assignments.get(analysis_type, {})
-        if isinstance(plugin_assignments, Mapping):
-            requested_tools = sorted(str(name) for name in plugin_assignments)
+    if analysis_type and not requested_tools:
+        requested_tools = sorted(str(name) for name in plugin_assignments)
     tool_rows: list[dict[str, Any]] = []
-    for tool_name in requested_tools:
-        assigned_env_name = assignments.get(tool_name)
+    report_project_root = Path(project_root or PROJECT_ROOT).expanduser()
+    for requested_tool in requested_tools:
+        tool_id, metadata = _match_plugin_tool(requested_tool, plugin_tools)
+        executable = str(metadata.get("executable") or tool_id)
+        assigned_env_name = assignments.get(tool_id)
         assigned_prefix = prefixes.get(assigned_env_name) if assigned_env_name else None
-        resolved = resolve_executable(tool_name, env_prefix=assigned_prefix, environ=env)
+        extra_dirs = _registry_extra_path_dirs(
+            metadata,
+            env_prefix=assigned_prefix,
+            environ=env,
+            project_root=report_project_root,
+        )
+        resolved = resolve_executable(
+            executable,
+            env_prefix=assigned_prefix,
+            extra_dirs=extra_dirs,
+            environ=env,
+        )
         tool_rows.append(
             {
-                "tool": tool_name,
+                "tool": requested_tool,
+                "tool_id": tool_id,
+                "executable": executable,
                 "environment": assigned_env_name,
                 **resolved.to_dict(),
             }
@@ -308,7 +339,7 @@ def build_environment_report(
     issues: list[str] = []
     if system != "Linux":
         issues.append(f"unsupported_platform:{system}")
-    missing_tools = [row["tool"] for row in tool_rows if not row["exists"]]
+    missing_tools = [row["tool_id"] for row in tool_rows if not row["exists"]]
     issues.extend(f"missing_tool:{name}" for name in missing_tools)
 
     plugin_status: dict[str, Any] | None = None
@@ -431,6 +462,88 @@ def _managed_environment_count(root: Path) -> int:
     if not envs_dir.is_dir():
         return 0
     return sum(1 for child in envs_dir.iterdir() if child.is_dir())
+
+
+def _environment_prefix_count(root: Path) -> int:
+    """Count managed and direct environment prefixes below a compatibility root."""
+
+    if not root.is_dir():
+        return 0
+    count = _managed_environment_count(root)
+    for child in root.iterdir():
+        if child.name == "envs" or not child.is_dir():
+            continue
+        if (child / "conda-meta").is_dir() or (child / "bin").is_dir():
+            count += 1
+    return count
+
+
+def _load_plugin_tool_metadata(analysis_type: str) -> dict[str, Mapping[str, Any]]:
+    """Load registry metadata lazily to keep core configuration imports acyclic."""
+
+    try:
+        from abi.plugins import get_plugin
+
+        registry = get_plugin(analysis_type).registry()
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return {}
+    return {
+        str(metadata.get("id")): metadata
+        for metadata in registry.list_tools()
+        if metadata.get("id")
+    }
+
+
+def _match_plugin_tool(
+    requested: str,
+    plugin_tools: Mapping[str, Mapping[str, Any]],
+) -> tuple[str, Mapping[str, Any]]:
+    """Match either a registry tool ID or its declared executable."""
+
+    if requested in plugin_tools:
+        return requested, plugin_tools[requested]
+    for tool_id, metadata in plugin_tools.items():
+        if str(metadata.get("executable") or tool_id) == requested:
+            return tool_id, metadata
+    return requested, {}
+
+
+def _registry_extra_path_dirs(
+    metadata: Mapping[str, Any],
+    *,
+    env_prefix: Path | None,
+    environ: Mapping[str, str],
+    project_root: Path,
+) -> list[Path]:
+    """Resolve existing registry PATH hints without activating an environment."""
+
+    raw_dirs = metadata.get("extra_path_dirs", [])
+    if not isinstance(raw_dirs, list):
+        return []
+    resource_root = (
+        environ.get("ABI_RESOURCE_ROOT")
+        or environ.get("AUTOPLASM_RESOURCE_ROOT")
+        or str(project_root / "resources" / "autoplasm")
+    )
+    values = {
+        "project_root": str(project_root),
+        "resource_root": resource_root,
+        "env_prefix": str(env_prefix or ""),
+    }
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    for raw in raw_dirs:
+        try:
+            candidate = Path(str(raw).format_map(values)).expanduser()
+        except (KeyError, ValueError):
+            continue
+        if not candidate.is_dir():
+            continue
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            paths.append(resolved)
+    return paths
 
 
 def _flatten_tool_assignments(raw: Any) -> dict[str, str]:
