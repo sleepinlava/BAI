@@ -80,9 +80,14 @@ def test_release_workflow_uses_full_gate_and_clean_wheel_smoke() -> None:
     assert "scripts/check_release_identity.py --tag" in release_workflow
     assert "python -m venv /tmp/abi-wheel-smoke" in release_workflow
     assert 'export PATH="/tmp/abi-wheel-smoke/bin:$PATH"' in release_workflow
+    assert 'cd "$wheel_smoke_dir"' in release_workflow
     assert "/tmp/abi-wheel-smoke/bin/abi dry-run" in release_workflow
     assert "--type metagenomic_plasmid" in release_workflow
-    assert "--config examples/config_minimal.yaml" in release_workflow
+    assert '--config "$GITHUB_WORKSPACE/examples/config_minimal.yaml"' in release_workflow
+    assert "abi-linux-capability-${GITHUB_REF_NAME}.json" in release_workflow
+    assert "/tmp/abi-wheel-smoke/bin/abi env discover" in release_workflow
+    assert '"allowed_statuses"] == ["certified", "partial", "unsupported"]' in release_workflow
+    assert "files: dist/*" in release_workflow
     assert "uses: ./.github/workflows/publish-pypi.yml" not in release_workflow
     for plugin in (
         "rnaseq_expression",
@@ -126,6 +131,8 @@ def test_pypi_publishes_the_github_release_artifacts_without_rebuilding() -> Non
     workflow = (root / ".github/workflows/publish-pypi.yml").read_text(encoding="utf-8")
 
     assert "gh release download" in workflow
+    assert '--pattern "*.whl" --pattern "*.tar.gz"' in workflow
+    assert '--pattern "*.json"' not in workflow
     assert "python -m pip install --upgrade twine packaging" in workflow
     assert "python -m twine check dist/*" in workflow
     assert "python -m build" not in workflow

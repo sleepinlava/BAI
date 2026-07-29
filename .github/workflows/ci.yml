@@ -145,6 +145,17 @@ jobs:
             --output-json > /tmp/abi-ci-env-report.json
           spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-env-report.json"))["environments"][0]["spec_path"])')"
           test -f "$spec_path"
+          abi env discover \
+            --mamba-root "/tmp/abi ci managed root" \
+            --output-json > /tmp/abi-ci-capabilities.json
+          python -c 'import json; p=json.load(open("/tmp/abi-ci-capabilities.json")); assert p["platform"]["normalized_architecture"] == "x86_64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
+          if abi env doctor --type viral_viwrap \
+            --mamba-root "/tmp/abi ci managed root" \
+            --output-json > /tmp/abi-ci-viral-viwrap.json; then
+            echo "viral_viwrap must remain unsupported"
+            exit 1
+          fi
+          python -c 'import json; p=json.load(open("/tmp/abi-ci-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
 
   linux-arm64:
     name: Linux arm64
@@ -181,7 +192,6 @@ jobs:
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
           abi list-types
-          abi env discover --output-json
           mkdir -p /tmp/abi-ci-bin
           printf '%s\n' \
             '#!/bin/sh' \
@@ -210,6 +220,17 @@ jobs:
             --output-json > /tmp/abi-ci-arm-env-report.json
           spec_path="$(python -c 'import json; print(json.load(open("/tmp/abi-ci-arm-env-report.json"))["environments"][0]["spec_path"])')"
           test -f "$spec_path"
+          abi env discover \
+            --mamba-root "/tmp/abi ci arm managed root" \
+            --output-json > /tmp/abi-ci-arm-capabilities.json
+          python -c 'import json; p=json.load(open("/tmp/abi-ci-arm-capabilities.json")); assert p["platform"]["normalized_architecture"] == "aarch64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
+          if abi env doctor --type viral_viwrap \
+            --mamba-root "/tmp/abi ci arm managed root" \
+            --output-json > /tmp/abi-ci-arm-viral-viwrap.json; then
+            echo "viral_viwrap must remain unsupported"
+            exit 1
+          fi
+          python -c 'import json; p=json.load(open("/tmp/abi-ci-arm-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
           abi-mcp --help
 
   migration-gate:

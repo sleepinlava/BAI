@@ -48,6 +48,8 @@ jobs:
           /tmp/abi-wheel-smoke/bin/pip install "${wheels[0]}[mcp]"
           export PATH="/tmp/abi-wheel-smoke/bin:$PATH"
           /tmp/abi-wheel-smoke/bin/python -c "import abi; from importlib.metadata import version; assert abi.__version__ == version('abi-agent')"
+          wheel_smoke_dir="$(mktemp -d)"
+          cd "$wheel_smoke_dir"
           /tmp/abi-wheel-smoke/bin/abi list-types
           /tmp/abi-wheel-smoke/bin/autoplasm --help
           for platform in claude-code opencode codex; do
@@ -60,7 +62,7 @@ jobs:
           done
           /tmp/abi-wheel-smoke/bin/abi dry-run \
             --type metagenomic_plasmid \
-            --config examples/config_minimal.yaml \
+            --config "$GITHUB_WORKSPACE/examples/config_minimal.yaml" \
             --profile dry_run \
             --outdir /tmp/abi-release-plasmid \
             --log-dir /tmp/abi-release-plasmid-log \
@@ -73,6 +75,20 @@ jobs:
               --no-check-files \
               --no-progress
           done
+          mkdir -p /tmp/abi-release-managed-root
+          capability_report="$GITHUB_WORKSPACE/dist/abi-linux-capability-${GITHUB_REF_NAME}.json"
+          /tmp/abi-wheel-smoke/bin/abi env discover \
+            --mamba-root /tmp/abi-release-managed-root \
+            --output-json > "$capability_report"
+          CAPABILITY_REPORT="$capability_report" /tmp/abi-wheel-smoke/bin/python -c 'import json,os; p=json.load(open(os.environ["CAPABILITY_REPORT"])); assert p["platform"]["normalized_architecture"] == "x86_64"; assert p["support"]["allowed_statuses"] == ["certified", "partial", "unsupported"]; assert len(p["support"]["environments"]) == 21'
+          if /tmp/abi-wheel-smoke/bin/abi env doctor \
+            --type viral_viwrap \
+            --mamba-root /tmp/abi-release-managed-root \
+            --output-json > /tmp/abi-release-viral-viwrap.json; then
+            echo "viral_viwrap must remain unsupported"
+            exit 1
+          fi
+          /tmp/abi-wheel-smoke/bin/python -c 'import json; p=json.load(open("/tmp/abi-release-viral-viwrap.json")); assert p["plugin"]["status"] == "unsupported"'
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

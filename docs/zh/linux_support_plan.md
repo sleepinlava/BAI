@@ -122,6 +122,11 @@ x86_64 核心能力已经认证，但插件和环境单元格会保持 `partial`
 - 含空格路径和符号链接；
 - 运行时锁可复现性与溯源断言。
 
+x86_64 与原生 arm64 wheel job 现在会断言打包的 21 环境矩阵、runner 架构、严格
+状态词汇和 ViWrap fail-closed 单元格。release workflow 在源码 checkout 外重复
+这些检查，并把 `abi-linux-capability-v<version>.json` 附加到 GitHub Release；
+PyPI publisher 仍只选择 wheel 与 sdist。
+
 常规 CI 使用小型代表环境；大型数据库和长时间真实工具流程放入定时或人工批准
 验收。Docker 镜像构建不属于必需矩阵。
 

@@ -135,6 +135,12 @@ The required CI matrix will cover:
 - paths containing spaces and symlinks;
 - runtime-lock reproducibility and provenance assertions.
 
+The x86_64 and native arm64 wheel jobs now assert the packaged 21-environment
+matrix, the runner architecture, the strict status vocabulary, and ViWrap's
+fail-closed cell. The release workflow repeats those checks outside the source
+checkout and attaches `abi-linux-capability-v<version>.json` to the GitHub
+Release; the PyPI publisher continues to select only wheel and sdist files.
+
 Routine CI uses small representative environments. Large databases and long
 real-tool workflows remain scheduled or manually approved acceptance jobs.
 Docker image construction is not part of the required matrix.

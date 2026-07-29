@@ -81,10 +81,15 @@ Docker workflow。
 
 ## GitHub Actions
 
-- `ci.yml` 运行 lint、格式检查、mypy、测试和构建检查。
+- `ci.yml` 运行 lint、格式检查、mypy、测试、构建检查、原生 arm64 验证和已安装
+  wheel 的能力矩阵断言。
 - `docker.yml` 仅允许手动触发。它构建并冒烟测试所选插件（或全部插件），只有操作员显式启用 `push` 才发布。registry push 包含 provenance 与 SBOM；非 push 验证以稳定本地 tag load，并关闭 attestation。发布镜像默认多架构，但 RNA-seq 在其 R/DESeq2 环境通过原生 arm64 构建与冒烟测试前仅发布 `linux/amd64`。
-- `release.yml` 构建分发包、为 `v*` tag 创建 GitHub Release，并发出 published event。
-- `publish-pypi.yml` 下载 Release 原始产物，并通过 PyPI Trusted Publishing 发布。PyPI OIDC 身份绑定该文件名，因此它是必需 workflow。
+- `release.yml` 构建分发包，在源码 checkout 外执行 wheel smoke，附加由该已安装
+  wheel 生成的 `abi-linux-capability-v<version>.json`，为 `v*` tag 创建 GitHub
+  Release，并发出 published event。
+- `publish-pypi.yml` 只下载并发布 Release 中的 `*.whl` 和 `*.tar.gz`。能力 JSON
+  保留为 GitHub Release 证据，不上传 PyPI。PyPI OIDC 身份绑定该文件名，因此它是
+  必需 workflow。
 
 `.github/workflows/` 不保留可选 bot 或重复发布 workflow；必需集合严格为 `ci.yml`、`docker.yml`、`release.yml` 和 `publish-pypi.yml`。
 
@@ -92,7 +97,7 @@ Docker workflow。
 
 ```text
 已验证 master 提交 → v<version> tag → 可复用 CI 质量门
-→ 构建并冒烟测试 wheel/sdist → 携带原始产物的 GitHub Release
+→ 构建并冒烟测试 wheel/sdist → 携带原始分发包与 Linux 能力证据的 GitHub Release
 → 顶层 release.published event 启动 publish-pypi.yml
 → 下载 Release 产物 → PyPI Trusted Publishing
 ```
@@ -121,4 +126,10 @@ ref 设为准确且已验证的 `v<version>` tag，先记录一次成功的 `pus
 
 ## 发布后验证
 
-发布完成后，核对 GitHub Release 与 PyPI 版本、Trusted Publishing provenance 和文件哈希；在干净环境安装 wheel，并运行 `abi list-types`、`autoplasm --help` 和代表性插件 dry-run。容器 tag 需要从 GHCR 拉取并执行 `abi list-types`。发布交接中记录 Release、PyPI、release workflow、publish job 和 container workflow 链接。
+发布完成后，核对 GitHub Release 与 PyPI 版本、Trusted Publishing provenance 和
+文件哈希；确认 GitHub Release 含 `abi-linux-capability-v<version>.json`，其中恰有
+21 个环境及声明的 x86_64/aarch64 单元格，且 unsupported 单元格保持明确。PyPI
+应仅包含 wheel 与 sdist。在干净环境安装 wheel，并运行 `abi list-types`、
+`autoplasm --help` 和代表性插件 dry-run。容器 tag 需要从 GHCR 拉取并执行
+`abi list-types`。发布交接中记录 Release、PyPI、release workflow、publish job 和
+container workflow 链接。
