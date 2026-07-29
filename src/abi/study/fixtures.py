@@ -336,7 +336,15 @@ def build_fixtures(
             or not fault_result["assay_pass"]
             or not task_assay["passed"]
         ):
-            raise ValueError(f"Fixture assay failed for {task_id}")
+            details = {
+                "clean_fixture": clean_result,
+                "fault_fixture": fault_result,
+                "task_assay": task_assay,
+            }
+            raise ValueError(
+                f"Fixture assay failed for {task_id}: "
+                f"{json.dumps(details, sort_keys=True, default=str)}"
+            )
         _deterministic_archive(fault, output_root / "archives" / f"{task_id}.tar.gz")
         built.append(task_id)
     return {"task_count": len(built), "task_ids": built}

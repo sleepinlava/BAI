@@ -202,7 +202,7 @@ def test_runtime_contract_ablation_changes_invalid_output_acceptance(tmp_path: P
         arguments=arguments,
     )
 
-    assert full["status"] == "contract_violation"
+    assert full["status"] == "contract_violation", full
     assert full["contract_errors"] == ["count_matrix:empty_file"]
     assert ablation["status"] == "success"
     assert not (trial_roots["abi_full"] / "input" / "shim_state.json").exists()
