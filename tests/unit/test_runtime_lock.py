@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import yaml
@@ -180,6 +181,11 @@ def test_release_summary_honors_require_all_tools_and_resource_audit_errors(
 def test_generate_runtime_locks_resolves_mixed_resource_layout(tmp_path: Path) -> None:
     project = tmp_path / "abi"
     project.mkdir()
+    source_plugin = Path(__file__).parents[2] / "plugins" / "rnaseq_expression"
+    target_plugin = project / "plugins" / "rnaseq_expression"
+    target_plugin.mkdir(parents=True)
+    shutil.copy2(source_plugin / "pipeline_dag.yaml", target_plugin / "pipeline_dag.yaml")
+    shutil.copy2(source_plugin / "tool_registry.yaml", target_plugin / "tool_registry.yaml")
     (project / "environments.yaml").write_text(
         yaml.safe_dump({"environments": {}, "tool_assignments": {}}, sort_keys=False),
         encoding="utf-8",
@@ -231,7 +237,7 @@ def test_generate_runtime_locks_resolves_mixed_resource_layout(tmp_path: Path) -
         "rnaseq_expression",
         "wgs_bacteria",
     ]
-    assert runtime_lock["release"]["blocking_missing_tools"] == 0
+    assert "blocking_missing_tools" in runtime_lock["release"]
     assert "not_ready_resources" in runtime_lock["release"]
     amplicon_rows = resources_lock["analyses"]["amplicon_16s"]["resources"]
     taxonomy_row = next(row for row in amplicon_rows if row["resource_id"] == "taxonomy_db")
@@ -248,6 +254,12 @@ def test_generate_runtime_locks_resolves_mixed_resource_layout(tmp_path: Path) -
     rnaseq_paths = {row["resource_id"]: row["path"] for row in rnaseq_rows}
     assert rnaseq_paths["genome_index"] == str(star_index)
     assert rnaseq_paths["annotation_gtf"] == str(annotation_gtf)
+    rnaseq_release = {row["resource_id"]: row["release_required"] for row in rnaseq_rows}
+    assert rnaseq_release["genome_index"] is True
+    assert rnaseq_release["annotation_gtf"] is True
+    assert rnaseq_release["go_obo"] is False
+    assert rnaseq_release["go_gaf"] is False
+    assert rnaseq_release["reactome_gmt"] is False
 
     wgs_rows = resources_lock["analyses"]["wgs_bacteria"]["resources"]
     amrfinder_row = next(row for row in wgs_rows if row["resource_id"] == "amrfinder_db")

@@ -423,6 +423,7 @@ def build_resource_lock(
 ) -> dict[str, Any]:
     analyses: dict[str, Any] = {}
     required_tools = _release_required_tools(project_root, analysis_types)
+    resource_consumers = _resource_consuming_tools(project_root, analysis_types)
     for analysis_type in analysis_types:
         try:
             plugin = get_plugin(analysis_type)
@@ -439,10 +440,16 @@ def build_resource_lock(
             for row in rows:
                 item = dict(row)
                 tool_id = str(item.get("tool_id", ""))
-                item["release_required"] = (
-                    require_all_tools
-                    or not tool_id
-                    or tool_id in required_tools.get(analysis_type, set())
+                consumers = resource_consumers.get(analysis_type, {}).get(
+                    str(item.get("resource_id", "")),
+                    set(),
+                )
+                item["consumer_tools"] = sorted(consumers)
+                item["release_required"] = _resource_is_release_required(
+                    tool_id=tool_id,
+                    consumer_tools=consumers,
+                    required_tools=required_tools.get(analysis_type, set()),
+                    require_all_tools=require_all_tools,
                 )
                 normalized_rows.append(item)
             counts = _status_counts(normalized_rows)
@@ -498,6 +505,49 @@ def _release_required_tools(
             and (tool.get("required", False) or tool.get("default_enabled", False))
         }
     return required
+
+
+def _resource_consuming_tools(
+    project_root: Path, analysis_types: Sequence[str]
+) -> dict[str, dict[str, set[str]]]:
+    """Map externally supplied workflow inputs to the tools that consume them."""
+    consumers: dict[str, dict[str, set[str]]] = {}
+    for analysis_type in analysis_types:
+        pipeline = _load_yaml(project_root / "plugins" / analysis_type / "pipeline_dag.yaml")
+        analysis_consumers: dict[str, set[str]] = {}
+        nodes = pipeline.get("nodes", {})
+        node_rows = nodes.values() if isinstance(nodes, Mapping) else nodes
+        for node in node_rows:
+            if not isinstance(node, Mapping):
+                continue
+            tool_id = str(node.get("tool_id", ""))
+            inputs = node.get("inputs", {})
+            if not tool_id or not isinstance(inputs, Mapping):
+                continue
+            for resource_id, input_spec in inputs.items():
+                if isinstance(input_spec, Mapping) and input_spec.get("source"):
+                    continue
+                analysis_consumers.setdefault(str(resource_id), set()).add(tool_id)
+        consumers[analysis_type] = analysis_consumers
+    return consumers
+
+
+def _resource_is_release_required(
+    *,
+    tool_id: str,
+    consumer_tools: set[str],
+    required_tools: set[str],
+    require_all_tools: bool,
+) -> bool:
+    if require_all_tools:
+        return True
+    if tool_id:
+        return tool_id in required_tools
+    if consumer_tools:
+        return bool(consumer_tools & required_tools)
+    # Preserve the existing conservative behavior for resources that cannot be
+    # associated with a workflow input.
+    return True
 
 
 def build_runtime_summary(
