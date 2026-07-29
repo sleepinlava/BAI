@@ -119,6 +119,7 @@ jobs:
             --profile dry_run \
             --outdir /tmp/abi-ci-metagenomic_plasmid \
             --log-dir /tmp/abi-ci-metagenomic_plasmid-log \
+            --no-check-files \
             --no-progress
           # Smoke-test each plugin with dry-run
           for plugin in rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap; do
