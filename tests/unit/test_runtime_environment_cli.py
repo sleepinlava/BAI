@@ -93,6 +93,30 @@ def test_env_doctor_rejects_declared_unsupported_plugin_cell(tmp_path: Path) -> 
     assert any(issue.startswith("unsupported_plugin:viral_viwrap:") for issue in payload["issues"])
 
 
+def test_env_install_rejects_declared_unsupported_plugin_cell(tmp_path: Path) -> None:
+    solver = _fake_solver(tmp_path / "bin" / "micromamba")
+
+    result = runner.invoke(
+        app,
+        [
+            "env",
+            "install",
+            "--type",
+            "viral_viwrap",
+            "--solver",
+            str(solver),
+            "--mamba-root",
+            str(tmp_path / "managed-root"),
+            "--dry-run",
+            "--output-json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "viral_viwrap" in result.output
+    assert "unsupported" in result.output
+
+
 def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:
     result = runner.invoke(
         app,

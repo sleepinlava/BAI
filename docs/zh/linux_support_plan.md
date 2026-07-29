@@ -81,7 +81,8 @@ checkout 或仓库本地 `envs/*.yml`。
 打包的 `platform_support` 清单现在为每个插件及全部 21 个环境发布严格的
 `certified | partial | unsupported` Linux x86_64/aarch64 单元格；每个单元格都包含
 阻塞项、可用替代方案和证据。工具能力继承其所分配环境，避免工具与环境声明重复或
-互相矛盾：
+互相矛盾。被多个插件环境分配的工具必须使用 `--type` 消歧；未在矩阵中声明的 CPU
+架构默认拒绝：
 
 ```bash
 abi env discover --output-json

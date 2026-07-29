@@ -161,7 +161,9 @@ commands, and defaults managed environments to
 environments, `--solver` to select an executable explicitly, and `abi env update` to
 reconcile an existing environment with the packaged specification. The diagnostic
 report includes the current Linux architecture capability, blockers, alternatives, and
-evidence; unsupported plugin/environment cells fail before execution.
+evidence; unsupported plugin/environment cells and undeclared CPU architectures fail
+before execution. Use `--type` when a tool is assigned to different environments by
+multiple plugins.
 
 To run the bundled example and work with the source repository:
 

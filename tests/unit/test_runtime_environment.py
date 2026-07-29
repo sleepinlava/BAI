@@ -538,3 +538,112 @@ def test_environment_install_rejects_unsupported_architecture_before_solver_look
             explicit_root=tmp_path / "root",
             environ={"PATH": ""},
         )
+
+
+def test_plugin_install_rejects_unsupported_plugin_before_solver_lookup(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(RuntimeEnvironmentError, match="viral_viwrap.*unsupported"):
+        manage_environments(
+            action="install",
+            environment_names=[],
+            analysis_type="viral_viwrap",
+            explicit_root=tmp_path / "root",
+            dry_run=True,
+            environ={"PATH": ""},
+        )
+
+
+def test_report_rejects_plugin_whose_assigned_environment_is_unsupported(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+    architecture = __import__("platform").machine()
+    normalized = "aarch64" if architecture in {"aarch64", "arm64"} else "x86_64"
+    partial = {
+        "status": "partial",
+        "blockers": [],
+        "alternatives": [],
+        "evidence": [],
+    }
+    unsupported = {
+        "status": "unsupported",
+        "blockers": ["native package unavailable"],
+        "alternatives": ["use another architecture"],
+        "evidence": [],
+    }
+    monkeypatch.setattr(
+        "abi.runtime_environment.load_environment_assignments",
+        lambda: {
+            "platform_support": {
+                "active_os": "linux",
+                "architectures": {normalized: {}},
+                "environments": {"blocked-env": {normalized: unsupported}},
+                "plugins": {"demo": {normalized: partial}},
+            },
+            "environments": {"blocked-env": {"dependencies": ["python=3.10"]}},
+            "tool_assignments": {"demo": {"demo-tool": "blocked-env"}},
+        },
+    )
+
+    report = build_environment_report(
+        explicit_root=root,
+        analysis_type="demo",
+        environ={"PATH": ""},
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+    )
+
+    assert f"unsupported_environment:blocked-env:{normalized}" in report["issues"]
+    assert report["healthy"] is False
+
+
+def test_unscoped_ambiguous_tool_assignment_requires_plugin_type(tmp_path: Path) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+    tool = _executable(tmp_path / "bin" / "fastp")
+
+    report = build_environment_report(
+        explicit_root=root,
+        tool_names=["fastp"],
+        environ={"PATH": str(tool.parent)},
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+    )
+
+    row = report["tools"][0]
+    assert row["environment"] is None
+    assert {"abi-qc", "autoplasm-qc"}.issubset(row["environment_candidates"])
+    assert len(row["environment_candidates"]) > 1
+    assert row["capability"]["status"] == "not_declared"
+    assert any(issue.startswith("ambiguous_tool_environment:fastp:") for issue in report["issues"])
+    assert report["healthy"] is False
+
+
+def test_unknown_linux_architecture_fails_closed_when_matrix_is_declared(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "mamba"
+    root.mkdir()
+    monkeypatch.setattr("abi.runtime_environment.platform.machine", lambda: "ppc64le")
+
+    report = build_environment_report(
+        explicit_root=root,
+        environ={"PATH": ""},
+        project_root=tmp_path / "project",
+        home=tmp_path / "home",
+    )
+
+    assert "unsupported_architecture:ppc64le" in report["issues"]
+    assert report["healthy"] is False
+    with pytest.raises(RuntimeEnvironmentError, match="Linux architecture ppc64le"):
+        manage_environments(
+            action="install",
+            environment_names=["wgs"],
+            explicit_root=tmp_path / "managed",
+            dry_run=True,
+            environ={"PATH": ""},
+        )

@@ -90,7 +90,9 @@ The packaged `platform_support` manifest now exposes strict
 `certified | partial | unsupported` cells for every plugin and all 21 environments on
 Linux x86_64 and aarch64. Each cell carries blockers, supported alternatives, and
 evidence. Tool capability is inherited from its assigned environment, so the report
-does not duplicate or contradict environment ownership:
+does not duplicate or contradict environment ownership. Tools assigned to multiple
+plugin environments require `--type` for disambiguation, and CPU architectures absent
+from the declared matrix fail closed:
 
 ```bash
 abi env discover --output-json

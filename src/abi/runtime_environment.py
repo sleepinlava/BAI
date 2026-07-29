@@ -318,7 +318,12 @@ def build_environment_report(
         )
 
     raw_assignments = manifest.get("tool_assignments", {})
-    assignments = _flatten_tool_assignments(raw_assignments)
+    assignment_candidates = _tool_assignment_candidates(raw_assignments)
+    assignments = {
+        tool_name: env_names[0]
+        for tool_name, env_names in assignment_candidates.items()
+        if len(env_names) == 1
+    }
     plugin_assignments: Mapping[str, Any] = {}
     plugin_tools: dict[str, Mapping[str, Any]] = {}
     if analysis_type and isinstance(raw_assignments, Mapping):
@@ -336,11 +341,17 @@ def build_environment_report(
     if analysis_type and not requested_tools:
         requested_tools = sorted(str(name) for name in plugin_assignments)
     tool_rows: list[dict[str, Any]] = []
+    tool_assignment_issues: list[str] = []
     report_project_root = Path(project_root or PROJECT_ROOT).expanduser()
     for requested_tool in requested_tools:
         tool_id, metadata = _match_plugin_tool(requested_tool, plugin_tools)
         executable = str(metadata.get("executable") or tool_id)
         assigned_env_name = assignments.get(tool_id)
+        candidates = assignment_candidates.get(tool_id, [])
+        if not analysis_type and len(candidates) > 1:
+            tool_assignment_issues.append(
+                f"ambiguous_tool_environment:{tool_id}:{','.join(candidates)}"
+            )
         assigned_prefix = prefixes.get(assigned_env_name) if assigned_env_name else None
         extra_dirs = _registry_extra_path_dirs(
             metadata,
@@ -360,6 +371,7 @@ def build_environment_report(
                 "tool_id": tool_id,
                 "executable": executable,
                 "environment": assigned_env_name,
+                "environment_candidates": candidates,
                 "capability": (
                     _capability_for(
                         support,
@@ -368,7 +380,11 @@ def build_environment_report(
                         architecture=architecture,
                     )
                     if assigned_env_name
-                    else _unassigned_tool_capability(support)
+                    else (
+                        _ambiguous_tool_capability(candidates)
+                        if len(candidates) > 1
+                        else _unassigned_tool_capability(support)
+                    )
                 ),
                 **resolved.to_dict(),
             }
@@ -377,8 +393,25 @@ def build_environment_report(
     issues: list[str] = []
     if system != "Linux":
         issues.append(f"unsupported_platform:{system}")
+    declared_architectures = support.get("architectures", {})
+    if (
+        isinstance(declared_architectures, Mapping)
+        and declared_architectures
+        and architecture not in declared_architectures
+    ):
+        issues.append(f"unsupported_architecture:{architecture}")
+    issues.extend(tool_assignment_issues)
     missing_tools = [row["tool_id"] for row in tool_rows if not row["exists"]]
     issues.extend(f"missing_tool:{name}" for name in missing_tools)
+    unsupported_environments = {
+        str(row["environment"])
+        for row in tool_rows
+        if row["environment"] and row["capability"]["status"] == "unsupported"
+    }
+    issues.extend(
+        f"unsupported_environment:{env_name}:{architecture}"
+        for env_name in sorted(unsupported_environments)
+    )
 
     plugin_status: dict[str, Any] | None = None
     if analysis_type:
@@ -444,6 +477,19 @@ def manage_environments(
     support = manifest.get("platform_support", {})
     if isinstance(support, Mapping):
         architecture = _normalized_architecture(platform.machine())
+        _require_declared_architecture(support, architecture)
+        if analysis_type:
+            plugin_capability = _capability_for(
+                support,
+                scope="plugins",
+                name=analysis_type,
+                architecture=architecture,
+            )
+            if plugin_capability["status"] == "unsupported":
+                blockers = "; ".join(plugin_capability["blockers"]) or "no supported runtime"
+                raise RuntimeEnvironmentError(
+                    f"{analysis_type} is unsupported on Linux {architecture}: {blockers}"
+                )
         for env_name in selected:
             capability = _capability_for(
                 support,
@@ -935,16 +981,19 @@ def _registry_extra_path_dirs(
     return paths
 
 
-def _flatten_tool_assignments(raw: Any) -> dict[str, str]:
-    assignments: dict[str, str] = {}
+def _tool_assignment_candidates(raw: Any) -> dict[str, list[str]]:
+    candidates: dict[str, list[str]] = {}
     if not isinstance(raw, Mapping):
-        return assignments
+        return candidates
     for plugin_assignments in raw.values():
         if not isinstance(plugin_assignments, Mapping):
             continue
         for tool_name, env_name in plugin_assignments.items():
-            assignments.setdefault(str(tool_name), str(env_name))
-    return assignments
+            tool_candidates = candidates.setdefault(str(tool_name), [])
+            normalized_env = str(env_name)
+            if normalized_env not in tool_candidates:
+                tool_candidates.append(normalized_env)
+    return candidates
 
 
 def _capability_for(
@@ -984,6 +1033,23 @@ def _unassigned_tool_capability(support: Mapping[str, Any]) -> dict[str, Any]:
     policy = support.get("tools", {})
     raw = policy.get("unassigned") if isinstance(policy, Mapping) else None
     return _normalize_capability(raw)
+
+
+def _ambiguous_tool_capability(candidates: Sequence[str]) -> dict[str, Any]:
+    return {
+        "status": "not_declared",
+        "blockers": ["tool is assigned to multiple environments: " + ", ".join(candidates)],
+        "alternatives": ["rerun abi env doctor with --type to select a plugin"],
+        "evidence": [],
+    }
+
+
+def _require_declared_architecture(support: Mapping[str, Any], architecture: str) -> None:
+    declared = support.get("architectures")
+    if isinstance(declared, Mapping) and declared and architecture not in declared:
+        raise RuntimeEnvironmentError(
+            f"Linux architecture {architecture} is not declared in the ABI capability matrix"
+        )
 
 
 def _normalized_architecture(machine: str) -> str:
