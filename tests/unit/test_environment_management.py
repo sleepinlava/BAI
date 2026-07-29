@@ -38,6 +38,7 @@ if [ "$operation" = "update" ] && [ ! -d "$prefix/conda-meta" ]; then
   exit 7
 fi
 mkdir -p "$prefix/conda-meta"
+: > "$prefix/conda-meta/history"
 printf '%s\n' "$MAMBA_ROOT_PREFIX" > "$ABI_TEST_ROOT_LOG"
 printf '%s\n' "${PYTHONPATH-unset}" > "$ABI_TEST_PYTHONPATH_LOG"
 printf '%s\n' "${LD_LIBRARY_PATH-unset}" > "$ABI_TEST_LD_LIBRARY_PATH_LOG"
@@ -176,7 +177,9 @@ def test_update_creates_missing_environment_then_updates_it(tmp_path: Path) -> N
 
 def test_conda_update_uses_documented_noninteractive_command_surface(tmp_path: Path) -> None:
     solver = _version_only_solver(tmp_path / "bin" / "conda")
-    (tmp_path / "managed-root" / "envs" / "wgs" / "conda-meta").mkdir(parents=True)
+    history = tmp_path / "managed-root" / "envs" / "wgs" / "conda-meta" / "history"
+    history.parent.mkdir(parents=True)
+    history.touch()
 
     report = manage_environments(
         action="update",
@@ -218,6 +221,42 @@ def test_solver_failure_does_not_publish_unapplied_environment_spec(tmp_path: Pa
     assert (root / "specs" / "wgs.yml").exists() is False
 
 
+def test_partial_conda_metadata_after_failure_is_retried(tmp_path: Path) -> None:
+    solver = tmp_path / "bin" / "micromamba"
+    command_log = tmp_path / "commands.log"
+    solver.parent.mkdir()
+    solver.write_text(
+        "#!/bin/sh\n"
+        "if [ \"${1:-}\" = \"--version\" ]; then printf '%s\\n' '2.1.0'; exit 0; fi\n"
+        f"printf '%s\\n' \"$*\" >> {command_log}\n"
+        "prefix=''\n"
+        'while [ "$#" -gt 0 ]; do\n'
+        '  if [ "$1" = "--prefix" ]; then shift; prefix="$1"; fi\n'
+        "  shift\n"
+        "done\n"
+        'mkdir -p "$prefix/conda-meta"\n'
+        "printf '%s\\n' 'linking failed' >&2\n"
+        "exit 7\n",
+        encoding="utf-8",
+    )
+    solver.chmod(0o755)
+    root = tmp_path / "managed-root"
+
+    for _ in range(2):
+        with pytest.raises(RuntimeEnvironmentError, match="linking failed"):
+            manage_environments(
+                action="install",
+                environment_names=["wgs"],
+                solver=solver,
+                explicit_root=root,
+                environ={"PATH": "/usr/bin:/bin"},
+            )
+
+    assert len(command_log.read_text(encoding="utf-8").splitlines()) == 2
+    assert (root / "envs" / "wgs" / "conda-meta").is_dir()
+    assert (root / "envs" / "wgs" / "conda-meta" / "history").exists() is False
+
+
 def test_managed_root_rejects_existing_non_directory_even_in_dry_run(tmp_path: Path) -> None:
     solver = _version_only_solver(tmp_path / "bin" / "conda")
     root = tmp_path / "managed-root"
@@ -237,7 +276,9 @@ def test_managed_root_rejects_existing_non_directory_even_in_dry_run(tmp_path: P
 def test_install_reports_unverified_spec_for_preexisting_environment(tmp_path: Path) -> None:
     solver = _version_only_solver(tmp_path / "bin" / "conda")
     root = tmp_path / "managed-root"
-    (root / "envs" / "wgs" / "conda-meta").mkdir(parents=True)
+    history = root / "envs" / "wgs" / "conda-meta" / "history"
+    history.parent.mkdir(parents=True)
+    history.touch()
 
     report = manage_environments(
         action="install",

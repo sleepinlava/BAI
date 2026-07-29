@@ -67,8 +67,8 @@ abi env update --env rnaseq --output-json
 默认可写根目录为 `${XDG_DATA_HOME:-~/.local/share}/abi/mamba`；CLI 和环境变量
 指定的根目录仍具有权威性。求解器子进程保留 Linux 动态库变量，但不会继承宿主
 `PYTHONPATH`。安装具有幂等性，更新执行 prune；求解失败不会发布未应用的规范，
-缺失目标环境时 `update` 会先执行创建，不含 `conda-meta/` 的残缺前缀不会被视为
-有效环境，且 `--dry-run` 不会创建目标根目录。
+缺失目标环境时 `update` 会先执行创建，不含 `conda-meta/history` 完成标志的残缺
+前缀不会被视为有效环境，且 `--dry-run` 不会创建目标根目录。
 
 x86_64 与 arm64 wheel 冒烟测试都会先切换到隔离的临时目录，再通过严格测试求解器
 实际执行环境创建并读取打包的 `environments.yaml`，从而证明该路径不会回退到源码

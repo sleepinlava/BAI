@@ -74,7 +74,8 @@ CLI and environment roots remain authoritative. Solver children retain Linux dyn
 library variables but receive no host `PYTHONPATH`. Installation is idempotent, update
 uses pruning, and an update request creates the environment first when its prefix is
 missing. Failed solves do not publish an unapplied specification, incomplete prefixes
-without `conda-meta/` are not accepted, and `--dry-run` does not create the target root.
+without `conda-meta/history` are not accepted, and `--dry-run` does not create the target
+root.
 
 The x86_64 and arm64 wheel smoke tests change to an isolated temporary directory, then
 execute environment creation with a strict test solver and the packaged

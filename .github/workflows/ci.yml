@@ -135,6 +135,7 @@ jobs:
             'test -n "$prefix"' \
             'test -f "$spec"' \
             'mkdir -p "$prefix/conda-meta"' \
+            ': > "$prefix/conda-meta/history"' \
             > /tmp/abi-ci-bin/micromamba
           chmod +x /tmp/abi-ci-bin/micromamba
           abi env install \
@@ -199,6 +200,7 @@ jobs:
             'test -n "$prefix"' \
             'test -f "$spec"' \
             'mkdir -p "$prefix/conda-meta"' \
+            ': > "$prefix/conda-meta/history"' \
             > /tmp/abi-ci-bin/micromamba
           chmod +x /tmp/abi-ci-bin/micromamba
           abi env install \

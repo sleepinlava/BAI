@@ -24,6 +24,13 @@ def _executable(path: Path, contents: str = "#!/bin/sh\nexit 0\n") -> Path:
     return path
 
 
+def _environment_prefix(path: Path) -> Path:
+    history = path / "conda-meta" / "history"
+    history.parent.mkdir(parents=True)
+    history.touch()
+    return path
+
+
 def test_explicit_mamba_root_is_authoritative_and_invalid_root_fails(tmp_path: Path) -> None:
     root = tmp_path / "managed mamba"
     root.mkdir()
@@ -138,7 +145,7 @@ def test_incomplete_managed_prefix_does_not_shadow_global_solver(tmp_path: Path)
 
 def test_populated_user_root_precedes_global_solver(tmp_path: Path) -> None:
     user_root = tmp_path / "xdg-data" / "abi" / "mamba"
-    (user_root / "envs" / "wgs" / "conda-meta").mkdir(parents=True)
+    _environment_prefix(user_root / "envs" / "wgs")
     solver_root = tmp_path / "global-mamba"
     solver_root.mkdir()
     bin_dir = tmp_path / "global-bin"
@@ -167,13 +174,13 @@ def test_environment_prefix_prefers_managed_layout_and_tracks_known_prefixes(
     root = tmp_path / "mamba"
     direct = root / "rnaseq"
     managed = root / "envs" / "rnaseq"
-    (direct / "conda-meta").mkdir(parents=True)
-    (managed / "conda-meta").mkdir(parents=True)
+    _environment_prefix(direct)
+    _environment_prefix(managed)
 
     assert resolve_environment_prefix(root, "rnaseq").path == managed.resolve()
 
     external = tmp_path / "named-envs" / "wgs"
-    (external / "conda-meta").mkdir(parents=True)
+    _environment_prefix(external)
     resolved = resolve_environment_prefix(
         root,
         "wgs",
@@ -189,7 +196,7 @@ def test_incomplete_managed_prefix_does_not_shadow_valid_direct_environment(
     root = tmp_path / "mamba"
     (root / "envs" / "wgs" / "bin").mkdir(parents=True)
     direct = root / "wgs"
-    (direct / "conda-meta").mkdir(parents=True)
+    _environment_prefix(direct)
 
     resolved = resolve_environment_prefix(root, "wgs")
 

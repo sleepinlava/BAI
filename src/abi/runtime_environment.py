@@ -833,7 +833,7 @@ def _environment_prefix_count(root: Path) -> int:
 def _is_environment_prefix(path: Path) -> bool:
     """Return whether a directory has markers of a usable Conda environment."""
 
-    return path.is_dir() and (path / "conda-meta").is_dir()
+    return path.is_dir() and (path / "conda-meta" / "history").is_file()
 
 
 def _load_plugin_tool_metadata(analysis_type: str) -> dict[str, Mapping[str, Any]]:
