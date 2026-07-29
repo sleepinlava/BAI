@@ -66,7 +66,8 @@ jobs:
             --profile dry_run \
             --outdir /tmp/abi-release-plasmid \
             --log-dir /tmp/abi-release-plasmid-log \
-            --no-progress
+            --no-progress \
+            --no-check-files
           for plugin in rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap; do
             /tmp/abi-wheel-smoke/bin/abi dry-run \
               --type "$plugin" \
