@@ -157,7 +157,11 @@ def test_study_build_artifacts_and_prepare_trial(tmp_path: Path) -> None:
     assert json.loads(record.read_text(encoding="utf-8"))["scores"]["cvc"] == 1
 
 
-def test_runtime_contract_ablation_changes_invalid_output_acceptance(tmp_path: Path) -> None:
+def test_runtime_contract_ablation_changes_invalid_output_acceptance(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PATH", "")
     study = yaml.safe_load((STUDY_ROOT / "study.yaml").read_text(encoding="utf-8"))
     tasks = yaml.safe_load((STUDY_ROOT / "tasks.yaml").read_text(encoding="utf-8"))
     trial_roots = {

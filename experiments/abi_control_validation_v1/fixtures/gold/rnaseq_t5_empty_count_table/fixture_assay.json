@@ -100,29 +100,6 @@
         },
         "name": "resource:reactome_gmt",
         "status": "pass"
-      },
-      {
-        "details": {
-          "checksum": "",
-          "command": [
-            "Rscript",
-            "-e",
-            "library(DESeq2)"
-          ],
-          "directory_file_count": 0,
-          "directory_size_bytes": 0,
-          "field": "r_package",
-          "message": "DESeq2 1.42.1 found.",
-          "path": "Rscript",
-          "ready_check": "r_package_loaded",
-          "resource_id": "deseq2_package",
-          "source_url": "https://bioconductor.org/packages/DESeq2/",
-          "status": "ok",
-          "tool_id": "deseq2",
-          "version": "1.42.1"
-        },
-        "name": "resource:deseq2_package",
-        "status": "pass"
       }
     ],
     "errors": [],
@@ -232,29 +209,6 @@
           "version": ""
         },
         "name": "resource:reactome_gmt",
-        "status": "pass"
-      },
-      {
-        "details": {
-          "checksum": "",
-          "command": [
-            "Rscript",
-            "-e",
-            "library(DESeq2)"
-          ],
-          "directory_file_count": 0,
-          "directory_size_bytes": 0,
-          "field": "r_package",
-          "message": "DESeq2 1.42.1 found.",
-          "path": "Rscript",
-          "ready_check": "r_package_loaded",
-          "resource_id": "deseq2_package",
-          "source_url": "https://bioconductor.org/packages/DESeq2/",
-          "status": "ok",
-          "tool_id": "deseq2",
-          "version": "1.42.1"
-        },
-        "name": "resource:deseq2_package",
         "status": "pass"
       }
     ],

@@ -13,6 +13,12 @@ recipes:
   rnaseq_base_v1:
     workflow: rnaseq_expression
     generator: paired_fastq_project
+    preflight_resource_ids:
+      - genome_index
+      - annotation_gtf
+      - go_obo
+      - go_gaf
+      - reactome_gmt
     sources:
       read1: examples/fixtures/tiny_R1.fastq
       read2: examples/fixtures/tiny_R2.fastq
