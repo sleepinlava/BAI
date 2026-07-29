@@ -444,6 +444,21 @@ def _replace_path_prefixes(value: Any, replacements: Mapping[str, str]) -> Any:
     return value
 
 
+def _normalize_assay_evidence(value: Any, replacements: Mapping[str, str]) -> Any:
+    """Remove runtime-only values from frozen fixture-assay evidence."""
+    if isinstance(value, dict):
+        return {
+            key: _normalize_assay_evidence(item, replacements)
+            for key, item in value.items()
+            if key not in {"date", "last_checked_at", "validated_at"}
+        }
+    if isinstance(value, list):
+        return [_normalize_assay_evidence(item, replacements) for item in value]
+    if isinstance(value, str):
+        return _replace_path_prefixes(value, replacements)
+    return value
+
+
 def _run_task_fixture_assay(
     *,
     clean: Path,
@@ -553,12 +568,20 @@ def _local_preflight(
             )
         else:
             result_status = result.get("status", "pass")
-        return {
+        evidence = {
             "status": result_status,
             "checks": checks,
             "errors": result.get("errors", []),
             "warnings": result.get("warnings", []),
         }
+        return _normalize_assay_evidence(
+            evidence,
+            {
+                str(local_root): "/task/input",
+                str(Path(temporary) / "work"): "/task/work",
+                temporary: "/task",
+            },
+        )
 
 
 def _sha256(path: Path) -> str:

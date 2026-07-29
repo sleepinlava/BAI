@@ -33,3 +33,17 @@ def test_fixture_factory_builds_clean_fault_gold_and_archive(tmp_path: Path) -> 
     )
     assert gold["hidden_root_cause"] == "incomplete_pairs"
     assert gold["compiled_plan"]["analysis_type"] == "rnaseq_expression"
+
+
+def test_fixture_assay_is_deterministic_across_builds(tmp_path: Path) -> None:
+    outputs = [tmp_path / "first", tmp_path / "second"]
+    for output in outputs:
+        build_fixtures(
+            repo_root=REPO_ROOT,
+            study_root=STUDY_ROOT,
+            output_root=output,
+            task_ids={"rnaseq_t3_missing_mate"},
+        )
+
+    relative = Path("gold/rnaseq_t3_missing_mate/fixture_assay.json")
+    assert (outputs[0] / relative).read_bytes() == (outputs[1] / relative).read_bytes()
