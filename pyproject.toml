@@ -43,7 +43,7 @@ Repository = "https://github.com/sleepinlava/BAI"
 
 [project.optional-dependencies]
 mcp = [
-    "mcp; python_version >= '3.10'",
+    "mcp>=1.28,<2; python_version >= '3.10'",
 ]
 report = [
     "jinja2",

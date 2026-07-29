@@ -221,3 +221,11 @@ import abi
 abi.get_agent_guide()          # 返回紧凑操作指南（str）
 abi.list_plugins_summary()     # 返回 list[dict]，包含 (analysis_type, name, description)
 ```
+
+### 已知缺口
+
+- **MCP SDK >=2.0.0** — `src/abi/mcp/server.py` 从 `mcp.server.fastmcp` 导入
+  `FastMCP`，该模块在 MCP Python SDK v2.0.0（2026-07-28 发布）中被重命名为
+  `MCPServer` 并移至 `mcp.server.mcpserver`。当前在 `pyproject.toml` 中将依赖
+  锁定为 `mcp>=1.28,<2` 以避免破坏性变更。待代码库迁移至 v2 API 后，更新导入
+  路径并取消上限。
