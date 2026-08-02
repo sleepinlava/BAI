@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.11.1] - 2026-08-02
+
+### Added
+
+- OpenCode integration for the ABI MCP server, including a safe-profile project
+  configuration and an ABI lifecycle skill for agent operators.
+- An IBD EasyMetaGenome pilot configuration and public sequencing-data manifest.
+
+### Documentation
+
+- Added primary literature references to the declared scientific limitations for
+  amplicon, metagenomic plasmid, metatranscriptomic, RNA-seq, and bacterial WGS
+  workflows.
+
 ## [1.5.11] - 2026-08-02
 
 ### Added
