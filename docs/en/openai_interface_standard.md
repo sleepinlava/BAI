@@ -77,6 +77,7 @@ abi-mcp                    # safe profile: no execution or management tools
 abi-mcp --profile discovery
 abi-mcp --profile full     # add confirmation-gated abi_run
 abi-mcp --profile management
+abi-mcp --transport streamable-http  # optional stateless 2026-07-28 transport
 python -m abi.mcp.server   # equivalent (if abi-mcp not available)
 ```
 

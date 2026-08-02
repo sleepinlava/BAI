@@ -502,11 +502,11 @@ def test_tool_name_standard_accepts_dashes(plugin):
 class FakeMCPTool:
     """Fake MCP that records registered tools with their signatures."""
 
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         self.name = name
         self.tools = {}
 
-    def tool(self):
+    def tool(self, **kwargs):
         def decorator(func):
             self.tools[func.__name__] = func
             return func
@@ -519,7 +519,7 @@ def test_mcp_generates_tool_with_zero_parameters(monkeypatch):
     import abi.mcp.server as server
 
     fake = FakeMCPTool("abi")
-    monkeypatch.setattr(server, "FastMCP", lambda name: fake)
+    monkeypatch.setattr(server, "MCPServer", lambda name, **kwargs: fake)
 
     server.create_server()
     assert "abi_list_types" in fake.tools
@@ -534,7 +534,7 @@ def test_mcp_generates_tool_with_many_parameters(monkeypatch):
     import abi.mcp.server as server
 
     fake = FakeMCPTool("abi")
-    monkeypatch.setattr(server, "FastMCP", lambda name: fake)
+    monkeypatch.setattr(server, "MCPServer", lambda name, **kwargs: fake)
 
     server.create_server(profile="full")
     assert "abi_run" in fake.tools
@@ -556,7 +556,7 @@ def test_mcp_generated_tools_are_callable(monkeypatch):
     import abi.mcp.server as server
 
     fake = FakeMCPTool("abi")
-    monkeypatch.setattr(server, "FastMCP", lambda name: fake)
+    monkeypatch.setattr(server, "MCPServer", lambda name, **kwargs: fake)
 
     server.create_server()
     # All generated tools should be callable (will fail at runtime due to no real agent,
@@ -564,10 +564,7 @@ def test_mcp_generated_tools_are_callable(monkeypatch):
     for tool_name, fn in fake.tools.items():
         assert callable(fn), f"{tool_name} is not callable"
         sig = __import__("inspect").signature(fn)
-        # With PEP 563 (from __future__ import annotations), annotations are strings
-        assert sig.return_annotation in (str, "str"), (
-            f"{tool_name} return annotation is {sig.return_annotation!r}"
-        )
+        assert __import__("typing").get_origin(sig.return_annotation) is dict
 
 
 def test_mcp_legacy_autoplasm_alias_registered(monkeypatch):
@@ -575,7 +572,7 @@ def test_mcp_legacy_autoplasm_alias_registered(monkeypatch):
     import abi.mcp.server as server
 
     fake = FakeMCPTool("abi")
-    monkeypatch.setattr(server, "FastMCP", lambda name: fake)
+    monkeypatch.setattr(server, "MCPServer", lambda name, **kwargs: fake)
 
     server.create_server(profile="management")
     assert "autoplasm_validate_result" in fake.tools

@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.5.11] - 2026-08-02
+
+### Added
+
+- Optional stateless Streamable HTTP transport for the ABI MCP server, bound to
+  `127.0.0.1:8000/mcp` by default while preserving stdio as the standard local
+  agent transport.
+- MCP SDK 2.x integration coverage that verifies `2026-07-28` protocol
+  negotiation, ABI server identity, tool annotations, and structured schemas.
+- A primary-source MCP `2026-07-28` migration report covering lifecycle,
+  transports, tools, security, compatibility, and deferred extension work.
+
+### Changed
+
+- Migrated the optional MCP dependency from `mcp>=1.28,<2` to `mcp>=2.0,<3`
+  and replaced `FastMCP` with the SDK 2.x `MCPServer` API.
+- MCP tools now return structured ABI JSON envelopes with generated
+  `outputSchema`, standard `readOnlyHint` annotations, and input schemas that
+  preserve descriptions, enums, array item types, and numeric constraints.
+- MCP server metadata now reports ABI's own name, title, description,
+  instructions, and package version.
+
+### Documentation
+
+- Updated the English and Chinese agent, development, and interface guides for
+  MCP `2026-07-28`, SDK 2.x, and safe Streamable HTTP usage.
+
 ## [1.5.10] - 2026-07-29
 
 ### Fixed

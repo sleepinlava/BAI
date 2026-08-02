@@ -105,7 +105,7 @@ def test_doctor_reports_healthy_claude_code_install(tmp_path, monkeypatch) -> No
     )
     monkeypatch.setattr(
         "abi.agent_integrations._mcp_runtime_status",
-        lambda: (True, "Safe MCP server initialized: FastMCP"),
+        lambda: (True, "Safe MCP server initialized: MCPServer"),
     )
     install_agent_integration(platform="claude-code", scope="user")
 
@@ -154,7 +154,7 @@ def test_doctor_reports_healthy_codex_project_install(tmp_path, monkeypatch) -> 
     )
     monkeypatch.setattr(
         "abi.agent_integrations._mcp_runtime_status",
-        lambda: (True, "Safe MCP server initialized: FastMCP"),
+        lambda: (True, "Safe MCP server initialized: MCPServer"),
     )
     install_agent_integration(platform="codex", scope="project", project_dir=tmp_path)
 

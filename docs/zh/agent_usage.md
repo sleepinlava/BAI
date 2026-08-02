@@ -71,7 +71,12 @@ Codex 插件开发时，可使用 plugin-creator 提供的校验器验证
 abi-mcp                         # safe：发现、规划和结果工具
 abi-mcp --profile discovery     # 只读发现与检查
 abi-mcp --profile full          # 加入受确认门控的 abi_run
+abi-mcp --transport streamable-http  # 127.0.0.1:8000/mcp 上的无状态 HTTP
 ```
+
+ABI 对齐 MCP `2026-07-28` 协议。本地 Agent 集成仍默认使用 stdio。Streamable
+HTTP 需要显式启用，采用无状态模式并默认仅绑定 `127.0.0.1`；对本机之外开放前，
+必须配置认证和明确的主机安全策略。
 
 `management` profile 保留完整兼容表面，只用于管理，不建议普通 Agent 会话使用。
 

@@ -1,6 +1,6 @@
 {
   "name": "abi",
-  "version": "1.5.10",
+  "version": "1.5.11",
   "description": "Discover, plan, validate, execute, inspect, and report ABI bioinformatics workflows.",
   "author": {
     "name": "BingkangGuo",

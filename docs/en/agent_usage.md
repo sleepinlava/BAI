@@ -81,7 +81,13 @@ Direct Codex installation uses `.agents/skills/abi` for project scope or
 abi-mcp                         # safe: discovery, planning, and result tools
 abi-mcp --profile discovery     # read-only discovery and inspection
 abi-mcp --profile full          # adds confirmation-gated abi_run
+abi-mcp --transport streamable-http  # stateless HTTP at 127.0.0.1:8000/mcp
 ```
+
+ABI targets MCP protocol `2026-07-28`. Stdio remains the default for local
+agent integrations. Streamable HTTP is opt-in, stateless, and bound to
+`127.0.0.1` by default; configure authentication and an explicit host policy
+before exposing it beyond the local machine.
 
 The `management` profile preserves the complete compatibility surface and is
 intended for administrative use, not ordinary agent sessions.

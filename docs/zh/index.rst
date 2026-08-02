@@ -126,6 +126,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    development_workflow
    linux_support_plan
    development
+   mcp_protocol_20260728_update_research
    plugin_development_guide
    testing
    workflow_validation

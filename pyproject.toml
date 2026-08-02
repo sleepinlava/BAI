@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abi-agent"
-version = "1.5.10"
+version = "1.5.11"
 description = "Agent-Bioinformatics Interface: plugin-based abstraction for AI-driven bioinformatics analysis"
 readme = "README.md"
 license = { text = "MIT" }
@@ -43,7 +43,7 @@ Repository = "https://github.com/sleepinlava/BAI"
 
 [project.optional-dependencies]
 mcp = [
-    "mcp>=1.28,<2; python_version >= '3.10'",
+    "mcp>=2.0,<3; python_version >= '3.10'",
 ]
 report = [
     "jinja2",

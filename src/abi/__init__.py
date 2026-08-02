@@ -30,7 +30,7 @@ Module                    Purpose
 ``abi.interfaces``        ``ABIPlugin``, ``ABIDryRunPlugin`` protocol classes
 ``abi.sciplot``           Figure compiler (Pydantic schema, 8 plot types, PDF/SVG/PNG/TIFF)
 ``abi.openai_contracts``   OpenAI function-calling tool descriptors
-``abi.mcp``               Optional MCP stdio server for Claude Desktop / Claude Code
+``abi.mcp``               Optional MCP server (stdio or stateless Streamable HTTP)
 ========================  ======================================================
 """
 

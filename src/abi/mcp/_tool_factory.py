@@ -3,7 +3,7 @@
 This module provides the canonical way to create MCP tool functions from
 the unified tool descriptor SSOT (``abi.tool_descriptors``).  Instead of
 using ``exec()`` to generate functions at runtime, we build them with
-proper ``inspect.Signature`` objects so that FastMCP can introspect
+proper ``inspect.Signature`` objects so that ``MCPServer`` can introspect
 parameter types without evaluating arbitrary code.
 
 Usage::
@@ -19,9 +19,12 @@ Usage::
 from __future__ import annotations
 
 import inspect
+import json
 import re
 from functools import wraps
-from typing import Any, Callable, Mapping, Optional, cast
+from typing import Annotated, Any, Callable, Literal, Mapping, Optional, cast
+
+from pydantic import Field
 
 # Safe name patterns — reject anything that could be an injection vector.
 # Only allow valid Python identifiers for both tool names and parameter names.
@@ -90,6 +93,7 @@ class ToolDescriptor:
         self.description = str(metadata.get("description", ""))
         self.properties = self._validate_properties(metadata)
         self.required = set(metadata.get("required", []))
+        self.read_only = bool(metadata.get("read_only", False))
 
     def _validate_properties(self, metadata: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
         """Validate all parameter names in the properties block."""
@@ -104,19 +108,18 @@ class ToolDescriptor:
         return result
 
     def make_function_signature(self) -> inspect.Signature:
-        """Generate an ``inspect.Signature`` for FastMCP introspection.
+        """Generate an ``inspect.Signature`` for ``MCPServer`` introspection.
 
         Required parameters come first (positional-keyword), then optional
         parameters with ``None`` default.  This avoids "non-default argument
-        follows default argument" syntax errors when FastMCP iterates the
+        follows default argument" syntax errors when ``MCPServer`` iterates the
         signature.
         """
         params: list[inspect.Parameter] = []
 
         for pname in self.properties:
             pschema = self.properties[pname]
-            json_type = pschema.get("type", "string")
-            py_type = _JSON_TO_PY_TYPE.get(json_type, Any)
+            py_type = self._parameter_annotation(pschema)
             if pname in self.required:
                 params.append(
                     inspect.Parameter(
@@ -128,8 +131,7 @@ class ToolDescriptor:
 
         for pname in self.properties:
             pschema = self.properties[pname]
-            json_type = pschema.get("type", "string")
-            py_type = _JSON_TO_PY_TYPE.get(json_type, Any)
+            py_type = self._parameter_annotation(pschema)
             if pname not in self.required:
                 params.append(
                     inspect.Parameter(
@@ -140,19 +142,51 @@ class ToolDescriptor:
                     )
                 )
 
-        return inspect.Signature(params, return_annotation=str)
+        return inspect.Signature(params, return_annotation=dict[str, Any])
+
+    @staticmethod
+    def _parameter_annotation(schema: Mapping[str, Any]) -> Any:
+        """Preserve the SSOT's useful JSON Schema constraints in SDK introspection."""
+        enum = schema.get("enum")
+        if isinstance(enum, list) and enum:
+            base: Any = Literal.__getitem__(tuple(enum))
+        else:
+            json_type = schema.get("type", "string")
+            if json_type == "array":
+                items = schema.get("items", {})
+                item_type = _JSON_TO_PY_TYPE.get(
+                    items.get("type", "string") if isinstance(items, Mapping) else "string",
+                    Any,
+                )
+                base = list.__class_getitem__(item_type)
+            else:
+                base = _JSON_TO_PY_TYPE.get(str(json_type), Any)
+
+        field_args: dict[str, Any] = {}
+        description = schema.get("description")
+        if isinstance(description, str) and description:
+            field_args["description"] = description
+        if isinstance(schema.get("minimum"), (int, float)):
+            field_args["ge"] = schema["minimum"]
+        if isinstance(schema.get("maximum"), (int, float)):
+            field_args["le"] = schema["maximum"]
+        return Annotated[base, Field(**field_args)] if field_args else base
+
+    def mcp_annotations(self) -> dict[str, bool]:
+        """Return protocol-standard tool behavior hints backed by ABI metadata."""
+        return {"readOnlyHint": self.read_only}
 
 
 def make_tool_func(
     descriptor: ToolDescriptor,
     agent_method: Callable[..., str],
-) -> Callable[..., str]:
+) -> Callable[..., dict[str, Any]]:
     """Create a safe MCP tool function from a ``ToolDescriptor``.
 
     The returned function:
     - Rejects unknown keyword arguments (defense-in-depth).
     - Wraps the agent method to preserve __doc__ and __wrapped__.
-    - Has a proper ``__signature__`` for FastMCP introspection.
+    - Has a proper ``__signature__`` for ``MCPServer`` introspection.
 
     Args:
         descriptor: A validated ``ToolDescriptor``.
@@ -170,13 +204,16 @@ def make_tool_func(
     declared = set(descriptor.properties)
 
     @wraps(agent_method)
-    def tool_func(**kwargs: Any) -> str:
+    def tool_func(**kwargs: Any) -> dict[str, Any]:
         unknown = set(kwargs) - declared
         if unknown:
             raise ValueError(
                 f"Unknown parameters for {descriptor.name}: {', '.join(sorted(unknown))}"
             )
-        return agent_method(**kwargs)
+        result = json.loads(agent_method(**kwargs))
+        if not isinstance(result, dict):
+            raise ValueError(f"{descriptor.name} returned a non-object JSON envelope")
+        return result
 
     tool_func.__name__ = tool_func.__qualname__ = descriptor.name
     tool_func.__doc__ = descriptor.description

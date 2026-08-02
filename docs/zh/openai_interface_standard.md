@@ -72,6 +72,7 @@ abi-mcp                    # safe profile：不包含执行和管理工具
 abi-mcp --profile discovery
 abi-mcp --profile full     # 加入受确认门控的 abi_run
 abi-mcp --profile management
+abi-mcp --transport streamable-http  # 可选的 2026-07-28 无状态传输
 python -m abi.mcp.server   # 等效命令（如果 abi-mcp 不可用）
 ```
 

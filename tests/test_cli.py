@@ -145,7 +145,7 @@ def test_agent_install_and_doctor_opencode_project(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         "abi.agent_integrations._mcp_runtime_status",
-        lambda: (True, "Safe MCP server initialized: FastMCP"),
+        lambda: (True, "Safe MCP server initialized: MCPServer"),
     )
 
     installed = runner.invoke(
@@ -194,7 +194,7 @@ def test_agent_install_and_doctor_codex_project(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(
         "abi.agent_integrations._mcp_runtime_status",
-        lambda: (True, "Safe MCP server initialized: FastMCP"),
+        lambda: (True, "Safe MCP server initialized: MCPServer"),
     )
 
     installed = runner.invoke(

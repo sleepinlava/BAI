@@ -49,7 +49,7 @@ class FakeMCP:
         self.name = name
         self.tools: dict[str, object] = {}
 
-    def tool(self):
+    def tool(self, **kwargs):
         def decorator(func):
             self.tools[func.__name__] = func
             return func

@@ -1,5 +1,4 @@
 import inspect
-import json
 
 import pytest
 
@@ -8,13 +7,16 @@ from abi.tool_descriptors import ABI_AGENT_TOOLS, TOOL_ALIASES
 
 
 class FakeMCP:
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         self.name = name
+        self.metadata = kwargs
         self.tools = {}
+        self.tool_annotations = {}
 
-    def tool(self):
+    def tool(self, **kwargs):
         def decorator(func):
             self.tools[func.__name__] = func
+            self.tool_annotations[func.__name__] = kwargs.get("annotations")
             return func
 
         return decorator
@@ -32,7 +34,7 @@ def test_mcp_server_module_imports_without_optional_dependency():
 def test_mcp_server_reports_missing_optional_dependency(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", None)
+    monkeypatch.setattr(server, "MCPServer", None)
 
     with pytest.raises(RuntimeError, match="optional MCP SDK"):
         server.create_server()
@@ -41,7 +43,7 @@ def test_mcp_server_reports_missing_optional_dependency(monkeypatch):
 def test_mcp_server_safe_profile_exposes_planning_but_not_execution_or_management(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
 
     mcp = server.create_server()
 
@@ -60,12 +62,15 @@ def test_mcp_server_safe_profile_exposes_planning_but_not_execution_or_managemen
     assert "abi_install_skills" not in mcp.tools
     assert "abi_autoplasm_validate_result" not in mcp.tools
     assert "autoplasm_validate_result" not in mcp.tools
+    assert mcp.metadata["version"]
+    assert mcp.tool_annotations["abi_list_types"] == {"readOnlyHint": True}
+    assert mcp.tool_annotations["abi_plan"] == {"readOnlyHint": False}
 
 
 def test_mcp_server_full_profile_adds_execution_but_not_management(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
 
     mcp = server.create_server(profile="full")
 
@@ -78,7 +83,7 @@ def test_mcp_server_full_profile_adds_execution_but_not_management(monkeypatch):
 def test_mcp_server_discovery_profile_is_read_only(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
 
     mcp = server.create_server(profile="discovery")
 
@@ -91,14 +96,12 @@ def test_mcp_server_discovery_profile_is_read_only(monkeypatch):
 def test_mcp_full_profile_run_still_requires_confirmation(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
     mcp = server.create_server(profile="full")
 
-    response = json.loads(
-        mcp.tools["abi_run"](
-            analysis_type="metatranscriptomics",
-            confirm_execution=False,
-        )
+    response = mcp.tools["abi_run"](
+        analysis_type="metatranscriptomics",
+        confirm_execution=False,
     )
 
     assert response["status"] == "confirmation_required"
@@ -108,7 +111,7 @@ def test_mcp_full_profile_run_still_requires_confirmation(monkeypatch):
 def test_mcp_server_management_profile_preserves_complete_legacy_surface(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
 
     mcp = server.create_server(profile="management")
 
@@ -119,7 +122,7 @@ def test_mcp_server_management_profile_preserves_complete_legacy_surface(monkeyp
 def test_mcp_server_rejects_unknown_profile(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
 
     with pytest.raises(ValueError, match="Unknown agent tool profile"):
         server.create_server(profile="unknown")
@@ -129,7 +132,7 @@ def test_mcp_cli_selects_requested_profile_and_runs_stdio(monkeypatch):
     import abi.mcp.server as server
 
     fake = FakeMCP("abi")
-    monkeypatch.setattr(server, "FastMCP", lambda name: fake)
+    monkeypatch.setattr(server, "MCPServer", lambda name, **kwargs: fake)
 
     server.main(["--profile", "full"])
 
@@ -140,7 +143,7 @@ def test_mcp_cli_selects_requested_profile_and_runs_stdio(monkeypatch):
 def test_mcp_server_tool_signatures_cover_agent_interface_parameters(monkeypatch):
     import abi.mcp.server as server
 
-    monkeypatch.setattr(server, "FastMCP", FakeMCP)
+    monkeypatch.setattr(server, "MCPServer", FakeMCP)
     mcp = server.create_server()
     mapping = {
         name: TOOL_ALIASES[name]
@@ -211,3 +214,42 @@ def test_mcp_main_runs_stdio_transport(monkeypatch):
     server.main(argv=[])
 
     assert calls == ["stdio"]
+
+
+def test_mcp_main_runs_stateless_streamable_http(monkeypatch):
+    import abi.mcp.server as server
+
+    calls = []
+
+    class FakeServer:
+        def __init__(self, *, profile: str = "safe"):
+            pass
+
+        def run(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr(server, "create_server", FakeServer)
+
+    server.main(
+        [
+            "--transport",
+            "streamable-http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8123",
+            "--http-path",
+            "/abi-mcp",
+        ]
+    )
+
+    assert calls == [
+        {
+            "transport": "streamable-http",
+            "host": "127.0.0.1",
+            "port": 8123,
+            "streamable_http_path": "/abi-mcp",
+            "stateless_http": True,
+            "json_response": True,
+        }
+    ]

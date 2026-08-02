@@ -1,4 +1,4 @@
-"""Optional MCP stdio server for ABI agent tools.
+"""MCP 2026-07-28 server adapter for ABI agent tools.
 
 The MCP server auto-generates tool registrations from the unified tool
 descriptor SSOT (``abi.tool_descriptors``), eliminating the previous manual
@@ -16,13 +16,13 @@ from typing import Any, Optional, Sequence
 
 from abi.agent import ABIAgentInterface
 
-FastMCP: Any
+MCPServer: Any
 try:
-    from mcp.server.fastmcp import FastMCP as _ImportedFastMCP
+    from mcp.server.mcpserver import MCPServer as _ImportedMCPServer
 except ImportError:  # pragma: no cover - exercised when optional dependency is absent
-    FastMCP = None
+    MCPServer = None
 else:
-    FastMCP = _ImportedFastMCP
+    MCPServer = _ImportedMCPServer
 
 _logger = logging.getLogger("abi.mcp.server")
 
@@ -61,7 +61,7 @@ def _register_mcp_tools(
             )
             continue
 
-        mcp.tool()(tool_func)
+        mcp.tool(annotations=desc.mcp_annotations())(tool_func)
 
     if profile != "management":
         return
@@ -87,13 +87,25 @@ def create_server(*, profile: str = "safe") -> object:
     dependency-light. Install the MCP extra or use a separate MCP environment
     before launching this server.
     """
-    if FastMCP is None:
+    if MCPServer is None:
         raise RuntimeError(
             "The optional MCP SDK is not installed. Install ABI with the MCP extra "
             "in a compatible environment before running `python -m abi.mcp.server`."
         )
 
-    mcp = FastMCP("abi")
+    from abi import __version__
+
+    mcp = MCPServer(
+        "abi",
+        title="ABI Bioinformatics Workflows",
+        description="Plan, validate, run, inspect, and report ABI workflow plugins.",
+        instructions=(
+            "Use discovery and planning tools before execution. "
+            "abi_run is available only in the full profile and still requires "
+            "confirm_execution=true after explicit user approval."
+        ),
+        version=__version__,
+    )
     agent = ABIAgentInterface()
     _register_mcp_tools(mcp, agent, profile=profile)
     return mcp
@@ -102,16 +114,48 @@ def create_server(*, profile: str = "safe") -> object:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     from abi.tool_descriptors import AGENT_TOOL_PROFILES
 
-    parser = argparse.ArgumentParser(description="Run the ABI MCP stdio server.")
+    parser = argparse.ArgumentParser(description="Run the ABI MCP server.")
     parser.add_argument(
         "--profile",
         choices=tuple(AGENT_TOOL_PROFILES),
         default="safe",
         help="Tool visibility profile (default: safe).",
     )
+    parser.add_argument(
+        "--transport",
+        choices=("stdio", "streamable-http"),
+        default="stdio",
+        help="MCP transport (default: stdio).",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Streamable HTTP bind host (default: 127.0.0.1).",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Streamable HTTP bind port (default: 8000).",
+    )
+    parser.add_argument(
+        "--http-path",
+        default="/mcp",
+        help="Streamable HTTP endpoint path (default: /mcp).",
+    )
     args = parser.parse_args(argv)
     server = create_server(profile=args.profile)
-    server.run(transport="stdio")  # type: ignore[attr-defined]
+    if args.transport == "stdio":
+        server.run(transport="stdio")  # type: ignore[attr-defined]
+    else:
+        server.run(  # type: ignore[attr-defined]
+            transport="streamable-http",
+            host=args.host,
+            port=args.port,
+            streamable_http_path=args.http_path,
+            stateless_http=True,
+            json_response=True,
+        )
 
 
 if __name__ == "__main__":

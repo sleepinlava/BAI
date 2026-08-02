@@ -246,11 +246,8 @@ abi.get_agent_guide()          # returns compact operating guide (str)
 abi.list_plugins_summary()     # returns list[dict] of (analysis_type, name, description)
 ```
 
-### Known Gaps
+### MCP Compatibility
 
-- **MCP SDK >=2.0.0** — `src/abi/mcp/server.py` imports `FastMCP` from
-  `mcp.server.fastmcp`, which was renamed to `MCPServer` and moved to
-  `mcp.server.mcpserver` in MCP Python SDK v2.0.0 (2026-07-28 release).
-  The dependency is pinned to `mcp>=1.28,<2` in `pyproject.toml` to avoid the
-  breaking change. Update the import and unpin the upper bound once the codebase
-  is migrated to the v2 API.
+- ABI targets MCP protocol `2026-07-28` through MCP Python SDK 2.x. The adapter
+  uses `MCPServer`, returns structured JSON envelopes, supplies standard tool
+  behavior annotations, and supports stdio plus opt-in stateless Streamable HTTP.
