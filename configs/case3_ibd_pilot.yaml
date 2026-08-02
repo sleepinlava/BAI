@@ -1,0 +1,22 @@
+project_name: case3_ibd_easymetagenome_pilot
+threads: 16
+outdir: results/case3_ibd_easymetagenome_pilot
+log_dir: logs/case3_ibd_easymetagenome_pilot
+input:
+  sample_sheet: configs/case3_ibd_pilot_samples.tsv
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2
+  humann_nucleotide_db: /root/autodl-tmp/resources/autoplasm/humann/chocophlan
+  humann_protein_db: /root/autodl-tmp/resources/autoplasm/humann/uniref
+  metaphlan_db: /root/autodl-tmp/resources/autoplasm/metaphlan
+workflow:
+  preset: p1_humann4
+tool_params:
+  fastp: {threads: 4}
+  kneaddata: {threads: 4}
+  kraken2: {threads: 4}
+  bracken: {read_length: 150, threshold: 0}
+execution:
+  resume: true
+  progress: true
