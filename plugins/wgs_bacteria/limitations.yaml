@@ -2,10 +2,10 @@
 # See: docs/next_development_plan.md §6.3
 
 limitations:
-  - "Short-read assembly (SPAdes) may fragment genomes with extensive repetitive elements (e.g., transposases, IS elements); long-read sequencing improves assembly contiguity."
-  - "AMR gene presence does not guarantee phenotypic resistance; expression, copy number, and regulatory mutations affect resistance phenotype."
-  - "MLST typing is scheme-dependent; isolates may have novel allelic profiles not in the reference database (indicated as 'unknown' or 'nearest match')."
-  - "Plasmid replicon detection via PlasmidFinder is limited to known replicon types; novel or divergent plasmid types may be missed."
-  - "Annotation (Prokka/Bakta) transfers annotations from reference databases; gene names and functions are computational predictions, not experimental validations."
-  - "This pipeline is designed for bacterial isolate WGS (single genome per sample), not metagenomic mixtures."
-  - "Database versions (AMRFinder DB, PubMLST, PlasmidFinder DB) are recorded in the resource manifest and affect results."
+  - "Short-read assembly (SPAdes) may fragment genomes with extensive repetitive elements (e.g., transposases, IS elements); long-read sequencing improves assembly contiguity. (Ref: Bankevich et al. 2012, J Comput Biol, DOI:10.1089/cmb.2012.0021; Wick et al. 2023, PLoS Comput Biol, DOI:10.1371/journal.pcbi.1010905)"
+  - "AMR gene presence does not guarantee phenotypic resistance; expression, copy number, and regulatory mutations affect resistance phenotype. (Ref: Feldgarden et al. 2019, Antimicrob Agents Chemother, DOI:10.1128/aac.00483-19; Mahfouz et al. 2020, J Antimicrob Chemother, DOI:10.1093/jac/dkaa257)"
+  - "MLST typing is scheme-dependent; isolates may have novel allelic profiles not in the reference database (indicated as 'unknown' or 'nearest match'). (Ref: Maiden et al. 1998, PNAS, DOI:10.1073/pnas.95.6.3140; Maiden 2006, Annu Rev Microbiol, DOI:10.1146/annurev.micro.59.030804.121325)"
+  - "Plasmid replicon detection via PlasmidFinder is limited to known replicon types; novel or divergent plasmid types may be missed. (Ref: Carattoli et al. 2014, Antimicrob Agents Chemother, DOI:10.1128/AAC.02412-14)"
+  - "Annotation (Prokka/Bakta) transfers annotations from reference databases; gene names and functions are computational predictions, not experimental validations. (Ref: Seemann 2014, Bioinformatics, DOI:10.1093/bioinformatics/btu153; Schwengers et al. 2021, Microbial Genomics, DOI:10.1099/mgen.0.000685)"
+  - "This pipeline is designed for bacterial isolate WGS (single genome per sample), not metagenomic mixtures. (Ref: Purushothaman et al. 2022, Int J Mol Sci, DOI:10.3390/ijms23179834)"
+  - "Database versions (AMRFinder DB, PubMLST, PlasmidFinder DB) are recorded in the resource manifest and affect results. (Ref: Feldgarden et al. 2022, Microbial Genomics, DOI:10.1099/mgen.0.000832)"

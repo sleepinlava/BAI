@@ -3,13 +3,13 @@
 # See: docs/next_development_plan.md §6.1
 
 limitations:
-  - "Plasmid detection via geNomad uses a score threshold (default 0.7); low-score contigs may be missed or incorrectly classified."
-  - "Assembly from metagenomic short reads can produce chimeric contigs that confound plasmid length estimates."
-  - "AMR gene presence does not guarantee phenotypic resistance; expression level, copy number, and host background all influence resistance phenotype."
-  - "Plasmid abundance estimates via CoverM depend on read mapping rates and contig coverage evenness; highly repetitive plasmid sequences may inflate abundance."
-  - "Host prediction from metagenomic data is correlative and should be validated with culture-based or Hi-C experiments before publication claims."
-  - "Taxonomic profiling (MetaPhlAn, Kraken2) is database-dependent; organisms absent from the reference database cannot be detected."
-  - "Mobile element detection (ISEScan, IntegronFinder) has false-positive rates that increase in low-complexity or repeat-rich regions."
-  - "This pipeline does not distinguish between chromosomal and plasmid-borne copies of identical genes (e.g., AMR genes present in both locations)."
-  - "Database versions (geNomad DB, Bakta DB, AMRFinder DB, Kraken2 DB) are recorded in the resource manifest but change over time; results are valid only for the versions listed."
-  - "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs."
+  - "Plasmid detection via geNomad uses a score threshold (default 0.7); low-score contigs may be missed or incorrectly classified. (Ref: Camargo et al., 2023, Nature Biotechnology, DOI: 10.1038/s41587-023-01953-y)"
+  - "Assembly from metagenomic short reads can produce chimeric contigs that confound plasmid length estimates. (Ref: Ayling et al., 2020, Briefings in Bioinformatics, DOI: 10.1093/bib/bbz020)"
+  - "AMR gene presence does not guarantee phenotypic resistance; expression level, copy number, and host background all influence resistance phenotype. (Ref: Hughes & Andersson, 2017, FEMS Microbiology Reviews, DOI: 10.1093/femsre/fux004; Feldgarden et al., 2021, Scientific Reports, DOI: 10.1038/s41598-021-91456-0)"
+  - "Plasmid abundance estimates via CoverM depend on read mapping rates and contig coverage evenness; highly repetitive plasmid sequences may inflate abundance. (Ref: Aroney et al., 2025, Bioinformatics, DOI: 10.1093/bioinformatics/btaf147)"
+  - "Host prediction from metagenomic data is correlative and should be validated with culture-based or Hi-C experiments before publication claims. (Ref: Ji et al., 2023, Bioinformatics, DOI: 10.1093/bioinformatics/btad283; Diebold et al., 2021, eLife, DOI: 10.7554/eLife.66834)"
+  - "Taxonomic profiling (MetaPhlAn, Kraken2) is database-dependent; organisms absent from the reference database cannot be detected. (Ref: Blanco-Míguez et al., 2023, Nature Biotechnology, DOI: 10.1038/s41587-023-01688-w; Wood et al., 2019, Genome Biology, DOI: 10.1186/s13059-019-1891-0)"
+  - "Mobile element detection (ISEScan, IntegronFinder) has false-positive rates that increase in low-complexity or repeat-rich regions. (Ref: Xie & Tang, 2017, Bioinformatics, DOI: 10.1093/bioinformatics/btx433; Cury et al., 2016, Nucleic Acids Research, DOI: 10.1093/nar/gkw319)"
+  - "This pipeline does not distinguish between chromosomal and plasmid-borne copies of identical genes (e.g., AMR genes present in both locations). (Ref: Berbers et al., 2020, Antibiotics, DOI: 10.3390/antibiotics9080503)"
+  - "Database versions (geNomad DB, Bakta DB, AMRFinder DB, Kraken2 DB) are recorded in the resource manifest but change over time; results are valid only for the versions listed. (Ref: Feldgarden et al., 2021, Scientific Reports, DOI: 10.1038/s41598-021-91456-0; Schwengers et al., 2021, Microbial Genomics, DOI: 10.1099/mgen.0.000685)"
+  - "Dry-run results prove only structural validity (planning, command rendering, provenance); biological conclusions require real tool outputs with validated inputs. (Ref: ABI documentation — docs/en/agent_usage.md, docs/en/usage_guide.md, README.md)"

@@ -2,11 +2,11 @@
 # See: docs/next_development_plan.md §6.4
 
 limitations:
-  - "16S/ITS amplicon sequencing measures relative abundance, not absolute bacterial load or viable cell count."
-  - "Primer choice (e.g., V3-V4 vs V4-V5) strongly influences taxonomic profiles; results are biased toward taxa with good primer binding."
-  - "Taxonomic assignment depends on the reference database version (SILVA, GTDB, Greengenes); organisms absent from the database cannot be identified."
-  - "Amplicon sequence variants (ASVs) at 100% identity may still merge ecologically distinct strains; 16S resolution is intrinsically limited."
-  - "Low-abundance taxa (<0.1% relative abundance) have high technical variability and should be interpreted with caution."
-  - "Differential abundance analysis (ANCOM, ALDEx2) is exploratory; results do not prove biological causation."
-  - "Alpha and beta diversity metrics are sensitive to sequencing depth; rarefaction or normalization choices affect results."
-  - "Chimera removal relies on abundance-based heuristics; low-abundance chimeras may escape filtering."
+  - "16S/ITS amplicon sequencing measures relative abundance, not absolute bacterial load or viable cell count. (Ref: Galbraith et al., Nat Commun, 2020, doi:10.1038/s41467-020-16224-6; Jian et al., PLoS One, 2020, doi:10.1371/journal.pone.0227285)"
+  - "Primer choice (e.g., V3-V4 vs V4-V5) strongly influences taxonomic profiles; results are biased toward taxa with good primer binding. (Ref: Pichler et al., mSphere, 2020, doi:10.1128/mSphere.01202-20; Sinha et al., Front Microbiol, 2021, doi:10.3389/fmicb.2021.637526)"
+  - "Taxonomic assignment depends on the reference database version (SILVA, GTDB, Greengenes); organisms absent from the database cannot be identified. (Ref: Balvočiūtė & Huson, BMC Genomics, 2017, doi:10.1186/s12864-017-3501-4; Edgar, PeerJ, 2018, doi:10.7717/peerj.5030)"
+  - "Amplicon sequence variants (ASVs) at 100% identity may still merge ecologically distinct strains; 16S resolution is intrinsically limited. (Ref: Schloss, mSphere, 2021, doi:10.1128/mSphere.00191-21; Callahan et al., ISME J, 2017, doi:10.1038/ismej.2017.119)"
+  - "Low-abundance taxa (<0.1% relative abundance) have high technical variability and should be interpreted with caution. (Ref: Nikodemova et al., Front Cell Infect Microbiol, 2023, doi:10.3389/fcimb.2023.1165295; Nearing et al., Front Microbiol, 2021, doi:10.3389/fmicb.2020.607325)"
+  - "Differential abundance analysis (ANCOM, ALDEx2) is exploratory; results do not prove biological causation. (Ref: Nearing et al., Nat Commun, 2022, doi:10.1038/s41467-022-28034-z; Yang & Chen, Microbiome, 2022, doi:10.1186/s40168-022-01320-0)"
+  - "Alpha and beta diversity metrics are sensitive to sequencing depth; rarefaction or normalization choices affect results. (Ref: Schloss, mSphere, 2024, doi:10.1128/msphere.00354-23; McMurdie & Holmes, PLoS Comput Biol, 2014, doi:10.1371/journal.pcbi.1003531)"
+  - "Chimera removal relies on abundance-based heuristics; low-abundance chimeras may escape filtering. (Ref: Edgar et al., Bioinformatics, 2011, doi:10.1093/bioinformatics/btr381; Edgar, bioRxiv, 2016, doi:10.1101/074252)"

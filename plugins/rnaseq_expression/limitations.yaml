@@ -2,12 +2,12 @@
 # See: docs/next_development_plan.md §6.2
 
 limitations:
-  - "RNA-seq measures steady-state transcript abundance, which does not always correlate with protein expression levels."
-  - "Alignment rates depend on reference genome completeness and annotation quality; unannotated genes or novel transcripts are missed by featureCounts."
-  - "DESeq2 normalisation assumes most genes are not differentially expressed; severe global shifts in expression violate this assumption."
-  - "Differential expression p-values are not corrected for unmeasured confounders (batch effects, sample processing variation) unless explicitly modeled."
-  - "Lowly expressed genes (mean count < 10) have inflated false discovery rates even after multiple testing correction."
-  - "GO/Reactome enrichment is database-release dependent; pathways absent from the configured offline OBO/GAF/GMT snapshots cannot be detected."
-  - "Gene-symbol mapping uses the configured GTF gene_name attribute; missing, duplicated, or retired symbols are excluded from enrichment after deterministic de-duplication."
-  - "ORA depends on the significance threshold and measured-gene universe, while preranked GSEA depends on the chosen ranking statistic and permutation count; neither establishes pathway causality."
-  - "Reference genome version, annotation version, and alignment index version all affect results; these are recorded in the resource manifest."
+  - "RNA-seq measures steady-state transcript abundance, which does not always correlate with protein expression levels. (Ref: Schwanhäusser et al., Nature, 2011, doi:10.1038/nature10098; Vogel & Marcotte, Nat Rev Genet, 2012, doi:10.1038/nrg3185)"
+  - "Alignment rates depend on reference genome completeness and annotation quality; unannotated genes or novel transcripts are missed by featureCounts. (Ref: Liao et al., Bioinformatics, 2014, doi:10.1093/bioinformatics/btt656; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)"
+  - "DESeq2 normalisation assumes most genes are not differentially expressed; severe global shifts in expression violate this assumption. (Ref: Anders & Huber, Genome Biol, 2010, doi:10.1186/gb-2010-11-10-r106; Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8)"
+  - "Differential expression p-values are not corrected for unmeasured confounders (batch effects, sample processing variation) unless explicitly modeled. (Ref: Leek & Storey, PLoS Genet, 2007, doi:10.1371/journal.pgen.0030161; Leek et al., Nat Rev Genet, 2010, doi:10.1038/nrg2825)"
+  - "Lowly expressed genes (mean count < 10) have inflated false discovery rates even after multiple testing correction. (Ref: Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8; Zehetmayer et al., BMC Bioinformatics, 2022, doi:10.1186/s12859-022-04928-z)"
+  - "GO/Reactome enrichment is database-release dependent; pathways absent from the configured offline OBO/GAF/GMT snapshots cannot be detected. (Ref: Wadi et al., Nat Methods, 2016, doi:10.1038/nmeth.3963; Jassal et al., Nucleic Acids Res, 2020, doi:10.1093/nar/gkz1031)"
+  - "Gene-symbol mapping uses the configured GTF gene_name attribute; missing, duplicated, or retired symbols are excluded from enrichment after deterministic de-duplication. (Ref: Oh et al., F1000Research, 2020, doi:10.12688/f1000research.28033.1; Braschi et al., Nucleic Acids Res, 2019, doi:10.1093/nar/gky930)"
+  - "ORA depends on the significance threshold and measured-gene universe, while preranked GSEA depends on the chosen ranking statistic and permutation count; neither establishes pathway causality. (Ref: Subramanian et al., PNAS, 2005, doi:10.1073/pnas.0506580102; Maleki et al., Front Genet, 2020, doi:10.3389/fgene.2020.00654)"
+  - "Reference genome version, annotation version, and alignment index version all affect results; these are recorded in the resource manifest. (Ref: Slabaugh et al., RNA, 2019, doi:10.1261/rna.070227.118; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)"
