@@ -243,6 +243,32 @@ def write_full_report(
     )
     paths.update(generic)
 
+    # Generate or load the database manifest before methods so report regeneration
+    # preserves the resources recorded by the original run.
+    resource_manifest_data: Optional[Mapping[str, Any]] = None
+    if resource_manifest:
+        manifest_path = root / "provenance" / "resource_manifest.json"
+        if config:
+            from abi.workflow.manifest import write_resource_manifest
+
+            plan_data = plan.to_dict() if hasattr(plan, "to_dict") else dict(plan)
+            analysis_type = str(plan_data.get("analysis_type", "unknown"))
+            manifest_path = write_resource_manifest(
+                root / "provenance",
+                analysis_type=analysis_type,
+                config=config,
+                checksum=True,
+            )
+        if manifest_path.exists():
+            try:
+                loaded_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                _LOGGER.warning("Could not load resource manifest %s: %s", manifest_path, exc)
+            else:
+                if isinstance(loaded_manifest, Mapping):
+                    resource_manifest_data = loaded_manifest
+                    paths["resource_manifest"] = manifest_path
+
     # ── Full HTML report (overwrites the simpler one) ──
     methods_md = None
     if methods:
@@ -251,6 +277,7 @@ def write_full_report(
             plan=plan,
             citations=citations,
             limitations=limitations,
+            resource_manifest=resource_manifest_data,
             title=f"{title} — Methods",
         )
         paths["methods"] = methods_path
@@ -267,20 +294,6 @@ def write_full_report(
         title=title,
     )
     paths["report_html"] = html_path
-
-    # ── Resource manifest ──
-    if resource_manifest and config:
-        from abi.workflow.manifest import write_resource_manifest
-
-        plan_data = plan.to_dict() if hasattr(plan, "to_dict") else dict(plan)
-        analysis_type = str(plan_data.get("analysis_type", "unknown"))
-        manifest_path = write_resource_manifest(
-            root / "provenance",
-            analysis_type=analysis_type,
-            config=config,
-            checksum=True,
-        )
-        paths["resource_manifest"] = manifest_path
 
     return paths
 

@@ -331,6 +331,7 @@ def write_resolved_inputs_tsv(rows: Iterable[Mapping[str, Any]], path: str | Pat
 
 
 _FAILED_VERSION_PREFIXES = ("version_command_", "regex_unmatched:", "capture_failed")
+_RESOURCE_PLACEHOLDER_MARKERS = ("NOT_CONFIGURED", "TODO", "PLACEHOLDER")
 
 
 def _format_version_cell(version: str, status: str) -> str:
@@ -342,6 +343,15 @@ def _format_version_cell(version: str, status: str) -> str:
     if status == "not_configured":
         return "not_configured"
     return "not_captured"
+
+
+def _format_resource_version_cell(resource: Mapping[str, Any]) -> str:
+    """Format a resource version while distinguishing absent and uncaptured resources."""
+    path = str(resource.get("path", "")).strip()
+    status = str(resource.get("status", ""))
+    if not path or any(marker in path.upper() for marker in _RESOURCE_PLACEHOLDER_MARKERS):
+        status = "not_configured"
+    return _format_version_cell(str(resource.get("version", "")), status)
 
 
 def write_methods_md(
@@ -393,9 +403,13 @@ def write_methods_md(
     if resources:
         for res in resources:
             resource_id = (
-                res.get("resource_id") or res.get("name") or res.get("tool_id") or "not_configured"
+                res.get("resource_id")
+                or res.get("id")
+                or res.get("name")
+                or res.get("tool_id")
+                or "not_configured"
             )
-            version = _format_version_cell(res.get("version", ""), res.get("status", ""))
+            version = _format_resource_version_cell(res)
             source = res.get("source") or res.get("source_url") or "not_configured"
             path_val = res.get("path") or "not_configured"
             lines.append(f"| {resource_id} | {version} | {source} | {path_val} |")

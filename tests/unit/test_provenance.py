@@ -325,6 +325,33 @@ def test_write_methods_md_with_resource_id_source_keys(tmp_path: Path) -> None:
     assert "/ref/host" in md
 
 
+def test_write_methods_md_with_resource_manifest_keys_and_placeholder_statuses() -> None:
+    """Manifest rows preserve database paths and derive semantic version placeholders."""
+    md = write_methods_md(
+        [],
+        [],
+        resources=[
+            {
+                "id": "host_db",
+                "version": "",
+                "source_url": "https://example.com/host",
+                "path": "/ref/host",
+            },
+            {
+                "id": "functional_db",
+                "version": "",
+                "source_url": "",
+                "path": "FUNCTIONAL_DB_NOT_CONFIGURED",
+            },
+        ],
+    )
+
+    assert "| host_db | not_captured | https://example.com/host | /ref/host |" in md
+    assert (
+        "| functional_db | not_configured | not_configured | FUNCTIONAL_DB_NOT_CONFIGURED |" in md
+    )
+
+
 def test_write_methods_md_missing_version(tmp_path: Path) -> None:
     """Marks missing version as 'not_captured' when status is not not_configured."""
     md = write_methods_md(

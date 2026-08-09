@@ -93,6 +93,34 @@ def test_write_methods_with_resource_manifest(tmp_path: Path) -> None:
     assert "|  |" in content
 
 
+def test_write_methods_derives_resource_version_placeholder_from_path(tmp_path: Path) -> None:
+    """Configured paths lack captured versions; sentinel paths are not configured."""
+    prov_dir = tmp_path / "provenance"
+    prov_dir.mkdir(parents=True)
+    (tmp_path / "tables").mkdir()
+    (prov_dir / "tool_versions.tsv").write_text("tool_id\tversion\n", encoding="utf-8")
+    (prov_dir / "commands.tsv").write_text("step_id\tcommand\n", encoding="utf-8")
+
+    path = write_methods(
+        tmp_path,
+        plan={"analysis_type": "test", "project_name": "resource-status"},
+        resource_manifest={
+            "resources": [
+                {"id": "host_db", "version": "", "path": "/ref/host"},
+                {
+                    "id": "functional_db",
+                    "version": "",
+                    "path": "FUNCTIONAL_DB_NOT_CONFIGURED",
+                },
+            ]
+        },
+    )
+
+    content = path.read_text(encoding="utf-8")
+    assert "| host_db | not_captured | `/ref/host` |" in content
+    assert "| functional_db | not_configured | `FUNCTIONAL_DB_NOT_CONFIGURED` |" in content
+
+
 def test_write_methods_no_resource_manifest(tmp_path: Path) -> None:
     """resource_manifest is None → Resources section rendered with placeholder."""
     result_dir = tmp_path

@@ -89,6 +89,11 @@ def test_abi_metatranscriptomics_dry_run_writes_portability_artifacts(tmp_path):
     assert "git_dirty" in summary
     assert "runtime_lock_id" in summary
     assert (outdir / "provenance" / "resource_manifest.json").exists()
+    methods = (outdir / "provenance" / "methods.md").read_text(encoding="utf-8")
+    assert "| genome_index | not_configured " in methods
+    assert "| annotation_gtf | not_configured " in methods
+    assert "GENOME_INDEX_NOT_CONFIGURED" in methods
+    assert "ANNOTATION_GTF_NOT_CONFIGURED" in methods
     events = [json.loads(line) for line in progress_events.read_text(encoding="utf-8").splitlines()]
     assert [event["event"] for event in events] == ["run_started", "run_completed"]
     resources = json.loads((outdir / "provenance" / "resources.json").read_text(encoding="utf-8"))[

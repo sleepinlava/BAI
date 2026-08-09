@@ -507,12 +507,13 @@ class GenericABIExecutor:
             checksum=True,
             checksum_directory_ids=checksum_directory_ids,
         )
+        resource_manifest = json.loads(resource_manifest_path.read_text(encoding="utf-8"))
         environment_path = self._write_environment(provenance / "environment.yml")
         methods_path = provenance / "methods.md"
         write_methods_md(
             command_rows,
             self._last_tool_version_rows,
-            self._last_resource_rows,
+            resource_manifest.get("resources", []),
             path=methods_path,
         )
         report_paths = write_generic_report(

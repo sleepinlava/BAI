@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from unittest import mock
@@ -328,6 +329,60 @@ def test_write_full_report_with_all_options(tmp_path: Path) -> None:
     assert "Test" in html  # citation mention
     assert "Lim A" in html  # limitation mention
     assert "fig1" in html  # figure mention
+
+
+def test_write_full_report_passes_generated_resource_manifest_to_methods(tmp_path: Path) -> None:
+    """Configured databases are rendered in methods during the same report call."""
+    from abi.report.generic_report import write_full_report
+
+    (tmp_path / "tables").mkdir()
+    provenance = tmp_path / "provenance"
+    provenance.mkdir()
+    (provenance / "tool_versions.tsv").write_text("tool_id\tversion\n", encoding="utf-8")
+    (provenance / "commands.tsv").write_text("step_id\tcommand\n", encoding="utf-8")
+
+    paths = write_full_report(
+        {"analysis_type": "test", "project_name": "configured-resources", "steps": []},
+        tmp_path,
+        table_summary={},
+        config={"resources": {"host_db": "/ref/host", "kraken2_db": "/ref/kraken2"}},
+    )
+
+    methods = paths["methods"].read_text(encoding="utf-8")
+    assert "| host_db | not_captured | `/ref/host` |" in methods
+    assert "| kraken2_db | not_captured | `/ref/kraken2` |" in methods
+    assert paths["resource_manifest"].exists()
+
+
+def test_write_full_report_reuses_existing_resource_manifest(tmp_path: Path) -> None:
+    """Report regeneration without config still renders the persisted database manifest."""
+    from abi.report.generic_report import write_full_report
+
+    (tmp_path / "tables").mkdir()
+    provenance = tmp_path / "provenance"
+    provenance.mkdir()
+    (provenance / "tool_versions.tsv").write_text("tool_id\tversion\n", encoding="utf-8")
+    (provenance / "commands.tsv").write_text("step_id\tcommand\n", encoding="utf-8")
+    manifest_path = provenance / "resource_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "analysis_type": "test",
+                "resources": [{"id": "host_db", "path": "/ref/host", "version": ""}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    paths = write_full_report(
+        {"analysis_type": "test", "project_name": "regenerated-report", "steps": []},
+        tmp_path,
+        table_summary={},
+    )
+
+    methods = paths["methods"].read_text(encoding="utf-8")
+    assert "| host_db | not_captured | `/ref/host` |" in methods
+    assert paths["resource_manifest"] == manifest_path
 
 
 # ── render_figures_via_sciplot: exception handling ─────────────────────────

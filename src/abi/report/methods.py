@@ -32,6 +32,7 @@ __all__ = ["write_methods"]
 
 
 _FAILED_VERSION_PREFIXES = ("version_command_", "regex_unmatched:", "capture_failed")
+_RESOURCE_PLACEHOLDER_MARKERS = ("NOT_CONFIGURED", "TODO", "PLACEHOLDER")
 
 
 def _format_version_cell(version: str, status: str) -> str:
@@ -43,6 +44,15 @@ def _format_version_cell(version: str, status: str) -> str:
     if status == "not_configured":
         return "not_configured"
     return "not_captured"
+
+
+def _format_resource_version_cell(resource: Mapping[str, Any]) -> str:
+    """Format a resource version while distinguishing absent and uncaptured resources."""
+    path = str(resource.get("path", "")).strip()
+    status = str(resource.get("status", ""))
+    if not path or any(marker in path.upper() for marker in _RESOURCE_PLACEHOLDER_MARKERS):
+        status = "not_configured"
+    return _format_version_cell(str(resource.get("version", "")), status)
 
 
 def write_methods(
@@ -155,7 +165,7 @@ def write_methods(
     if resources:
         for res in resources:
             rid = res.get("id", "")
-            ver = _format_version_cell(res.get("version", ""), res.get("status", ""))
+            ver = _format_resource_version_cell(res)
             path = res.get("path", "")
             cs_raw = res.get("checksum_sha256", "")
             cs = cs_raw[:12] + "..." if cs_raw else ""
