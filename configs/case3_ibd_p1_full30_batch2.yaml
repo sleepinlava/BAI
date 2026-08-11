@@ -1,0 +1,27 @@
+project_name: case3_ibd_easymetagenome_p1_full30_batch2
+threads: 12
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_p1_full30_batch2_20260812
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_p1_full30_batch2_20260812
+
+input:
+  sample_sheet: /root/autodl-tmp/abi/configs/case3_ibd_pilot_samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  humann_nucleotide_db: /root/autodl-tmp/resources/autoplasm/humann/chocophlan
+  humann_protein_db: /root/autodl-tmp/resources/autoplasm/humann/uniref
+  metaphlan_db: /root/autodl-tmp/resources/autoplasm/metaphlan
+
+workflow:
+  preset: p1_humann4
+
+tool_params:
+  fastp: {threads: 4}
+  kneaddata: {threads: 4}
+
+execution:
+  parallel: true
+  workers: 2
+  batch_size: 2
+  error_policy: halt
+  progress: true

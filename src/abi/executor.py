@@ -331,6 +331,7 @@ class GenericABIExecutor:
         )
         parallel = bool(execution.get("parallel", False))
         workers = int(execution.get("workers", 1))
+        batch_size = execution.get("batch_size")
         if progress_recorder:
             # Emit a start_run event so downstream dashboards can track the run.
             # 发出 start_run 事件，供下游 dashboard 跟踪运行。
@@ -414,14 +415,56 @@ class GenericABIExecutor:
 
                 completed_chains: Dict[int, List[tuple]] = {}
                 if per_sample:
-                    actual_workers = min(workers, len(per_sample))
-                    with ThreadPoolExecutor(max_workers=actual_workers) as pool:
-                        futures = {
-                            pool.submit(_run_sample_chain, steps, f"sample_{i}"): i
-                            for i, steps in enumerate(per_sample)
-                        }
-                        for future in as_completed(futures):
-                            completed_chains[futures[future]] = future.result()
+
+                    def _run_chains(indexed_chains: List[tuple[int, List[Any]]]) -> bool:
+                        actual_workers = min(workers, len(indexed_chains))
+                        phase_failed = False
+                        with ThreadPoolExecutor(max_workers=actual_workers) as pool:
+                            futures = {
+                                pool.submit(_run_sample_chain, steps, f"sample_{index}"): index
+                                for index, steps in indexed_chains
+                            }
+                            for future in as_completed(futures):
+                                index = futures[future]
+                                results = future.result()
+                                completed_chains.setdefault(index, []).extend(results)
+                                phase_failed = phase_failed or any(
+                                    error is not None for _step, _row, error in results
+                                )
+                        return phase_failed
+
+                    effective_batch_size = min(
+                        int(batch_size) if batch_size is not None else len(per_sample),
+                        len(per_sample),
+                    )
+                    for batch_start in range(0, len(per_sample), effective_batch_size):
+                        batch = per_sample[batch_start : batch_start + effective_batch_size]
+                        analysis_chains: List[tuple[int, List[Any]]] = []
+                        cleanup_chains: List[tuple[int, List[Any]]] = []
+                        for offset, steps in enumerate(batch):
+                            index = batch_start + offset
+                            cleanup_index = next(
+                                (
+                                    i
+                                    for i, step in enumerate(steps)
+                                    if bool(getattr(step, "params", {}).get("_batch_cleanup"))
+                                ),
+                                len(steps),
+                            )
+                            analysis_chains.append((index, steps[:cleanup_index]))
+                            if cleanup_index < len(steps):
+                                cleanup_chains.append((index, steps[cleanup_index:]))
+
+                        batch_failed = _run_chains(analysis_chains)
+                        if batch_failed:
+                            if error_policy != "continue":
+                                break
+                            continue
+                        if cleanup_chains and _run_chains(cleanup_chains):
+                            if error_policy != "continue":
+                                break
+                        if _stop_event.is_set() and error_policy != "continue":
+                            break
 
                 # Merge results in plan/sample order, independent of worker
                 # completion order.  This also makes the worker return value
@@ -581,6 +624,7 @@ class GenericABIExecutor:
                     "status": run_status,
                     "parallel": parallel,
                     "workers": workers,
+                    "batch_size": batch_size,
                     "selected_tools": plan.selected_tools,
                     "standard_tables": table_summary,
                     "warnings": run_warnings,
@@ -1540,10 +1584,13 @@ def _execution_options(config: Mapping[str, Any]) -> Dict[str, Any]:
     dashboard_enabled = isinstance(dashboard, Mapping) and bool(dashboard.get("enable", False))
     parallel = bool(execution.get("parallel", False))
     workers = int(execution.get("workers", 1))
+    raw_batch_size = execution.get("batch_size")
+    batch_size = int(raw_batch_size) if raw_batch_size is not None else None
     return {
         "record_progress": progress or dashboard_enabled,
         "parallel": parallel,
         "workers": max(workers, 1),
+        "batch_size": max(batch_size, 1) if batch_size is not None else None,
         "error_policy": str(execution.get("error_policy", "halt")),
         "tool_timeout_seconds": execution.get("tool_timeout_seconds"),
     }

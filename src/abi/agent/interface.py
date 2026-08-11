@@ -1084,9 +1084,17 @@ class ABIAgentInterface:
         ]
         summary_path = provenance / "run_summary.json"
         summary = load_json_object(summary_path) if summary_path.exists() else {}
+        dry_run = bool(summary.get("dry_run", False))
+        smoke = bool(summary.get("smoke", False))
+        status = str(summary.get("status", "unknown"))
         return {
             "result_dir": root,
-            "status": summary.get("status", "unknown"),
+            "status": status,
+            "dry_run": dry_run,
+            "execution_mode": "dry_run" if dry_run else "real",
+            "biological_result_ready": (
+                status == "success" and not dry_run and not smoke and not failed
+            ),
             "step_count": len(commands),
             "failed_steps": failed,
             "skipped_steps": skipped,

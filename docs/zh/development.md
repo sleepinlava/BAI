@@ -184,9 +184,13 @@ Docker `/app` 上下文。该目录变化时，建议在容器发布前手动运
 execution:
   parallel: true
   workers: 8
+  batch_size: 8  # 可选的严格样本批次屏障
 ```
 
-样本间并行运行；每个样本内的步骤保持 DAG 拓扑顺序串行执行。
+使用 ``local`` 引擎时，样本间并行运行；每个样本内的步骤保持 DAG 拓扑顺序串行执行。
+设置 ``batch_size`` 后，本地执行器会等待该批全部样本完成分析阶段，再执行标记为
+批次清理的步骤；清理完成后才启动下一批。不设置时，仍按 ``workers``
+持续调度样本。其他执行引擎目前不实现该批次屏障。
 通过 ``threading.Lock`` 保证 ``StandardTableManager``、``PipelineProgressRecorder``
 和 ``RunLogger`` 的线程安全。
 

@@ -9,8 +9,8 @@ inputs:
   clean_read2: {type: file, formats: [fastq, fastq.gz], required: true}
   host_db: {type: directory, required: true}
 outputs:
-  dehost_read1: {type: file, format: fastq.gz}
-  dehost_read2: {type: file, format: fastq.gz}
+  dehost_read1: {type: file, format: fastq}
+  dehost_read2: {type: file, format: fastq}
   output_dir: {type: directory}
 execution:
   executable: kneaddata

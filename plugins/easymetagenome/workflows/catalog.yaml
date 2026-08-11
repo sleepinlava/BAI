@@ -9,6 +9,7 @@ workflows:
       - seqkit_stat_raw
       - fastp_qc
       - kneaddata_host_removal
+      - compress_dehost_reads
       - fastp_summary
       - kneaddata_summary
       - kraken2_classify
@@ -29,10 +30,12 @@ workflows:
       - seqkit_stat_raw
       - fastp_qc
       - kneaddata_host_removal
+      - compress_dehost_reads
       - fastp_summary
-      - kneaddata_summary
       - concat_dehost_reads
       - humann4_profile
+      - cleanup_functional_intermediates
+      - kneaddata_cleanup_summary
       - humann_join_genefamilies
       - humann_renorm_genefamilies
       - humann_regroup_ko
@@ -52,6 +55,7 @@ workflows:
       - seqkit_stat_raw
       - fastp_qc
       - kneaddata_host_removal
+      - compress_dehost_reads
       - fastp_summary
       - kneaddata_summary
       - kraken2_classify

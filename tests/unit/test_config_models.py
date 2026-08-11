@@ -34,6 +34,7 @@ class TestExecutionConfigDefaults:
         assert d == {
             "parallel": False,
             "workers": 1,
+            "batch_size": None,
             "error_policy": "halt",
             "record_progress": False,
             "tool_timeout_seconds": None,

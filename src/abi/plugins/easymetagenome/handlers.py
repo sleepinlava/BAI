@@ -6,6 +6,8 @@ import csv
 import gzip
 import json
 import shutil
+from collections import deque
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -13,6 +15,9 @@ from abi.internal import FunctionInternalHandler, InternalHandlerContext, Intern
 
 from .adapters import ManifestValidator, merge_bracken, parse_fastp_json, taxonomy_diversity
 from .report_manifest import write_report_manifest
+
+_GZIP_CHUNK_SIZE = 8 * 1024 * 1024
+_GZIP_COMPRESSION_LEVEL = 6
 
 
 def _paths(value: Any) -> list[Path]:
@@ -85,6 +90,28 @@ def kneaddata_summary_handler(
     _write_rows(step.outputs["summary_table"], rows)
     return InternalHandlerResult(
         message=f"Summarized KneadData for {len(rows)} samples",
+        tables={"host_removal_summary": rows},
+    )
+
+
+def kneaddata_cleanup_summary_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    del config, context
+    rows = []
+    for path in _paths(step.inputs.get("cleanup_receipts")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        rows.append(
+            {
+                "sample_id": payload["sample_id"],
+                "dehost_read_pairs": payload["dehost_read_pairs"],
+            }
+        )
+    _write_rows(step.outputs["summary_table"], rows)
+    return InternalHandlerResult(
+        message=f"Summarized KneadData cleanup receipts for {len(rows)} samples",
         tables={"host_removal_summary": rows},
     )
 
@@ -217,6 +244,124 @@ def concat_reads_handler(
     )
 
 
+def compress_reads_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    """Compress KneadData's plain FASTQ outputs and remove them after success."""
+    del context
+    requested_threads = max(1, int(step.params.get("threads", config.get("threads", 1))))
+    execution = config.get("execution", {})
+    concurrent_steps = max(1, int(execution.get("workers", 1))) if execution.get("parallel") else 1
+    compression_workers = max(1, requested_threads // concurrent_steps)
+    pairs = [
+        (Path(step.inputs[key]), Path(step.outputs[key]))
+        for key in ("dehost_read1", "dehost_read2")
+    ]
+    temporary: list[tuple[Path, Path]] = []
+    try:
+        for source, destination in pairs:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            staged = destination.with_name(f".{destination.name}.tmp")
+            temporary.append((staged, destination))
+            _parallel_gzip(source, staged, workers=compression_workers)
+        for staged, destination in temporary:
+            staged.replace(destination)
+    except Exception:
+        for staged, _ in temporary:
+            staged.unlink(missing_ok=True)
+        raise
+
+    for source, _ in pairs:
+        source.unlink()
+    return InternalHandlerResult(
+        message=f"Compressed paired host-filtered reads; workers={compression_workers}",
+        artifacts={key: Path(step.outputs[key]) for key in ("dehost_read1", "dehost_read2")},
+    )
+
+
+def _compress_gzip_member(data: bytes) -> bytes:
+    return gzip.compress(data, compresslevel=_GZIP_COMPRESSION_LEVEL, mtime=0)
+
+
+def _parallel_gzip(source: Path, destination: Path, *, workers: int) -> None:
+    """Write ordered gzip members while compressing bounded chunks concurrently."""
+    pending: deque[Future[bytes]] = deque()
+    max_pending = workers + 1
+    with (
+        source.open("rb") as input_handle,
+        destination.open("wb") as output_handle,
+        ThreadPoolExecutor(max_workers=workers) as executor,
+    ):
+        while chunk := input_handle.read(_GZIP_CHUNK_SIZE):
+            pending.append(executor.submit(_compress_gzip_member, chunk))
+            if len(pending) >= max_pending:
+                output_handle.write(pending.popleft().result())
+        while pending:
+            output_handle.write(pending.popleft().result())
+
+
+def cleanup_functional_intermediates_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    """Remove large per-sample FASTQ intermediates after HUMAnN4 succeeds."""
+    del config
+    sample_id = str(step.sample_id)
+    dehost_read_pairs = _fastq_records(Path(step.inputs["dehost_read1"]))
+    intermediates = [
+        Path(step.inputs[key])
+        for key in ("clean_read1", "clean_read2", "dehost_read1", "dehost_read2", "merged_reads")
+    ]
+    outdir = context.outdir.resolve()
+    deleted_bytes = 0
+    deleted_paths: list[str] = []
+    for path in intermediates:
+        resolved = path.resolve()
+        if not resolved.is_relative_to(outdir):
+            raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
+        if path.is_file():
+            deleted_bytes += path.stat().st_size
+            path.unlink()
+            deleted_paths.append(str(path))
+
+    humann_output_dir = Path(step.inputs["humann_output_dir"])
+    if not humann_output_dir.resolve().is_relative_to(outdir):
+        raise ValueError(
+            f"Refusing to clean HUMAnN intermediates outside result directory: {humann_output_dir}"
+        )
+    humann_temp_dir = humann_output_dir / f"{sample_id}_humann_temp"
+    if humann_temp_dir.is_dir():
+        deleted_bytes += sum(
+            item.stat().st_size for item in humann_temp_dir.rglob("*") if item.is_file()
+        )
+        shutil.rmtree(humann_temp_dir)
+        deleted_paths.append(str(humann_temp_dir))
+
+    receipt = Path(step.outputs["cleanup_receipt"])
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    receipt.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "sample_id": sample_id,
+                "dehost_read_pairs": dehost_read_pairs,
+                "deleted_bytes": deleted_bytes,
+                "deleted_paths": deleted_paths,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return InternalHandlerResult(
+        message=f"Cleaned {len(deleted_paths)} FASTQ intermediates for {sample_id}",
+        artifacts={"cleanup_receipt": receipt},
+    )
+
+
 def _read_humann_table(path: Path, feature_type: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
@@ -318,6 +463,12 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.kneaddata_summary": FunctionInternalHandler(
             "easymetagenome.kneaddata_summary", kneaddata_summary_handler
         ),
+        "easymetagenome.kneaddata_cleanup_summary": FunctionInternalHandler(
+            "easymetagenome.kneaddata_cleanup_summary", kneaddata_cleanup_summary_handler
+        ),
+        "easymetagenome.compress_reads": FunctionInternalHandler(
+            "easymetagenome.compress_reads", compress_reads_handler
+        ),
         "easymetagenome.bracken_merge": FunctionInternalHandler(
             "easymetagenome.bracken_merge", bracken_merge_handler
         ),
@@ -330,6 +481,10 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.report": FunctionInternalHandler("easymetagenome.report", report_handler),
         "easymetagenome.concat_reads": FunctionInternalHandler(
             "easymetagenome.concat_reads", concat_reads_handler
+        ),
+        "easymetagenome.cleanup_functional_intermediates": FunctionInternalHandler(
+            "easymetagenome.cleanup_functional_intermediates",
+            cleanup_functional_intermediates_handler,
         ),
         "easymetagenome.functional_report": FunctionInternalHandler(
             "easymetagenome.functional_report", functional_report_handler

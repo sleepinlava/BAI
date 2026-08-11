@@ -29,6 +29,7 @@ class ExecutionConfig(BaseModel):
 
     parallel: bool = False
     workers: int = Field(default=1, ge=1, le=128)
+    batch_size: Optional[int] = Field(default=None, ge=1, le=128)
     error_policy: str = Field(default="halt", pattern=r"^(halt|continue)$")
     record_progress: bool = False
     tool_timeout_seconds: Optional[float] = None

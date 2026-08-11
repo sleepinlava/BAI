@@ -208,9 +208,8 @@ elif name == 'fastp':
     report.write_text(json.dumps(data))
 elif name == 'kneaddata':
     out = value('-o'); out.mkdir(parents=True, exist_ok=True)
-    for suffix in ('paired_1.fastq.gz', 'paired_2.fastq.gz'):
-        with gzip.open(out / ('S1_1_kneaddata_' + suffix), 'wt') as handle:
-            handle.write('@r1\\nACGT\\n+\\nIIII\\n')
+    for suffix in ('paired_1.fastq', 'paired_2.fastq'):
+        (out / ('S1_1_kneaddata_' + suffix)).write_text('@r1\\nACGT\\n+\\nIIII\\n')
 elif name == 'kraken2':
     for flag in ('--report', '--output'):
         path = value(flag)
@@ -236,6 +235,22 @@ elif name == 'bracken':
         result = workflow.run(manifest, tmp_path, db_registry=registry)
 
     assert result["status"] == "success"
+    host_removed = tmp_path / "result/02_host_removal/S1"
+    assert not (host_removed / "S1_1_kneaddata_paired_1.fastq").exists()
+    with gzip.open(host_removed / "S1_1_kneaddata_paired_1.fastq.gz", "rt") as handle:
+        assert handle.readline() == "@r1\n"
+    progress_events = [
+        json.loads(line)
+        for line in (tmp_path / "result/provenance/progress.jsonl").read_text().splitlines()
+    ]
+    compression_event = next(
+        event
+        for event in progress_events
+        if event["event"] == "step_completed"
+        and event["payload"]["step_id"] == "S1_host_removal_internal"
+    )
+    assert "workers=" in compression_event["payload"]["reason"]
+    assert int(compression_event["payload"]["reason"].rsplit("workers=", 1)[1]) > 1
     assert {"status", "nodes", "reports", "abi_outputs"} <= result.keys()
     assert all({"node", "command", "status"} <= row.keys() for row in result["nodes"])
     assert {row["status"] for row in result["nodes"]} == {"success", 0}
@@ -405,14 +420,16 @@ elif name == 'fastp':
     value('-h').write_text('<html>fixture</html>\\n')
 elif name == 'kneaddata':
     out = value('-o'); out.mkdir(parents=True, exist_ok=True)
-    for suffix in ('paired_1.fastq.gz', 'paired_2.fastq.gz'):
-        with gzip.open(out / ('S1_1_kneaddata_' + suffix), 'wt') as handle:
-            handle.write('@r1\\nACGT\\n+\\nIIII\\n')
+    for suffix in ('paired_1.fastq', 'paired_2.fastq'):
+        (out / ('S1_1_kneaddata_' + suffix)).write_text('@r1\\nACGT\\n+\\nIIII\\n')
 elif name == 'humann':
     out = value('--output'); sample = args[args.index('--output-basename') + 1]
     write_table(out / (sample + '_genefamilies.tsv'), 'UniRef90_A')
     write_table(out / (sample + '_pathabundance.tsv'), 'PWY-1')
     write_table(out / (sample + '_pathcoverage.tsv'), 'PWY-1')
+    temp = out / (sample + '_humann_temp'); temp.mkdir()
+    (temp / 'translated.tsv').write_text('temporary\\n')
+    (out / (sample + '.log')).write_text('retain this result log\\n')
 elif name == 'humann_join_tables':
     write_table(value('--output'), 'UniRef90_A' if 'genefamilies' in args else 'PWY-1')
 elif name in ('humann_renorm_table', 'humann_regroup_table'):
@@ -476,3 +493,13 @@ elif name == 'humann_split_stratified_table':
         "path": str(functional_table),
         "rows": 10,
     }
+    result_dir = Path(prepared.config["outdir"])
+    assert not (result_dir / "01_preprocessing/S1/S1_1.fastq.gz").exists()
+    assert not (result_dir / "01_preprocessing/S1/S1_2.fastq.gz").exists()
+    assert not (result_dir / "02_host_removal/S1/S1_1_kneaddata_paired_1.fastq.gz").exists()
+    assert not (result_dir / "02_host_removal/S1/S1_1_kneaddata_paired_2.fastq.gz").exists()
+    assert not (result_dir / "04_function/sample/S1/S1.merged.fastq.gz").exists()
+    assert not (result_dir / "04_function/sample/S1/S1_humann_temp").exists()
+    assert (result_dir / "04_function/sample/S1/S1.log").is_file()
+    cleanup_receipt = result_dir / "provenance/intermediate_cleanup/S1.json"
+    assert json.loads(cleanup_receipt.read_text(encoding="utf-8"))["status"] == "success"

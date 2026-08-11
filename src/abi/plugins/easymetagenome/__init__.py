@@ -255,6 +255,54 @@ class EasyMetagenomePlugin:
     def table_schemas(self) -> Mapping[str, Iterable[str]]:
         return load_yaml(self.root / "standard_tables.yaml").get("tables", {})
 
+    def validate_result_dir(
+        self,
+        result_dir: str | Path,
+        *,
+        allow_empty_tables: bool = True,
+    ) -> Mapping[str, Any]:
+        """Apply workflow-preset-aware non-empty table validation."""
+        if allow_empty_tables:
+            return {"errors": []}
+
+        root = Path(result_dir)
+        config_path = root / "provenance" / "config.resolved.yaml"
+        if not config_path.is_file():
+            return {"errors": []}
+        config = load_yaml(config_path)
+        workflow = config.get("workflow", {})
+        preset = (
+            str(workflow.get("preset", "p0_taxonomy"))
+            if isinstance(workflow, Mapping)
+            else "p0_taxonomy"
+        )
+        required_by_preset = {
+            "p0_taxonomy": (
+                "qc_summary",
+                "host_removal_summary",
+                "taxonomy_abundance",
+            ),
+            "p1_humann4": (
+                "qc_summary",
+                "host_removal_summary",
+                "functional_abundance",
+            ),
+            "full_read_based": tuple(self.table_schemas()),
+        }
+        required_tables = required_by_preset.get(preset, tuple(self.table_schemas()))
+        empty_tables = []
+        for table_name in required_tables:
+            table_path = root / "tables" / f"{table_name}.tsv"
+            if not table_path.is_file():
+                continue
+            with table_path.open("r", encoding="utf-8", newline="") as handle:
+                if not any(csv.DictReader(handle, delimiter="\t")):
+                    empty_tables.append(table_name)
+        errors = []
+        if empty_tables:
+            errors.append("Empty standard table(s): " + ", ".join(sorted(empty_tables)))
+        return {"errors": errors}
+
     def parse_outputs(
         self, tool_id: str, output_dir: str | Path, sample_id: str
     ) -> Mapping[str, Iterable[Mapping[str, Any]]]:

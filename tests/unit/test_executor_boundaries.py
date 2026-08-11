@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -288,6 +290,82 @@ def test_generic_executor_parallel_dry_run_preserves_plan_order(tmp_path: Path) 
         "S2_step",
         "project_step",
     ]
+
+
+def test_generic_executor_waits_for_batch_cleanup_before_starting_next_samples(
+    tmp_path: Path,
+) -> None:
+    events: list[str] = []
+
+    def record_step(step, config, context):
+        del config, context
+        events.append(f"start:{step.step_id}")
+        time.sleep(float(step.params.get("delay", 0)))
+        events.append(f"done:{step.step_id}")
+        return InternalHandlerResult(message="recorded")
+
+    samples = [
+        SampleInput(sample_id=sample_id, platform="assembly", assembly=f"{sample_id}.fa")
+        for sample_id in ("S1", "S2", "S3")
+    ]
+    context = SampleContext(samples, True, False, True, False)
+    steps = []
+    for sample in samples:
+        handler = {"_internal_handler": {"handler_id": "test.record", "execution_scope": "worker"}}
+        steps.extend(
+            [
+                _step(
+                    step_id=f"{sample.sample_id}_work",
+                    sample_id=sample.sample_id,
+                    tool_id="internal",
+                    params={**handler, "delay": 0.2 if sample.sample_id == "S2" else 0},
+                ),
+                _step(
+                    step_id=f"{sample.sample_id}_cleanup",
+                    sample_id=sample.sample_id,
+                    tool_id="internal",
+                    params={**handler, "_batch_cleanup": True},
+                ),
+            ]
+        )
+    plan = ExecutionPlan(
+        project_name="batched",
+        mode="auto",
+        threads=1,
+        outdir=str(tmp_path / "out"),
+        log_dir=str(tmp_path / "logs"),
+        samples=samples,
+        sample_context=context,
+        selected_tools=[],
+        steps=steps,
+    )
+    executor = GenericABIExecutor(
+        ToolRegistry([]),
+        RunLogger(tmp_path / "logs"),
+        table_manager=StandardTableManager({"summary": ["sample_id"]}),
+        parse_outputs=lambda *args: {},
+        internal_handlers={
+            "test.record": FunctionInternalHandler("test.record", record_step),
+        },
+    )
+
+    outputs = executor.run(
+        plan,
+        {
+            "outdir": str(tmp_path / "out"),
+            "execution": {
+                "parallel": True,
+                "workers": 2,
+                "batch_size": 2,
+                "progress": False,
+            },
+        },
+    )
+
+    assert events.index("done:S2_work") < events.index("start:S1_cleanup")
+    assert events.index("done:S2_cleanup") < events.index("start:S3_work")
+    summary = json.loads(outputs["summary"].read_text(encoding="utf-8"))
+    assert summary["batch_size"] == 2
 
 
 def test_execute_step_handles_skipped_dry_run_missing_and_external_failures(

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from abi.agent import ABIAgentInterface
 from abi.plugins import get_plugin
@@ -68,6 +69,19 @@ def test_manifest_validator_accepts_csv_read_aliases(tmp_path):
     records = ManifestValidator.validate(manifest)
 
     assert records == [SampleRecord("S1", str(r1), str(r2), "case")]
+
+
+def test_case3_p1_config_references_a_valid_grouped_manifest():
+    project_root = Path(__file__).parents[2]
+    config = yaml.safe_load(
+        (project_root / "configs/case3_ibd_pilot.yaml").read_text(encoding="utf-8")
+    )
+    manifest = project_root / config["input"]["sample_sheet"]
+
+    records = ManifestValidator.validate(manifest, check_files=False)
+
+    assert len(records) == 30
+    assert {record.group for record in records} == {"NC", "CD", "UC"}
 
 
 def test_output_contract_reports_missing_and_empty_artifacts(tmp_path):
@@ -204,6 +218,32 @@ def test_humann4_preset_selects_functional_branch_without_taxonomy(tmp_path):
     assert "bracken" not in plan.selected_tools
     join_step = next(step for step in plan.steps if step.step_id == "humann_join_genefamilies")
     assert join_step.params["_explicit_dependencies"]
+
+
+def test_full_p1_config_plans_all_30_samples_with_cleanup_receipts(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_p1_full30_batch2.yaml",
+        overrides={
+            "input": {"sample_sheet": "configs/case3_ibd_pilot_samples.tsv"},
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+    cleanup_steps = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "cleanup_functional_intermediates"
+    ]
+
+    assert len(plan.samples) == 30
+    assert len(cleanup_steps) == 30
+    assert config["execution"]["workers"] == 2
+    assert config["execution"]["batch_size"] == 2
+    assert all(str(step.params["_batch_cleanup"]).lower() == "true" for step in cleanup_steps)
+    assert all(step.outputs["cleanup_receipt"].endswith(".json") for step in cleanup_steps)
 
 
 def test_combined_preset_publishes_branch_qualified_reports(tmp_path):

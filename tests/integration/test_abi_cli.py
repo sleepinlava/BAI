@@ -137,11 +137,97 @@ def test_abi_inspect_reports_placeholder_inputs(tmp_path):
     )
     assert dry_run.exit_code == 0, dry_run.output
 
-    result = runner.invoke(app, ["inspect", "--result-dir", str(outdir)])
+    result = runner.invoke(
+        app,
+        ["inspect", "--result-dir", str(outdir), "--output-json"],
+    )
 
     assert result.exit_code == 0, result.output
-    assert "missing_or_placeholder_inputs" in result.output
+    payload = json.loads(result.output)
+    assert payload["result"]["dry_run"] is True
+    assert payload["result"]["execution_mode"] == "dry_run"
+    assert payload["result"]["biological_result_ready"] is False
+    assert payload["result"]["missing_or_placeholder_inputs"]
     assert "GENOME_INDEX_NOT_CONFIGURED" in result.output
+
+
+@pytest.mark.parametrize(
+    ("preset", "populated_tables", "expected_empty_table"),
+    [
+        (
+            "p0_taxonomy",
+            ("qc_summary", "host_removal_summary", "taxonomy_abundance"),
+            "functional_abundance",
+        ),
+        (
+            "p1_humann4",
+            ("qc_summary", "host_removal_summary", "functional_abundance"),
+            "taxonomy_abundance",
+        ),
+    ],
+)
+def test_easymetagenome_strict_validation_is_preset_aware(
+    tmp_path, preset, populated_tables, expected_empty_table
+):
+    reads = []
+    for mate in (1, 2):
+        path = tmp_path / f"S1_R{mate}.fastq.gz"
+        path.write_bytes(b"reads")
+        reads.append(path)
+    sample_sheet = tmp_path / "samples.tsv"
+    sample_sheet.write_text(
+        f"sample_id\tr1\tr2\tgroup\nS1\t{reads[0]}\t{reads[1]}\tcase\n",
+        encoding="utf-8",
+    )
+    config = tmp_path / f"{preset}.yaml"
+    config.write_text(
+        f"workflow:\n  preset: {preset}\ninput:\n  sample_sheet: {sample_sheet}\n",
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "result"
+    runner = CliRunner()
+    dry_run = runner.invoke(
+        app,
+        [
+            "dry-run",
+            "--type",
+            "easymetagenome",
+            "--config",
+            str(config),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--outdir",
+            str(outdir),
+            "--log-dir",
+            str(tmp_path / "logs"),
+            "--no-progress",
+        ],
+    )
+    assert dry_run.exit_code == 0, dry_run.output
+
+    schemas = get_plugin("easymetagenome").table_schemas()
+    for table_name in populated_tables:
+        columns = list(schemas[table_name])
+        (outdir / "tables" / f"{table_name}.tsv").write_text(
+            "\t".join(columns) + "\n" + "\t".join("value" for _ in columns) + "\n",
+            encoding="utf-8",
+        )
+
+    result = runner.invoke(
+        app,
+        [
+            "validate-result",
+            "--result-dir",
+            str(outdir),
+            "--require-nonempty-tables",
+            "--output-json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["result"]["valid"] is True
+    assert payload["result"]["tables"][expected_empty_table]["rows"] == 0
 
 
 def test_abi_report_regenerates_transcriptomics_report(tmp_path):

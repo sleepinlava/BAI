@@ -82,6 +82,22 @@ nodes:
       clean_read2: {type: file, source: fastp_qc.clean_read2}
       host_db: {type: directory}
     outputs:
+      dehost_read1: {type: file, format: fastq, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_1.fastq", contract: {file_exists: true, extensions: [.fastq], min_size: "10B"}}
+      dehost_read2: {type: file, format: fastq, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_2.fastq", contract: {file_exists: true, extensions: [.fastq], min_size: "10B"}}
+      output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
+    assertions: ["output_files.dehost_read1 exists", "output_files.dehost_read2 exists"]
+  compress_dehost_reads:
+    tool_id: internal
+    internal_handler: easymetagenome.compress_reads
+    category: host_removal
+    scope: per_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [kneaddata_host_removal]
+    inputs:
+      dehost_read1: {type: file, source: kneaddata_host_removal.dehost_read1}
+      dehost_read2: {type: file, source: kneaddata_host_removal.dehost_read2}
+    outputs:
       dehost_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       dehost_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
@@ -92,10 +108,10 @@ nodes:
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [kneaddata_host_removal]
+    depends_on: [compress_dehost_reads]
     inputs:
-      dehost_read1: {type: file, source: kneaddata_host_removal.dehost_read1}
-      dehost_read2: {type: file, source: kneaddata_host_removal.dehost_read2}
+      dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}
+      dehost_read2: {type: file, source: compress_dehost_reads.dehost_read2}
       kraken2_db: {type: directory}
     outputs:
       report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.kraken2.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
@@ -179,9 +195,9 @@ nodes:
     scope: cross_sample
     platforms: [illumina]
     optional: false
-    depends_on: [kneaddata_host_removal]
+    depends_on: [compress_dehost_reads]
     inputs:
-      dehost_reads: {type: files, source: kneaddata_host_removal.dehost_read1, aggregate: per_sample_outputs}
+      dehost_reads: {type: files, source: compress_dehost_reads.dehost_read1, aggregate: per_sample_outputs}
     outputs:
       summary_table:
         type: file
@@ -276,10 +292,10 @@ nodes:
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [kneaddata_host_removal]
+    depends_on: [compress_dehost_reads]
     inputs:
-      dehost_read1: {type: file, source: kneaddata_host_removal.dehost_read1}
-      dehost_read2: {type: file, source: kneaddata_host_removal.dehost_read2}
+      dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}
+      dehost_read2: {type: file, source: compress_dehost_reads.dehost_read2}
     outputs:
       merged_reads: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.merged.fastq.gz", contract: {min_size: "10B"}}
   humann4_profile:
@@ -299,6 +315,40 @@ nodes:
       pathabundance: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_pathabundance.tsv", contract: {min_size: "10B"}}
       pathcoverage: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_pathcoverage.tsv", contract: {min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
+  cleanup_functional_intermediates:
+    tool_id: internal
+    internal_handler: easymetagenome.cleanup_functional_intermediates
+    category: functional
+    scope: per_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [fastp_qc, compress_dehost_reads, concat_dehost_reads, humann4_profile]
+    params: {_batch_cleanup: true}
+    inputs:
+      clean_read1: {type: file, source: fastp_qc.clean_read1}
+      clean_read2: {type: file, source: fastp_qc.clean_read2}
+      dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}
+      dehost_read2: {type: file, source: compress_dehost_reads.dehost_read2}
+      merged_reads: {type: file, source: concat_dehost_reads.merged_reads}
+      humann_output_dir: {type: directory, source: humann4_profile.output_dir}
+    outputs:
+      cleanup_receipt: {type: file, format: json, path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.json", contract: {min_size: "10B"}}
+  kneaddata_cleanup_summary:
+    tool_id: internal
+    internal_handler: easymetagenome.kneaddata_cleanup_summary
+    category: summary
+    scope: cross_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [cleanup_functional_intermediates]
+    inputs:
+      cleanup_receipts: {type: files, source: cleanup_functional_intermediates.cleanup_receipt, aggregate: per_sample_outputs}
+    outputs:
+      summary_table:
+        type: file
+        format: tsv
+        path: "{outdir}/{category_dir}/kneaddata_summary.tsv"
+        contract: {min_size: "10B"}
   humann_join_genefamilies:
     tool_id: humann_join_tables
     category: functional_summary

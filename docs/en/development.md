@@ -202,10 +202,16 @@ manifest rather than duplicating them.
 execution:
   parallel: true
   workers: 8
+  batch_size: 8  # optional strict sample-batch barrier
 ```
 
-Samples run concurrently; steps within each sample remain serial respecting
-DAG topological order. Thread safety is maintained via ``threading.Lock``
+With the ``local`` engine, samples run concurrently; steps within each sample
+remain serial respecting DAG topological order. When ``batch_size`` is set, the
+local executor waits for every sample
+in the batch to finish its analysis phase, runs steps marked as batch cleanup,
+and only then starts the next batch. Omitting it preserves unbounded sample
+queueing up to ``workers``. Other engines do not currently implement this batch
+barrier. Thread safety is maintained via ``threading.Lock``
 for ``StandardTableManager``, ``PipelineProgressRecorder``, and ``RunLogger``.
 
 ## Agent Interfaces
