@@ -1,0 +1,218 @@
+project_name: metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811
+mode: auto
+threads: 12
+outdir: /root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811
+log_dir: /root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/logs
+profile: local
+resume: false
+force: false
+dry_run: false
+mock_tools: false
+execution:
+  parallel: false
+  workers: 1
+  progress: true
+  tool_timeout_seconds: 604800
+  resource_timeout_seconds: 86400
+  nextflow_timeout_seconds: 604800
+  dashboard:
+    enable: false
+    host: 127.0.0.1
+    port: 18790
+    open_browser: true
+  resources:
+    cpu: 12
+    memory: 62GB
+workflow:
+  plasmid_contigs_source: auto
+  data_profile: short_read_metagenome
+  include_nodes:
+  - annotation_amrfinderplus
+basecalling:
+  enable: true
+resources:
+  root: /root/autodl-tmp/resources/autoplasm
+  auto_download: false
+  genomad:
+    database: genomad/genomad_db
+    version: ''
+  bakta:
+    database: bakta/db
+    version: ''
+  mob_suite:
+    database: mob_suite/data
+    version: ''
+  plasmidfinder:
+    database: plasmidfinder_db
+    version: ''
+  metaphlan:
+    database: metaphlan
+    version: ''
+  amrfinderplus:
+    database: /root/autodl-tmp/resources/autoplasm/amrfinderplus/latest
+    version: ''
+  card:
+    database: card
+    version: ''
+  kraken2:
+    database: kraken2
+    version: ''
+  gtdbtk:
+    database: gtdbtk/release232
+    version: ''
+  checkm2:
+    database: checkm2
+    version: ''
+  eggnog_mapper:
+    database: eggnog_mapper
+    version: ''
+  abricate:
+    database: abricate
+    version: ''
+  plasme:
+    database: PLASMe/DB
+    version: ''
+  plasx:
+    annotations: PlasX
+    model: PlasX
+    version: ''
+  copla:
+    refgraph: COPLA_REFGRAPH_NOT_CONFIGURED
+    reflist: COPLA_REFLIST_NOT_CONFIGURED
+    version: ''
+  blast:
+    database: BLAST_DB_NOT_CONFIGURED
+    version: ''
+  plasmidhostfinder:
+    database: PLASMIDHOSTFINDER_DB_NOT_CONFIGURED
+    version: ''
+tool_params:
+  amrfinderplus:
+    plasmid_contigs: /root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta
+input:
+  sample_sheet: /root/autodl-tmp/abi-real-data/manifests/plasmid_scapp/sample_sheet.tsv
+  single_input: null
+  read2: null
+  long_reads: null
+  pod5: null
+  bam: null
+  assembly: null
+  platform: null
+  sample_id: single_sample
+  group: null
+qc:
+  enable: true
+  short_read_tool: fastp
+  long_read_tool: filtlong
+  run_fastqc: false
+  run_multiqc: true
+  optional_tools: []
+  avoid_duplicate_qc: true
+host_removal:
+  enable: auto
+  host_reference: null
+assembly:
+  enable: true
+  short_read_assembler: megahit
+  memory_bytes: 96636764160
+  high_quality_short_read_assembler: metaspades
+  long_read_assembler: metaflye
+  pacbio_hifi_assembler: hifiasm_meta
+  hybrid_assembler: opera_ms
+  assembly_qc: true
+polishing:
+  enable: false
+  tools: []
+plasmid_detection:
+  enable: true
+  tools:
+  - genomad
+  default_tool: genomad
+  strategy: weighted_vote
+  tool_weights:
+    genomad: 0.6
+    platon: 0.15
+    plasme: 0.15
+    plasx: 0.1
+  min_contig_length: 1000
+  output_uncertain: true
+plasmid_binning:
+  enable: false
+  tools: auto
+  strategy: auto
+typing:
+  enable: true
+  tools:
+  - plasmidfinder
+  - mob_typer
+  optional_tools: []
+host_prediction:
+  enable: false
+  tools:
+  - metaphlan
+  optional_tools: []
+  use_abundance_correlation: true
+  use_crispr_spacer: false
+  use_methylation: false
+  interpretation: evidence_integration
+annotation:
+  enable: true
+  tools:
+  - amrfinderplus
+  optional_tools: []
+  general_annotator: none
+  arg_tools:
+  - amrfinderplus
+comparative_genomics:
+  enable: true
+  tools:
+  - mmseqs2
+  optional_tools: []
+abundance:
+  enable: true
+  mapper_short: bowtie2
+  mapper_long: minimap2
+  calculator: coverm
+  abundance_policy:
+    min_contig_length: 1000
+    min_mean_coverage: null
+    min_coverage_breadth: null
+    multimapping_strategy: report_separately
+    length_normalization: tpm
+    shared_region_masking: optional
+    report_copy_number_bias: true
+  normalization:
+  - raw_counts
+  - coverage
+  - rpkm
+  - tpm
+sample_analysis:
+  enable: auto
+  alpha_diversity: true
+  beta_diversity: true
+  differential_abundance: auto
+  differential_method: deseq2
+  min_diversity_samples: 3
+  min_group_replicates: 3
+diversity:
+  enable: true
+statistics:
+  enable: true
+network:
+  enable: auto
+  min_samples: 20
+contig_coverage:
+  enable: false
+mag_host_genomes:
+  enable: false
+  tools: []
+host_plasmid_linking:
+  enable: false
+  methods:
+  - co_abundance
+visualization:
+  enable: false
+  tools: []
+  optional_tools: []
+  html_report: true
+  markdown_report: true

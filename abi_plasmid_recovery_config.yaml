@@ -1,0 +1,64 @@
+project_name: metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb
+mode: auto
+threads: 12
+outdir: /root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb
+log_dir: /root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/logs
+mock_tools: false
+
+input:
+  sample_sheet: /root/autodl-tmp/abi-real-data/manifests/plasmid_scapp/sample_sheet.tsv
+
+workflow:
+  data_profile: short_read_metagenome
+  include_nodes:
+    - qc_fastp
+    - assembly_megahit
+    - plasmid_detect_genomad
+    - plasmid_consensus
+    - annotation_bakta
+    - typing_plasmidfinder
+    - abundance_bowtie2
+    - abundance_samtools
+    - abundance_coverm
+    - report_markdown
+
+qc:
+  enable: true
+  run_fastqc: false
+  run_multiqc: false
+  tool: fastp
+
+assembly:
+  enable: true
+  tool: megahit
+  memory_bytes: 66571993088
+
+plasmid_detection:
+  enable: true
+  tools: [genomad]
+  strategy: single_tool
+
+annotation:
+  enable: true
+  general_annotator: bakta
+
+typing:
+  enable: true
+  tools: [plasmidfinder]
+
+abundance:
+  enable: true
+  tool: coverm
+
+sample_analysis:
+  enable: false
+
+resources:
+  root: /root/autodl-tmp/resources/autoplasm
+  auto_download: false
+  genomad:
+    database: /root/autodl-tmp/resources/autoplasm/genomad/genomad_db
+  bakta:
+    database: /root/autodl-tmp/resources/autoplasm/bakta_v6_full/db
+  plasmidfinder:
+    database: /root/autodl-tmp/resources/autoplasm/plasmidfinder_db

@@ -1,0 +1,2 @@
+sample_id	tool	raw_reads	clean_reads	q30	gc_content	filter_rate	source_file	warnings
+SRR11038083	fastp	37233298	34294974	0.870572	0.558293	0.931636	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083.fastp.json	

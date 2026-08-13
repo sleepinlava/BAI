@@ -1,0 +1,2 @@
+sample_id	contig_id	start	end	strand	gene	product	drug_class	category	tool	evidence	identity	coverage	source_file
+SRR11038083	k141_775	2153	3010	+	blaTEM-116	broad-spectrum class A beta-lactamase TEM-116	BETA-LACTAM	ARG	amrfinderplus	element_type=AMR	100.00	100.00	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/08_annotation/SRR11038083/SRR11038083.amrfinder.tsv

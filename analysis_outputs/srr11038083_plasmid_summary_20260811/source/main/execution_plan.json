@@ -1,0 +1,1734 @@
+{
+  "project_name": "metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb",
+  "analysis_type": "metagenomic_plasmid",
+  "mode": "auto",
+  "threads": 12,
+  "outdir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb",
+  "log_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/logs",
+  "samples": [
+    {
+      "sample_id": "SRR11038083",
+      "platform": "illumina",
+      "read1": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_1.fastq.gz",
+      "read2": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_2.fastq.gz",
+      "long_reads": null,
+      "pod5": null,
+      "bam": null,
+      "assembly": null,
+      "group": "human_gut_plasmidome",
+      "technology": "Illumina paired-end",
+      "host_reference": null,
+      "condition": null,
+      "notes": null,
+      "attributes": {}
+    }
+  ],
+  "sample_context": {
+    "samples": [
+      {
+        "sample_id": "SRR11038083",
+        "platform": "illumina",
+        "read1": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_1.fastq.gz",
+        "read2": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_2.fastq.gz",
+        "long_reads": null,
+        "pod5": null,
+        "bam": null,
+        "assembly": null,
+        "group": "human_gut_plasmidome",
+        "technology": "Illumina paired-end",
+        "host_reference": null,
+        "condition": null,
+        "notes": null,
+        "attributes": {}
+      }
+    ],
+    "multi_sample": false,
+    "has_groups": false,
+    "enable_sample_analysis": false,
+    "enable_differential_abundance": false
+  },
+  "selected_tools": [
+    "bakta",
+    "bowtie2",
+    "coverm",
+    "fastp",
+    "genomad",
+    "megahit",
+    "plasmidfinder",
+    "report_markdown",
+    "samtools"
+  ],
+  "steps": [
+    {
+      "step_id": "SRR11038083_qc_fastp",
+      "step_name": "qc",
+      "tool_id": "fastp",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "read1": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_1.fastq.gz",
+        "read2": "/root/autodl-tmp/abi-real-data/raw/plasmid_scapp/SRR11038083_2.fastq.gz",
+        "sample_id": "SRR11038083",
+        "threads": "12"
+      },
+      "outputs": {
+        "clean_read1": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R1.clean.fastq.gz",
+        "clean_read2": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R2.clean.fastq.gz",
+        "html_report": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083.fastp.html",
+        "json_report": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083.fastp.json",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "read1": {
+              "type": "file",
+              "format": "fastq",
+              "contract": {
+                "min_size": "1KB",
+                "extensions": [
+                  ".fastq",
+                  ".fastq.gz",
+                  ".fq",
+                  ".fq.gz"
+                ]
+              },
+              "source": "sample_sheet"
+            },
+            "read2": {
+              "type": "file",
+              "format": "fastq",
+              "contract": {
+                "min_size": "1KB",
+                "extensions": [
+                  ".fastq",
+                  ".fastq.gz",
+                  ".fq",
+                  ".fq.gz"
+                ]
+              },
+              "source": "sample_sheet"
+            },
+            "sample_id": {
+              "type": "string",
+              "source": "sample_sheet"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "clean_read1": {
+              "type": "file",
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R1.clean.fastq.gz",
+              "contract": {
+                "min_size": "1KB"
+              }
+            },
+            "clean_read2": {
+              "type": "file",
+              "format": "fastq.gz",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}_R2.clean.fastq.gz",
+              "contract": {
+                "min_size": "1KB"
+              }
+            },
+            "html_report": {
+              "type": "file",
+              "format": "html",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.html"
+            },
+            "json_report": {
+              "type": "file",
+              "format": "json",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.fastp.json",
+              "contract": {
+                "required_keys": [
+                  "summary"
+                ],
+                "schema": {
+                  "summary.before_filtering.total_reads": {
+                    "type": "integer",
+                    "min": 0
+                  },
+                  "summary.after_filtering.total_reads": {
+                    "type": "integer",
+                    "min": 0
+                  }
+                }
+              }
+            }
+          },
+          "assertions": [
+            "output_json.summary.after_filtering.total_reads > 0",
+            "output_json.summary.after_filtering.total_reads <= output_json.summary.before_filtering.total_reads"
+          ]
+        },
+        "_dag_node_id": "qc_fastp",
+        "_explicit_dependencies": []
+      },
+      "reason": "active DAG node 'qc_fastp' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_assembly_megahit",
+      "step_name": "assembly",
+      "tool_id": "megahit",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "read1": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R1.clean.fastq.gz",
+        "read2": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R2.clean.fastq.gz",
+        "threads": "12"
+      },
+      "outputs": {
+        "assembly": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "memory_bytes": 66571993088,
+        "_contract": {
+          "inputs": {
+            "read1": {
+              "type": "file",
+              "format": "fastq.gz",
+              "source": "host_removal_bowtie2.clean_read1",
+              "fallback": "qc_fastp.clean_read1"
+            },
+            "read2": {
+              "type": "file",
+              "format": "fastq.gz",
+              "source": "host_removal_bowtie2.clean_read2",
+              "fallback": "qc_fastp.clean_read2"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "assembly": {
+              "type": "file",
+              "format": "fasta",
+              "contract": {
+                "min_size": "500B",
+                "min_contigs": 1
+              },
+              "path": "{outdir}/{category_dir}/{sample_id}/final.contigs.fa"
+            },
+            "output_dir": {
+              "type": "directory"
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "assembly_megahit",
+        "_explicit_dependencies": []
+      },
+      "reason": "active DAG node 'assembly_megahit' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_genomad",
+      "step_name": "plasmid_detection",
+      "tool_id": "genomad",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "assembly": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa",
+        "database": "/root/autodl-tmp/resources/autoplasm/genomad/genomad_db",
+        "threads": "12"
+      },
+      "outputs": {
+        "plasmid_summary": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/contigs_summary/contigs_plasmid_summary.tsv",
+        "plasmid_contigs": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/contigs_summary/contigs_plasmid.fna",
+        "virus_summary": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/contigs_summary/contigs_virus_summary.tsv",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "assembly": {
+              "type": "file",
+              "format": "fasta",
+              "source": "{active_assembly_node}.assembly"
+            },
+            "database": {
+              "type": "directory",
+              "contract": {
+                "contains": [
+                  "version.txt"
+                ]
+              },
+              "source": "config.resources.genomad.database"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "plasmid_summary": {
+              "type": "file",
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid_summary.tsv",
+              "contract": {
+                "min_size": "50B"
+              }
+            },
+            "plasmid_contigs": {
+              "type": "file",
+              "format": "fasta",
+              "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_plasmid.fna",
+              "contract": {
+                "min_size": "50B"
+              }
+            },
+            "virus_summary": {
+              "type": "file",
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/contigs_summary/contigs_virus_summary.tsv",
+              "contract": {
+                "min_size": "50B"
+              }
+            }
+          },
+          "assertions": [
+            "output_files.plasmid_summary exists"
+          ]
+        },
+        "_dag_node_id": "plasmid_detect_genomad",
+        "_explicit_dependencies": [
+          "SRR11038083_assembly_megahit"
+        ]
+      },
+      "reason": "active DAG node 'plasmid_detect_genomad' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_plasmid_consensus_internal",
+      "step_name": "plasmid_consensus",
+      "tool_id": "internal",
+      "category": "plasmid_consensus",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "genomad_summary": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/contigs_summary/contigs_plasmid_summary.tsv",
+        "plasme_predictions": "",
+        "plasx_predictions": "",
+        "platon_predictions": "",
+        "scapp_predictions": "",
+        "consensus_method": "intersection",
+        "tool_weights": {}
+      },
+      "outputs": {
+        "plasmid_contigs": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_internal_handler": {
+          "handler_id": "metagenomic_plasmid.plasmid_consensus",
+          "execution_scope": "worker"
+        },
+        "_contract": {
+          "inputs": {
+            "genomad_summary": {
+              "type": "file",
+              "format": "tsv",
+              "source": "plasmid_detect_genomad.plasmid_summary"
+            },
+            "plasme_predictions": {
+              "type": "file",
+              "format": "tsv",
+              "source": "plasmid_detect_plasme.plasme_predictions",
+              "required": false
+            },
+            "plasx_predictions": {
+              "type": "file",
+              "format": "tsv",
+              "source": "plasmid_detect_plasx.plasx_predictions",
+              "required": false
+            },
+            "platon_predictions": {
+              "type": "directory",
+              "source": "plasmid_detect_platon.output_dir",
+              "required": false
+            },
+            "scapp_predictions": {
+              "type": "file",
+              "format": "fasta",
+              "source": "plasmid_detect_scapp.scapp_predictions",
+              "required": false
+            },
+            "consensus_method": {
+              "type": "string",
+              "default": "intersection",
+              "enum": [
+                "intersection",
+                "majority_vote",
+                "single_tool",
+                "weighted_vote"
+              ]
+            },
+            "tool_weights": {
+              "type": "object",
+              "description": "Per-tool weight map for weighted_vote strategy. Tools not listed receive a default weight of 1.0. Example: {genomad: 0.6, plasme: 0.25, plasx: 0.15}\n",
+              "default": {},
+              "required": false
+            }
+          },
+          "outputs": {
+            "plasmid_contigs": {
+              "type": "file",
+              "format": "fasta",
+              "path": "{outdir}/04_plasmid_detection/{sample_id}/plasmid_contigs.fasta",
+              "contract": {
+                "min_size": "100B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "plasmid_consensus",
+        "_explicit_dependencies": [
+          "SRR11038083_plasmid_detection_genomad"
+        ]
+      },
+      "reason": "active DAG node 'plasmid_consensus' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_abundance_bowtie2",
+      "step_name": "abundance",
+      "tool_id": "bowtie2",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "plasmid_contigs": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta",
+        "read1": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R1.clean.fastq.gz",
+        "read2": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/01_qc/SRR11038083/SRR11038083_R2.clean.fastq.gz",
+        "sample_id": "single_sample",
+        "threads": "12"
+      },
+      "outputs": {
+        "alignment": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.sam",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "plasmid_contigs": {
+              "type": "file",
+              "format": "fasta",
+              "source": "plasmid_consensus.plasmid_contigs"
+            },
+            "read1": {
+              "type": "file",
+              "format": "fastq.gz",
+              "source": "host_removal_bowtie2.clean_read1",
+              "fallback": "qc_fastp.clean_read1"
+            },
+            "read2": {
+              "type": "file",
+              "format": "fastq.gz",
+              "source": "host_removal_bowtie2.clean_read2",
+              "fallback": "qc_fastp.clean_read2"
+            },
+            "sample_id": {
+              "type": "string"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "alignment": {
+              "type": "file",
+              "format": "sam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.sam",
+              "contract": {
+                "min_size": "100B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "abundance_bowtie2",
+        "_explicit_dependencies": [
+          "SRR11038083_plasmid_consensus_internal"
+        ]
+      },
+      "reason": "active DAG node 'abundance_bowtie2' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_annotation_bakta",
+      "step_name": "annotation",
+      "tool_id": "bakta",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "plasmid_contigs": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta",
+        "database": "/root/autodl-tmp/resources/autoplasm/bakta_v6_full/db",
+        "threads": "12"
+      },
+      "outputs": {
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/08_annotation/SRR11038083",
+        "annotations": ""
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "plasmid_contigs": {
+              "type": "file",
+              "format": "fasta",
+              "source": "plasmid_consensus.plasmid_contigs"
+            },
+            "database": {
+              "type": "directory",
+              "source": "config.resources.bakta.database"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "output_dir": {
+              "type": "directory"
+            },
+            "annotations": {
+              "type": "file",
+              "format": "tsv",
+              "contract": {
+                "file_exists": true,
+                "min_size": "0B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "annotation_bakta",
+        "_explicit_dependencies": [
+          "SRR11038083_plasmid_consensus_internal"
+        ]
+      },
+      "reason": "active DAG node 'annotation_bakta' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_typing_plasmidfinder",
+      "step_name": "typing",
+      "tool_id": "plasmidfinder",
+      "category": "typing",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "plasmid_contigs": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/04_plasmid_detection/SRR11038083/plasmid_contigs.fasta",
+        "database": "/root/autodl-tmp/resources/autoplasm/plasmidfinder_db/DB"
+      },
+      "outputs": {
+        "typing_results": "",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/06_plasmid_typing/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "plasmid_contigs": {
+              "type": "file",
+              "format": "fasta",
+              "source": "plasmid_consensus.plasmid_contigs"
+            },
+            "database": {
+              "type": "directory",
+              "source": "config.resources.plasmidfinder.database"
+            }
+          },
+          "outputs": {
+            "typing_results": {
+              "type": "file",
+              "format": "tsv",
+              "contract": {
+                "file_exists": true,
+                "min_size": "0B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "typing_plasmidfinder",
+        "_explicit_dependencies": [
+          "SRR11038083_plasmid_consensus_internal"
+        ]
+      },
+      "reason": "active DAG node 'typing_plasmidfinder' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_abundance_samtools",
+      "step_name": "abundance",
+      "tool_id": "samtools",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "alignment": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.sam",
+        "threads": "12"
+      },
+      "outputs": {
+        "bam": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.bam",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "alignment": {
+              "type": "file",
+              "format": "sam",
+              "source": "{active_abundance_mapper}.alignment"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "bam": {
+              "type": "file",
+              "format": "bam",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.plasmid_alignment.bam",
+              "contract": {
+                "min_size": "100B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "abundance_samtools",
+        "_explicit_dependencies": [
+          "SRR11038083_abundance_bowtie2"
+        ]
+      },
+      "reason": "active DAG node 'abundance_samtools' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "SRR11038083_abundance_coverm",
+      "step_name": "abundance",
+      "tool_id": "coverm",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {
+        "bam": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.bam",
+        "threads": "12"
+      },
+      "outputs": {
+        "abundance": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.coverm.tsv",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "sample_id": "SRR11038083",
+        "_contract": {
+          "inputs": {
+            "bam": {
+              "type": "file",
+              "format": "bam",
+              "source": "abundance_samtools.bam"
+            },
+            "threads": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          "outputs": {
+            "abundance": {
+              "type": "file",
+              "format": "tsv",
+              "path": "{outdir}/{category_dir}/{sample_id}/{sample_id}.coverm.tsv",
+              "contract": {
+                "file_exists": true,
+                "extensions": [
+                  ".tsv"
+                ],
+                "min_size": "0B"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "abundance_coverm",
+        "_explicit_dependencies": [
+          "SRR11038083_abundance_samtools"
+        ]
+      },
+      "reason": "active DAG node 'abundance_coverm' for platform 'illumina'",
+      "skipped": false
+    },
+    {
+      "step_id": "report_markdown",
+      "step_name": "report",
+      "tool_id": "report_markdown",
+      "category": "report",
+      "sample_id": null,
+      "inputs": {
+        "project_outdir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb"
+      },
+      "outputs": {
+        "report_md": "",
+        "report_html": "",
+        "methods_md": "",
+        "output_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/report"
+      },
+      "params": {
+        "mode": "auto",
+        "threads": 12,
+        "_contract": {
+          "inputs": {
+            "project_outdir": {
+              "type": "directory",
+              "source": "config.outdir"
+            }
+          },
+          "outputs": {
+            "report_md": {
+              "type": "file",
+              "format": "markdown",
+              "contract": {
+                "file_exists": true,
+                "min_size": "1KB"
+              }
+            },
+            "report_html": {
+              "type": "file",
+              "format": "html",
+              "contract": {
+                "file_exists": true,
+                "min_size": "1KB"
+              }
+            },
+            "methods_md": {
+              "type": "file",
+              "format": "markdown",
+              "contract": {
+                "file_exists": true,
+                "min_size": "1KB"
+              }
+            }
+          },
+          "assertions": []
+        },
+        "_dag_node_id": "report_markdown",
+        "_explicit_dependencies": [
+          "SRR11038083_plasmid_consensus_internal",
+          "SRR11038083_typing_plasmidfinder",
+          "SRR11038083_annotation_bakta"
+        ]
+      },
+      "reason": "active cross-sample DAG node 'report_markdown'",
+      "skipped": false
+    }
+  ],
+  "skipped_steps": [
+    {
+      "step_id": "SRR11038083_basecalling_internal",
+      "step_name": "basecalling",
+      "tool_id": "internal",
+      "category": "basecalling",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'long_reads_provided': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_basecalling_dorado",
+      "step_name": "basecalling",
+      "tool_id": "dorado",
+      "category": "basecalling",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'basecalling_dorado': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_basecalling_samtools_fastq",
+      "step_name": "basecalling",
+      "tool_id": "samtools_fastq",
+      "category": "basecalling",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'long_read_bam_to_fastq': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_qc_fastqc",
+      "step_name": "qc",
+      "tool_id": "fastqc",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'qc_fastqc_raw': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_qc_fastqc",
+      "step_name": "qc",
+      "tool_id": "fastqc",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'qc_fastqc_clean': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_qc_nanoplot",
+      "step_name": "qc",
+      "tool_id": "nanoplot",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'qc_nanoplot': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_qc_filtlong",
+      "step_name": "qc",
+      "tool_id": "filtlong",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'qc_filtlong': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_qc_hifiadapterfilt",
+      "step_name": "qc",
+      "tool_id": "hifiadapterfilt",
+      "category": "qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'qc_hifiadapterfilt': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_removal_bowtie2_host_removal",
+      "step_name": "host_removal",
+      "tool_id": "bowtie2_host_removal",
+      "category": "host_removal",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_removal_bowtie2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_removal_minimap2_host_removal",
+      "step_name": "host_removal",
+      "tool_id": "minimap2_host_removal",
+      "category": "host_removal",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_removal_minimap2_long': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_metaspades",
+      "step_name": "assembly",
+      "tool_id": "metaspades",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_metaspades': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_metaflye",
+      "step_name": "assembly",
+      "tool_id": "metaflye",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_metaflye': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_hifiasm_meta",
+      "step_name": "assembly",
+      "tool_id": "hifiasm_meta",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_hifiasm': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_opera_ms",
+      "step_name": "assembly",
+      "tool_id": "opera_ms",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_opera_ms': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_internal",
+      "step_name": "assembly",
+      "tool_id": "internal",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_provided': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_polishing_medaka",
+      "step_name": "polishing",
+      "tool_id": "medaka",
+      "category": "polishing",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'polishing_medaka': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_qc_quast",
+      "step_name": "assembly_qc",
+      "tool_id": "quast",
+      "category": "assembly_qc",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_qc_quast': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_contig_coverage_bowtie2",
+      "step_name": "contig_coverage",
+      "tool_id": "bowtie2",
+      "category": "contig_coverage",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'contig_coverage_bowtie2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_contig_coverage_minimap2",
+      "step_name": "contig_coverage",
+      "tool_id": "minimap2",
+      "category": "contig_coverage",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'contig_coverage_minimap2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_contig_coverage_samtools",
+      "step_name": "contig_coverage",
+      "tool_id": "samtools",
+      "category": "contig_coverage",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'contig_coverage_samtools': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_contig_coverage_coverm",
+      "step_name": "contig_coverage",
+      "tool_id": "coverm",
+      "category": "contig_coverage",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'contig_coverage_coverm': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_plasme",
+      "step_name": "plasmid_detection",
+      "tool_id": "plasme",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_detect_plasme': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_plasx",
+      "step_name": "plasmid_detection",
+      "tool_id": "plasx",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_detect_plasx': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_platon",
+      "step_name": "plasmid_detection",
+      "tool_id": "platon",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_detect_platon': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_scapp",
+      "step_name": "plasmid_detection",
+      "tool_id": "scapp",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_detect_scapp': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_detection_internal",
+      "step_name": "plasmid_detection",
+      "tool_id": "internal",
+      "category": "plasmid_detection",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_structure': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_binning_plasmaag",
+      "step_name": "plasmid_binning",
+      "tool_id": "plasmaag",
+      "category": "plasmid_binning",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_binning_plasmaag': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_binning_gplas2",
+      "step_name": "plasmid_binning",
+      "tool_id": "gplas2",
+      "category": "plasmid_binning",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_binning_gplas2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_binning_mob_suite",
+      "step_name": "plasmid_binning",
+      "tool_id": "mob_suite",
+      "category": "plasmid_binning",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_binning_mob_recon': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_typing_mob_typer",
+      "step_name": "typing",
+      "tool_id": "mob_typer",
+      "category": "typing",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'typing_mob_typer': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_typing_copla",
+      "step_name": "typing",
+      "tool_id": "copla",
+      "category": "typing",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'typing_copla': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_prediction_metaphlan",
+      "step_name": "host_prediction",
+      "tool_id": "metaphlan",
+      "category": "host_prediction",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_prediction_metaphlan': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_prediction_kraken2",
+      "step_name": "host_prediction",
+      "tool_id": "kraken2",
+      "category": "host_prediction",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_prediction_kraken2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_prediction_plasmidhostfinder",
+      "step_name": "host_prediction",
+      "tool_id": "plasmidhostfinder",
+      "category": "host_prediction",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_prediction_plasmidhostfinder': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_prodigal",
+      "step_name": "annotation",
+      "tool_id": "prodigal",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_prodigal': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_amrfinderplus",
+      "step_name": "annotation",
+      "tool_id": "amrfinderplus",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_amrfinderplus': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_abricate",
+      "step_name": "annotation",
+      "tool_id": "abricate",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_abricate': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_isescan",
+      "step_name": "annotation",
+      "tool_id": "isescan",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_isescan': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_integronfinder",
+      "step_name": "annotation",
+      "tool_id": "integronfinder",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_integronfinder': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_mob_suite",
+      "step_name": "annotation",
+      "tool_id": "mob_suite",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_mob_suite': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_metabat2",
+      "step_name": "mag_host_genomes",
+      "tool_id": "metabat2",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_metabat2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_checkm2",
+      "step_name": "mag_host_genomes",
+      "tool_id": "checkm2",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_checkm2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_gtdbtk",
+      "step_name": "mag_host_genomes",
+      "tool_id": "gtdbtk",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_gtdbtk': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_plasmid_linking_internal",
+      "step_name": "host_plasmid_linking",
+      "tool_id": "internal",
+      "category": "host_plasmid_linking",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_plasmid_link_sequence': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_plasmid_linking_minced",
+      "step_name": "host_plasmid_linking",
+      "tool_id": "minced",
+      "category": "host_plasmid_linking",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_plasmid_link_crispr': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_host_plasmid_linking_internal",
+      "step_name": "host_plasmid_linking",
+      "tool_id": "internal",
+      "category": "host_plasmid_linking",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'host_plasmid_link_longread': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_minimap2",
+      "step_name": "abundance",
+      "tool_id": "minimap2",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_minimap2': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_bowtie2",
+      "step_name": "abundance",
+      "tool_id": "bowtie2",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_bowtie2_short': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_samtools",
+      "step_name": "abundance",
+      "tool_id": "samtools",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_samtools_short': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_coverm",
+      "step_name": "abundance",
+      "tool_id": "coverm",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_coverm_short': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_minimap2",
+      "step_name": "abundance",
+      "tool_id": "minimap2",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_minimap2_long': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_samtools",
+      "step_name": "abundance",
+      "tool_id": "samtools",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_samtools_long': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_abundance_coverm",
+      "step_name": "abundance",
+      "tool_id": "coverm",
+      "category": "abundance",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'abundance_coverm_long': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_comparative_genomics_blast",
+      "step_name": "comparative_genomics",
+      "tool_id": "blast",
+      "category": "comparative_genomics",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'comparative_blast': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_comparative_genomics_mummer",
+      "step_name": "comparative_genomics",
+      "tool_id": "mummer",
+      "category": "comparative_genomics",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'comparative_mummer': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_comparative_genomics_clinker",
+      "step_name": "comparative_genomics",
+      "tool_id": "clinker",
+      "category": "comparative_genomics",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'comparative_clinker': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_assembly_hybridspades",
+      "step_name": "assembly",
+      "tool_id": "hybridspades",
+      "category": "assembly",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'assembly_hybridspades': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_binning_scapp",
+      "step_name": "plasmid_binning",
+      "tool_id": "scapp",
+      "category": "plasmid_binning",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_binning_scapp': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_plasmid_binning_recycler",
+      "step_name": "plasmid_binning",
+      "tool_id": "recycler",
+      "category": "plasmid_binning",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'plasmid_binning_recycler': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_typing_conjscan",
+      "step_name": "typing",
+      "tool_id": "conjscan",
+      "category": "typing",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'typing_conjscan': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_typing_macsyfinder",
+      "step_name": "typing",
+      "tool_id": "macsyfinder",
+      "category": "typing",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'typing_macsyfinder': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_rgi",
+      "step_name": "annotation",
+      "tool_id": "rgi",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_rgi': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_annotation_eggnog_mapper",
+      "step_name": "annotation",
+      "tool_id": "eggnog_mapper",
+      "category": "annotation",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'annotation_eggnog_mapper': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_concoct",
+      "step_name": "mag_host_genomes",
+      "tool_id": "concoct",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_concoct': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_semibin",
+      "step_name": "mag_host_genomes",
+      "tool_id": "semibin",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_semibin': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "SRR11038083_mag_host_genomes_das_tool",
+      "step_name": "mag_host_genomes",
+      "tool_id": "das_tool",
+      "category": "mag_host_genomes",
+      "sample_id": "SRR11038083",
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded DAG node 'mag_das_tool': platform 'illumina' or resolved configuration did not satisfy its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "qc_multiqc_illumina",
+      "step_name": "qc",
+      "tool_id": "multiqc",
+      "category": "qc",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'qc_multiqc_illumina': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "qc_multiqc_ont",
+      "step_name": "qc",
+      "tool_id": "multiqc",
+      "category": "qc",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'qc_multiqc_ont': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "qc_multiqc_hifi",
+      "step_name": "qc",
+      "tool_id": "multiqc",
+      "category": "qc",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'qc_multiqc_hifi': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "host_plasmid_link_coabundance",
+      "step_name": "host_plasmid_linking",
+      "tool_id": "internal",
+      "category": "host_plasmid_linking",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'host_plasmid_link_coabundance': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "multisample_diversity",
+      "step_name": "diversity",
+      "tool_id": "internal",
+      "category": "diversity",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'multisample_diversity': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "multisample_differential_abundance",
+      "step_name": "statistics",
+      "tool_id": "internal",
+      "category": "statistics",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'multisample_differential_abundance': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "multisample_differential_deseq2",
+      "step_name": "statistics",
+      "tool_id": "deseq2_plasmid",
+      "category": "statistics",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'multisample_differential_deseq2': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "multisample_network_prepare",
+      "step_name": "network",
+      "tool_id": "internal",
+      "category": "network",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'multisample_network_prepare': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "multisample_network_fastspar",
+      "step_name": "network",
+      "tool_id": "fastspar",
+      "category": "network",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'multisample_network_fastspar': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "plasmid_catalog_prepare",
+      "step_name": "comparative_genomics",
+      "tool_id": "internal",
+      "category": "comparative_genomics",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'plasmid_catalog_prepare': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "comparative_mmseqs2",
+      "step_name": "comparative_genomics",
+      "tool_id": "mmseqs2",
+      "category": "comparative_genomics",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'comparative_mmseqs2': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "visualization_clinker_gene_maps",
+      "step_name": "visualization",
+      "tool_id": "clinker",
+      "category": "visualization",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'visualization_clinker_gene_maps': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "visualization_pycirclize",
+      "step_name": "visualization",
+      "tool_id": "pycirclize",
+      "category": "visualization",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'visualization_pycirclize': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "visualization_network",
+      "step_name": "visualization",
+      "tool_id": "pyvis",
+      "category": "visualization",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'visualization_network': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    },
+    {
+      "step_id": "visualization_dna_features",
+      "step_name": "visualization",
+      "tool_id": "dna_features_viewer",
+      "category": "visualization",
+      "sample_id": null,
+      "inputs": {},
+      "outputs": {},
+      "params": {},
+      "reason": "excluded cross-sample DAG node 'visualization_dna_features': no project platform or resolved configuration satisfied its activation conditions",
+      "skipped": true
+    }
+  ],
+  "provenance_dir": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/provenance",
+  "managed_output_roots": [],
+  "plasmid_strategy": "single_tool"
+}

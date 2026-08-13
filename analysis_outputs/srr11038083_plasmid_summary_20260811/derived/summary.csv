@@ -1,0 +1,2 @@
+raw_reads,clean_reads,read_retention,q30_rate,assembly_contigs,assembly_n50_bp,assembly_total_bp,candidate_count,candidate_total_bp,candidate_median_bp,candidate_max_bp,typed_contigs,typing_hits,bakta_features,amr_candidate_count,integron_positive,integron_tested,median_tpm,k141_775_tpm,k141_775_abundance_rank,k141_1187_tpm,k141_1187_abundance_rank
+37233298,34294974,0.921083,0.870572,3641,498,1928285,156,366512,1676.5,11660,8,9,602,1,0,156,21.8894,312.949,31,332.4139,30

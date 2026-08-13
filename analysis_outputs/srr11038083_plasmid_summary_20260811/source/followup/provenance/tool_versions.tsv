@@ -1,0 +1,11 @@
+tool_id	executable	env_name	version	status
+abricate	abricate	autoplasm-annotation		not_configured
+amrfinderplus	amrfinder	autoplasm-annotation		not_configured
+bakta	bakta	autoplasm-annotation	bakta 1.12.0	captured
+fastp	fastp	autoplasm-qc	fastp 1.3.5	captured
+genomad	genomad	autoplasm-plasmid-detect	geNomad, version 1.12.0	captured
+integronfinder	integron_finder	autoplasm-integronfinder		not_configured
+megahit	megahit	autoplasm-assembly	MEGAHIT v1.2.9	captured
+plasmidfinder	python	autoplasm-annotation	3.0.3	captured
+report_markdown	abi	autoplasm-base	1.5.11.1	captured
+rgi	rgi	autoplasm-rgi		not_configured

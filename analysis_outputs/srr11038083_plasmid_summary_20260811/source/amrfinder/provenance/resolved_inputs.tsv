@@ -1,0 +1,2 @@
+step_id	tool_id	sample_id	input_name	path	exists	source
+SRR11038083_annotation_amrfinderplus	amrfinderplus	SRR11038083	database	/root/autodl-tmp/resources/autoplasm/amrfinderplus/latest	True	config_or_plan

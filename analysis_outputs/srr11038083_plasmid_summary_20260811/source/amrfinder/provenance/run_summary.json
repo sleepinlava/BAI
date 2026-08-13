@@ -1,0 +1,149 @@
+{
+  "run_id": "4a2104c9-6547-4a53-9a5b-b1a6f9d9e431",
+  "abi_version": "1.5.11.1",
+  "git_commit": "0190f21325713bd60830464fa94f13d1854bac95",
+  "git_dirty": true,
+  "runtime_lock_id": "",
+  "project_name": "metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811",
+  "analysis_type": "metagenomic_plasmid",
+  "dry_run": false,
+  "sample_count": 1,
+  "step_count": 1,
+  "completed_step_count": 1,
+  "status": "success",
+  "parallel": false,
+  "workers": 1,
+  "selected_tools": [
+    "amrfinderplus"
+  ],
+  "standard_tables": {
+    "sample_qc": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/sample_qc.tsv"
+    },
+    "assembly_qc": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/assembly_qc.tsv"
+    },
+    "plasmid_catalog": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_catalog.tsv"
+    },
+    "plasmid_structure": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_structure.tsv"
+    },
+    "plasmid_abundance": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_abundance.tsv"
+    },
+    "plasmid_annotation": {
+      "rows": 1,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_annotation.tsv"
+    },
+    "amr_genes": {
+      "rows": 1,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/amr_genes.tsv"
+    },
+    "mge_elements": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/mge_elements.tsv"
+    },
+    "host_profile": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/host_profile.tsv"
+    },
+    "host_plasmid_links": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/host_plasmid_links.tsv"
+    },
+    "differential_plasmids": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/differential_plasmids.tsv"
+    },
+    "analysis_status": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/analysis_status.tsv"
+    },
+    "plasmid_predictions": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_predictions.tsv"
+    },
+    "plasmid_consensus": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_consensus.tsv"
+    },
+    "annotations": {
+      "rows": 1,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/annotations.tsv"
+    },
+    "host_predictions": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/host_predictions.tsv"
+    },
+    "abundance": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/abundance.tsv"
+    },
+    "qc_summary": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/qc_summary.tsv"
+    },
+    "assembly_summary": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/assembly_summary.tsv"
+    },
+    "alignment_summary": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/alignment_summary.tsv"
+    },
+    "mag_quality": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/mag_quality.tsv"
+    },
+    "artifacts": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/artifacts.tsv"
+    },
+    "plasmid_typing": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_typing.tsv"
+    },
+    "plasmid_bins": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/plasmid_bins.tsv"
+    },
+    "bin_to_contig": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/bin_to_contig.tsv"
+    },
+    "comparative_hits": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/comparative_hits.tsv"
+    },
+    "visualization_outputs": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/visualization_outputs.tsv"
+    },
+    "sample_diversity": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/sample_diversity.tsv"
+    },
+    "differential_abundance": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/differential_abundance.tsv"
+    },
+    "network_edges": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/network_edges.tsv"
+    },
+    "network_nodes": {
+      "rows": 0,
+      "path": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/tables/network_nodes.tsv"
+    }
+  },
+  "warnings": [],
+  "progress_file": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/provenance/progress.json",
+  "progress_events": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/provenance/progress.jsonl",
+  "log_file": "/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_amrfinder_recovery_20260811/logs/log_abi_20260811_230012.log"
+}
