@@ -1,0 +1,18 @@
+{
+  "figure_id": "pca_expression",
+  "status": "passed",
+  "errors": [],
+  "warnings": [
+    {
+      "rule": "LABEL001",
+      "level": "WARNING",
+      "message": "x-axis label is empty."
+    },
+    {
+      "rule": "LABEL001",
+      "level": "WARNING",
+      "message": "y-axis label is empty."
+    }
+  ],
+  "info": []
+}

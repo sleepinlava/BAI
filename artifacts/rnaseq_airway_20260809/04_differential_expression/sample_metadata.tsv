@@ -1,0 +1,9 @@
+sample_id	group	condition	donor	platform	read1	read2
+SRR1039508	untreated	untreated	N61311	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039508_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039508_2.fastq.gz
+SRR1039509	dex	dex	N61311	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039509_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039509_2.fastq.gz
+SRR1039512	untreated	untreated	N052611	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039512_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039512_2.fastq.gz
+SRR1039513	dex	dex	N052611	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039513_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039513_2.fastq.gz
+SRR1039516	untreated	untreated	N080611	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039516_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039516_2.fastq.gz
+SRR1039517	dex	dex	N080611	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039517_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039517_2.fastq.gz
+SRR1039520	untreated	untreated	N061011	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039520_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039520_2.fastq.gz
+SRR1039521	dex	dex	N061011	rna_seq	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039521_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039521_2.fastq.gz

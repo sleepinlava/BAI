@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RNA-seq Gene Expression ABI Report — rnaseq_airway_dex_untreated_retry5_parity</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280;
+    --accent: #2563eb; --border: #e5e7eb; --code-bg: #f3f4f6;
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111827; --fg: #e5e7eb; --muted: #9ca3af;
+      --accent: #60a5fa; --border: #374151; --code-bg: #1f2937;
+    }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    max-width: 960px; margin: 0 auto; padding: 2rem 1rem;
+    background: var(--bg); color: var(--fg); line-height: 1.6;
+  }
+  header { border-bottom: 2px solid var(--accent); margin-bottom: 2rem; }
+  header h1 { margin: 0; font-size: 1.8rem; }
+  .subtitle { color: var(--muted); margin: 0.25rem 0 0.5rem; font-size: 1.1rem; }
+  h2 { margin-top: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-weight: 600; }
+  code { background: var(--code-bg); padding: 0.15em 0.4em; border-radius: var(--radius);
+    font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: 0.85em; line-height: 1.5; }
+  figure { margin: 1.5rem 0; text-align: center; }
+  figure img { max-width: 100%; height: auto; border: 1px solid var(--border);
+    border-radius: var(--radius); }
+  figcaption { color: var(--muted); font-size: 0.85em; margin-top: 0.5rem; }
+  ol, ul { padding-left: 1.5rem; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.85rem; }
+  @media print {
+    body { max-width: none; padding: 0; }
+    figure img { max-width: 100%; page-break-inside: avoid; }
+    footer { display: none; }
+  }
+</style>
+</head>
+<body>
+<header><h1>RNA-seq Gene Expression ABI Report</h1><p class="subtitle">rnaseq_airway_dex_untreated_retry5_parity</p></header>
+<main>
+<section>
+<h2>Executive Summary</h2>
+<p>Analysis type: <code>rnaseq_expression</code></p>
+<p>Planned steps: 27</p>
+<p>Tools used: fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, fastp, star, featurecounts, build_count_matrix, deseq2, rnaseq_enrichment</p>
+</section>
+<section>
+<h2>Workflow Overview</h2>
+<table>
+<thead><tr><th>Step</th><th>Tool</th><th>Category</th><th>Sample</th></tr></thead>
+<tbody>
+<tr><td>SRR1039508_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039508</td></tr>
+<tr><td>SRR1039508_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039508</td></tr>
+<tr><td>SRR1039508_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039508</td></tr>
+<tr><td>SRR1039509_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039509</td></tr>
+<tr><td>SRR1039509_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039509</td></tr>
+<tr><td>SRR1039509_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039509</td></tr>
+<tr><td>SRR1039512_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039512</td></tr>
+<tr><td>SRR1039512_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039512</td></tr>
+<tr><td>SRR1039512_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039512</td></tr>
+<tr><td>SRR1039513_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039513</td></tr>
+<tr><td>SRR1039513_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039513</td></tr>
+<tr><td>SRR1039513_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039513</td></tr>
+<tr><td>SRR1039516_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039516</td></tr>
+<tr><td>SRR1039516_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039516</td></tr>
+<tr><td>SRR1039516_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039516</td></tr>
+<tr><td>SRR1039517_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039517</td></tr>
+<tr><td>SRR1039517_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039517</td></tr>
+<tr><td>SRR1039517_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039517</td></tr>
+<tr><td>SRR1039520_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039520</td></tr>
+<tr><td>SRR1039520_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039520</td></tr>
+<tr><td>SRR1039520_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039520</td></tr>
+<tr><td>SRR1039521_qc_fastp</td><td><code>fastp</code></td><td>qc</td><td>SRR1039521</td></tr>
+<tr><td>SRR1039521_alignment_star</td><td><code>star</code></td><td>alignment</td><td>SRR1039521</td></tr>
+<tr><td>SRR1039521_expression_featurecounts</td><td><code>featurecounts</code></td><td>expression</td><td>SRR1039521</td></tr>
+<tr><td>build_matrix</td><td><code>build_count_matrix</code></td><td>preprocessing</td><td>None</td></tr>
+<tr><td>de_deseq2</td><td><code>deseq2</code></td><td>differential_expression</td><td>None</td></tr>
+<tr><td>enrichment_offline</td><td><code>rnaseq_enrichment</code></td><td>enrichment</td><td>None</td></tr>
+</tbody>
+</table>
+</section>
+<section>
+<h2>Standard Tables</h2>
+<table>
+<thead><tr><th>Table</th><th>Rows</th><th>Path</th></tr></thead>
+<tbody>
+<tr><td><code>alignment_summary.tsv</code></td><td>256</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/alignment_summary.tsv</code></td></tr>
+<tr><td><code>annotated_differential_expression.tsv</code></td><td>16019</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/annotated_differential_expression.tsv</code></td></tr>
+<tr><td><code>count_matrix.tsv</code></td><td>509416</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/count_matrix.tsv</code></td></tr>
+<tr><td><code>differential_expression.tsv</code></td><td>16019</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/differential_expression.tsv</code></td></tr>
+<tr><td><code>gene_expression.tsv</code></td><td>509416</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/gene_expression.tsv</code></td></tr>
+<tr><td><code>go_gsea.tsv</code></td><td>3560</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/go_gsea.tsv</code></td></tr>
+<tr><td><code>go_gsea_plot.tsv</code></td><td>20</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/go_gsea_plot.tsv</code></td></tr>
+<tr><td><code>go_overrepresentation.tsv</code></td><td>9726</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/go_overrepresentation.tsv</code></td></tr>
+<tr><td><code>go_overrepresentation_plot.tsv</code></td><td>20</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/go_overrepresentation_plot.tsv</code></td></tr>
+<tr><td><code>normalized_expression.tsv</code></td><td>128152</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/normalized_expression.tsv</code></td></tr>
+<tr><td><code>qc_summary.tsv</code></td><td>144</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/qc_summary.tsv</code></td></tr>
+<tr><td><code>reactome_gsea.tsv</code></td><td>1248</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/reactome_gsea.tsv</code></td></tr>
+<tr><td><code>reactome_gsea_plot.tsv</code></td><td>11</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/reactome_gsea_plot.tsv</code></td></tr>
+<tr><td><code>reactome_overrepresentation.tsv</code></td><td>2496</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/reactome_overrepresentation.tsv</code></td></tr>
+<tr><td><code>reactome_overrepresentation_plot.tsv</code></td><td>18</td><td><code>/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/reactome_overrepresentation_plot.tsv</code></td></tr>
+</tbody>
+</table>
+</section>
+<section>
+<h2>Figures</h2>
+<figure id="fig-go_overrepresentation">
+<img src="../figures/go_overrepresentation/go_overrepresentation.png" alt="go_overrepresentation" loading="lazy">
+<figcaption>go_overrepresentation</figcaption>
+</figure>
+<figure id="fig-go_preranked_gsea">
+<img src="../figures/go_preranked_gsea/go_preranked_gsea.png" alt="go_preranked_gsea" loading="lazy">
+<figcaption>go_preranked_gsea</figcaption>
+</figure>
+<figure id="fig-ma_plot">
+<img src="../figures/ma_plot/ma_plot.png" alt="ma_plot" loading="lazy">
+<figcaption>ma_plot</figcaption>
+</figure>
+<figure id="fig-mapping_rate">
+<img src="../figures/mapping_rate/mapping_rate.png" alt="mapping_rate" loading="lazy">
+<figcaption>mapping_rate</figcaption>
+</figure>
+<figure id="fig-pca_expression">
+<img src="../figures/pca_expression/pca_expression.png" alt="pca_expression" loading="lazy">
+<figcaption>pca_expression</figcaption>
+</figure>
+<figure id="fig-qc_read_counts">
+<img src="../figures/qc_read_counts/qc_read_counts.png" alt="qc_read_counts" loading="lazy">
+<figcaption>qc_read_counts</figcaption>
+</figure>
+<figure id="fig-reactome_overrepresentation">
+<img src="../figures/reactome_overrepresentation/reactome_overrepresentation.png" alt="reactome_overrepresentation" loading="lazy">
+<figcaption>reactome_overrepresentation</figcaption>
+</figure>
+<figure id="fig-reactome_preranked_gsea">
+<img src="../figures/reactome_preranked_gsea/reactome_preranked_gsea.png" alt="reactome_preranked_gsea" loading="lazy">
+<figcaption>reactome_preranked_gsea</figcaption>
+</figure>
+<figure id="fig-top_deg_heatmap">
+<img src="../figures/top_deg_heatmap/top_deg_heatmap.png" alt="top_deg_heatmap" loading="lazy">
+<figcaption>top_deg_heatmap</figcaption>
+</figure>
+<figure id="fig-volcano_deg">
+<img src="../figures/volcano_deg/volcano_deg.png" alt="volcano_deg" loading="lazy">
+<figcaption>volcano_deg</figcaption>
+</figure>
+</section>
+<section>
+<h2>Methods</h2>
+<pre># RNA-seq Gene Expression ABI Report — Methods — rnaseq_airway_dex_untreated_retry5_parity
+
+Analysis type: `rnaseq_expression`
+
+## Pipeline Steps
+
+| Step | Tool | Category | Sample |
+| --- | --- | --- | --- |
+| qc | `fastp` | qc | SRR1039508 |
+| alignment | `star` | alignment | SRR1039508 |
+| expression | `featurecounts` | expression | SRR1039508 |
+| qc | `fastp` | qc | SRR1039509 |
+| alignment | `star` | alignment | SRR1039509 |
+| expression | `featurecounts` | expression | SRR1039509 |
+| qc | `fastp` | qc | SRR1039512 |
+| alignment | `star` | alignment | SRR1039512 |
+| expression | `featurecounts` | expression | SRR1039512 |
+| qc | `fastp` | qc | SRR1039513 |
+| alignment | `star` | alignment | SRR1039513 |
+| expression | `featurecounts` | expression | SRR1039513 |
+| qc | `fastp` | qc | SRR1039516 |
+| alignment | `star` | alignment | SRR1039516 |
+| expression | `featurecounts` | expression | SRR1039516 |
+| qc | `fastp` | qc | SRR1039517 |
+| alignment | `star` | alignment | SRR1039517 |
+| expression | `featurecounts` | expression | SRR1039517 |
+| qc | `fastp` | qc | SRR1039520 |
+| alignment | `star` | alignment | SRR1039520 |
+| expression | `featurecounts` | expression | SRR1039520 |
+| qc | `fastp` | qc | SRR1039521 |
+| alignment | `star` | alignment | SRR1039521 |
+| expression | `featurecounts` | expression | SRR1039521 |
+| preprocessing | `build_count_matrix` | preprocessing | None |
+| differential_expression | `deseq2` | differential_expression | None |
+| enrichment | `rnaseq_enrichment` | enrichment | None |
+
+## Tool Versions
+
+| Tool | Version | Command |
+| --- | --- | --- |
+| `build_count_matrix` | Python 3.10.20 | `python` |
+| `deseq2` | 1.50.2 | `Rscript` |
+| `fastp` | fastp 1.3.5 | `fastp` |
+| `featurecounts` | featureCounts v2.1.1 | `featureCounts` |
+| `rnaseq_enrichment` | not_configured | `python` |
+| `star` | 2.7.11b | `STAR` |
+
+## Executed Commands
+
+- **SRR1039508_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039508_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039508_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508.fastp.json`
+- **SRR1039508_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039508/SRR1039508_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.`
+- **SRR1039508_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039508/SRR1039508.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Aligned.sortedByCoord.out.bam`
+- **SRR1039509_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039509_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039509_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509.fastp.json`
+- **SRR1039509_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039509/SRR1039509_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.`
+- **SRR1039509_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039509/SRR1039509.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Aligned.sortedByCoord.out.bam`
+- **SRR1039512_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039512_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039512_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512.fastp.json`
+- **SRR1039512_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039512/SRR1039512_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.`
+- **SRR1039512_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039512/SRR1039512.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Aligned.sortedByCoord.out.bam`
+- **SRR1039513_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039513_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039513_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513.fastp.json`
+- **SRR1039513_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039513/SRR1039513_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.`
+- **SRR1039513_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039513/SRR1039513.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Aligned.sortedByCoord.out.bam`
+- **SRR1039516_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039516_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039516_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516.fastp.json`
+- **SRR1039516_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039516/SRR1039516_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.`
+- **SRR1039516_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039516/SRR1039516.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Aligned.sortedByCoord.out.bam`
+- **SRR1039517_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039517_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039517_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517.fastp.json`
+- **SRR1039517_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039517/SRR1039517_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.`
+- **SRR1039517_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039517/SRR1039517.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Aligned.sortedByCoord.out.bam`
+- **SRR1039520_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039520_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039520_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520.fastp.json`
+- **SRR1039520_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039520/SRR1039520_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.`
+- **SRR1039520_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039520/SRR1039520.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Aligned.sortedByCoord.out.bam`
+- **SRR1039521_qc_fastp**: `fastp -i /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039521_1.fastq.gz -I /root/autodl-tmp/abi-real-data/raw/rnaseq_airway_dex_untreated/SRR1039521_2.fastq.gz -o /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521_R1.clean.fastq.gz -O /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521_R2.clean.fastq.gz --thread 12 --html /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521.fastp.html --json /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521.fastp.json`
+- **SRR1039521_alignment_star**: `STAR --runThreadN 12 --genomeDir /root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1 --readFilesIn /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521_R1.clean.fastq.gz /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/01_qc/SRR1039521/SRR1039521_R2.clean.fastq.gz --readFilesCommand zcat --outSAMtype BAM SortedByCoordinate --outFileNamePrefix /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.`
+- **SRR1039521_expression_featurecounts**: `sh -c &#x27;tmp=&quot;$3.stderr.tmp&quot;; if featureCounts -T &quot;$1&quot; -p --countReadPairs -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot; 2&gt;&quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit 0; fi; rc=$?; if grep -q &quot;No paired-end reads were detected&quot; &quot;$tmp&quot;; then cat &quot;$tmp&quot; &gt;&amp;2; echo &quot;ABI: retrying featureCounts without -p because BAM has no paired-end flags&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; featureCounts -T &quot;$1&quot; -a &quot;$2&quot; -o &quot;$3&quot; &quot;$4&quot;; else cat &quot;$tmp&quot; &gt;&amp;2; rm -f &quot;$tmp&quot;; exit &quot;$rc&quot;; fi&#x27; featurecounts 12 /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression/SRR1039521/SRR1039521.featureCounts.txt /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Aligned.sortedByCoord.out.bam`
+- **build_matrix**: `python plugins/rnaseq_expression/scripts/build_count_matrix.py --expression-dir /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/03_expression --sample-sheet /root/autodl-tmp/abi-real-data/references/airway_gse52778/airway_dex_untreated_samples.tsv --output-dir /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/04_differential_expression`
+- **de_deseq2**: `Rscript plugins/rnaseq_expression/scripts/run_deseq2.R --counts /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/04_differential_expression/count_matrix.tsv --metadata /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/04_differential_expression/sample_metadata.tsv --output /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/04_differential_expression --comparison dex_vs_untreated --design &#x27;~ donor + condition&#x27; --alpha 0.05`
+- **enrichment_offline**: `python plugins/rnaseq_expression/scripts/run_enrichment.py --de-results /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/04_differential_expression/deseq2_results.tsv --annotation-gtf /root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf --go-obo /root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/go-basic.obo --go-gaf /root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/goa_human.gaf.gz --reactome-gmt /root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/reactome_gmt/ReactomePathways.gmt --output-dir /root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/05_enrichment --annotation-release GRCh37.75 --alpha 0.05 --rank-column stat --permutations 1000 --gsea-fdr 0.25 --seed 20260727 --min-size 15 --max-size 500 --top-n 10 --threads 12`
+
+## Resources &amp; Databases
+
+| Resource | Version | Path | Checksum |
+| --- | --- | --- | --- |
+| annotation_gtf | not_captured | `/root/autodl-tmp/abi-real-data/references/airway_grch37_75/Homo_sapiens.GRCh37.75.gtf` | 84a3e413718c... |
+| genome_index | not_captured | `/root/autodl-tmp/abi-real-data/references/airway_grch37_75/star_index_retry1` |  |
+| go_gaf | not_captured | `/root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/goa_human.gaf.gz` | db472faff178... |
+| go_obo | not_captured | `/root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/go-basic.obo` | c72fc198a869... |
+| reactome_gmt | not_captured | `/root/autodl-tmp/abi-real-data/references/pathway_annotations_20260727/reactome_gmt/ReactomePathways.gmt` | 89983d5c1f0a... |
+
+## Literature Citations
+
+| Tool | Stage | Citation |
+| --- | --- | --- |
+| `fastp` | qc | Chen et al. 2018, Bioinformatics, doi:10.1093/bioinformatics/bty560 |
+| `star` | alignment | Dobin et al. 2013, Bioinformatics, doi:10.1093/bioinformatics/bts635 |
+| `featurecounts` | quantification | Liao et al. 2014, Bioinformatics, doi:10.1093/bioinformatics/btt656 |
+| `deseq2` | differential_expression | Love et al. 2014, Genome Biology, doi:10.1186/s13059-014-0550-8 |
+| `rnaseq_enrichment` | enrichment | Subramanian et al. 2005, PNAS, doi:10.1073/pnas.0506580102 |
+
+## Known Limitations
+
+1. RNA-seq measures steady-state transcript abundance, which does not always correlate with protein expression levels. (Ref: Schwanhäusser et al., Nature, 2011, doi:10.1038/nature10098; Vogel &amp; Marcotte, Nat Rev Genet, 2012, doi:10.1038/nrg3185)
+2. Alignment rates depend on reference genome completeness and annotation quality; unannotated genes or novel transcripts are missed by featureCounts. (Ref: Liao et al., Bioinformatics, 2014, doi:10.1093/bioinformatics/btt656; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)
+3. DESeq2 normalisation assumes most genes are not differentially expressed; severe global shifts in expression violate this assumption. (Ref: Anders &amp; Huber, Genome Biol, 2010, doi:10.1186/gb-2010-11-10-r106; Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8)
+4. Differential expression p-values are not corrected for unmeasured confounders (batch effects, sample processing variation) unless explicitly modeled. (Ref: Leek &amp; Storey, PLoS Genet, 2007, doi:10.1371/journal.pgen.0030161; Leek et al., Nat Rev Genet, 2010, doi:10.1038/nrg2825)
+5. Lowly expressed genes (mean count &lt; 10) have inflated false discovery rates even after multiple testing correction. (Ref: Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8; Zehetmayer et al., BMC Bioinformatics, 2022, doi:10.1186/s12859-022-04928-z)
+6. GO/Reactome enrichment is database-release dependent; pathways absent from the configured offline OBO/GAF/GMT snapshots cannot be detected. (Ref: Wadi et al., Nat Methods, 2016, doi:10.1038/nmeth.3963; Jassal et al., Nucleic Acids Res, 2020, doi:10.1093/nar/gkz1031)
+7. Gene-symbol mapping uses the configured GTF gene_name attribute; missing, duplicated, or retired symbols are excluded from enrichment after deterministic de-duplication. (Ref: Oh et al., F1000Research, 2020, doi:10.12688/f1000research.28033.1; Braschi et al., Nucleic Acids Res, 2019, doi:10.1093/nar/gky930)
+8. ORA depends on the significance threshold and measured-gene universe, while preranked GSEA depends on the chosen ranking statistic and permutation count; neither establishes pathway causality. (Ref: Subramanian et al., PNAS, 2005, doi:10.1073/pnas.0506580102; Maleki et al., Front Genet, 2020, doi:10.3389/fgene.2020.00654)
+9. Reference genome version, annotation version, and alignment index version all affect results; these are recorded in the resource manifest. (Ref: Slabaugh et al., RNA, 2019, doi:10.1261/rna.070227.118; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)
+
+## Provenance
+
+- **Provenance directory**: `/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/provenance`
+- The full provenance record (commands, tool versions, resource
+  checksums, progress log, step logs) is available for audit and
+  reproduction.
+
+---
+
+*This methods section was auto-generated by the ABI report engine.*
+*Dates and versions reflect the pipeline execution environment.*
+
+</pre>
+</section>
+<section>
+<h2>Known Limitations</h2>
+<ol>
+<li>RNA-seq measures steady-state transcript abundance, which does not always correlate with protein expression levels. (Ref: Schwanhäusser et al., Nature, 2011, doi:10.1038/nature10098; Vogel &amp; Marcotte, Nat Rev Genet, 2012, doi:10.1038/nrg3185)</li>
+<li>Alignment rates depend on reference genome completeness and annotation quality; unannotated genes or novel transcripts are missed by featureCounts. (Ref: Liao et al., Bioinformatics, 2014, doi:10.1093/bioinformatics/btt656; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)</li>
+<li>DESeq2 normalisation assumes most genes are not differentially expressed; severe global shifts in expression violate this assumption. (Ref: Anders &amp; Huber, Genome Biol, 2010, doi:10.1186/gb-2010-11-10-r106; Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8)</li>
+<li>Differential expression p-values are not corrected for unmeasured confounders (batch effects, sample processing variation) unless explicitly modeled. (Ref: Leek &amp; Storey, PLoS Genet, 2007, doi:10.1371/journal.pgen.0030161; Leek et al., Nat Rev Genet, 2010, doi:10.1038/nrg2825)</li>
+<li>Lowly expressed genes (mean count &lt; 10) have inflated false discovery rates even after multiple testing correction. (Ref: Love et al., Genome Biol, 2014, doi:10.1186/s13059-014-0550-8; Zehetmayer et al., BMC Bioinformatics, 2022, doi:10.1186/s12859-022-04928-z)</li>
+<li>GO/Reactome enrichment is database-release dependent; pathways absent from the configured offline OBO/GAF/GMT snapshots cannot be detected. (Ref: Wadi et al., Nat Methods, 2016, doi:10.1038/nmeth.3963; Jassal et al., Nucleic Acids Res, 2020, doi:10.1093/nar/gkz1031)</li>
+<li>Gene-symbol mapping uses the configured GTF gene_name attribute; missing, duplicated, or retired symbols are excluded from enrichment after deterministic de-duplication. (Ref: Oh et al., F1000Research, 2020, doi:10.12688/f1000research.28033.1; Braschi et al., Nucleic Acids Res, 2019, doi:10.1093/nar/gky930)</li>
+<li>ORA depends on the significance threshold and measured-gene universe, while preranked GSEA depends on the chosen ranking statistic and permutation count; neither establishes pathway causality. (Ref: Subramanian et al., PNAS, 2005, doi:10.1073/pnas.0506580102; Maleki et al., Front Genet, 2020, doi:10.3389/fgene.2020.00654)</li>
+<li>Reference genome version, annotation version, and alignment index version all affect results; these are recorded in the resource manifest. (Ref: Slabaugh et al., RNA, 2019, doi:10.1261/rna.070227.118; Ungar et al., Am J Hum Genet, 2024, doi:10.1016/j.ajhg.2024.05.005)</li>
+</ol>
+</section>
+<section>
+<h2>References</h2>
+<ol>
+<li><strong>fastp</strong> (qc): Chen et al. 2018, Bioinformatics, doi:10.1093/bioinformatics/bty560</li>
+<li><strong>star</strong> (alignment): Dobin et al. 2013, Bioinformatics, doi:10.1093/bioinformatics/bts635</li>
+<li><strong>featurecounts</strong> (quantification): Liao et al. 2014, Bioinformatics, doi:10.1093/bioinformatics/btt656</li>
+<li><strong>deseq2</strong> (differential_expression): Love et al. 2014, Genome Biology, doi:10.1186/s13059-014-0550-8</li>
+<li><strong>rnaseq_enrichment</strong> (enrichment): Subramanian et al. 2005, PNAS, doi:10.1073/pnas.0506580102</li>
+</ol>
+</section>
+</main>
+<footer>
+<p>Generated by the ABI report engine. Dry-run artifacts prove planning, command rendering, provenance, and table contracts only; biological conclusions require real tool outputs.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,257 @@
+sample_id	tool	metric	value	unit	source_file
+SRR1039508	star	Started job on	Aug 09 23:14:03		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Started mapping on	Aug 09 23:14:27		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Finished on	Aug 09 23:16:19		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Mapping speed, Million of reads per hour	722.35		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of input reads	22472992		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Uniquely mapped reads number	21217734		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Uniquely mapped reads %	94.41%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Average mapped length	125.53		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: Total	9768205		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: Annotated (sjdb)	9719367		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: GT/AG	9682961		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: GC/AG	65190		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: AT/AC	6154		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of splices: Non-canonical	13900		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Mismatch rate per base, %	0.20%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Deletion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Deletion average length	1.49		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Insertion average length	1.27		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of reads mapped to multiple loci	919279		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of reads mapped to multiple loci	4.09%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of reads mapped to too many loci	6793		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of reads mapped to too many loci	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of reads unmapped: too short	323215		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of reads unmapped: too short	1.44%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of reads unmapped: other	5971		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039508	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039508/SRR1039508.Log.final.out
+SRR1039509	star	Started job on	Aug 09 23:17:22		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Started mapping on	Aug 09 23:17:45		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Finished on	Aug 09 23:19:30		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Mapping speed, Million of reads per hour	704.55		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of input reads	20549417		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Uniquely mapped reads number	19316851		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Uniquely mapped reads %	94.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Average mapped length	125.52		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: Total	8607239		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: Annotated (sjdb)	8564445		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: GT/AG	8532538		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: GC/AG	56495		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: AT/AC	5815		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of splices: Non-canonical	12391		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Mismatch rate per base, %	0.20%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Deletion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Deletion average length	1.51		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Insertion average length	1.26		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of reads mapped to multiple loci	802296		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of reads mapped to multiple loci	3.90%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of reads mapped to too many loci	5863		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of reads mapped to too many loci	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of reads unmapped: too short	419402		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of reads unmapped: too short	2.04%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of reads unmapped: other	5005		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of reads unmapped: other	0.02%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039509	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039509/SRR1039509.Log.final.out
+SRR1039512	star	Started job on	Aug 09 23:20:46		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Started mapping on	Aug 09 23:21:08		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Finished on	Aug 09 23:23:17		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Mapping speed, Million of reads per hour	758.97		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of input reads	27196274		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Uniquely mapped reads number	25997908		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Uniquely mapped reads %	95.59%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Average mapped length	125.63		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: Total	11895298		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: Annotated (sjdb)	11835824		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: GT/AG	11794947		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: GC/AG	78607		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: AT/AC	7401		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of splices: Non-canonical	14343		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Mismatch rate per base, %	0.17%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Deletion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Deletion average length	1.49		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Insertion average length	1.34		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of reads mapped to multiple loci	977976		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of reads mapped to multiple loci	3.60%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of reads mapped to too many loci	9561		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of reads mapped to too many loci	0.04%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of reads unmapped: too short	202726		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of reads unmapped: too short	0.75%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of reads unmapped: other	8103		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039512	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039512/SRR1039512.Log.final.out
+SRR1039513	star	Started job on	Aug 09 23:24:15		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Started mapping on	Aug 09 23:24:37		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Finished on	Aug 09 23:25:54		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Mapping speed, Million of reads per hour	752.35		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of input reads	16091880		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Uniquely mapped reads number	15391808		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Uniquely mapped reads %	95.65%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Average mapped length	125.56		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: Total	6514439		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: Annotated (sjdb)	6482371		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: GT/AG	6458299		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: GC/AG	43008		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: AT/AC	4325		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of splices: Non-canonical	8807		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Mismatch rate per base, %	0.17%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Deletion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Deletion average length	1.49		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Insertion average length	1.28		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of reads mapped to multiple loci	558756		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of reads mapped to multiple loci	3.47%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of reads mapped to too many loci	4793		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of reads mapped to too many loci	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of reads unmapped: too short	132691		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of reads unmapped: too short	0.82%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of reads unmapped: other	3832		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of reads unmapped: other	0.02%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039513	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039513/SRR1039513.Log.final.out
+SRR1039516	star	Started job on	Aug 09 23:27:04		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Started mapping on	Aug 09 23:27:28		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Finished on	Aug 09 23:29:37		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Mapping speed, Million of reads per hour	729.03		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of input reads	26123507		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Uniquely mapped reads number	24914773		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Uniquely mapped reads %	95.37%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Average mapped length	125.63		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: Total	11177262		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: Annotated (sjdb)	11121795		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: GT/AG	11077514		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: GC/AG	79178		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: AT/AC	7545		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of splices: Non-canonical	13025		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Mismatch rate per base, %	0.25%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Deletion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Deletion average length	1.51		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Insertion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Insertion average length	1.32		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of reads mapped to multiple loci	984389		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of reads mapped to multiple loci	3.77%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of reads mapped to too many loci	10564		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of reads mapped to too many loci	0.04%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of reads unmapped: too short	205256		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of reads unmapped: too short	0.79%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of reads unmapped: other	8525		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039516	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039516/SRR1039516.Log.final.out
+SRR1039517	star	Started job on	Aug 09 23:31:09		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Started mapping on	Aug 09 23:31:29		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Finished on	Aug 09 23:34:05		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Mapping speed, Million of reads per hour	758.56		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of input reads	32871045		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Uniquely mapped reads number	31520439		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Uniquely mapped reads %	95.89%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Average mapped length	125.59		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: Total	14007399		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: Annotated (sjdb)	13936489		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: GT/AG	13885285		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: GC/AG	94297		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: AT/AC	10080		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of splices: Non-canonical	17737		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Mismatch rate per base, %	0.25%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Deletion rate per base	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Deletion average length	1.51		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Insertion average length	1.27		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of reads mapped to multiple loci	1128827		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of reads mapped to multiple loci	3.43%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of reads mapped to too many loci	11396		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of reads mapped to too many loci	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of reads unmapped: too short	201476		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of reads unmapped: too short	0.61%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of reads unmapped: other	8907		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039517	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039517/SRR1039517.Log.final.out
+SRR1039520	star	Started job on	Aug 09 23:35:12		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Started mapping on	Aug 09 23:35:35		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Finished on	Aug 09 23:37:12		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Mapping speed, Million of reads per hour	756.03		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of input reads	20370846		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Uniquely mapped reads number	19460118		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Uniquely mapped reads %	95.53%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Average mapped length	125.54		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: Total	8831903		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: Annotated (sjdb)	8785824		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: GT/AG	8757921		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: GC/AG	57767		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: AT/AC	5632		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of splices: Non-canonical	10583		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Mismatch rate per base, %	0.18%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Deletion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Deletion average length	1.54		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Insertion average length	1.31		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of reads mapped to multiple loci	727346		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of reads mapped to multiple loci	3.57%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of reads mapped to too many loci	7501		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of reads mapped to too many loci	0.04%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of reads unmapped: too short	169515		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of reads unmapped: too short	0.83%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of reads unmapped: other	6366		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039520	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039520/SRR1039520.Log.final.out
+SRR1039521	star	Started job on	Aug 09 23:38:15		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Started mapping on	Aug 09 23:38:37		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Finished on	Aug 09 23:40:21		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Mapping speed, Million of reads per hour	775.96		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of input reads	22416611		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Average input read length	125		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Uniquely mapped reads number	21427791		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Uniquely mapped reads %	95.59%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Average mapped length	125.52		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: Total	9575138		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: Annotated (sjdb)	9525719		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: GT/AG	9495346		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: GC/AG	61309		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: AT/AC	6835		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of splices: Non-canonical	11648		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Mismatch rate per base, %	0.18%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Deletion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Deletion average length	1.55		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Insertion rate per base	0.01%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Insertion average length	1.28		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of reads mapped to multiple loci	786330		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of reads mapped to multiple loci	3.51%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of reads mapped to too many loci	7001		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of reads mapped to too many loci	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of reads unmapped: too many mismatches	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of reads unmapped: too many mismatches	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of reads unmapped: too short	189810		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of reads unmapped: too short	0.85%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of reads unmapped: other	5679		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of reads unmapped: other	0.03%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	Number of chimeric reads	0		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out
+SRR1039521	star	% of chimeric reads	0.00%		/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/02_alignment/SRR1039521/SRR1039521.Log.final.out

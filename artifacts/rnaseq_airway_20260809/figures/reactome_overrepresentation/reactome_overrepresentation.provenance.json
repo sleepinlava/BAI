@@ -1,0 +1,28 @@
+{
+  "figure_id": "reactome_overrepresentation",
+  "created_at": "2026-08-09T16:04:14.036718+00:00",
+  "abi_version": "unknown",
+  "skill": "abi_sciplot",
+  "skill_version": "0.1.0",
+  "renderer": "matplotlib",
+  "renderer_version": "3.10.9",
+  "python_version": "3.10.20",
+  "input_table": "/root/autodl-tmp/abi-real-data/results/rnaseq_airway_abi_test_20260809_12vcpu_62gb_retry1/tables/reactome_overrepresentation_plot.tsv",
+  "input_data_role": "reactome_overrepresentation_plot",
+  "input_sha256": "7c8b10e1434a6e76d56fa481ca71fe923bde68ee1093d7ed05c24b9218aa60d3",
+  "source_run_id": "unknown",
+  "source_standard_table": "unknown",
+  "source_standard_table_sha256": "unknown",
+  "workflow_name": "RNA-seq Gene Expression ABI Report",
+  "theme": "abi_nature",
+  "palette": "colorblind_safe_8",
+  "statistical_test": null,
+  "multiple_testing_correction": null,
+  "packages": {
+    "matplotlib": "3.10.9",
+    "pandas": "2.3.3",
+    "numpy": "2.2.6",
+    "seaborn": "unknown",
+    "pydantic": "2.13.4"
+  }
+}
