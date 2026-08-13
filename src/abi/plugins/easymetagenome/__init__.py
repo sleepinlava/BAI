@@ -16,6 +16,7 @@ from abi.workflow import WorkflowCatalog
 
 from .adapters import ManifestValidator
 from .handlers import handlers as easymeta_handlers
+from .reproduction import validate_core53_manifest, validate_pluspf_identity
 from .workflow import P0Workflow
 
 __all__ = ["EasyMetagenomePlugin", "ManifestValidator", "P0Workflow"]
@@ -157,6 +158,32 @@ class EasyMetagenomePlugin:
             checks.append({"name": "manifest", "status": "pass", "sample_count": len(samples)})
         except (FileNotFoundError, ValueError) as exc:
             checks.append({"name": "manifest", "status": "fail", "message": str(exc)})
+        reproduction = config.get("reproduction", {})
+        if isinstance(reproduction, Mapping) and reproduction.get("protocol") == "ibd_core53":
+            try:
+                manifest_errors = validate_core53_manifest(config["input"]["sample_sheet"])
+            except (OSError, ValueError) as exc:
+                manifest_errors = [str(exc)]
+            checks.append(
+                {
+                    "name": "ibd_core53_manifest",
+                    "status": "fail" if manifest_errors else "pass",
+                    "errors": manifest_errors,
+                }
+            )
+            identity_path = reproduction.get("kraken2_identity")
+            if not identity_path:
+                kraken_db = config.get("resources", {}).get("kraken2_db", "")
+                identity_path = Path(str(kraken_db)) / ".abi_resource_identity.json"
+            identity_errors = validate_pluspf_identity(identity_path)
+            checks.append(
+                {
+                    "name": "pluspf_20240605_identity",
+                    "status": "fail" if identity_errors else "pass",
+                    "path": str(identity_path),
+                    "errors": identity_errors,
+                }
+            )
         resources = config.get("resources", {})
         workflow = config.get("workflow", {})
         taxonomy_enabled = (

@@ -1,4 +1,27 @@
 workflows:
+  - id: ibd_core53_reproduction
+    name: Preregistered IBD core-53 reproduction
+    description: Frozen SRP131166 subset, pluspf 20240605 gate, and E1-E5 endpoint scoring.
+    required_resources: [host_db, kraken2_db, reference_table]
+    capabilities: [taxonomy, reproduction]
+    include_nodes:
+      - validate_manifest
+      - seqkit_stat_raw
+      - fastp_qc
+      - kneaddata_host_removal
+      - compress_dehost_reads
+      - fastp_summary
+      - kneaddata_summary
+      - kraken2_classify
+      - bracken_phylum
+      - bracken_genus
+      - bracken_species
+      - cleanup_taxonomy_intermediates
+      - bracken_merge
+      - taxonomy_filter
+      - taxonomy_diversity
+      - score_ibd_reproduction
+      - collect_report
   - id: p0_taxonomy
     name: Taxonomic profiling
     description: fastp, KneadData, Kraken2, Bracken, prevalence filtering, and diversity.

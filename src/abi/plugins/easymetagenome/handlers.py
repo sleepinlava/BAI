@@ -15,6 +15,7 @@ from abi.internal import FunctionInternalHandler, InternalHandlerContext, Intern
 
 from .adapters import ManifestValidator, merge_bracken, parse_fastp_json, taxonomy_diversity
 from .report_manifest import write_report_manifest
+from .reproduction import score_ibd_reproduction
 
 _GZIP_CHUNK_SIZE = 8 * 1024 * 1024
 _GZIP_COMPRESSION_LEVEL = 6
@@ -81,7 +82,7 @@ def kneaddata_summary_handler(
 ) -> InternalHandlerResult:
     del config
     paths = _paths(step.inputs.get("dehost_reads"))
-    rows = []
+    rows: list[dict[str, Any]] = []
     reused_standard_table = any(not path.is_file() for path in paths)
     if reused_standard_table:
         sample_ids = {path.name.split("_1_kneaddata", 1)[0] for path in paths}
@@ -261,6 +262,26 @@ def concat_reads_handler(
     return InternalHandlerResult(
         message="Concatenated paired host-filtered reads",
         artifacts={"merged_reads": destination},
+    )
+
+
+def score_ibd_reproduction_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    del context
+    result = score_ibd_reproduction(
+        step.inputs["genus_table"],
+        config["input"]["sample_sheet"],
+        step.inputs["reference_table"],
+        step.outputs["endpoint_scores"],
+        permutations=int(step.params.get("permutations", 999)),
+        seed=int(step.params.get("seed", 20240605)),
+    )
+    return InternalHandlerResult(
+        message=f"IBD core53 endpoint status: {result['status']}",
+        artifacts={"endpoint_scores": Path(step.outputs["endpoint_scores"])},
     )
 
 
@@ -588,6 +609,9 @@ def handlers() -> dict[str, FunctionInternalHandler]:
             "easymetagenome.taxonomy_diversity", taxonomy_diversity_handler
         ),
         "easymetagenome.report": FunctionInternalHandler("easymetagenome.report", report_handler),
+        "easymetagenome.score_ibd_reproduction": FunctionInternalHandler(
+            "easymetagenome.score_ibd_reproduction", score_ibd_reproduction_handler
+        ),
         "easymetagenome.concat_reads": FunctionInternalHandler(
             "easymetagenome.concat_reads", concat_reads_handler
         ),

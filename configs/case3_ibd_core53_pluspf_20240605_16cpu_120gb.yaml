@@ -1,0 +1,34 @@
+project_name: case3_ibd_core53_pluspf_20240605_16cpu_120gb
+threads: 16
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_core53_pluspf_20240605
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_core53_pluspf_20240605
+
+input:
+  sample_sheet: /root/autodl-tmp/abi-real-data/configs/case3_ibd_srp131166_core53.samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2_pluspf_20240605
+  reference_table: /root/autodl-tmp/abi/docs/zh/figures/data/easymeta_ibd_20260725/Table_3.csv
+
+workflow:
+  preset: ibd_core53_reproduction
+
+reproduction:
+  protocol: ibd_core53
+  kraken2_identity: /root/autodl-tmp/resources/autoplasm/kraken2_pluspf_20240605/.abi_resource_identity.json
+
+tool_params:
+  fastp: {threads: 16}
+  kneaddata: {threads: 16}
+  kraken2: {threads: 16}
+  bracken: {read_length: 150, threshold: 0}
+
+execution:
+  resources: {cpu: 16, memory: 120GB}
+  parallel: false
+  workers: 1
+  batch_size: 1
+  error_policy: halt
+  resume: true
+  progress: true

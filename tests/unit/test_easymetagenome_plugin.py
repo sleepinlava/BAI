@@ -340,6 +340,7 @@ def test_workflow_catalog_is_available_through_unified_query():
 
     assert payload["status"] == "success"
     assert {item["id"] for item in payload["result"]["workflows"]} == {
+        "ibd_core53_reproduction",
         "p0_taxonomy",
         "p1_humann4",
         "full_read_based",
@@ -366,6 +367,65 @@ def test_humann4_preflight_requires_only_functional_databases(tmp_path):
 
     assert report["status"] == "pass"
     assert "kraken2_db" not in {check["name"] for check in report["checks"]}
+
+
+def test_formal_reproduction_preflight_enforces_core53_and_pluspf_identity(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    host_db = tmp_path / "host"
+    kraken_db = tmp_path / "kraken"
+    host_db.mkdir()
+    kraken_db.mkdir()
+    manifest = _manifest(tmp_path)
+    identity = kraken_db / ".abi_resource_identity.json"
+    identity.write_text(
+        json.dumps(
+            {
+                "database_id": "kraken2_standard",
+                "version": "standard_20260226",
+                "source_url": "https://example.invalid/standard.tar.gz",
+                "archive_sha256": "a" * 64,
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = plugin.load_config(
+        overrides={
+            "input": {"sample_sheet": str(manifest)},
+            "resources": {"host_db": str(host_db), "kraken2_db": str(kraken_db)},
+            "reproduction": {
+                "protocol": "ibd_core53",
+                "kraken2_identity": str(identity),
+            },
+            "outdir": str(tmp_path / "results"),
+        }
+    )
+
+    report = plugin.preflight(config, engine="local", check_runtime=False)
+
+    assert report["status"] == "fail"
+    checks = {check["name"]: check for check in report["checks"]}
+    assert checks["ibd_core53_manifest"]["status"] == "fail"
+    assert checks["pluspf_20240605_identity"]["status"] == "fail"
+
+
+def test_ibd_core53_preset_plans_frozen_endpoint_scoring(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        overrides={
+            "workflow": {"preset": "ibd_core53_reproduction"},
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+            "resources": {
+                "reference_table": "docs/zh/figures/data/easymeta_ibd_20260725/Table_3.csv"
+            },
+        }
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+
+    score = next(step for step in plan.steps if step.step_id == "score_ibd_reproduction")
+    assert int(score.params["permutations"]) == 999
+    assert score.outputs["endpoint_scores"].endswith("ibd_core53_endpoint_scores.json")
 
 
 def test_easymetagenome_parsers_cover_every_registered_tool(tmp_path):

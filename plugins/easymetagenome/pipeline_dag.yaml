@@ -307,6 +307,29 @@ nodes:
       - "len(output_json.standard_tables) == 3"
       - "output_json.consistency.standard_table_count == 3"
       - "output_json.consistency.standard_row_count == output_json.standard_tables.qc_summary.rows + output_json.standard_tables.host_removal_summary.rows + output_json.standard_tables.taxonomy_abundance.rows"
+  score_ibd_reproduction:
+    tool_id: internal
+    internal_handler: easymetagenome.score_ibd_reproduction
+    category: statistics
+    scope: cross_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [bracken_merge]
+    params: {permutations: 999, seed: 20240605}
+    inputs:
+      genus_table: {type: file, source: bracken_merge.genus_table}
+      reference_table: {type: file}
+    outputs:
+      endpoint_scores:
+        type: file
+        format: json
+        path: "{outdir}/{category_dir}/ibd_core53_endpoint_scores.json"
+        contract:
+          min_size: "100B"
+          required_keys: [protocol, status, endpoints]
+    assertions:
+      - "output_json.protocol == 'ibd_core53'"
+      - "len(output_json.endpoints) == 5"
   concat_dehost_reads:
     tool_id: internal
     internal_handler: easymetagenome.concat_reads

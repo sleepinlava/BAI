@@ -52,3 +52,17 @@ SRP131166 全部 NC（13）+ 全部 UC（20）+ 按 run accession 字典序取�
 2. 下载 pluspf 20240605 数据库（~8GB）与 GRCh37/hg19 Bowtie2 索引，冻结 SHA256。
 3. 子集 manifest（53 runs + ENA MD5）写入机器可读清单。
 4. ABI `easymetagenome` 插件完整生命周期执行，validate-result 通过后计算 E1-E5。
+
+## ABI 实现冻结（2026-08-14）
+
+- 工程压力测试使用 `configs/case3_ibd_p0_real30_16cpu_120gb.yaml`；30 个样本跨项目，
+  仅用于验证 16 vCPU、120GB 内存、逐样本清理与断点续跑，不产生论文结论。
+- 正式结论使用 `configs/case3_ibd_core53_pluspf_20240605_16cpu_120gb.yaml` 和
+  `ibd_core53_reproduction` 预设。插件 preflight 强制 53 个样本均来自 SRP131166，
+  分组必须为 13 NC / 20 CD / 20 UC。
+- `scripts/cloud/freeze_easymeta_ibd_core53.py` 从冻结的 Table_1 确定性生成样本表；
+  CD 必须为 run accession 字典序前 20 个。
+- 正式运行要求 Kraken2 数据库目录内提供 `.abi_resource_identity.json`，其中版本、
+  官方下载 URL 与归档 SHA256 必须匹配 pluspf 20240605，否则 preflight 失败。
+- E1-E5 由 DAG 的 `score_ibd_reproduction` 节点统一输出到
+  `05_statistics/ibd_core53_endpoint_scores.json`；端点不达标时固定写为 `divergent`。
