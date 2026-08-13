@@ -90,6 +90,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -1012,6 +1013,7 @@ class GenericABIExecutor:
             )
             with Path(params["stderr_path"]).open("a", encoding="utf-8") as handle:
                 handle.write(str(exc) + "\n")
+            _cleanup_failed_step_output_dir(step, provenance.parent)
             return {"status": "failed", "return_code": "", "reason": reason}
         if result.return_code != 0:
             # The tool ran but exited with a non-zero code.
@@ -1022,6 +1024,7 @@ class GenericABIExecutor:
                 stderr_path=str(result.outputs.get("stderr_path", params["stderr_path"])),
                 stdout_path=str(result.outputs.get("stdout_path", params["stdout_path"])),
             )
+            _cleanup_failed_step_output_dir(step, provenance.parent)
             return {
                 "status": "failed",
                 "return_code": result.return_code,
@@ -1970,6 +1973,29 @@ def _read_pair_for_key(key: str) -> str:
 def _filename_has_read_pair(name: str, pair: str) -> bool:
     """Detect R1/R2 or read1/read2 as a delimited filename token."""
     return bool(re.search(rf"(^|[^a-z0-9])(?:r|read)?{pair}([^a-z0-9]|$)", name))
+
+
+def _cleanup_failed_step_output_dir(step: Any, run_outdir: Path) -> None:
+    """Remove opted-in partial outputs after a failed external tool step."""
+    enabled = str(step.params.get("_cleanup_failed_output_dir", "false")).lower()
+    if enabled not in {"1", "true", "yes", "on"}:
+        return
+    raw_output_dir = step.outputs.get("output_dir")
+    if not raw_output_dir:
+        return
+    output_dir = Path(str(raw_output_dir))
+    resolved_run = run_outdir.resolve()
+    resolved_output = output_dir.resolve()
+    if resolved_output == resolved_run or not resolved_output.is_relative_to(resolved_run):
+        _logger.warning("Refusing failed-step cleanup outside run directory: %s", output_dir)
+        return
+    if not output_dir.is_dir():
+        return
+    for child in output_dir.iterdir():
+        if child.is_symlink() or child.is_file():
+            child.unlink(missing_ok=True)
+        elif child.is_dir():
+            shutil.rmtree(child)
 
 
 def _tool_failure_reason(

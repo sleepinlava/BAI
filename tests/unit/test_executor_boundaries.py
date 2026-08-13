@@ -13,6 +13,7 @@ from abi.executor import (
     GenericABIExecutor,
     _bridge_consensus_for_single_detector,
     _build_assertion_context,
+    _cleanup_failed_step_output_dir,
     _execution_options,
     _filename_has_read_pair,
     _output_candidate_score,
@@ -107,6 +108,22 @@ def _executor(
     )
     executor._config = {"outdir": str(tmp_path)}
     return executor
+
+
+def test_cleanup_failed_step_output_dir_is_opt_in_and_scoped(tmp_path: Path) -> None:
+    output_dir = tmp_path / "out" / "02_host_removal" / "S1"
+    output_dir.mkdir(parents=True)
+    partial = output_dir / "_temp.sam"
+    partial.write_bytes(b"partial")
+    step = _step(
+        params={"_cleanup_failed_output_dir": "true"},
+        outputs={"output_dir": str(output_dir)},
+    )
+
+    _cleanup_failed_step_output_dir(step, tmp_path / "out")
+
+    assert output_dir.is_dir()
+    assert not partial.exists()
 
 
 def test_prepare_output_directories_rejects_all_outputs_outside_root(tmp_path: Path) -> None:
