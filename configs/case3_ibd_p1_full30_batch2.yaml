@@ -16,12 +16,16 @@ workflow:
   preset: p1_humann4
 
 tool_params:
-  fastp: {threads: 4}
-  kneaddata: {threads: 4}
+  fastp: {threads: 12}
+  kneaddata: {threads: 12}
+  humann4: {threads: 12}
 
 execution:
+  resources:
+    cpu: 12
+    memory: 62GB
   parallel: true
-  workers: 2
-  batch_size: 2
+  workers: 1
+  batch_size: 1
   error_policy: halt
   progress: true

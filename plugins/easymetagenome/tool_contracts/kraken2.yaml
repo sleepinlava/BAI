@@ -13,7 +13,7 @@ outputs:
   classifications: {type: file, format: tsv}
 execution:
   executable: kraken2
-  command_template: kraken2 --db {kraken2_db} --paired {dehost_read1} {dehost_read2}
+  command_template: kraken2 --db {kraken2_db} --memory-mapping --paired {dehost_read1} {dehost_read2}
     --threads {threads} --use-names --report-zero-counts --report {report}
     --output {classifications}
   network: false

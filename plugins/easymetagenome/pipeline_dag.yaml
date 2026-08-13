@@ -77,6 +77,7 @@ nodes:
     platforms: [illumina]
     optional: false
     depends_on: [fastp_qc]
+    params: {_cleanup_failed_output_dir: true}
     inputs:
       clean_read1: {type: file, source: fastp_qc.clean_read1}
       clean_read2: {type: file, source: fastp_qc.clean_read2}
@@ -172,6 +173,27 @@ nodes:
       bracken_report: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/S/{sample_id}.S.report", contract: {file_exists: true, extensions: [.report], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}/S"}
     assertions: ["output_files.bracken_table exists"]
+  cleanup_taxonomy_intermediates:
+    tool_id: internal
+    internal_handler: easymetagenome.cleanup_taxonomy_intermediates
+    category: taxonomy
+    scope: per_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [fastp_qc, compress_dehost_reads, kraken2_classify, bracken_phylum, bracken_genus, bracken_species]
+    params: {_batch_cleanup: true}
+    inputs:
+      clean_read1: {type: file, source: fastp_qc.clean_read1}
+      clean_read2: {type: file, source: fastp_qc.clean_read2}
+      dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}
+      dehost_read2: {type: file, source: compress_dehost_reads.dehost_read2}
+      classifications: {type: file, source: kraken2_classify.classifications}
+    outputs:
+      cleanup_receipt:
+        type: file
+        format: json
+        path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.taxonomy.json"
+        contract: {min_size: "10B", required_keys: [status, sample_id, dehost_read_pairs, deleted_bytes, deleted_paths]}
   fastp_summary:
     tool_id: internal
     internal_handler: easymetagenome.fastp_summary

@@ -79,18 +79,38 @@ def kneaddata_summary_handler(
     config: Mapping[str, Any],
     context: InternalHandlerContext,
 ) -> InternalHandlerResult:
-    del config, context
-    rows = [
-        {
-            "sample_id": path.name.split("_1_kneaddata", 1)[0],
-            "dehost_read_pairs": _fastq_records(path),
-        }
-        for path in _paths(step.inputs.get("dehost_reads"))
-    ]
+    del config
+    paths = _paths(step.inputs.get("dehost_reads"))
+    rows = []
+    reused_standard_table = any(not path.is_file() for path in paths)
+    if reused_standard_table:
+        sample_ids = {path.name.split("_1_kneaddata", 1)[0] for path in paths}
+        table_path = context.tables_dir / "host_removal_summary.tsv"
+        with table_path.open("r", encoding="utf-8", newline="") as handle:
+            seen = set()
+            for record in csv.DictReader(handle, delimiter="\t"):
+                sample_id = str(record.get("sample_id", ""))
+                if sample_id not in sample_ids or sample_id in seen:
+                    continue
+                rows.append(
+                    {
+                        "sample_id": sample_id,
+                        "dehost_read_pairs": str(record.get("dehost_read_pairs", "")),
+                    }
+                )
+                seen.add(sample_id)
+    else:
+        rows = [
+            {
+                "sample_id": path.name.split("_1_kneaddata", 1)[0],
+                "dehost_read_pairs": _fastq_records(path),
+            }
+            for path in paths
+        ]
     _write_rows(step.outputs["summary_table"], rows)
     return InternalHandlerResult(
         message=f"Summarized KneadData for {len(rows)} samples",
-        tables={"host_removal_summary": rows},
+        tables={} if reused_standard_table else {"host_removal_summary": rows},
     )
 
 
@@ -275,10 +295,46 @@ def compress_reads_handler(
 
     for source, _ in pairs:
         source.unlink()
+    deleted_bytes, deleted_paths = _cleanup_kneaddata_intermediates(
+        pairs[0][0].parent,
+        keep={destination.resolve() for _, destination in pairs},
+    )
     return InternalHandlerResult(
-        message=f"Compressed paired host-filtered reads; workers={compression_workers}",
+        message=(
+            f"Compressed paired host-filtered reads; "
+            f"removed_intermediates={len(deleted_paths)}; freed_bytes={deleted_bytes}; "
+            f"workers={compression_workers}"
+        ),
         artifacts={key: Path(step.outputs[key]) for key in ("dehost_read1", "dehost_read2")},
     )
+
+
+def _cleanup_kneaddata_intermediates(
+    output_dir: Path,
+    *,
+    keep: set[Path],
+) -> tuple[int, list[str]]:
+    """Remove non-final files left by KneadData after paired reads are compressed."""
+    deleted_bytes = 0
+    deleted_paths: list[str] = []
+    if not output_dir.is_dir():
+        return deleted_bytes, deleted_paths
+    keep_resolved = {path.resolve() for path in keep}
+    for path in output_dir.iterdir():
+        resolved = path.resolve()
+        if resolved in keep_resolved or path.name.endswith(".log"):
+            continue
+        if path.is_symlink() or path.is_file():
+            deleted_bytes += path.lstat().st_size
+            path.unlink()
+            deleted_paths.append(str(path))
+        elif path.is_dir():
+            deleted_bytes += sum(
+                child.stat().st_size for child in path.rglob("*") if child.is_file()
+            )
+            shutil.rmtree(path)
+            deleted_paths.append(str(path))
+    return deleted_bytes, deleted_paths
 
 
 def _compress_gzip_member(data: bytes) -> bytes:
@@ -358,6 +414,59 @@ def cleanup_functional_intermediates_handler(
     )
     return InternalHandlerResult(
         message=f"Cleaned {len(deleted_paths)} FASTQ intermediates for {sample_id}",
+        artifacts={"cleanup_receipt": receipt},
+    )
+
+
+def cleanup_taxonomy_intermediates_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    """Remove large per-sample read/classification intermediates after Bracken succeeds."""
+    del config
+    sample_id = str(step.sample_id)
+    dehost_read_pairs = _fastq_records(Path(step.inputs["dehost_read1"]))
+    intermediates = [
+        Path(step.inputs[key])
+        for key in (
+            "clean_read1",
+            "clean_read2",
+            "dehost_read1",
+            "dehost_read2",
+            "classifications",
+        )
+    ]
+    outdir = context.outdir.resolve()
+    deleted_bytes = 0
+    deleted_paths: list[str] = []
+    for path in intermediates:
+        resolved = path.resolve()
+        if not resolved.is_relative_to(outdir):
+            raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
+        if path.is_file():
+            deleted_bytes += path.stat().st_size
+            path.unlink()
+            deleted_paths.append(str(path))
+
+    receipt = Path(step.outputs["cleanup_receipt"])
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    receipt.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "sample_id": sample_id,
+                "dehost_read_pairs": dehost_read_pairs,
+                "deleted_bytes": deleted_bytes,
+                "deleted_paths": deleted_paths,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return InternalHandlerResult(
+        message=f"Cleaned {len(deleted_paths)} taxonomy intermediates for {sample_id}",
         artifacts={"cleanup_receipt": receipt},
     )
 
@@ -485,6 +594,10 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.cleanup_functional_intermediates": FunctionInternalHandler(
             "easymetagenome.cleanup_functional_intermediates",
             cleanup_functional_intermediates_handler,
+        ),
+        "easymetagenome.cleanup_taxonomy_intermediates": FunctionInternalHandler(
+            "easymetagenome.cleanup_taxonomy_intermediates",
+            cleanup_taxonomy_intermediates_handler,
         ),
         "easymetagenome.functional_report": FunctionInternalHandler(
             "easymetagenome.functional_report", functional_report_handler

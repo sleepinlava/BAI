@@ -240,8 +240,52 @@ def test_full_p1_config_plans_all_30_samples_with_cleanup_receipts(tmp_path):
 
     assert len(plan.samples) == 30
     assert len(cleanup_steps) == 30
-    assert config["execution"]["workers"] == 2
-    assert config["execution"]["batch_size"] == 2
+    assert config["execution"]["workers"] == 1
+    assert config["execution"]["batch_size"] == 1
+    assert all(str(step.params["_batch_cleanup"]).lower() == "true" for step in cleanup_steps)
+    assert all(step.outputs["cleanup_receipt"].endswith(".json") for step in cleanup_steps)
+
+
+def test_p0_kraken2_uses_memory_mapping_and_kneaddata_opts_into_failure_cleanup(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        overrides={
+            "workflow": {"preset": "p0_taxonomy"},
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        }
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+    kraken = next(step for step in plan.steps if step.tool_id == "kraken2")
+    kneaddata = next(step for step in plan.steps if step.tool_id == "kneaddata")
+
+    assert "--memory-mapping" in plugin.registry().create("kraken2").build_command(
+        {**kraken.inputs, **kraken.params, **kraken.outputs}
+    )
+    assert str(kneaddata.params["_cleanup_failed_output_dir"]).lower() == "true"
+
+
+def test_p0_real30_config_plans_per_sample_low_storage_cleanup(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_p0_real30_16cpu_120gb.yaml",
+        overrides={
+            "input": {"sample_sheet": "configs/case3_ibd_p0_technical_pilot_samples.tsv"},
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+    cleanup_steps = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
+    ]
+
+    assert len(plan.samples) == 30
+    assert len(cleanup_steps) == 30
     assert all(str(step.params["_batch_cleanup"]).lower() == "true" for step in cleanup_steps)
     assert all(step.outputs["cleanup_receipt"].endswith(".json") for step in cleanup_steps)
 

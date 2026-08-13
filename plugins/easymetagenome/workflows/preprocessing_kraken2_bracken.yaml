@@ -95,7 +95,7 @@ nodes:
     params: {threads: 4}
     resources: {cpu: 4, memory_gb: 32, disk_multiplier: 2}
     depends_on: [kneaddata_host_removal]
-    command_template: kraken2 --db {inputs.kraken2_db} --paired {inputs.dehost_r1} {inputs.dehost_r2} --threads {params.threads} --use-names --report-zero-counts --report {outputs.report} --output {outputs.output}
+    command_template: kraken2 --db {inputs.kraken2_db} --memory-mapping --paired {inputs.dehost_r1} {inputs.dehost_r2} --threads {params.threads} --use-names --report-zero-counts --report {outputs.report} --output {outputs.output}
     checks: [{exists: "{outputs.report}"}]
     on_fail: {retry: 0, action: stop_workflow}
   - id: kneaddata_summary

@@ -28,7 +28,7 @@ tools:
     category: taxonomy
     executable: kraken2
     required: true
-    command_template: kraken2 --db {kraken2_db} --paired {dehost_read1} {dehost_read2} --threads {threads} --use-names --report-zero-counts --report {report} --output {classifications}
+    command_template: kraken2 --db {kraken2_db} --memory-mapping --paired {dehost_read1} {dehost_read2} --threads {threads} --use-names --report-zero-counts --report {report} --output {classifications}
     inputs: [dehost_read1, dehost_read2, kraken2_db]
     resources: {cpu: 4, memory: 32GB, walltime: "08:00:00", disk: 20GB}
   - id: bracken

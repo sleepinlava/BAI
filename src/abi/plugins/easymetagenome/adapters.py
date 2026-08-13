@@ -283,7 +283,7 @@ KNEADDATA_ADAPTER = ToolAdapter(
 KRAKEN2_ADAPTER = ToolAdapter(
     "kraken2",
     "kraken2",
-    "kraken2 --db {kraken2_db} --paired {dehost_r1} {dehost_r2} "
+    "kraken2 --db {kraken2_db} --memory-mapping --paired {dehost_r1} {dehost_r2} "
     "--threads {threads} --use-names --report-zero-counts "
     "--report {report} --output {output}",
     failure_patterns=(

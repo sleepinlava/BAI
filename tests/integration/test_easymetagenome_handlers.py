@@ -13,6 +13,8 @@ import yaml
 from abi.plugins import get_plugin
 from abi.plugins.easymetagenome.handlers import (
     bracken_merge_handler,
+    cleanup_taxonomy_intermediates_handler,
+    kneaddata_summary_handler,
     report_handler,
     taxonomy_diversity_handler,
     taxonomy_filter_handler,
@@ -68,6 +70,62 @@ def _manifest(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return manifest
+
+
+def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_path):
+    outdir = tmp_path / "result"
+    inputs = {}
+    for key, relative in (
+        ("clean_read1", "01_preprocessing/S1/S1_1.fastq.gz"),
+        ("clean_read2", "01_preprocessing/S1/S1_2.fastq.gz"),
+        ("dehost_read1", "02_host_removal/S1/S1_1_kneaddata_paired_1.fastq.gz"),
+        ("dehost_read2", "02_host_removal/S1/S1_1_kneaddata_paired_2.fastq.gz"),
+        ("classifications", "03_taxonomy/S1/S1.kraken2.output"),
+    ):
+        path = outdir / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if key.startswith("dehost"):
+            with gzip.open(path, "wt", encoding="utf-8") as handle:
+                handle.write("@r1\nACGT\n+\nIIII\n")
+        else:
+            path.write_text("intermediate\n", encoding="utf-8")
+        inputs[key] = str(path)
+
+    tables_dir = outdir / "tables"
+    tables_dir.mkdir(parents=True)
+    (tables_dir / "host_removal_summary.tsv").write_text(
+        "sample_id\tdehost_read_pairs\ttool\tsource_file\nS1\t1\tkneaddata\tfixture\n",
+        encoding="utf-8",
+    )
+    receipt = outdir / "provenance/intermediate_cleanup/S1.taxonomy.json"
+    context = SimpleNamespace(outdir=outdir, tables_dir=tables_dir)
+
+    cleanup_taxonomy_intermediates_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs=inputs,
+            outputs={"cleanup_receipt": str(receipt)},
+        ),
+        {},
+        context,
+    )
+    summary = outdir / "04_summary/kneaddata_summary.tsv"
+    result = kneaddata_summary_handler(
+        SimpleNamespace(
+            inputs={"dehost_reads": [inputs["dehost_read1"]]},
+            outputs={"summary_table": str(summary)},
+        ),
+        {},
+        context,
+    )
+
+    assert all(not Path(path).exists() for path in inputs.values())
+    assert json.loads(receipt.read_text(encoding="utf-8"))["dehost_read_pairs"] == 1
+    assert result.tables == {}
+    assert summary.read_text(encoding="utf-8").splitlines() == [
+        "sample_id\tdehost_read_pairs",
+        "S1\t1",
+    ]
 
 
 def test_taxonomy_internal_handlers_merge_filter_diversity_and_report(tmp_path):
@@ -210,6 +268,7 @@ elif name == 'kneaddata':
     out = value('-o'); out.mkdir(parents=True, exist_ok=True)
     for suffix in ('paired_1.fastq', 'paired_2.fastq'):
         (out / ('S1_1_kneaddata_' + suffix)).write_text('@r1\\nACGT\\n+\\nIIII\\n')
+    (out / '_temp.sam').write_text('temporary\\n')
 elif name == 'kraken2':
     for flag in ('--report', '--output'):
         path = value(flag)
@@ -237,8 +296,11 @@ elif name == 'bracken':
     assert result["status"] == "success"
     host_removed = tmp_path / "result/02_host_removal/S1"
     assert not (host_removed / "S1_1_kneaddata_paired_1.fastq").exists()
-    with gzip.open(host_removed / "S1_1_kneaddata_paired_1.fastq.gz", "rt") as handle:
-        assert handle.readline() == "@r1\n"
+    assert not (host_removed / "_temp.sam").exists()
+    assert not (host_removed / "S1_1_kneaddata_paired_1.fastq.gz").exists()
+    cleanup_receipt = tmp_path / "result/provenance/intermediate_cleanup/S1.taxonomy.json"
+    assert json.loads(cleanup_receipt.read_text(encoding="utf-8"))["dehost_read_pairs"] == 1
+    assert (tmp_path / "result/tables/host_removal_summary.tsv").is_file()
     progress_events = [
         json.loads(line)
         for line in (tmp_path / "result/provenance/progress.jsonl").read_text().splitlines()

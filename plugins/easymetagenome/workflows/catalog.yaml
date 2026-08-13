@@ -16,6 +16,7 @@ workflows:
       - bracken_phylum
       - bracken_genus
       - bracken_species
+      - cleanup_taxonomy_intermediates
       - bracken_merge
       - taxonomy_filter
       - taxonomy_diversity

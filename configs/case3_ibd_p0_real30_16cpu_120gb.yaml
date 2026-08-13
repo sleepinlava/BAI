@@ -1,0 +1,31 @@
+project_name: case3_ibd_easymetagenome_p0_real30_16cpu_120gb
+threads: 16
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_p0_real30_16cpu_120gb_20260814
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_p0_real30_16cpu_120gb_20260814
+
+input:
+  sample_sheet: /root/autodl-tmp/abi-real-data/configs/case3_ibd_p0_technical_pilot_samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2
+
+workflow:
+  preset: p0_taxonomy
+
+tool_params:
+  fastp: {threads: 16}
+  kneaddata: {threads: 16}
+  kraken2: {threads: 16}
+  bracken: {read_length: 150, threshold: 0}
+
+execution:
+  resources:
+    cpu: 16
+    memory: 120GB
+  parallel: false
+  workers: 1
+  batch_size: 1
+  error_policy: halt
+  resume: true
+  progress: true
