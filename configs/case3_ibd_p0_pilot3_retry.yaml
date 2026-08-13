@@ -1,0 +1,27 @@
+project_name: case3_ibd_easymetagenome_p0_pilot3_retry
+threads: 12
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_p0_pilot3_retry_20260811
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_p0_pilot3_retry_20260811
+
+input:
+  sample_sheet: /root/autodl-tmp/abi-real-data/configs/case3_ibd_p0_smoke_samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2
+
+workflow:
+  preset: p0_taxonomy
+
+tool_params:
+  fastp: {threads: 12}
+  kneaddata: {threads: 12}
+  kraken2: {threads: 12}
+  bracken: {read_length: 150, threshold: 0}
+
+execution:
+  parallel: false
+  workers: 1
+  error_policy: halt
+  resume: true
+  progress: true

@@ -1,0 +1,4 @@
+sample_id	r1	r2	group
+SRR14874694	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/NC/SRR14874694_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/NC/SRR14874694_2.fastq.gz	NC
+ERR1620261	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/CD/ERR1620261_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/CD/ERR1620261_2.fastq.gz	CD
+SRR14874720	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/UC/SRR14874720_1.fastq.gz	/root/autodl-tmp/abi-real-data/raw/case3_ibd_easymetagenome/UC/SRR14874720_2.fastq.gz	UC
