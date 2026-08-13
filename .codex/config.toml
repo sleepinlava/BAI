@@ -1,0 +1,5 @@
+# ABI managed MCP server (safe profile)
+
+[mcp_servers.abi]
+command = "abi-mcp"
+args = ["--profile", "safe"]

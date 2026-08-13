@@ -190,6 +190,8 @@ conda.lock
 !.claude/skills/abi/**
 .codex/*
 !.codex/config.toml
+.kimi-code/*
+!.kimi-code/mcp.json
 docs/_build/
 .readthedocs-cache/
 .opencode/*
