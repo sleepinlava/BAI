@@ -137,6 +137,27 @@ class ResourceManifest:
             if isinstance(value, Mapping) or identity:
                 resource = dict(value) if isinstance(value, Mapping) else {}
                 resource.update(identity)
+                identity_file = Path(str(resource.get("identity_file", "")))
+                if identity_file.is_file():
+                    try:
+                        frozen_identity = json.loads(identity_file.read_text(encoding="utf-8"))
+                    except (OSError, json.JSONDecodeError):
+                        frozen_identity = {}
+                    if isinstance(frozen_identity, Mapping):
+                        resource.update(
+                            {
+                                "version": frozen_identity.get(
+                                    "version", resource.get("version", "")
+                                ),
+                                "source_url": frozen_identity.get(
+                                    "source_url", resource.get("source_url", "")
+                                ),
+                                "checksum_sha256": frozen_identity.get(
+                                    "content_sha256", resource.get("checksum_sha256", "")
+                                ),
+                                "checksum_method": "sha256:content-tree-v1",
+                            }
+                        )
                 res_path = Path(
                     str(
                         resource.get(

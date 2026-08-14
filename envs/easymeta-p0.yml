@@ -9,5 +9,7 @@ dependencies:
 - seqkit
 - fastp
 - kneaddata
+- bowtie2
+- trimmomatic
 - kraken2
 - bracken

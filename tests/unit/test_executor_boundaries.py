@@ -385,6 +385,74 @@ def test_generic_executor_waits_for_batch_cleanup_before_starting_next_samples(
     assert summary["batch_size"] == 2
 
 
+def test_parallel_executor_runs_driver_validation_before_sample_chains(tmp_path: Path) -> None:
+    events: list[str] = []
+
+    def record_step(step, config, context):
+        del config, context
+        events.append(step.step_id)
+        return InternalHandlerResult(message="recorded")
+
+    samples = [
+        SampleInput(sample_id=sample_id, platform="assembly", assembly=f"{sample_id}.fa")
+        for sample_id in ("S1", "S2")
+    ]
+    context = SampleContext(samples, True, False, True, False)
+    handler = {"handler_id": "test.record", "execution_scope": "worker"}
+    steps = [
+        _step(
+            step_id="validate",
+            sample_id=None,
+            tool_id="internal",
+            params={
+                "_internal_handler": {
+                    "handler_id": "test.record",
+                    "execution_scope": "driver",
+                }
+            },
+        ),
+        *[
+            _step(
+                step_id=f"{sample.sample_id}_work",
+                sample_id=sample.sample_id,
+                tool_id="internal",
+                params={"_internal_handler": handler},
+            )
+            for sample in samples
+        ],
+    ]
+    plan = ExecutionPlan(
+        project_name="driver-first",
+        mode="auto",
+        threads=1,
+        outdir=str(tmp_path / "out"),
+        log_dir=str(tmp_path / "logs"),
+        samples=samples,
+        sample_context=context,
+        selected_tools=[],
+        steps=steps,
+    )
+    executor = GenericABIExecutor(
+        ToolRegistry([]),
+        RunLogger(tmp_path / "logs"),
+        table_manager=StandardTableManager({"summary": ["sample_id"]}),
+        parse_outputs=lambda *args: {},
+        internal_handlers={
+            "test.record": FunctionInternalHandler("test.record", record_step),
+        },
+    )
+
+    executor.run(
+        plan,
+        {
+            "outdir": str(tmp_path / "out"),
+            "execution": {"parallel": True, "workers": 2, "batch_size": 1},
+        },
+    )
+
+    assert events[0] == "validate"
+
+
 def test_execute_step_handles_skipped_dry_run_missing_and_external_failures(
     tmp_path: Path,
 ) -> None:

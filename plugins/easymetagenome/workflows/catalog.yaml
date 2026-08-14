@@ -1,4 +1,12 @@
 workflows:
+  - id: ibd_core53_download
+    name: Preregistered IBD core-53 ENA download
+    description: Download all frozen SRP131166 reads and verify ENA byte counts and MD5 values.
+    required_resources: []
+    capabilities: [download, reproduction]
+    include_nodes:
+      - validate_manifest
+      - download_ena_reads
   - id: ibd_core53_reproduction
     name: Preregistered IBD core-53 reproduction
     description: Frozen SRP131166 subset, pluspf 20240605 gate, and E1-E5 endpoint scoring.
@@ -6,6 +14,7 @@ workflows:
     capabilities: [taxonomy, reproduction]
     include_nodes:
       - validate_manifest
+      - download_ena_reads
       - seqkit_stat_raw
       - fastp_qc
       - kneaddata_host_removal
@@ -21,7 +30,7 @@ workflows:
       - taxonomy_filter
       - taxonomy_diversity
       - score_ibd_reproduction
-      - collect_report
+      - collect_ibd_reproduction_report
   - id: p0_taxonomy
     name: Taxonomic profiling
     description: fastp, KneadData, Kraken2, Bracken, prevalence filtering, and diversity.

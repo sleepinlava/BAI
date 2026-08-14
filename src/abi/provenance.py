@@ -47,6 +47,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping
 
+import yaml
+
 from abi import __version__
 from abi._shared import _display_command
 from abi.config import PROJECT_ROOT
@@ -104,16 +106,33 @@ def capture_run_identity(
     )
     runtime_lock_path = str(configured_lock or os.environ.get("ABI_RUNTIME_LOCK", "")).strip()
     runtime_lock_id = ""
+    runtime_lock_strict = False
     if runtime_lock_path:
-        digest = _sha256_file(Path(runtime_lock_path))
+        lock_path = Path(runtime_lock_path)
+        digest = _sha256_file(lock_path)
         if digest:
             runtime_lock_id = f"sha256:{digest}"
+            try:
+                lock = yaml.safe_load(lock_path.read_text(encoding="utf-8")) or {}
+            except (OSError, yaml.YAMLError):
+                lock = {}
+            release = lock.get("release", {}) if isinstance(lock, Mapping) else {}
+            project = lock.get("project", {}) if isinstance(lock, Mapping) else {}
+            runtime_lock_strict = bool(
+                lock.get("kind") == "abi-runtime-lock"
+                and release.get("blocking_missing_tools") == 0
+                and release.get("not_ready_resources") == 0
+                and project.get("git_commit") == commit
+                and project.get("git_dirty") is False
+            )
     return {
         "run_id": str(uuid.uuid4()),
         "abi_version": __version__,
         "git_commit": commit,
         "git_dirty": dirty,
         "runtime_lock_id": runtime_lock_id,
+        "runtime_lock_path": runtime_lock_path,
+        "runtime_lock_strict": runtime_lock_strict,
     }
 
 

@@ -14,7 +14,10 @@ import numpy as np
 
 CORE_PROJECT = "SRP131166"
 CORE_COUNTS = {"NC": 13, "CD": 20, "UC": 20}
-PLUSPF_20240605_SOURCE = "https://genome-idx.s3.amazonaws.com/k2_pluspf_20240605.tar.gz"
+PLUSPF_20240605_SOURCE = "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20240605.tar.gz"
+PLUSPF_20240605_PUBLISHER_MD5 = (
+    "https://genome-idx.s3.amazonaws.com/kraken/pluspf_20240605/pluspf.md5"
+)
 
 
 def _table1_rows(path: str | Path) -> list[dict[str, str]]:
@@ -31,6 +34,7 @@ def freeze_core53(
     output_path: str | Path,
     *,
     reads_root: str | Path,
+    ena_report: str | Path | None = None,
 ) -> list[dict[str, str]]:
     """Freeze all NC/UC and the lexicographically first 20 CD runs from SRP131166."""
     project_rows = [row for row in _table1_rows(table1_path) if row.get("project") == CORE_PROJECT]
@@ -42,6 +46,10 @@ def freeze_core53(
         )
         selected.extend(candidates[: CORE_COUNTS[group]])
     root = Path(reads_root)
+    ena: dict[str, dict[str, str]] = {}
+    if ena_report:
+        with Path(ena_report).open("r", encoding="utf-8", newline="") as handle:
+            ena = {row["run_accession"]: row for row in csv.DictReader(handle, delimiter="\t")}
     rows = [
         {
             "sample_id": row["run"],
@@ -51,6 +59,7 @@ def freeze_core53(
             "project": row["project"],
             "country": row.get("country", ""),
             "continent": row.get("continent", ""),
+            **_ena_fields(row["run"], ena.get(row["run"])),
         }
         for row in selected
     ]
@@ -67,7 +76,42 @@ def freeze_core53(
     return rows
 
 
-def validate_core53_manifest(path: str | Path) -> list[str]:
+def _ena_fields(run: str, row: dict[str, str] | None) -> dict[str, str]:
+    if row is None:
+        return {}
+    urls = str(row.get("fastq_ftp", "")).split(";")
+    md5s = str(row.get("fastq_md5", "")).split(";")
+    sizes = str(row.get("fastq_bytes", "")).split(";")
+    if len(urls) != 2 or len(md5s) != 2 or len(sizes) != 2:
+        raise ValueError(f"ENA run {run} must have exactly two paired FASTQ files")
+    return {
+        "r1_url": "https://" + urls[0].removeprefix("https://"),
+        "r2_url": "https://" + urls[1].removeprefix("https://"),
+        "r1_md5": md5s[0],
+        "r2_md5": md5s[1],
+        "r1_bytes": sizes[0],
+        "r2_bytes": sizes[1],
+    }
+
+
+def _expected_core_runs(table1_path: str | Path) -> list[str]:
+    project_rows = [row for row in _table1_rows(table1_path) if row.get("project") == CORE_PROJECT]
+    return [
+        row["run"]
+        for group in ("NC", "CD", "UC")
+        for row in sorted(
+            (row for row in project_rows if row.get("group") == group),
+            key=lambda item: item.get("run", ""),
+        )[: CORE_COUNTS[group]]
+    ]
+
+
+def validate_core53_manifest(
+    path: str | Path,
+    *,
+    table1_path: str | Path | None = None,
+    require_ena_metadata: bool = False,
+) -> list[str]:
     errors: list[str] = []
     with Path(path).open("r", encoding="utf-8-sig", newline="") as handle:
         first = handle.readline()
@@ -91,10 +135,46 @@ def validate_core53_manifest(path: str | Path) -> list[str]:
         errors.append("IBD core CD runs must be in lexicographic order")
     if len({str(row.get("sample_id", "")).strip() for row in rows}) != len(rows):
         errors.append("IBD core sample_id values must be unique")
+    if table1_path is not None:
+        observed = [str(row.get("sample_id", "")).strip() for row in rows]
+        expected = _expected_core_runs(table1_path)
+        if observed != expected:
+            errors.append("IBD core sample accessions do not match the frozen Table_1 selection")
+    ena_fields = ("r1_url", "r2_url", "r1_md5", "r2_md5", "r1_bytes", "r2_bytes")
+    present = [all(str(row.get(field, "")).strip() for field in ena_fields) for row in rows]
+    if any(present) and not all(present):
+        errors.append("ENA URL, MD5, and byte metadata must be complete for every core sample")
+    if require_ena_metadata and not all(present):
+        errors.append("Formal IBD reproduction requires ENA URL, MD5, and byte metadata")
+    if all(present):
+        if any(
+            not str(row.get(field, "")).startswith("https://")
+            for row in rows
+            for field in ("r1_url", "r2_url")
+        ):
+            errors.append("Formal IBD reproduction requires valid HTTPS URLs")
+        if any(
+            not re.fullmatch(r"[0-9a-fA-F]{32}", str(row.get(field, "")))
+            for row in rows
+            for field in ("r1_md5", "r2_md5")
+        ):
+            errors.append("Formal IBD reproduction requires valid MD5 values")
+        try:
+            positive_bytes = all(
+                int(str(row.get(field, ""))) > 0
+                for row in rows
+                for field in ("r1_bytes", "r2_bytes")
+            )
+        except ValueError:
+            positive_bytes = False
+        if not positive_bytes:
+            errors.append("Formal IBD reproduction requires positive byte counts")
     return errors
 
 
-def validate_pluspf_identity(path: str | Path) -> list[str]:
+def validate_pluspf_identity(
+    path: str | Path, *, resource_path: str | Path | None = None
+) -> list[str]:
     identity_path = Path(path)
     if not identity_path.is_file():
         return [f"Kraken2 identity file is missing: {identity_path}"]
@@ -116,6 +196,24 @@ def validate_pluspf_identity(path: str | Path) -> list[str]:
     checksum = str(payload.get("archive_sha256", ""))
     if not re.fullmatch(r"[0-9a-f]{64}", checksum):
         errors.append("Kraken2 pluspf identity requires a lowercase SHA-256 archive checksum")
+    publisher_md5 = str(payload.get("publisher_md5_url", ""))
+    if publisher_md5 != PLUSPF_20240605_PUBLISHER_MD5:
+        errors.append(
+            "Kraken2 pluspf identity must cite the publisher MD5 manifest at "
+            + PLUSPF_20240605_PUBLISHER_MD5
+        )
+    content_checksum = str(payload.get("content_sha256", ""))
+    if not re.fullmatch(r"[0-9a-f]{64}", content_checksum):
+        errors.append("Kraken2 pluspf identity requires a content-tree SHA-256 fingerprint")
+    if resource_path is not None and content_checksum:
+        from abi.workflow.manifest import checksum_path
+
+        actual = checksum_path(resource_path)
+        if actual != content_checksum:
+            errors.append(
+                "Kraken2 pluspf content fingerprint mismatch: "
+                f"expected {content_checksum}, got {actual or 'missing'}"
+            )
     return errors
 
 
@@ -252,6 +350,7 @@ def score_ibd_reproduction(
     *,
     permutations: int = 999,
     seed: int = 20240605,
+    method_substitutions: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Score the frozen E1-E5 endpoints without changing preregistered thresholds."""
     samples, taxa = _read_matrix(genus_table)
@@ -268,8 +367,18 @@ def score_ibd_reproduction(
     }
     reference = _read_reference(reference_path)
     shared = sorted(set(taxa) & set(reference))
+    sample_totals = np.sum(np.asarray(list(taxa.values()), dtype=float), axis=0)
+    relative = {
+        genus: np.divide(
+            values * 100,
+            sample_totals,
+            out=np.zeros_like(values),
+            where=sample_totals > 0,
+        )
+        for genus, values in taxa.items()
+    }
     means = {
-        group: {genus: float(np.mean(taxa[genus][indices[group]])) for genus in shared}
+        group: {genus: float(np.mean(relative[genus][indices[group]])) for genus in shared}
         for group in CORE_COUNTS
     }
     rhos = {
@@ -367,9 +476,11 @@ def score_ibd_reproduction(
     result = {
         "protocol": "ibd_core53",
         "status": "pass"
-        if all(item["status"] == "pass" for item in endpoints.values())
+        if all(item["status"] == "pass" for item in endpoints.values()) and not method_substitutions
         else "divergent",
         "endpoints": endpoints,
+        "method_compatibility": "exact" if not method_substitutions else "divergent",
+        "method_substitutions": method_substitutions or [],
     }
     destination = Path(output_path)
     destination.parent.mkdir(parents=True, exist_ok=True)

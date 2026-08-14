@@ -9,7 +9,7 @@ PMCID: PMC12239758）前半部分流程的 ABI 迁移性验证。验证目标是
 - 上游流程：EasyMetagenome（作者既往发表的 pipeline）。KneadData v0.6.1
   （Trimmomatic v0.39 去接头/低质 + Bowtie2 v2.3.5.1 比对 GRCh37/hg19 去宿主）。
 - 分类：Kraken2 默认参数，数据库 pluspf 20240605
-  （https://genome-idx.s3.amazonaws.com/k2_pluspf_20240605.tar.gz），输出相对丰度。
+  （https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_20240605.tar.gz），输出相对丰度。
 - 数据：ENA metagenome 266 样本（39 NC / 197 CD / 30 UC），样本清单冻结于
   `docs/zh/figures/data/easymeta_ibd_20260725/Table_1.csv`（SHA256SUMS 同目录）。
   项目分组：ERP017091（109 CD）、PRJNA737472/SRP324954（22 NC + 10 UC）、
@@ -49,7 +49,8 @@ SRP131166 全部 NC（13）+ 全部 UC（20）+ 按 run accession 字典序取�
 ## 执行前提（SCAPP 主线收尾后启动）
 
 1. 构建 legacy 环境（KneadData v0.6.1 组合）并验证可运行。
-2. 下载 pluspf 20240605 数据库（~8GB）与 GRCh37/hg19 Bowtie2 索引，冻结 SHA256。
+2. 下载 pluspf 20240605 数据库（归档约 64GB、索引约 83GB）与 GRCh37/hg19 Bowtie2
+   索引，冻结发布方 MD5 清单、ABI 实测归档 SHA256 和解压内容树 SHA256。
 3. 子集 manifest（53 runs + ENA MD5）写入机器可读清单。
 4. ABI `easymetagenome` 插件完整生命周期执行，validate-result 通过后计算 E1-E5。
 
@@ -62,7 +63,17 @@ SRP131166 全部 NC（13）+ 全部 UC（20）+ 按 run accession 字典序取�
   分组必须为 13 NC / 20 CD / 20 UC。
 - `scripts/cloud/freeze_easymeta_ibd_core53.py` 从冻结的 Table_1 确定性生成样本表；
   CD 必须为 run accession 字典序前 20 个。
-- 正式运行要求 Kraken2 数据库目录内提供 `.abi_resource_identity.json`，其中版本、
-  官方下载 URL 与归档 SHA256 必须匹配 pluspf 20240605，否则 preflight 失败。
+- 正式运行要求外部不可循环身份文件记录版本、官方下载 URL、发布方 MD5 清单 URL、
+  ABI 实测归档 SHA256 和解压内容树 SHA256。上游索引页仅发布 MD5 清单，并未发布
+  归档 SHA256，因此不得把 ABI 计算值标注为“官方 SHA256”。宿主索引同样冻结来源、
+  归档 SHA256 与实际内容树指纹；任一实际内容不匹配时 preflight 失败。
+- `provenance.require_captured_tool_versions` 禁止正式运行出现 `not_configured`；
+  `require_clean_git` 和 `require_runtime_lock` 强制绑定干净提交与严格 runtime lock。
+- 每个被清理文件在删除前计算 SHA256，清理回执链接独立 tombstone manifest。
+  `abi audit-result --result-dir ... --output compliance.json` 独立核验工具、资源、运行身份、
+  E1-E5 以及每条 checksum 是“现存并匹配”或“已删除且 tombstone 匹配”。
 - E1-E5 由 DAG 的 `score_ibd_reproduction` 节点统一输出到
   `05_statistics/ibd_core53_endpoint_scores.json`；端点不达标时固定写为 `divergent`。
+- 当前云端实际组合为 KneadData 0.12.4、Trimmomatic 0.40、Bowtie2 2.5.5，区别于
+  文献组合 0.6.1/0.39/2.3.5.1。工具版本会从实际命令捕获，且正式结果的
+  `method_compatibility` 与总状态固定为 `divergent`；E1-E5 各端点仍按预注册阈值独立报告。

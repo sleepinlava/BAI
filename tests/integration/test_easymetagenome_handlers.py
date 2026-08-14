@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
+import io
 import json
 import os
 import sys
@@ -14,6 +16,7 @@ from abi.plugins import get_plugin
 from abi.plugins.easymetagenome.handlers import (
     bracken_merge_handler,
     cleanup_taxonomy_intermediates_handler,
+    download_ena_reads_handler,
     kneaddata_summary_handler,
     report_handler,
     taxonomy_diversity_handler,
@@ -72,6 +75,94 @@ def _manifest(tmp_path: Path) -> Path:
     return manifest
 
 
+def test_download_ena_reads_is_verified_atomic_and_cleanup_managed(tmp_path, monkeypatch):
+    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
+    monkeypatch.setattr(
+        "abi.plugins.easymetagenome.handlers.urllib.request.urlopen",
+        lambda url, timeout: io.BytesIO(payload),
+    )
+    outdir = tmp_path / "result"
+    read1 = outdir / "00_input_validation/staged_reads/S1_1.fastq.gz"
+    read2 = outdir / "00_input_validation/staged_reads/S1_2.fastq.gz"
+    receipt = outdir / "provenance/ena_downloads/S1.json"
+    digest = hashlib.md5(payload).hexdigest()
+
+    download_ena_reads_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs={
+                "r1_url": "https://example.test/S1_1.fastq.gz",
+                "r2_url": "https://example.test/S1_2.fastq.gz",
+                "r1_md5": digest,
+                "r2_md5": digest,
+                "r1_bytes": len(payload),
+                "r2_bytes": len(payload),
+            },
+            outputs={
+                "read1": str(read1),
+                "read2": str(read2),
+                "download_receipt": str(receipt),
+            },
+        ),
+        {},
+        SimpleNamespace(outdir=outdir),
+    )
+
+    assert read1.read_bytes() == payload
+    assert read2.read_bytes() == payload
+    assert not list(read1.parent.glob("*.part"))
+    assert json.loads(receipt.read_text(encoding="utf-8"))["r1_md5"] == digest
+
+
+def test_download_ena_reads_aria2c_resumes_then_verifies(tmp_path, monkeypatch):
+    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
+    commands = []
+
+    def fake_run(command, *, check):
+        assert check is True
+        commands.append(command)
+        directory = Path(
+            next(item.split("=", 1)[1] for item in command if item.startswith("--dir="))
+        )
+        output = next(item.split("=", 1)[1] for item in command if item.startswith("--out="))
+        (directory / output).write_bytes(payload)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr("abi.plugins.easymetagenome.handlers.subprocess.run", fake_run)
+    outdir = tmp_path / "raw"
+    digest = hashlib.md5(payload).hexdigest()
+    read1 = outdir / "S1_1.fastq.gz"
+    read2 = outdir / "S1_2.fastq.gz"
+    receipt = outdir / "provenance/ena_downloads/S1.json"
+
+    download_ena_reads_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs={
+                "r1_url": "https://example.test/S1_1.fastq.gz",
+                "r2_url": "https://example.test/S1_2.fastq.gz",
+                "r1_md5": digest,
+                "r2_md5": digest,
+                "r1_bytes": len(payload),
+                "r2_bytes": len(payload),
+            },
+            outputs={
+                "read1": str(read1),
+                "read2": str(read2),
+                "download_receipt": str(receipt),
+            },
+        ),
+        {"reproduction": {"download_backend": "aria2c", "connections_per_file": 4}},
+        SimpleNamespace(outdir=outdir),
+    )
+
+    assert read1.read_bytes() == payload
+    assert read2.read_bytes() == payload
+    assert len(commands) == 2
+    assert all("--continue=true" in command for command in commands)
+    assert all("--max-connection-per-server=4" in command for command in commands)
+
+
 def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_path):
     outdir = tmp_path / "result"
     inputs = {}
@@ -120,7 +211,13 @@ def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_pa
     )
 
     assert all(not Path(path).exists() for path in inputs.values())
-    assert json.loads(receipt.read_text(encoding="utf-8"))["dehost_read_pairs"] == 1
+    cleanup = json.loads(receipt.read_text(encoding="utf-8"))
+    assert cleanup["dehost_read_pairs"] == 1
+    tombstone = Path(cleanup["tombstone_manifest"])
+    assert tombstone.is_file()
+    deleted = json.loads(tombstone.read_text(encoding="utf-8"))["artifacts"]
+    assert len(deleted) == len(inputs)
+    assert all(len(item["sha256"]) == 64 and item["status"] == "deleted" for item in deleted)
     assert result.tables == {}
     assert summary.read_text(encoding="utf-8").splitlines() == [
         "sample_id\tdehost_read_pairs",

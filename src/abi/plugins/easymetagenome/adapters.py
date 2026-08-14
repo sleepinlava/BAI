@@ -45,9 +45,26 @@ class SampleRecord:
     r1: str
     r2: str
     group: str = ""
+    r1_url: str = ""
+    r2_url: str = ""
+    r1_md5: str = ""
+    r2_md5: str = ""
+    r1_bytes: str = ""
+    r2_bytes: str = ""
 
     def as_dict(self) -> dict[str, str]:
-        return {"sample_id": self.sample_id, "r1": self.r1, "r2": self.r2, "group": self.group}
+        return {
+            "sample_id": self.sample_id,
+            "r1": self.r1,
+            "r2": self.r2,
+            "group": self.group,
+            "r1_url": self.r1_url,
+            "r2_url": self.r2_url,
+            "r1_md5": self.r1_md5,
+            "r2_md5": self.r2_md5,
+            "r1_bytes": self.r1_bytes,
+            "r2_bytes": self.r2_bytes,
+        }
 
 
 class ManifestValidator:
@@ -78,6 +95,10 @@ class ManifestValidator:
                 selected[canonical] = match
             sample_field = fields["sample_id"]
             group_field = fields.get("group")
+            metadata_fields = {
+                name: fields.get(name)
+                for name in ("r1_url", "r2_url", "r1_md5", "r2_md5", "r1_bytes", "r2_bytes")
+            }
             records: list[SampleRecord] = []
             seen: set[str] = set()
             errors: list[str] = []
@@ -107,6 +128,10 @@ class ManifestValidator:
                         values["r1"],
                         values["r2"],
                         str(row.get(group_field) or "").strip() if group_field else "",
+                        **{
+                            name: str(row.get(field) or "").strip() if field else ""
+                            for name, field in metadata_fields.items()
+                        },
                     )
                 )
         if errors:
@@ -124,8 +149,9 @@ class ManifestValidator:
         result_dir.mkdir(parents=True, exist_ok=True)
         normalized = result_dir / "metadata.normalized.tsv"
         with normalized.open("w", encoding="utf-8", newline="") as handle:
+            fieldnames = list(records[0].as_dict())
             writer = csv.DictWriter(
-                handle, fieldnames=["sample_id", "r1", "r2", "group"], delimiter="\t"
+                handle, fieldnames=fieldnames, delimiter="\t"
             )
             writer.writeheader()
             writer.writerows(record.as_dict() for record in records)

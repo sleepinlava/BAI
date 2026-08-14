@@ -1,0 +1,17 @@
+abi_version: "0.1"
+tool_id: trimmomatic
+name: Trimmomatic (KneadData dependency)
+category: host_removal_dependency
+purpose: Capture the actual Trimmomatic version invoked by KneadData.
+when_to_use: [host_decontamination]
+inputs: {}
+outputs: {}
+execution:
+  executable: trimmomatic
+  command_template: trimmomatic -version
+  network: false
+  writes_output: false
+normalization: {tables: []}
+failure_handling:
+  tool_not_found: {hint: Install Trimmomatic in easymeta-p0.}
+resources: {cpu: 1, memory: 1GB, walltime: "00:05:00"}

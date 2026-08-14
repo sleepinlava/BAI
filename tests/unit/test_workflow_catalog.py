@@ -8,7 +8,13 @@ from abi.workflow import WorkflowCatalog, WorkflowPresetError
 def test_catalog_lists_presets_in_declared_order():
     catalog = WorkflowCatalog.for_plugin("easymetagenome")
 
-    assert catalog.preset_ids == ("p0_taxonomy", "p1_humann4", "full_read_based")
+    assert catalog.preset_ids == (
+        "ibd_core53_download",
+        "ibd_core53_reproduction",
+        "p0_taxonomy",
+        "p1_humann4",
+        "full_read_based",
+    )
 
 
 def test_catalog_resolves_easymetagenome_functional_selection():

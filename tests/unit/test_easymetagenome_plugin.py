@@ -340,6 +340,7 @@ def test_workflow_catalog_is_available_through_unified_query():
 
     assert payload["status"] == "success"
     assert {item["id"] for item in payload["result"]["workflows"]} == {
+        "ibd_core53_download",
         "ibd_core53_reproduction",
         "p0_taxonomy",
         "p1_humann4",
@@ -408,6 +409,37 @@ def test_formal_reproduction_preflight_enforces_core53_and_pluspf_identity(tmp_p
     assert checks["pluspf_20240605_identity"]["status"] == "fail"
 
 
+def test_formal_reproduction_allows_explicit_cloud_current_kraken_substitution(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    host_db = tmp_path / "host"
+    kraken_db = tmp_path / "kraken"
+    host_db.mkdir()
+    kraken_db.mkdir()
+    for name in ("hash.k2d", "opts.k2d", "taxo.k2d"):
+        (kraken_db / name).write_bytes(b"database")
+    config = plugin.load_config(
+        overrides={
+            "input": {"sample_sheet": str(_manifest(tmp_path))},
+            "resources": {"host_db": str(host_db), "kraken2_db": str(kraken_db)},
+            "reproduction": {
+                "protocol": "ibd_core53",
+                "streaming_inputs": True,
+                "kraken2_policy": "cloud_current",
+            },
+            "outdir": str(tmp_path / "results"),
+        }
+    )
+
+    report = plugin.preflight(config, engine="local", check_runtime=False)
+    checks = {check["name"]: check for check in report["checks"]}
+
+    assert checks["kraken2_cloud_current_compatibility"]["status"] == "pass"
+    assert checks["kraken2_cloud_current_compatibility"]["compatibility"] == (
+        "non_exact_literature_resource"
+    )
+    assert "pluspf_20240605_identity" not in checks
+
+
 def test_ibd_core53_preset_plans_frozen_endpoint_scoring(tmp_path):
     plugin = get_plugin("easymetagenome")
     config = plugin.load_config(
@@ -426,6 +458,98 @@ def test_ibd_core53_preset_plans_frozen_endpoint_scoring(tmp_path):
     score = next(step for step in plan.steps if step.step_id == "score_ibd_reproduction")
     assert int(score.params["permutations"]) == 999
     assert score.outputs["endpoint_scores"].endswith("ibd_core53_endpoint_scores.json")
+
+
+def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_core53_pluspf_20240605_16cpu_120gb.yaml",
+        overrides={
+            "input": {
+                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
+            },
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=True)
+    downloads = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "download_ena_reads"
+    ]
+    cleanups = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
+    ]
+
+    assert len(downloads) == len(cleanups) == 53
+    assert all(step.inputs["r1_url"].startswith("https://") for step in downloads)
+    assert all(step.inputs["raw_read1"] for step in cleanups)
+    assert config["threads"] == 16
+    assert config["execution"] == {
+        "resources": {"cpu": 16, "memory": "120GB"},
+            "parallel": False,
+            "workers": 1,
+        "batch_size": 1,
+        "error_policy": "halt",
+        "resume": True,
+        "progress": True,
+    }
+
+
+def test_ibd_core53_download_all_is_a_separate_verified_phase(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_core53_download_all.yaml",
+        overrides={
+            "input": {
+                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
+            },
+            "outdir": str(tmp_path / "raw"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=True)
+    node_ids = [step.params.get("_dag_node_id") for step in plan.steps]
+
+    assert len(plan.samples) == 53
+    assert node_ids.count("download_ena_reads") == 53
+    assert set(node_ids) == {"validate_manifest", "download_ena_reads"}
+    assert all(
+        step.outputs["read1"].startswith(str(tmp_path / "raw"))
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "download_ena_reads"
+    )
+
+
+def test_ibd_core53_cloud_analysis_reuses_complete_raw_dataset(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_core53_cloud_current_16cpu_120gb.yaml",
+        overrides={
+            "input": {
+                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
+            },
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+    node_ids = [step.params.get("_dag_node_id") for step in plan.steps]
+    cleanups = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
+    ]
+
+    assert "download_ena_reads" not in node_ids
+    assert len(cleanups) == 53
+    assert all(not step.inputs.get("raw_read1") for step in cleanups)
 
 
 def test_easymetagenome_parsers_cover_every_registered_tool(tmp_path):
@@ -479,7 +603,9 @@ def test_easymetagenome_parsers_cover_every_registered_tool(tmp_path):
     assert functional[0]["feature_id"] == "UniRef90_A"
     assert functional[0]["value"] == "4.5"
 
+    provenance_only = {"bowtie2", "trimmomatic"}
     assert all(
         any(plugin.parse_outputs(tool_id, tmp_path, "S1").values())
         for tool_id in plugin.registry().ids()
+        if tool_id not in provenance_only
     )

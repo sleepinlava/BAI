@@ -498,6 +498,8 @@ environments:
     - seqkit
     - fastp
     - kneaddata
+    - bowtie2
+    - trimmomatic
     - kraken2
     - bracken
   easymeta-humann:
@@ -611,6 +613,8 @@ tool_assignments:
     seqkit: easymeta-p0
     fastp: easymeta-p0
     kneaddata: easymeta-p0
+    bowtie2: easymeta-p0
+    trimmomatic: easymeta-p0
     kraken2: easymeta-p0
     bracken: easymeta-p0
     humann4: easymeta-humann

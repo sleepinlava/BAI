@@ -1257,6 +1257,10 @@ def _resolve_inputs(
             source_str = str(source)
             if source_str == "sample_sheet":
                 value = sample_dict.get(key, "")
+                if not value:
+                    attributes = sample_dict.get("attributes", {})
+                    if isinstance(attributes, Mapping):
+                        value = attributes.get(key, "")
             elif source_str.startswith("config."):
                 value = _lookup_config_path(config, source_str.removeprefix("config.")) or ""
             elif "." in source_str:
@@ -1289,7 +1293,13 @@ def _resolve_inputs(
             fallback = spec.get("fallback")
             if fallback is not None:
                 fallback_str = str(fallback)
-                if "." in fallback_str:
+                if fallback_str == "sample_sheet":
+                    value = sample_dict.get(key, "")
+                    if not value:
+                        attributes = sample_dict.get("attributes", {})
+                        if isinstance(attributes, Mapping):
+                            value = attributes.get(key, "")
+                elif "." in fallback_str:
                     parts = fallback_str.split(".", 1)
                     fb_id, fb_key = parts[0], parts[1]
                     # Handle template fallback like "{active_assembly_node}.assembly"

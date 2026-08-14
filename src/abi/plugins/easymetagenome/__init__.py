@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import gzip
+import shutil
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
@@ -99,8 +100,14 @@ class EasyMetagenomePlugin:
         self, config: Mapping[str, Any], *, check_files: bool = True
     ) -> ABISampleContext:
         path = config["input"]["sample_sheet"]
+        reproduction = config.get("reproduction", {})
+        streaming_inputs = bool(
+            isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
+        )
         try:
-            records = ManifestValidator.validate(path, check_files=check_files)
+            records = ManifestValidator.validate(
+                path, check_files=check_files and not streaming_inputs
+            )
         except (FileNotFoundError, ValueError):
             if check_files:
                 raise
@@ -122,6 +129,14 @@ class EasyMetagenomePlugin:
                     read1=record.r1,
                     read2=record.r2,
                     group=record.group or None,
+                    attributes={
+                        "r1_url": record.r1_url,
+                        "r2_url": record.r2_url,
+                        "r1_md5": record.r1_md5,
+                        "r2_md5": record.r2_md5,
+                        "r1_bytes": record.r1_bytes,
+                        "r2_bytes": record.r2_bytes,
+                    },
                 )
                 for record in records
             ]
@@ -153,15 +168,25 @@ class EasyMetagenomePlugin:
     ) -> Mapping[str, Any]:
         del engine
         checks: list[dict[str, Any]] = []
+        reproduction = config.get("reproduction", {})
+        streaming_inputs = bool(
+            isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
+        )
         try:
-            samples = ManifestValidator.validate(config["input"]["sample_sheet"])
+            samples = ManifestValidator.validate(
+                config["input"]["sample_sheet"], check_files=not streaming_inputs
+            )
             checks.append({"name": "manifest", "status": "pass", "sample_count": len(samples)})
         except (FileNotFoundError, ValueError) as exc:
             checks.append({"name": "manifest", "status": "fail", "message": str(exc)})
-        reproduction = config.get("reproduction", {})
-        if isinstance(reproduction, Mapping) and reproduction.get("protocol") == "ibd_core53":
+        protocol = reproduction.get("protocol") if isinstance(reproduction, Mapping) else None
+        if protocol in {"ibd_core53", "ibd_core53_download"}:
             try:
-                manifest_errors = validate_core53_manifest(config["input"]["sample_sheet"])
+                manifest_errors = validate_core53_manifest(
+                    config["input"]["sample_sheet"],
+                    table1_path=reproduction.get("frozen_table1"),
+                    require_ena_metadata=True,
+                )
             except (OSError, ValueError) as exc:
                 manifest_errors = [str(exc)]
             checks.append(
@@ -171,19 +196,55 @@ class EasyMetagenomePlugin:
                     "errors": manifest_errors,
                 }
             )
-            identity_path = reproduction.get("kraken2_identity")
-            if not identity_path:
-                kraken_db = config.get("resources", {}).get("kraken2_db", "")
-                identity_path = Path(str(kraken_db)) / ".abi_resource_identity.json"
-            identity_errors = validate_pluspf_identity(identity_path)
+        if protocol == "ibd_core53_download" and reproduction.get("download_backend") == "aria2c":
+            executable = shutil.which("aria2c") if check_runtime else "aria2c"
             checks.append(
                 {
-                    "name": "pluspf_20240605_identity",
-                    "status": "fail" if identity_errors else "pass",
-                    "path": str(identity_path),
-                    "errors": identity_errors,
+                    "name": "ena_download_backend",
+                    "status": "pass" if executable else "fail",
+                    "backend": "aria2c",
+                    "executable": executable,
                 }
             )
+        if protocol == "ibd_core53":
+            kraken_policy = str(reproduction.get("kraken2_policy", "pluspf_20240605_exact"))
+            if kraken_policy == "cloud_current":
+                kraken_db = Path(str(config.get("resources", {}).get("kraken2_db", "")))
+                missing = [
+                    name
+                    for name in ("hash.k2d", "opts.k2d", "taxo.k2d")
+                    if not (kraken_db / name).is_file()
+                ]
+                checks.append(
+                    {
+                        "name": "kraken2_cloud_current_compatibility",
+                        "status": "fail" if missing else "pass",
+                        "path": str(kraken_db),
+                        "missing": missing,
+                        "compatibility": "non_exact_literature_resource",
+                        "warning": (
+                            "Cloud-current Kraken2 is an explicit substitution for PlusPF "
+                            "20240605; results are not database-version-exact."
+                        ),
+                    }
+                )
+            else:
+                identity_path = reproduction.get("kraken2_identity")
+                if not identity_path:
+                    kraken_db = config.get("resources", {}).get("kraken2_db", "")
+                    identity_path = Path(str(kraken_db)) / ".abi_resource_identity.json"
+                identity_errors = validate_pluspf_identity(
+                    identity_path,
+                    resource_path=config.get("resources", {}).get("kraken2_db", ""),
+                )
+                checks.append(
+                    {
+                        "name": "pluspf_20240605_identity",
+                        "status": "fail" if identity_errors else "pass",
+                        "path": str(identity_path),
+                        "errors": identity_errors,
+                    }
+                )
         resources = config.get("resources", {})
         workflow = config.get("workflow", {})
         taxonomy_enabled = (
@@ -249,6 +310,7 @@ class EasyMetagenomePlugin:
     def published_outputs(self, plan: Any) -> Dict[str, Path]:
         report_kinds = {
             "collect_report": "taxonomy",
+            "collect_ibd_reproduction_report": "reproduction",
             "functional_report": "functional",
             "publish_functional_report": "functional",
         }

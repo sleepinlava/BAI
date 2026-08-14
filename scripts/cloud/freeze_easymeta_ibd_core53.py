@@ -14,8 +14,14 @@ def main() -> int:
     parser.add_argument("--table1", type=Path, required=True)
     parser.add_argument("--reads-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ena-report", type=Path)
     args = parser.parse_args()
-    rows = freeze_core53(args.table1, args.output, reads_root=args.reads_root)
+    rows = freeze_core53(
+        args.table1,
+        args.output,
+        reads_root=args.reads_root,
+        ena_report=args.ena_report,
+    )
     print(f"Frozen {len(rows)} SRP131166 samples at {args.output}")
     return 0
 

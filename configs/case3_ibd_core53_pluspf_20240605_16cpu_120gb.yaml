@@ -4,19 +4,25 @@ outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_core53_pluspf_20240605
 log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_core53_pluspf_20240605
 
 input:
-  sample_sheet: /root/autodl-tmp/abi-real-data/configs/case3_ibd_srp131166_core53.samples.tsv
+  sample_sheet: configs/case3_ibd_srp131166_core53.samples.tsv
 
 resources:
   host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
   kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2_pluspf_20240605
-  reference_table: /root/autodl-tmp/abi/docs/zh/figures/data/easymeta_ibd_20260725/Table_3.csv
+  reference_table: docs/zh/figures/data/easymeta_ibd_20260725/Table_3.csv
 
 workflow:
   preset: ibd_core53_reproduction
 
 reproduction:
   protocol: ibd_core53
-  kraken2_identity: /root/autodl-tmp/resources/autoplasm/kraken2_pluspf_20240605/.abi_resource_identity.json
+  streaming_inputs: true
+  frozen_table1: docs/zh/figures/data/easymeta_ibd_20260725/Table_1.csv
+  kraken2_identity: /root/autodl-tmp/resources/autoplasm/identities/kraken2_pluspf_20240605.json
+  method_substitutions:
+    - {tool: kneaddata, literature: "0.6.1", actual_expected: "0.12.4"}
+    - {tool: trimmomatic, literature: "0.39", actual_expected: "0.40"}
+    - {tool: bowtie2, literature: "2.3.5.1", actual_expected: "2.5.5"}
 
 tool_params:
   fastp: {threads: 16}
@@ -32,3 +38,17 @@ execution:
   error_policy: halt
   resume: true
   progress: true
+
+provenance:
+  require_captured_tool_versions: true
+  additional_tool_version_ids: [bowtie2, trimmomatic]
+  require_clean_git: true
+  require_runtime_lock: true
+  require_strict_runtime_lock: true
+  required_resource_identity_ids: [host_db, kraken2_db]
+  checksum_resource_ids: [host_db, kraken2_db]
+  resource_identities:
+    host_db:
+      identity_file: /root/autodl-tmp/resources/autoplasm/identities/kneaddata_host_grch37_hg19.json
+    kraken2_db:
+      identity_file: /root/autodl-tmp/resources/autoplasm/identities/kraken2_pluspf_20240605.json

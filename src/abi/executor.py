@@ -306,6 +306,7 @@ class GenericABIExecutor:
                 required_resource_ids,
                 checksum_directory_ids=checksum_directory_ids,
             )
+            identity_errors.extend(identity_manifest.validate())
             if identity_errors:
                 raise ValueError(
                     "Formal-run resource identity requirements failed: "
@@ -314,11 +315,47 @@ class GenericABIExecutor:
         # Write tool versions BEFORE step iteration to avoid concurrent access
         # issues when parallel execution is enabled (B4 fix).
         # 在步骤迭代之前写入工具版本，避免并发访问问题（B4 修复）。
+        additional_version_tools = (
+            provenance_options.get("additional_tool_version_ids", [])
+            if isinstance(provenance_options, Mapping)
+            else []
+        )
+        version_tool_ids = set(plan.selected_tools) | {
+            str(tool_id) for tool_id in additional_version_tools
+        }
         versions_path = self._write_tool_versions(
             provenance / "tool_versions.tsv",
-            tool_ids=plan.selected_tools,
+            tool_ids=version_tool_ids,
+            require_captured=bool(
+                provenance_options.get("require_captured_tool_versions", False)
+                if isinstance(provenance_options, Mapping)
+                else False
+            ),
         )
         run_identity = capture_run_identity(config)
+        if isinstance(provenance_options, Mapping):
+            identity_failures = []
+            if provenance_options.get("require_clean_git") and (
+                not run_identity["git_commit"] or run_identity["git_dirty"] is not False
+            ):
+                identity_failures.append("a clean Git commit is required")
+            if (
+                provenance_options.get("require_runtime_lock")
+                and not run_identity["runtime_lock_id"]
+            ):
+                identity_failures.append("a readable strict runtime lock is required")
+            if (
+                provenance_options.get("require_strict_runtime_lock")
+                and not run_identity["runtime_lock_strict"]
+            ):
+                identity_failures.append(
+                    "runtime lock must have zero release blockers and match this clean commit"
+                )
+            if identity_failures:
+                raise ValueError(
+                    "Formal-run source identity requirements failed: "
+                    + "; ".join(identity_failures)
+                )
 
         # Determine whether to record structured pipeline progress events.
         # Progress recording is enabled when config.execution.progress is True
@@ -367,6 +404,7 @@ class GenericABIExecutor:
                 # 跨样本步骤（sample_id=None）在所有样本步骤完成后执行。
                 per_sample: List[List[Any]] = []  # list of step-lists
                 per_sample_steps: List[Any] = []
+                driver_steps: List[Any] = []
                 cross_sample_steps: List[Any] = []
                 # Plan steps are already in topological order; splitting by
                 # sample_id preserves intra-sample ordering.
@@ -374,7 +412,14 @@ class GenericABIExecutor:
                 for step in plan.steps:
                     sid = getattr(step, "sample_id", None)
                     if sid is None:
-                        cross_sample_steps.append(step)
+                        handler = getattr(step, "params", {}).get("_internal_handler", {})
+                        if (
+                            isinstance(handler, Mapping)
+                            and handler.get("execution_scope") == "driver"
+                        ):
+                            driver_steps.append(step)
+                        else:
+                            cross_sample_steps.append(step)
                     else:
                         # Append to the last group with the same sample_id,
                         # or start a new group.
@@ -390,6 +435,24 @@ class GenericABIExecutor:
                             per_sample_steps = [step]
                 if per_sample_steps:
                     per_sample.append(per_sample_steps)
+
+                for step in driver_steps:
+                    _last_step_id = getattr(step, "step_id", str(step))
+                    row, error = self._execute_step(
+                        step,
+                        dry_run=dry_run,
+                        resume=resume,
+                        provenance=provenance,
+                        tables_dir=tables_dir,
+                        progress_recorder=progress_recorder,
+                    )
+                    command_rows.append(row)
+                    if error:
+                        failed_errors.append(error)
+                        if error_policy != "continue":
+                            per_sample = []
+                            cross_sample_steps = []
+                            break
 
                 def _run_sample_chain(steps: List[Any], label: str) -> List[tuple]:
                     """Run a chain of steps sequentially in one thread."""
@@ -1332,6 +1395,7 @@ class GenericABIExecutor:
         path: Path,
         *,
         tool_ids: Iterable[str] | None = None,
+        require_captured: bool = False,
     ) -> Path:
         """Write a TSV recording each selected tool's executable and version status.
 
@@ -1374,6 +1438,17 @@ class GenericABIExecutor:
             handle.write("\t".join(fields) + "\n")
             for row in rows:
                 handle.write("\t".join(str(row.get(field, "")) for field in fields) + "\n")
+        if require_captured:
+            failures = [
+                f"{row['tool_id']}={row['status']}"
+                for row in rows
+                if row["status"] != "captured" or not str(row["version"]).strip()
+            ]
+            if failures:
+                raise ValueError(
+                    "Formal run requires captured versions for every selected tool: "
+                    + ", ".join(failures)
+                )
         return path
 
     def _write_resources(self, config: Mapping[str, Any], path: Path) -> Path:

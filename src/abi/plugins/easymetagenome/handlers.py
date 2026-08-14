@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import csv
 import gzip
+import hashlib
 import json
+import os
 import shutil
+import subprocess
+import urllib.request
 from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
@@ -19,6 +23,44 @@ from .reproduction import score_ibd_reproduction
 
 _GZIP_CHUNK_SIZE = 8 * 1024 * 1024
 _GZIP_COMPRESSION_LEVEL = 6
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _write_tombstone_manifest(
+    *, sample_id: str, receipt: Path, artifacts: list[dict[str, Any]]
+) -> Path:
+    tombstone = receipt.parent.parent / "tombstones" / receipt.name
+    tombstone.parent.mkdir(parents=True, exist_ok=True)
+    tombstone.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "sample_id": sample_id,
+                "cleanup_receipt": str(receipt),
+                "artifacts": artifacts,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return tombstone
+
+
+def _tombstone_file(path: Path) -> dict[str, Any]:
+    return {
+        "path": str(path),
+        "sha256": _sha256(path),
+        "size_bytes": path.stat().st_size,
+        "status": "deleted",
+    }
 
 
 def _paths(value: Any) -> list[Path]:
@@ -45,7 +87,11 @@ def validate_manifest_handler(
 ) -> InternalHandlerResult:
     del context
     manifest = config["input"]["sample_sheet"]
-    records = ManifestValidator.validate(manifest)
+    reproduction = config.get("reproduction", {})
+    streaming_inputs = bool(
+        isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
+    )
+    records = ManifestValidator.validate(manifest, check_files=not streaming_inputs)
     _write_rows(step.outputs["normalized_manifest"], [record.as_dict() for record in records])
     report = {
         "status": "pass",
@@ -56,6 +102,140 @@ def validate_manifest_handler(
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return InternalHandlerResult(message=f"Validated {len(records)} samples")
+
+
+def _verify_transfer(path: Path, *, url: str, expected_md5: str, expected_bytes: int) -> None:
+    size = path.stat().st_size
+    if size != expected_bytes:
+        raise ValueError(
+            f"Downloaded byte count mismatch for {url}: expected {expected_bytes}, got {size}"
+        )
+    digest = hashlib.md5()  # noqa: S324 - ENA publishes MD5 as a transfer-integrity checksum.
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    observed_md5 = digest.hexdigest()
+    if observed_md5 != expected_md5.lower():
+        raise ValueError(
+            f"Downloaded MD5 mismatch for {url}: expected {expected_md5}, got {observed_md5}"
+        )
+
+
+def _download_verified_urllib(
+    url: str, destination: Path, expected_md5: str, expected_bytes: int
+) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    part = destination.with_name(destination.name + ".part")
+    part.unlink(missing_ok=True)
+    try:
+        with urllib.request.urlopen(url, timeout=120) as response, part.open("wb") as handle:
+            while chunk := response.read(8 * 1024 * 1024):
+                handle.write(chunk)
+            handle.flush()
+            os.fsync(handle.fileno())
+        _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
+        os.replace(part, destination)
+    except BaseException:
+        part.unlink(missing_ok=True)
+        raise
+
+
+def _download_verified_aria2c(
+    url: str,
+    destination: Path,
+    expected_md5: str,
+    expected_bytes: int,
+    *,
+    connections: int,
+) -> None:
+    """Resume an ENA transfer with aria2 and publish only after full verification."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    part = destination.with_name(destination.name + ".part")
+    if destination.is_file():
+        _verify_transfer(
+            destination, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes
+        )
+        return
+    command = [
+        "aria2c",
+        f"--dir={destination.parent}",
+        f"--out={part.name}",
+        "--continue=true",
+        "--auto-file-renaming=false",
+        "--allow-overwrite=true",
+        "--file-allocation=none",
+        f"--max-connection-per-server={connections}",
+        f"--split={connections}",
+        "--min-split-size=16M",
+        "--connect-timeout=30",
+        "--timeout=60",
+        "--max-tries=0",
+        "--retry-wait=5",
+        "--lowest-speed-limit=1K",
+        "--async-dns=false",
+        "--console-log-level=warn",
+        "--summary-interval=0",
+        url,
+    ]
+    subprocess.run(command, check=True)  # noqa: S603 - fixed executable and validated arguments.
+    _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
+    os.replace(part, destination)
+    part.with_name(part.name + ".aria2").unlink(missing_ok=True)
+
+
+def download_ena_reads_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    """Atomically stage one paired ENA run and verify its frozen transfer metadata."""
+    reproduction = config.get("reproduction", {})
+    backend = str(reproduction.get("download_backend", "urllib"))
+    connections = int(reproduction.get("connections_per_file", 4))
+    if backend not in {"urllib", "aria2c"}:
+        raise ValueError(f"Unsupported ENA download backend: {backend}")
+    if not 1 <= connections <= 16:
+        raise ValueError("reproduction.connections_per_file must be between 1 and 16")
+    outputs = {key: Path(step.outputs[key]) for key in ("read1", "read2")}
+    outdir = context.outdir.resolve()
+    for path in outputs.values():
+        if not path.resolve().is_relative_to(outdir):
+            raise ValueError(f"Refusing to stage ENA input outside result directory: {path}")
+    for mate in ("r1", "r2"):
+        destination = outputs["read1" if mate == "r1" else "read2"]
+        arguments = (
+            str(step.inputs[f"{mate}_url"]),
+            destination,
+            str(step.inputs[f"{mate}_md5"]),
+            int(step.inputs[f"{mate}_bytes"]),
+        )
+        if backend == "aria2c":
+            _download_verified_aria2c(*arguments, connections=connections)
+        else:
+            _download_verified_urllib(*arguments)
+    receipt = Path(step.outputs["download_receipt"])
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    receipt.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "sample_id": str(step.sample_id),
+                "read1": str(outputs["read1"]),
+                "read2": str(outputs["read2"]),
+                "r1_md5": str(step.inputs["r1_md5"]),
+                "r2_md5": str(step.inputs["r2_md5"]),
+                "r1_bytes": int(step.inputs["r1_bytes"]),
+                "r2_bytes": int(step.inputs["r2_bytes"]),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return InternalHandlerResult(
+        message=f"Downloaded and verified ENA reads for {step.sample_id}",
+        artifacts={"download_receipt": receipt},
+    )
 
 
 def fastp_summary_handler(
@@ -278,10 +458,41 @@ def score_ibd_reproduction_handler(
         step.outputs["endpoint_scores"],
         permutations=int(step.params.get("permutations", 999)),
         seed=int(step.params.get("seed", 20240605)),
+        method_substitutions=list(config.get("reproduction", {}).get("method_substitutions", [])),
     )
     return InternalHandlerResult(
         message=f"IBD core53 endpoint status: {result['status']}",
         artifacts={"endpoint_scores": Path(step.outputs["endpoint_scores"])},
+    )
+
+
+def ibd_reproduction_report_handler(
+    step: Any,
+    config: Mapping[str, Any],
+    context: InternalHandlerContext,
+) -> InternalHandlerResult:
+    samples = ManifestValidator.validate(config["input"]["sample_sheet"], check_files=False)
+    scores = json.loads(Path(step.inputs["endpoint_scores"]).read_text(encoding="utf-8"))
+    artifacts = {key: Path(str(value)) for key, value in step.inputs.items()}
+    report = Path(step.outputs["report_markdown"])
+    report.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["# IBD core-53 reproduction", "", f"Overall: **{scores['status']}**", ""]
+    for endpoint, payload in scores["endpoints"].items():
+        lines.append(f"- {endpoint}: **{payload['status']}**")
+    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    manifest = write_report_manifest(
+        step.outputs["report_manifest"],
+        workflow="ibd_core53_reproduction",
+        sample_count=len(samples),
+        artifacts=artifacts,
+        report=report,
+        tables_dir=context.tables_dir,
+        table_names=("qc_summary", "host_removal_summary", "taxonomy_abundance"),
+        extra={"endpoint_status": scores["status"], "endpoints": scores["endpoints"]},
+    )
+    return InternalHandlerResult(
+        message=f"Published IBD reproduction report: {scores['status']}",
+        artifacts={"report": report, "manifest": manifest},
     )
 
 
@@ -314,11 +525,34 @@ def compress_reads_handler(
             staged.unlink(missing_ok=True)
         raise
 
+    tombstones = [_tombstone_file(source) for source, _ in pairs]
+    source_bytes = sum(item["size_bytes"] for item in tombstones)
     for source, _ in pairs:
         source.unlink()
-    deleted_bytes, deleted_paths = _cleanup_kneaddata_intermediates(
+    deleted_bytes, deleted_paths, extra_tombstones = _cleanup_kneaddata_intermediates(
         pairs[0][0].parent,
         keep={destination.resolve() for _, destination in pairs},
+    )
+    tombstones.extend(extra_tombstones)
+    deleted_paths = [str(source) for source, _ in pairs] + deleted_paths
+    receipt = Path(step.outputs["cleanup_receipt"])
+    receipt.parent.mkdir(parents=True, exist_ok=True)
+    tombstone_manifest = _write_tombstone_manifest(
+        sample_id=str(step.sample_id), receipt=receipt, artifacts=tombstones
+    )
+    receipt.write_text(
+        json.dumps(
+            {
+                "status": "success",
+                "sample_id": str(step.sample_id),
+                "deleted_bytes": source_bytes + deleted_bytes,
+                "deleted_paths": deleted_paths,
+                "tombstone_manifest": str(tombstone_manifest),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
     )
     return InternalHandlerResult(
         message=(
@@ -326,7 +560,11 @@ def compress_reads_handler(
             f"removed_intermediates={len(deleted_paths)}; freed_bytes={deleted_bytes}; "
             f"workers={compression_workers}"
         ),
-        artifacts={key: Path(step.outputs[key]) for key in ("dehost_read1", "dehost_read2")},
+        artifacts={
+            **{key: Path(step.outputs[key]) for key in ("dehost_read1", "dehost_read2")},
+            "cleanup_receipt": receipt,
+            "tombstone_manifest": tombstone_manifest,
+        },
     )
 
 
@@ -334,18 +572,21 @@ def _cleanup_kneaddata_intermediates(
     output_dir: Path,
     *,
     keep: set[Path],
-) -> tuple[int, list[str]]:
+) -> tuple[int, list[str], list[dict[str, Any]]]:
     """Remove non-final files left by KneadData after paired reads are compressed."""
     deleted_bytes = 0
     deleted_paths: list[str] = []
+    tombstones: list[dict[str, Any]] = []
     if not output_dir.is_dir():
-        return deleted_bytes, deleted_paths
+        return deleted_bytes, deleted_paths, tombstones
     keep_resolved = {path.resolve() for path in keep}
     for path in output_dir.iterdir():
         resolved = path.resolve()
         if resolved in keep_resolved or path.name.endswith(".log"):
             continue
         if path.is_symlink() or path.is_file():
+            if path.is_file():
+                tombstones.append(_tombstone_file(path))
             deleted_bytes += path.lstat().st_size
             path.unlink()
             deleted_paths.append(str(path))
@@ -355,7 +596,7 @@ def _cleanup_kneaddata_intermediates(
             )
             shutil.rmtree(path)
             deleted_paths.append(str(path))
-    return deleted_bytes, deleted_paths
+    return deleted_bytes, deleted_paths, tombstones
 
 
 def _compress_gzip_member(data: bytes) -> bytes:
@@ -395,11 +636,13 @@ def cleanup_functional_intermediates_handler(
     outdir = context.outdir.resolve()
     deleted_bytes = 0
     deleted_paths: list[str] = []
+    tombstones: list[dict[str, Any]] = []
     for path in intermediates:
         resolved = path.resolve()
         if not resolved.is_relative_to(outdir):
             raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
         if path.is_file():
+            tombstones.append(_tombstone_file(path))
             deleted_bytes += path.stat().st_size
             path.unlink()
             deleted_paths.append(str(path))
@@ -411,6 +654,9 @@ def cleanup_functional_intermediates_handler(
         )
     humann_temp_dir = humann_output_dir / f"{sample_id}_humann_temp"
     if humann_temp_dir.is_dir():
+        tombstones.extend(
+            _tombstone_file(item) for item in humann_temp_dir.rglob("*") if item.is_file()
+        )
         deleted_bytes += sum(
             item.stat().st_size for item in humann_temp_dir.rglob("*") if item.is_file()
         )
@@ -419,6 +665,9 @@ def cleanup_functional_intermediates_handler(
 
     receipt = Path(step.outputs["cleanup_receipt"])
     receipt.parent.mkdir(parents=True, exist_ok=True)
+    tombstone_manifest = _write_tombstone_manifest(
+        sample_id=sample_id, receipt=receipt, artifacts=tombstones
+    )
     receipt.write_text(
         json.dumps(
             {
@@ -427,6 +676,7 @@ def cleanup_functional_intermediates_handler(
                 "dehost_read_pairs": dehost_read_pairs,
                 "deleted_bytes": deleted_bytes,
                 "deleted_paths": deleted_paths,
+                "tombstone_manifest": str(tombstone_manifest),
             },
             indent=2,
         )
@@ -435,7 +685,7 @@ def cleanup_functional_intermediates_handler(
     )
     return InternalHandlerResult(
         message=f"Cleaned {len(deleted_paths)} FASTQ intermediates for {sample_id}",
-        artifacts={"cleanup_receipt": receipt},
+        artifacts={"cleanup_receipt": receipt, "tombstone_manifest": tombstone_manifest},
     )
 
 
@@ -451,27 +701,35 @@ def cleanup_taxonomy_intermediates_handler(
     intermediates = [
         Path(step.inputs[key])
         for key in (
+            "raw_read1",
+            "raw_read2",
             "clean_read1",
             "clean_read2",
             "dehost_read1",
             "dehost_read2",
             "classifications",
         )
+        if step.inputs.get(key)
     ]
     outdir = context.outdir.resolve()
     deleted_bytes = 0
     deleted_paths: list[str] = []
+    tombstones: list[dict[str, Any]] = []
     for path in intermediates:
         resolved = path.resolve()
         if not resolved.is_relative_to(outdir):
             raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
         if path.is_file():
+            tombstones.append(_tombstone_file(path))
             deleted_bytes += path.stat().st_size
             path.unlink()
             deleted_paths.append(str(path))
 
     receipt = Path(step.outputs["cleanup_receipt"])
     receipt.parent.mkdir(parents=True, exist_ok=True)
+    tombstone_manifest = _write_tombstone_manifest(
+        sample_id=sample_id, receipt=receipt, artifacts=tombstones
+    )
     receipt.write_text(
         json.dumps(
             {
@@ -480,6 +738,7 @@ def cleanup_taxonomy_intermediates_handler(
                 "dehost_read_pairs": dehost_read_pairs,
                 "deleted_bytes": deleted_bytes,
                 "deleted_paths": deleted_paths,
+                "tombstone_manifest": str(tombstone_manifest),
             },
             indent=2,
         )
@@ -488,7 +747,7 @@ def cleanup_taxonomy_intermediates_handler(
     )
     return InternalHandlerResult(
         message=f"Cleaned {len(deleted_paths)} taxonomy intermediates for {sample_id}",
-        artifacts={"cleanup_receipt": receipt},
+        artifacts={"cleanup_receipt": receipt, "tombstone_manifest": tombstone_manifest},
     )
 
 
@@ -612,6 +871,9 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.score_ibd_reproduction": FunctionInternalHandler(
             "easymetagenome.score_ibd_reproduction", score_ibd_reproduction_handler
         ),
+        "easymetagenome.ibd_reproduction_report": FunctionInternalHandler(
+            "easymetagenome.ibd_reproduction_report", ibd_reproduction_report_handler
+        ),
         "easymetagenome.concat_reads": FunctionInternalHandler(
             "easymetagenome.concat_reads", concat_reads_handler
         ),
@@ -622,6 +884,9 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.cleanup_taxonomy_intermediates": FunctionInternalHandler(
             "easymetagenome.cleanup_taxonomy_intermediates",
             cleanup_taxonomy_intermediates_handler,
+        ),
+        "easymetagenome.download_ena_reads": FunctionInternalHandler(
+            "easymetagenome.download_ena_reads", download_ena_reads_handler
         ),
         "easymetagenome.functional_report": FunctionInternalHandler(
             "easymetagenome.functional_report", functional_report_handler

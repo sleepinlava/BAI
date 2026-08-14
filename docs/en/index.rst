@@ -148,6 +148,7 @@ representative biological acceptance criteria, and a strict runtime lock.
    :caption: Operations and Release
 
    runtime_locks
+   easymeta_ibd_reproduction
    release
    devlog
 

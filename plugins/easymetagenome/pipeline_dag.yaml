@@ -39,16 +39,40 @@ nodes:
         format: json
         path: "{outdir}/{category_dir}/input_validation.json"
         contract: {min_size: "10B"}
+  download_ena_reads:
+    tool_id: internal
+    internal_handler: easymetagenome.download_ena_reads
+    category: input_validation
+    scope: per_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [validate_manifest]
+    enable_condition: {field: reproduction.streaming_inputs, value: true}
+    inputs:
+      r1_url: {type: string, source: sample_sheet}
+      r2_url: {type: string, source: sample_sheet}
+      r1_md5: {type: string, source: sample_sheet}
+      r2_md5: {type: string, source: sample_sheet}
+      r1_bytes: {type: integer, source: sample_sheet}
+      r2_bytes: {type: integer, source: sample_sheet}
+    outputs:
+      read1: {type: file, format: fastq.gz, path: "{outdir}/{sample_id}_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
+      read2: {type: file, format: fastq.gz, path: "{outdir}/{sample_id}_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
+      download_receipt:
+        type: file
+        format: json
+        path: "{outdir}/provenance/ena_downloads/{sample_id}.json"
+        contract: {min_size: "10B", required_keys: [status, sample_id, r1_md5, r2_md5, r1_bytes, r2_bytes]}
   seqkit_stat_raw:
     tool_id: seqkit
     category: input_validation
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [validate_manifest]
+    depends_on: [validate_manifest, download_ena_reads]
     inputs:
-      read1: {type: file, format: fastq.gz, source: sample_sheet}
-      read2: {type: file, format: fastq.gz, source: sample_sheet}
+      read1: {type: file, format: fastq.gz, source: download_ena_reads.read1, fallback: sample_sheet}
+      read2: {type: file, format: fastq.gz, source: download_ena_reads.read2, fallback: sample_sheet}
     outputs:
       stats: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.seqkit.tsv", contract: {file_exists: true, extensions: [.tsv], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
@@ -59,10 +83,10 @@ nodes:
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [validate_manifest, seqkit_stat_raw]
+    depends_on: [validate_manifest, download_ena_reads, seqkit_stat_raw]
     inputs:
-      read1: {type: file, format: fastq.gz, source: sample_sheet}
-      read2: {type: file, format: fastq.gz, source: sample_sheet}
+      read1: {type: file, format: fastq.gz, source: download_ena_reads.read1, fallback: sample_sheet}
+      read2: {type: file, format: fastq.gz, source: download_ena_reads.read2, fallback: sample_sheet}
     outputs:
       clean_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       clean_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
@@ -102,6 +126,8 @@ nodes:
       dehost_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       dehost_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1_kneaddata_paired_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
+      cleanup_receipt: {type: file, format: json, path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.compression.json", contract: {min_size: "10B", required_keys: [status, sample_id, deleted_bytes, deleted_paths, tombstone_manifest]}}
+      tombstone_manifest: {type: file, format: json, path: "{outdir}/provenance/tombstones/{sample_id}.compression.json", contract: {min_size: "10B", required_keys: [schema_version, sample_id, cleanup_receipt, artifacts]}}
     assertions: ["output_files.dehost_read1 exists", "output_files.dehost_read2 exists"]
   kraken2_classify:
     tool_id: kraken2
@@ -183,6 +209,8 @@ nodes:
     depends_on: [fastp_qc, compress_dehost_reads, kraken2_classify, bracken_phylum, bracken_genus, bracken_species]
     params: {_batch_cleanup: true}
     inputs:
+      raw_read1: {type: file, source: download_ena_reads.read1, required: false}
+      raw_read2: {type: file, source: download_ena_reads.read2, required: false}
       clean_read1: {type: file, source: fastp_qc.clean_read1}
       clean_read2: {type: file, source: fastp_qc.clean_read2}
       dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}
@@ -193,7 +221,12 @@ nodes:
         type: file
         format: json
         path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.taxonomy.json"
-        contract: {min_size: "10B", required_keys: [status, sample_id, dehost_read_pairs, deleted_bytes, deleted_paths]}
+        contract: {min_size: "10B", required_keys: [status, sample_id, dehost_read_pairs, deleted_bytes, deleted_paths, tombstone_manifest]}
+      tombstone_manifest:
+        type: file
+        format: json
+        path: "{outdir}/provenance/tombstones/{sample_id}.taxonomy.json"
+        contract: {min_size: "10B", required_keys: [schema_version, sample_id, cleanup_receipt, artifacts]}
   fastp_summary:
     tool_id: internal
     internal_handler: easymetagenome.fastp_summary
@@ -307,6 +340,30 @@ nodes:
       - "len(output_json.standard_tables) == 3"
       - "output_json.consistency.standard_table_count == 3"
       - "output_json.consistency.standard_row_count == output_json.standard_tables.qc_summary.rows + output_json.standard_tables.host_removal_summary.rows + output_json.standard_tables.taxonomy_abundance.rows"
+  collect_ibd_reproduction_report:
+    tool_id: internal
+    internal_handler: easymetagenome.ibd_reproduction_report
+    category: report
+    scope: cross_sample
+    platforms: [illumina]
+    optional: false
+    depends_on: [fastp_summary, kneaddata_summary, taxonomy_diversity, score_ibd_reproduction]
+    inputs:
+      fastp_summary: {type: file, source: fastp_summary.summary_table}
+      kneaddata_summary: {type: file, source: kneaddata_summary.summary_table}
+      genus_table: {type: file, source: bracken_merge.genus_table}
+      alpha_table: {type: file, source: taxonomy_diversity.alpha_table}
+      beta_table: {type: file, source: taxonomy_diversity.beta_table}
+      endpoint_scores: {type: file, source: score_ibd_reproduction.endpoint_scores}
+    outputs:
+      report_manifest:
+        type: file
+        format: json
+        path: "{outdir}/{category_dir}/ibd_core53_report_manifest.json"
+        contract: {min_size: "100B", required_keys: [schema_version, plugin, workflow, sample_count, artifacts, report, standard_tables, consistency]}
+      report_markdown: {type: file, format: markdown, path: "{outdir}/{category_dir}/ibd_core53_reproduction.md", contract: {min_size: "100B"}}
+    assertions:
+      - "output_json.workflow == 'ibd_core53_reproduction'"
   score_ibd_reproduction:
     tool_id: internal
     internal_handler: easymetagenome.score_ibd_reproduction
@@ -377,7 +434,8 @@ nodes:
       merged_reads: {type: file, source: concat_dehost_reads.merged_reads}
       humann_output_dir: {type: directory, source: humann4_profile.output_dir}
     outputs:
-      cleanup_receipt: {type: file, format: json, path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.json", contract: {min_size: "10B"}}
+      cleanup_receipt: {type: file, format: json, path: "{outdir}/provenance/intermediate_cleanup/{sample_id}.json", contract: {min_size: "10B", required_keys: [status, sample_id, deleted_paths, tombstone_manifest]}}
+      tombstone_manifest: {type: file, format: json, path: "{outdir}/provenance/tombstones/{sample_id}.json", contract: {min_size: "10B", required_keys: [schema_version, sample_id, cleanup_receipt, artifacts]}}
   kneaddata_cleanup_summary:
     tool_id: internal
     internal_handler: easymetagenome.kneaddata_cleanup_summary

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
+import pytest
+
 from abi.executor import (
     GenericABIExecutor,
     _build_assertion_context,
@@ -110,6 +112,58 @@ def test_tool_versions_only_capture_tools_selected_by_plan(tmp_path):
     content = path.read_text(encoding="utf-8")
     assert "\nused\tused\t\t1.0\tcaptured\n" in content
     assert "unused" not in content
+
+
+def test_formal_tool_version_gate_rejects_not_configured(tmp_path):
+    class Skill:
+        def check_installation(self):
+            return True
+
+        def capture_version(self):
+            return ""
+
+    class Registry:
+        def list_tools(self):
+            return [{"id": "kraken2", "executable": "kraken2"}]
+
+        def create(self, tool_id, *, mock_tools):
+            return Skill()
+
+    executor = GenericABIExecutor.__new__(GenericABIExecutor)
+    executor.registry = Registry()
+    executor.mock_tools = False
+
+    with pytest.raises(ValueError, match="kraken2=not_configured"):
+        executor._write_tool_versions(
+            tmp_path / "tool_versions.tsv",
+            tool_ids=["kraken2"],
+            require_captured=True,
+        )
+
+
+def test_additional_version_tools_can_be_captured_without_dag_nodes(tmp_path):
+    class Skill:
+        def check_installation(self):
+            return True
+
+        def capture_version(self):
+            return "2.5.5"
+
+    class Registry:
+        def list_tools(self):
+            return [{"id": "bowtie2", "executable": "bowtie2"}]
+
+        def create(self, tool_id, *, mock_tools):
+            return Skill()
+
+    executor = GenericABIExecutor.__new__(GenericABIExecutor)
+    executor.registry = Registry()
+    executor.mock_tools = False
+    path = executor._write_tool_versions(
+        tmp_path / "tool_versions.tsv", tool_ids={"bowtie2"}, require_captured=True
+    )
+
+    assert "bowtie2\tbowtie2\t\t2.5.5\tcaptured" in path.read_text(encoding="utf-8")
 
 
 def test_resolve_actual_outputs_keeps_read_pairs_in_order(tmp_path):

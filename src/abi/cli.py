@@ -95,6 +95,7 @@ from abi._shared import _common_overrides
 from abi.agent import ABIAgentInterface
 from abi.agent.context import render_doctor_agent
 from abi.agent_integrations import doctor_agent_integration, install_agent_integration
+from abi.compliance import audit_result
 from abi.evidence import verify_evidence_manifest
 from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.json_utils import load_json_object, loads_json
@@ -817,6 +818,25 @@ def verify_evidence_command(
         }
         typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
         if not result.valid:
+            raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        _fail(exc)
+
+
+@app.command("audit-result")
+def audit_result_command(
+    result_dir: Path = typer.Option(..., "--result-dir", help="ABI result directory."),
+    output: Optional[Path] = typer.Option(
+        None, "--output", help="Write the compliance matrix JSON."
+    ),
+) -> None:
+    """Independently generate a machine-readable compliance matrix."""
+    try:
+        result = audit_result(result_dir, output=output)
+        typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
+        if not result["valid"]:
             raise typer.Exit(code=1)
     except typer.Exit:
         raise
