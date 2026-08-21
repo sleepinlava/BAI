@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.5.12] - 2026-08-21
+
+### Added
+
+- Formal EasyMetaGenome IBD reproduction workflows with validated cohort
+  manifests, verified ENA download backends, bounded per-sample cleanup, and
+  strict provenance/compliance checks.
+- ABI project integrations for Codex and Kimi, alongside the existing Claude
+  Code and OpenCode lifecycle assets.
+- Auditable real-data evidence and reports for the plasmid and RNA-seq case
+  studies, plus canonical publication-evidence bindings.
+- A tracked core-development sparse-worktree profile that hides archival and
+  paper-editing material without removing it from repository history.
+
+### Changed
+
+- Failed-step cleanup can remove explicitly opted-in intermediate outputs while
+  preserving structured tombstones and provenance receipts.
+- EasyMetaGenome execution supports bounded batched P1 processing and durable,
+  checksum-verified scripted downloads for cloud runs.
+- Runtime logs now use the canonical `logs/` hierarchy, and ignore rules keep
+  generated environments in the release surface while excluding local runtime
+  state, secrets, and externally archived evidence.
+
+### Fixed
+
+- Provenance reports now retain configured reference-database identities even
+  when a runtime resource record is incomplete.
+- EasyMetaGenome manifest adapter formatting now satisfies the repository-wide
+  Ruff gate on every supported Python matrix job.
+
 ## [1.5.11.1] - 2026-08-02
 
 ### Added
