@@ -2,7 +2,7 @@ project_name: abi_metatranscriptomics_demo
 mode: auto
 threads: 4
 outdir: results/abi_metatranscriptomics_demo
-log_dir: log
+log_dir: logs/metatranscriptomics
 input:
   sample_sheet: examples/sample_sheet_transcriptomics.tsv
 

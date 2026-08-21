@@ -48,9 +48,18 @@ def test_create_figures_excludes_benchmark_outcomes(
     monkeypatch.setattr(figure_builder, "FIGURE_DIR", tmp_path / "figures")
     monkeypatch.setattr(figure_builder, "DATA_DIR", data_dir)
     source_runs = (
-        ("downloads/rnaseq_retry5", "differential_expression.tsv"),
-        ("downloads/wgs_st93_mrsa_retry", "mlst_profile.tsv"),
-        ("downloads/plasmid_scapp_core_retry7", "plasmid_consensus.tsv"),
+        (
+            "analysis_outputs/canonical_runs_20260819/rnaseq_airway_20260809",
+            "differential_expression.tsv",
+        ),
+        (
+            "analysis_outputs/canonical_runs_20260819/wgs_st93_20260810",
+            "mlst_profile.tsv",
+        ),
+        (
+            "analysis_outputs/canonical_runs_20260819/metagenomic_plasmid_20260810",
+            "plasmid_consensus.tsv",
+        ),
     )
     for index, (result_dir, standard_table) in enumerate(source_runs):
         run_root = tmp_path / result_dir

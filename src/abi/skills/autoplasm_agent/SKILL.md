@@ -110,7 +110,7 @@ Minimal dry-run:
 PYTHONPATH=src python -m abi.autoplasm.cli dry-run \
   --config examples/config_minimal.yaml \
   --outdir results/autoplasm_project \
-  --log-dir log
+  --log-dir logs/autoplasm_project
 ```
 
 Assembly-only real smoke:
@@ -123,7 +123,7 @@ PYTHONPATH=src python -m abi.autoplasm.cli run \
   --config examples/config_assembly_full_run.yaml \
   --profile local \
   --outdir results/assembly_full_run \
-  --log-dir results/assembly_full_run/log
+  --log-dir logs/assembly_full_run
 ```
 
 Reads-route preflights:
@@ -133,22 +133,22 @@ PYTHONPATH=src python -m abi.autoplasm.cli dry-run \
   --config examples/config_illumina_smoke.yaml \
   --profile dry_run \
   --outdir results/illumina_smoke_dry \
-  --log-dir results/illumina_smoke_dry/log
+  --log-dir logs/illumina_smoke_dry
 PYTHONPATH=src python -m abi.autoplasm.cli dry-run \
   --config examples/config_ont_smoke.yaml \
   --profile dry_run \
   --outdir results/ont_smoke_dry \
-  --log-dir results/ont_smoke_dry/log
+  --log-dir logs/ont_smoke_dry
 PYTHONPATH=src python -m abi.autoplasm.cli dry-run \
   --config examples/config_hifi_smoke.yaml \
   --profile dry_run \
   --outdir results/hifi_smoke_dry \
-  --log-dir results/hifi_smoke_dry/log
+  --log-dir logs/hifi_smoke_dry
 PYTHONPATH=src python -m abi.autoplasm.cli dry-run \
   --config examples/config_hybrid_smoke.yaml \
   --profile dry_run \
   --outdir results/hybrid_smoke_dry \
-  --log-dir results/hybrid_smoke_dry/log
+  --log-dir logs/hybrid_smoke_dry
 ```
 
 ## Real Run Procedure
@@ -185,7 +185,7 @@ PYTHONPATH=src python -m abi.autoplasm.cli run \
   --sample-sheet samples.tsv \
   --profile local \
   --outdir results/your_project \
-  --log-dir results/your_project/log
+  --log-dir logs/your_project
 ```
 
 For one sample:

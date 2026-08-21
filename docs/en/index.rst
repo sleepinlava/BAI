@@ -135,6 +135,7 @@ a regression test, and run checks proportional to the affected release surface.
    workflow_validation
    paper_evaluation
    paper_outline
+   publication_evidence_package
    production_manual_acceptance_checklist
 
 Operate and release

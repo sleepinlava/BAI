@@ -159,7 +159,7 @@ Docker `/app` 上下文。该目录变化时，建议在容器发布前手动运
 - `.mamba/`
 - `resources/`
 - `results/`
-- `log/`
+- `logs/`
 - Nextflow 与 Snakemake 工作目录
 
 工具执行通过 ``abi.config.resolved_mamba_root()`` 解析环境，优先级如下：

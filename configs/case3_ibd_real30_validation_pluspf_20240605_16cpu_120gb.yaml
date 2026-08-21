@@ -1,0 +1,45 @@
+project_name: case3_ibd_real30_validation_pluspf_20240605_16cpu_120gb
+threads: 16
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_real30_validation_pluspf_20240605
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_real30_validation_pluspf_20240605
+
+input:
+  # Frozen current validation cohort: 10 NC, 10 CD, and 10 UC samples.
+  sample_sheet: configs/case3_ibd_p0_technical_pilot_samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2_pluspf_20240605
+
+workflow:
+  # This mixed-source cohort validates execution, provenance, and structured outputs.
+  preset: p0_taxonomy
+
+tool_params:
+  fastp: {threads: 16}
+  kneaddata: {threads: 16}
+  kraken2: {threads: 16}
+  bracken: {read_length: 150, threshold: 0}
+
+execution:
+  resources: {cpu: 16, memory: 120GB}
+  parallel: false
+  workers: 1
+  batch_size: 1
+  error_policy: halt
+  resume: true
+  progress: true
+
+provenance:
+  require_captured_tool_versions: true
+  additional_tool_version_ids: [bowtie2, trimmomatic]
+  require_clean_git: true
+  require_runtime_lock: true
+  require_strict_runtime_lock: true
+  required_resource_identity_ids: [host_db, kraken2_db]
+  checksum_resource_ids: [host_db, kraken2_db]
+  resource_identities:
+    host_db:
+      identity_file: /root/autodl-tmp/resources/autoplasm/identities/kneaddata_host_grch37_hg19.json
+    kraken2_db:
+      identity_file: /root/autodl-tmp/resources/autoplasm/identities/kraken2_pluspf_20240605.json

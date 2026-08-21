@@ -18,6 +18,7 @@ def test_plasmid_engine_uses_canonical_project_root():
 def test_load_config_merges_defaults_and_profile():
     config = load_config("examples/config_minimal.yaml", profile="dry_run")
     assert config["project_name"] == "autoplasm_project"
+    assert config["log_dir"] == "logs/autoplasm_project"
     assert config["threads"] == 2
     assert config["mock_tools"] is True
     assert config["plasmid_detection"]["tools"] == ["genomad"]

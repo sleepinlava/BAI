@@ -175,7 +175,7 @@ Large or generated runtime state is ignored:
 - `.mamba/`
 - `resources/`
 - `results/`
-- `log/`
+- `logs/`
 - Nextflow and Snakemake work directories
 
 Tool execution resolves environments via ``abi.config.resolved_mamba_root()``

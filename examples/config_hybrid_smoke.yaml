@@ -2,7 +2,7 @@ project_name: autoplasm_hybrid_smoke
 mode: auto
 threads: 2
 outdir: results/hybrid_smoke
-log_dir: results/hybrid_smoke/log
+log_dir: logs/hybrid_smoke
 dry_run: true
 mock_tools: true
 

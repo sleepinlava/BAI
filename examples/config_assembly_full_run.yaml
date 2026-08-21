@@ -2,7 +2,7 @@ project_name: autoplasm_assembly_full_run
 mode: auto
 threads: 4
 outdir: results/assembly_full_run
-log_dir: results/assembly_full_run/log
+log_dir: logs/assembly_full_run
 dry_run: false
 mock_tools: false
 

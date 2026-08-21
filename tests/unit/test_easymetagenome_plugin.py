@@ -465,9 +465,7 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
     config = plugin.load_config(
         "configs/case3_ibd_core53_pluspf_20240605_16cpu_120gb.yaml",
         overrides={
-            "input": {
-                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
-            },
+            "input": {"sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"},
             "outdir": str(tmp_path / "results"),
             "log_dir": str(tmp_path / "logs"),
         },
@@ -475,9 +473,7 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
 
     plan = plugin.build_plan(config, check_files=True)
     downloads = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "download_ena_reads"
+        step for step in plan.steps if step.params.get("_dag_node_id") == "download_ena_reads"
     ]
     cleanups = [
         step
@@ -491,8 +487,8 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
     assert config["threads"] == 16
     assert config["execution"] == {
         "resources": {"cpu": 16, "memory": "120GB"},
-            "parallel": False,
-            "workers": 1,
+        "parallel": False,
+        "workers": 1,
         "batch_size": 1,
         "error_policy": "halt",
         "resume": True,
@@ -500,14 +496,50 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
     }
 
 
+def test_real30_validation_config_uses_current_cohort_and_strict_provenance(tmp_path):
+    plugin = get_plugin("easymetagenome")
+    config = plugin.load_config(
+        "configs/case3_ibd_real30_validation_pluspf_20240605_16cpu_120gb.yaml",
+        overrides={
+            "input": {"sample_sheet": "configs/case3_ibd_p0_technical_pilot_samples.tsv"},
+            "outdir": str(tmp_path / "results"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+    )
+
+    plan = plugin.build_plan(config, check_files=False)
+    cleanups = [
+        step
+        for step in plan.steps
+        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
+    ]
+
+    assert len(plan.samples) == len(cleanups) == 30
+    group_counts = {
+        group: sum(sample.group == group for sample in plan.samples) for group in ("NC", "CD", "UC")
+    }
+    assert group_counts == {
+        "NC": 10,
+        "CD": 10,
+        "UC": 10,
+    }
+    assert config["workflow"]["preset"] == "p0_taxonomy"
+    assert config["resources"]["kraken2_db"].endswith("kraken2_pluspf_20240605")
+    assert config["provenance"]["require_captured_tool_versions"] is True
+    assert config["provenance"]["require_clean_git"] is True
+    assert config["provenance"]["require_strict_runtime_lock"] is True
+    assert config["provenance"]["required_resource_identity_ids"] == [
+        "host_db",
+        "kraken2_db",
+    ]
+
+
 def test_ibd_core53_download_all_is_a_separate_verified_phase(tmp_path):
     plugin = get_plugin("easymetagenome")
     config = plugin.load_config(
         "configs/case3_ibd_core53_download_all.yaml",
         overrides={
-            "input": {
-                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
-            },
+            "input": {"sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"},
             "outdir": str(tmp_path / "raw"),
             "log_dir": str(tmp_path / "logs"),
         },
@@ -531,9 +563,7 @@ def test_ibd_core53_cloud_analysis_reuses_complete_raw_dataset(tmp_path):
     config = plugin.load_config(
         "configs/case3_ibd_core53_cloud_current_16cpu_120gb.yaml",
         overrides={
-            "input": {
-                "sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"
-            },
+            "input": {"sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"},
             "outdir": str(tmp_path / "results"),
             "log_dir": str(tmp_path / "logs"),
         },

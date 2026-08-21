@@ -36,8 +36,6 @@ resources/*
 results/*
 !results/.gitkeep
 logs/
-log/*
-!log/.gitkeep
 *.log
 progress.json
 progress.jsonl
@@ -140,14 +138,6 @@ report/citations.md
 resource_manifest.json
 resource_manifest_cache.json
 
-# Plugin demo results
-results/plasmid_demo/
-results/rnaseq_demo/
-results/wgs_bacteria_demo/
-results/amplicon_16s_demo/
-results/metatranscriptomics_demo/
-results/rnaseq_expression_demo/
-
 # Benchmark datasets (large, not for repo)
 data/benchmark/
 data/validation/
@@ -224,14 +214,12 @@ abi paper writing/
 # Demo execution databases (large, external)
 abi-databases/
 
-# Plugin benchmark run artifacts
-bench/Bench_1/bench/results/
-bench/results/
-
 sample_sheet_illumina_test.tsv
 config_illumina_full.yaml
 docs/en/abi_hpc_validation_guide.md
 
 locks/
 
-locks/
+# Canonical real-data evidence is frozen locally and published through an
+# external archival deposit; individual tables can exceed Git hosting limits.
+analysis_outputs/canonical_runs_20260819/

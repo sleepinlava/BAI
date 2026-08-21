@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -161,6 +162,59 @@ def test_download_ena_reads_aria2c_resumes_then_verifies(tmp_path, monkeypatch):
     assert len(commands) == 2
     assert all("--continue=true" in command for command in commands)
     assert all("--max-connection-per-server=4" in command for command in commands)
+
+
+def test_download_ena_reads_script_is_silent_on_stdout_and_verified(tmp_path, monkeypatch):
+    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
+    script = tmp_path / "download.sh"
+    script.write_text("#!/bin/sh\n", encoding="utf-8")
+    script.chmod(0o755)
+    commands = []
+
+    def fake_run(command, *, check, stdout):
+        assert check is True
+        assert stdout is subprocess.DEVNULL
+        commands.append(command)
+        Path(command[2]).write_bytes(payload)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr("abi.plugins.easymetagenome.handlers.subprocess.run", fake_run)
+    outdir = tmp_path / "raw"
+    digest = hashlib.md5(payload).hexdigest()
+    outputs = {
+        "read1": str(outdir / "S1_1.fastq.gz"),
+        "read2": str(outdir / "S1_2.fastq.gz"),
+        "download_receipt": str(outdir / "provenance/ena_downloads/S1.json"),
+    }
+    download_ena_reads_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs={
+                "r1_url": "https://ftp.sra.ebi.ac.uk/S1_1.fastq.gz",
+                "r2_url": "https://ftp.sra.ebi.ac.uk/S1_2.fastq.gz",
+                "r1_md5": digest,
+                "r2_md5": digest,
+                "r1_bytes": len(payload),
+                "r2_bytes": len(payload),
+            },
+            outputs=outputs,
+        ),
+        {
+            "reproduction": {
+                "download_backend": "script",
+                "download_script": str(script),
+                "connections_per_file": 4,
+            }
+        },
+        SimpleNamespace(outdir=outdir),
+    )
+
+    assert Path(outputs["read1"]).read_bytes() == payload
+    assert Path(outputs["read2"]).read_bytes() == payload
+    assert commands == [
+        [str(script), "https://ftp.sra.ebi.ac.uk/S1_1.fastq.gz", outputs["read1"] + ".part", "4"],
+        [str(script), "https://ftp.sra.ebi.ac.uk/S1_2.fastq.gz", outputs["read2"] + ".part", "4"],
+    ]
 
 
 def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_path):

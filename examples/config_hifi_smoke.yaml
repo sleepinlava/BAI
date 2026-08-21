@@ -2,7 +2,7 @@ project_name: autoplasm_hifi_smoke
 mode: auto
 threads: 2
 outdir: results/hifi_smoke
-log_dir: results/hifi_smoke/log
+log_dir: logs/hifi_smoke
 dry_run: true
 mock_tools: true
 

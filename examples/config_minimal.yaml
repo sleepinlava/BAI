@@ -2,7 +2,7 @@ project_name: autoplasm_project
 mode: auto
 threads: 2
 outdir: results/autoplasm_project
-log_dir: log
+log_dir: logs/autoplasm_project
 dry_run: true
 mock_tools: true
 input:

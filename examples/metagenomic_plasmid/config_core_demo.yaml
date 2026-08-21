@@ -2,7 +2,7 @@ project_name: plasmid_core_demo
 mode: auto
 threads: 2
 outdir: results/plasmid_core_demo
-log_dir: results/plasmid_core_demo/logs
+log_dir: logs/plasmid_core_demo
 mock_tools: false
 
 input:

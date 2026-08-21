@@ -2,7 +2,7 @@ project_name: autoplasm_project
 mode: auto
 threads: 16
 outdir: results/autoplasm_project
-log_dir: log
+log_dir: logs/autoplasm_project
 profile: local
 resume: false
 force: false

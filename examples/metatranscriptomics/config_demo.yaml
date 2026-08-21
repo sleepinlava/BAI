@@ -2,7 +2,7 @@ project_name: metatranscriptomics_demo
 mode: auto
 threads: 2
 outdir: results/metatranscriptomics_demo
-log_dir: results/metatranscriptomics_demo/logs
+log_dir: logs/metatranscriptomics_demo
 mock_tools: false
 
 execution:

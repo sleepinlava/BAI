@@ -765,7 +765,7 @@ def _plan_from_dict(data: Mapping[str, Any]) -> ExecutionPlan:
         mode=str(data.get("mode", "auto")),
         threads=int(data.get("threads", 1)),
         outdir=str(data.get("outdir", "")),
-        log_dir=str(data.get("log_dir", "log")),
+        log_dir=str(data.get("log_dir", "logs/plasmid_analysis")),
         samples=samples,
         steps=[PlanStep(**step) for step in data.get("steps", [])],
         sample_context=sample_context,

@@ -183,6 +183,33 @@ def _download_verified_aria2c(
     part.with_name(part.name + ".aria2").unlink(missing_ok=True)
 
 
+def _download_verified_script(
+    url: str,
+    destination: Path,
+    expected_md5: str,
+    expected_bytes: int,
+    *,
+    script: Path,
+    connections: int,
+) -> None:
+    """Run the durable cloud transfer script, then atomically publish verified data."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    part = destination.with_name(destination.name + ".part")
+    if destination.is_file():
+        _verify_transfer(
+            destination, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes
+        )
+        return
+    subprocess.run(
+        [str(script), url, str(part), str(connections)],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )  # noqa: S603 - configured script path is checked by preflight.
+    _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
+    os.replace(part, destination)
+    part.with_name(part.name + ".aria2").unlink(missing_ok=True)
+
+
 def download_ena_reads_handler(
     step: Any,
     config: Mapping[str, Any],
@@ -192,7 +219,7 @@ def download_ena_reads_handler(
     reproduction = config.get("reproduction", {})
     backend = str(reproduction.get("download_backend", "urllib"))
     connections = int(reproduction.get("connections_per_file", 4))
-    if backend not in {"urllib", "aria2c"}:
+    if backend not in {"urllib", "aria2c", "script"}:
         raise ValueError(f"Unsupported ENA download backend: {backend}")
     if not 1 <= connections <= 16:
         raise ValueError("reproduction.connections_per_file must be between 1 and 16")
@@ -209,7 +236,16 @@ def download_ena_reads_handler(
             str(step.inputs[f"{mate}_md5"]),
             int(step.inputs[f"{mate}_bytes"]),
         )
-        if backend == "aria2c":
+        if backend == "script":
+            script = Path(str(reproduction.get("download_script", "")))
+            if not script.is_file() or not os.access(script, os.X_OK):
+                raise ValueError(f"ENA download script is not executable: {script}")
+            _download_verified_script(
+                *arguments,
+                script=script,
+                connections=connections,
+            )
+        elif backend == "aria2c":
             _download_verified_aria2c(*arguments, connections=connections)
         else:
             _download_verified_urllib(*arguments)

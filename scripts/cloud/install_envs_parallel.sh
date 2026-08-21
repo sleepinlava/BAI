@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 ENVS_DIR="${PROJECT_ROOT}/envs"
 MAMBA_ROOT="${PROJECT_ROOT}/.mamba"
-LOG_DIR="${PROJECT_ROOT}/log"
+LOG_DIR="${PROJECT_ROOT}/logs/cloud"
 mkdir -p "${LOG_DIR}"
 
 echo "[$(date '+%H:%M:%S')] Starting parallel conda environment installation (10 threads)..."

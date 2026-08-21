@@ -140,7 +140,10 @@ def create_airway_figure() -> dict[str, Any]:
         "data": _display_path(data_path),
         "outputs": outputs,
         "claim": "method-sensitive significant-set overlap with strong effect-direction evidence",
-        **_source_binding("downloads/rnaseq_retry5", "differential_expression.tsv"),
+        **_source_binding(
+            "analysis_outputs/canonical_runs_20260819/rnaseq_airway_20260809",
+            "differential_expression.tsv",
+        ),
     }
 
 
@@ -213,9 +216,7 @@ def create_wgs_figure() -> dict[str, Any]:
         for column_index, value in enumerate(values):
             ax_grid.text(column_index, row_index, "✓", ha="center", va="center", color="white")
     ax_grid.set_xticks(range(6), labels)
-    ax_grid.set_yticks(
-        range(3), ["ST93 MLST", "Full-length mecA", "External core-SNP range 7-60"]
-    )
+    ax_grid.set_yticks(range(3), ["ST93 MLST", "Full-length mecA", "External core-SNP range 7-60"])
     ax_grid.set_title("Study endpoint and comparator recovery", fontsize=11, pad=8)
     ax_grid.set_xlabel("Study isolate (I1-I6 = SRR2057030-35)")
     for spine in ax_grid.spines.values():
@@ -271,7 +272,10 @@ def create_wgs_figure() -> dict[str, Any]:
         "pairwise_data": _display_path(pairwise_path),
         "outputs": outputs,
         "claim": "ST93/mecA recovery plus paper-track core-SNP pairwise-distance endpoint recovery",
-        **_source_binding("downloads/wgs_st93_mrsa_retry", "mlst_profile.tsv"),
+        **_source_binding(
+            "analysis_outputs/canonical_runs_20260819/wgs_st93_20260810",
+            "mlst_profile.tsv",
+        ),
     }
 
 
@@ -353,7 +357,7 @@ def create_scapp_figure(source_path: Path) -> dict[str, Any]:
         "outputs": outputs,
         "claim": "descriptive length-abundance and auxiliary mobility evidence; not accuracy",
         **_source_binding(
-            "downloads/plasmid_scapp_core_retry7",
+            "analysis_outputs/canonical_runs_20260819/metagenomic_plasmid_20260810",
             "plasmid_consensus.tsv",
         ),
     }

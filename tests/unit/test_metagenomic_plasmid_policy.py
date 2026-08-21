@@ -12,7 +12,7 @@ import yaml
 from abi.contracts.lint import validate_pipeline_template_params
 from abi.internal import InternalHandlerContext
 from abi.plugins import get_plugin
-from abi.plugins.metagenomic_plasmid import build_plan_from_dag
+from abi.plugins.metagenomic_plasmid import _plan_from_dict, build_plan_from_dag
 from abi.plugins.metagenomic_plasmid._engine.config import load_config
 from abi.plugins.metagenomic_plasmid._engine.pipeline import (
     _assembly_paths_by_sample,
@@ -55,6 +55,12 @@ def _context(samples: list[SampleInput]) -> SampleContext:
         enable_sample_analysis=len(samples) > 1,
         enable_differential_abundance=len(groups) >= 2,
     )
+
+
+def test_serialized_plan_fallback_uses_workflow_scoped_log_directory():
+    plan = _plan_from_dict({"samples": [{"sample_id": "S1"}]})
+
+    assert plan.log_dir == "logs/plasmid_analysis"
 
 
 def test_scapp_requires_metaspades_and_only_plans_for_illumina(tmp_path):

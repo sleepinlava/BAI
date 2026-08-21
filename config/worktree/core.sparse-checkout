@@ -1,0 +1,39 @@
+# ABI core-development worktree view (non-cone sparse-checkout patterns).
+# Keep the repository by default, then hide archival/publication-heavy paths.
+/*
+
+# Generated and frozen documentation evidence. Canonical guides and build
+# infrastructure remain visible.
+!/docs/_static/paper_examples/
+!/docs/evidence/
+!/docs/superpowers/
+!/docs/zh/figures/rendered/
+!/docs/zh/figures/data/scapp_evidence_20260720/
+!/docs/zh/figures/data/scapp_paper_method_v2_20260724/
+!/docs/zh/figures/scapp_paper_method_*.figure.yaml
+!/docs/zh/figures/scapp_paper_method_v2_evidence.SHA256SUMS
+!/docs/zh/figures/scapp_plsdb_*.figure.yaml
+!/docs/zh/figures/scapp_plsdb_*.tsv
+!/docs/zh/figures/scapp_plsdb_evidence.SHA256SUMS
+!/docs/zh/bai_agent_ready_workflow_module_positioning.md
+!/docs/zh/easymeta_ibd_transferability_preregistration.md
+!/docs/zh/experiment_claim_alignment_20260726.md
+!/docs/zh/new_validation_experiment_research.md
+
+# One-off cloud recovery, publication, and data-acquisition helpers. Scripts
+# used by CI, packaging, Docker, runtime locks, or unit tests remain visible.
+!/scripts/build_paper_provenance.py
+!/scripts/download_real_biodata.sh
+!/scripts/download_sra_fastq.sh
+!/scripts/cloud/backfill_cleanup_tombstones.py
+!/scripts/cloud/continue_scapp_k127_and_validate.sh
+!/scripts/cloud/download_all_dbs.sh
+!/scripts/cloud/download_dbs.sh
+!/scripts/cloud/download_dbs_seq.sh
+!/scripts/cloud/download_manual.sh
+!/scripts/cloud/freeze_easymeta_host_identity.py
+!/scripts/cloud/freeze_easymeta_ibd_core53.py
+!/scripts/cloud/install_easymeta_pluspf_20240605.sh
+!/scripts/cloud/launch_download.sh
+!/scripts/cloud/monitor_downloads.sh
+!/scripts/cloud/run_scapp_paper_method_validation.sh

@@ -196,7 +196,8 @@ class EasyMetagenomePlugin:
                     "errors": manifest_errors,
                 }
             )
-        if protocol == "ibd_core53_download" and reproduction.get("download_backend") == "aria2c":
+        download_backend = reproduction.get("download_backend")
+        if protocol == "ibd_core53_download" and download_backend in {"aria2c", "script"}:
             executable = shutil.which("aria2c") if check_runtime else "aria2c"
             checks.append(
                 {
@@ -204,6 +205,17 @@ class EasyMetagenomePlugin:
                     "status": "pass" if executable else "fail",
                     "backend": "aria2c",
                     "executable": executable,
+                }
+            )
+        if protocol == "ibd_core53_download" and download_backend == "script":
+            script = Path(str(reproduction.get("download_script", "")))
+            script_ready = script.is_file() and script.stat().st_mode & 0o111 != 0
+            checks.append(
+                {
+                    "name": "ena_download_script",
+                    "status": "pass" if script_ready else "fail",
+                    "path": str(script),
+                    "executable": script_ready,
                 }
             )
         if protocol == "ibd_core53":

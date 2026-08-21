@@ -2,7 +2,7 @@ project_name: autoplasm_ont_smoke
 mode: auto
 threads: 2
 outdir: results/ont_smoke
-log_dir: results/ont_smoke/log
+log_dir: logs/ont_smoke
 dry_run: true
 mock_tools: true
 
