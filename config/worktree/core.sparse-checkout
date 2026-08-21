@@ -6,6 +6,7 @@
 # infrastructure remain visible.
 !/docs/_static/paper_examples/
 !/docs/evidence/
+!/docs/paper_examples/
 !/docs/superpowers/
 !/docs/zh/figures/rendered/
 !/docs/zh/figures/data/scapp_evidence_20260720/
@@ -15,10 +16,21 @@
 !/docs/zh/figures/scapp_plsdb_*.figure.yaml
 !/docs/zh/figures/scapp_plsdb_*.tsv
 !/docs/zh/figures/scapp_plsdb_evidence.SHA256SUMS
+
+# Paper publication, editorial review, claim-shaping, and revision material.
+# Keep these versioned in Git, but omit them from the core-development view.
+!/docs/en/paper_evaluation.md
+!/docs/en/paper_outline.md
+!/docs/en/publication_evidence_package.md
+!/docs/zh/abi_real_data_validation_status_20260724.md
 !/docs/zh/bai_agent_ready_workflow_module_positioning.md
+!/docs/zh/current_conclusions_next_steps.md
 !/docs/zh/easymeta_ibd_transferability_preregistration.md
 !/docs/zh/experiment_claim_alignment_20260726.md
 !/docs/zh/new_validation_experiment_research.md
+!/docs/zh/paper_evaluation.md
+!/docs/zh/paper_outline.md
+!/docs/zh/scapp_v2_biological_correctness_audit_20260726.md
 
 # One-off cloud recovery, publication, and data-acquisition helpers. Scripts
 # used by CI, packaging, Docker, runtime locks, or unit tests remain visible.
