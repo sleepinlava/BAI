@@ -30,6 +30,8 @@
   when a runtime resource record is incomplete.
 - EasyMetaGenome manifest adapter formatting now satisfies the repository-wide
   Ruff gate on every supported Python matrix job.
+- Release builds retain Core Metadata 2.4 until the trusted-publishing toolchain
+  can validate Metadata 2.5 artifacts.
 
 ## [1.5.11.1] - 2026-08-02
 

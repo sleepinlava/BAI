@@ -1,9 +1,10 @@
 # ── Build system ──────────────────────────────────────────────────────
 # hatchling >=1.21.0 fixes a bug where the "dependencies" field was
 # incorrectly validated as a URL under [project.urls] during editable
-# installs.  See: pip install -e ".[dev]"  on Python 3.10.
+# installs. Hatchling 1.32 defaults to Core Metadata 2.5, which Twine 6.2
+# cannot validate yet, so keep release artifacts on Metadata 2.4.
 [build-system]
-requires = ["hatchling>=1.21.0"]
+requires = ["hatchling>=1.21.0,<1.32"]
 build-backend = "hatchling.build"
 
 [project]
