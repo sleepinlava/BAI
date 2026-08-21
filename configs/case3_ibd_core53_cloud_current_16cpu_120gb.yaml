@@ -1,0 +1,37 @@
+project_name: case3_ibd_core53_cloud_current_16cpu_120gb
+threads: 16
+outdir: /root/autodl-tmp/abi-real-data/results/case3_ibd_core53_cloud_current
+log_dir: /root/autodl-tmp/abi-real-data/logs/case3_ibd_core53_cloud_current
+
+input:
+  sample_sheet: /root/autodl-tmp/abi/configs/case3_ibd_srp131166_core53.samples.tsv
+
+resources:
+  host_db: /root/autodl-tmp/resources/autoplasm/kneaddata_host
+  kraken2_db: /root/autodl-tmp/resources/autoplasm/kraken2
+  reference_table: /root/autodl-tmp/abi/docs/zh/figures/data/easymeta_ibd_20260725/Table_3.csv
+  raw_reads: /root/autodl-tmp/abi-real-data/raw/easymeta_ibd_srp131166_core53
+
+workflow:
+  preset: ibd_core53_reproduction
+
+reproduction:
+  protocol: ibd_core53
+  streaming_inputs: false
+  kraken2_policy: cloud_current
+  frozen_table1: /root/autodl-tmp/abi/docs/zh/figures/data/easymeta_ibd_20260725/Table_1.csv
+
+tool_params:
+  fastp: {threads: 16}
+  kneaddata: {threads: 16}
+  kraken2: {threads: 16}
+  bracken: {read_length: 150, threshold: 0}
+
+execution:
+  resources: {cpu: 16, memory: 120GB}
+  parallel: true
+  workers: 2
+  batch_size: 1
+  error_policy: halt
+  resume: true
+  progress: true
