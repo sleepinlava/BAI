@@ -150,9 +150,7 @@ class ManifestValidator:
         normalized = result_dir / "metadata.normalized.tsv"
         with normalized.open("w", encoding="utf-8", newline="") as handle:
             fieldnames = list(records[0].as_dict())
-            writer = csv.DictWriter(
-                handle, fieldnames=fieldnames, delimiter="\t"
-            )
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
             writer.writeheader()
             writer.writerows(record.as_dict() for record in records)
         report = result_dir / "input_validation.json"
