@@ -75,10 +75,10 @@
     },
     {
       "path": "samples.tsv",
-      "sha256": "010196f7a762a6eb3771d46ae8d8884f25531784b852cb802c90e6a295c884a5"
+      "sha256": "68e02453b922203f128559c06554895a409d87cc114be641436b0991d0a11552"
     }
   ],
-  "pre_fault_twin_sha256": "68b6e8abb957dc05e3e8476d2ed60ce3fa0c1216e13af732912c2e13ff6f90b2",
+  "pre_fault_twin_sha256": "35e504cd1badfd81f173c23eb408b7a69a2ecb5f90c026454832b60934b28247",
   "schema_version": "abi.control-validation.fixture.v1",
   "task_id": "rnaseq_t6_recover_resource_path"
 }

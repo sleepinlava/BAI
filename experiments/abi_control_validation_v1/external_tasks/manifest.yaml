@@ -1,0 +1,31 @@
+schema_version: abi.external-tasks.v1
+task_count: 3
+confirmatory_gate: exact_upstream_materials_and_licenses_verified
+tasks:
+  - task_id: bioagent_deseq_clean
+    workflow: rnaseq_expression
+    modification_level: D1
+    original_prompt: bioagent_deseq_clean.yaml#original_prompt
+    adapted_prompt: bioagent_deseq_clean.yaml#adapted_prompt
+    prompt_diff: bioagent_deseq_clean.yaml#prompt_diff
+    license: CC-BY-4.0_with_third_party_terms
+    sha256: 3941224e8b262bd1a665d529e1afd385ce3cd28df562039a86f232c255fd2eab
+    freeze_status: prompt_frozen_data_bundle_pending
+  - task_id: core_retrieve_scapp
+    workflow: metagenomic_plasmid
+    modification_level: D1
+    original_prompt: core_retrieve_scapp.yaml#original_prompt
+    adapted_prompt: core_retrieve_scapp.yaml#adapted_prompt
+    prompt_diff: core_retrieve_scapp.yaml#prompt_diff
+    license: upstream_capsule_terms_apply
+    sha256: 5d36dd241ee893bdccc4b783c76fb213db8318cecef3b2c6386fb46dab5362f5
+    freeze_status: metadata_frozen_upstream_question_bundle_pending
+  - task_id: core_easy_st93
+    workflow: wgs_bacteria
+    modification_level: D1
+    original_prompt: core_easy_st93.yaml#original_prompt
+    adapted_prompt: core_easy_st93.yaml#adapted_prompt
+    prompt_diff: core_easy_st93.yaml#prompt_diff
+    license: upstream_capsule_terms_apply
+    sha256: 6908646704ee95483149ef8c56c71eceaab55019017b96851a2fea238d3181a8
+    freeze_status: metadata_frozen_upstream_capsule_pending

@@ -6,6 +6,7 @@ import csv
 import hashlib
 import json
 import random
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping
@@ -50,6 +51,7 @@ def build_study_artifacts(
     generate_fixtures: bool = True,
 ) -> dict[str, Any]:
     study = yaml.safe_load((study_root / "study.yaml").read_text(encoding="utf-8"))
+    _copy_release_inputs(study_root, output_root)
     workflows = list(study["workflows"])
     # Capture the source identity before generated artifacts make an in-repository
     # output directory appear dirty.
@@ -200,9 +202,40 @@ def build_study_artifacts(
     }
 
 
+def _copy_release_inputs(study_root: Path, output_root: Path) -> None:
+    """Make an out-of-tree build a self-contained, hashable release candidate."""
+    if study_root.resolve() == output_root.resolve():
+        return
+    for name in [
+        "README.md",
+        "analysis_plan.md",
+        "benchmark_design_zh.md",
+        "execution_plan.md",
+        "fixture_recipes.yaml",
+        "scoring.yaml",
+        "study.yaml",
+        "system_prompt.txt",
+        "tasks.yaml",
+        "trial_record.schema.yaml",
+    ]:
+        source = study_root / name
+        destination = output_root / name
+        if source.exists():
+            output_root.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+        elif destination.exists():
+            destination.unlink()
+    external = study_root / "external_tasks"
+    external_destination = output_root / "external_tasks"
+    if external_destination.exists():
+        shutil.rmtree(external_destination)
+    if external.exists():
+        shutil.copytree(external, external_destination)
+
+
 def _write_coverage(path: Path, workflows: list[str]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle, delimiter="\t")
+        writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
         writer.writerow(
             [
                 "workflow",
@@ -244,7 +277,7 @@ def record_semantic_review(path: Path, reviewer: str) -> int:
         row["reviewer"] = reviewer
         row["notes"] = "Independently reviewed against snapshot and advisory card."
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t", lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     checksum_file = path.parent / "frozen" / "SHA256SUMS"
@@ -296,15 +329,21 @@ def _write_randomization(
 ) -> None:
     rng = random.Random(study["randomization"]["randomization_seed"])
     rows = []
-    conditions = list(study["run_matrix"]["primary_model"]["conditions"])
+    primary_conditions = list(study["run_matrix"]["primary_model"]["conditions"])
+    targeted = dict(study["run_matrix"].get("targeted_ablations", {}))
     for task in tasks:
+        conditions = primary_conditions.copy()
+        category = str(task["category"])
+        conditions.extend(
+            condition for condition, categories in targeted.items() if category in set(categories)
+        )
         for seed in study["sampling"]["seeds"]:
             order = conditions.copy()
             rng.shuffle(order)
             for position, condition in enumerate(order, start=1):
                 rows.append([task["task_id"], "primary", seed, position, condition])
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.writer(handle, delimiter="\t")
+        writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
         writer.writerow(["task_id", "model_id", "seed", "position", "condition"])
         writer.writerows(rows)
 
@@ -313,16 +352,25 @@ def _write_sha256s(root: Path, destination: Path) -> None:
     included_roots = [
         "advisory_cards",
         "contract_snapshot",
+        "external_tasks",
         "fixtures",
         "pilot_tasks",
         "tool_shims",
         "validators",
     ]
-    files = [
-        path
-        for path in [root / "semantic_coverage.tsv", root / "study.yaml", root / "tasks.yaml"]
-        if path.exists()
+    release_files = [
+        "analysis_plan.md",
+        "benchmark_design_zh.md",
+        "execution_plan.md",
+        "fixture_recipes.yaml",
+        "scoring.yaml",
+        "semantic_coverage.tsv",
+        "study.yaml",
+        "system_prompt.txt",
+        "tasks.yaml",
+        "trial_record.schema.yaml",
     ]
+    files = [path for name in release_files if (path := root / name).exists()]
     for relative_root in included_roots:
         files.extend(path for path in (root / relative_root).rglob("*") if path.is_file())
     files.extend(

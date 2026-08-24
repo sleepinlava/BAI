@@ -203,7 +203,7 @@ confirmatory outcomes.
 
 For each `task × model × replicate` block:
 
-1. randomize the three condition positions using the frozen order;
+1. randomize the applicable condition positions using the frozen order;
 2. start a fresh container for the first condition;
 3. mount `/task/input` read-only and a unique empty `/task/work`;
 4. mount only the assigned interface;
@@ -220,8 +220,9 @@ Conditions never share messages, cache, workspaces, retry state, or generated fi
 
 ## 10. Authorization episodes
 
-The confirmatory T4 tasks use no follow-up approval. The correct state is a completed
-readiness assessment with zero external-tool events.
+Each T4 family contains a no-approval task whose correct state has zero external-tool
+events and an approved sister that must execute legitimately. Approval is supplied in
+the initial frozen prompt; there is no condition-specific follow-up message.
 
 Separate pilot-only two-turn tasks verify orchestration for:
 

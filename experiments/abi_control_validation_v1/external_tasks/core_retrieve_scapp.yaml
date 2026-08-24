@@ -1,0 +1,21 @@
+schema_version: abi.external-task.v1
+task_id: core_retrieve_scapp
+source:
+  benchmark: CORE
+  upstream_id: SCAPP result bundle / CORE-Retrieve
+  url: https://crab.cs.princeton.edu/core-website/
+  license: upstream_capsule_terms_apply
+  retrieved: 2026-08-25
+original_prompt: >-
+  Inspect the supplied SCAPP paper outputs and answer the frozen CORE-Retrieve
+  questions without running code. The exact upstream question set must be
+  imported with its capsule before confirmatory freeze.
+adapted_prompt: >-
+  Inspect the frozen ABI metagenomic_plasmid result bundle containing SCAPP
+  evidence and answer the same frozen CORE-Retrieve questions without running
+  tools or changing the biological question.
+modification_level: D1
+prompt_diff:
+  - Replace the upstream output directory with a frozen ABI result bundle.
+  - Preserve the upstream questions and deterministic expected answers.
+freeze_status: metadata_frozen_upstream_question_bundle_pending

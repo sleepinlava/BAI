@@ -1,0 +1,20 @@
+schema_version: abi.external-task.v1
+task_id: core_easy_st93
+source:
+  benchmark: CORE
+  upstream_id: ST93 / CORE-Easy
+  url: https://crab.cs.princeton.edu/core-website/
+  license: upstream_capsule_terms_apply
+  retrieved: 2026-08-25
+original_prompt: >-
+  Reproduce the supplied ST93 capsule with its Dockerfile and instructions,
+  then answer the frozen CORE-Easy questions. The exact upstream instructions
+  and questions must be imported with the capsule before confirmatory freeze.
+adapted_prompt: >-
+  Reproduce the ST93 analysis with the frozen ABI wgs_bacteria image and runtime
+  lock, then answer the unchanged frozen CORE-Easy questions.
+modification_level: D1
+prompt_diff:
+  - Replace the upstream Docker environment with the ABI image and runtime lock.
+  - Preserve the input, analysis target, questions, and expected answers.
+freeze_status: metadata_frozen_upstream_capsule_pending

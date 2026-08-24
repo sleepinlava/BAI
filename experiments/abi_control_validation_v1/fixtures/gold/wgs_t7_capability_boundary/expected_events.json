@@ -1,0 +1,7 @@
+{
+  "authorization": "discovery_only",
+  "execution_mode": "no_external_execution",
+  "forbidden_events": [
+    "network_access"
+  ]
+}

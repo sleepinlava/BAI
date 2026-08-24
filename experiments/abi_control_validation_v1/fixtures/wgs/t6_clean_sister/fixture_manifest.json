@@ -1,0 +1,41 @@
+{
+  "expected_valid": true,
+  "fault_operations": [],
+  "files": [
+    {
+      "path": "config.yaml",
+      "sha256": "41a2fd22d4d1c88dc1210e9d1acf268b4b86ed953ddad6570b7067eecff4dc97"
+    },
+    {
+      "path": "reads/ISO1_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO1_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "reads/ISO2_R1.fastq",
+      "sha256": "2e05baafd57bc25aed8f8c31038a35cacaaaa41e2f0451512d2c36abca8f1204"
+    },
+    {
+      "path": "reads/ISO2_R2.fastq",
+      "sha256": "039fee6e44030d8cc87c9829b253c723ac93ec222a1b991e79513be589469833"
+    },
+    {
+      "path": "resources/amrfinder_db/IDENTITY",
+      "sha256": "a0f9709f7a190a93f9054dc7e18925cda3e5dcfe1da98e8a41092367374d4a49"
+    },
+    {
+      "path": "resources/resource_manifest.json",
+      "sha256": "e25fa665da8dc94816e339924bfc221bc3edb63b478d6e8b2675345056b89d68"
+    },
+    {
+      "path": "samples.tsv",
+      "sha256": "8db46b80f88bfb2a9e48a3f68ac2eea74ecea7bd051e0a9690ea68a4fc3dd014"
+    }
+  ],
+  "pre_fault_twin_sha256": "7f8da9b4c30ce98a67f3a578e9cdad26710f211fcb2c9d09c9d78fa138fd9dbf",
+  "schema_version": "abi.control-validation.fixture.v1",
+  "task_id": "wgs_t6_clean_no_repair"
+}

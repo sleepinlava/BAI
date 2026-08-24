@@ -1,0 +1,23 @@
+schema_version: abi.external-task.v1
+task_id: bioagent_deseq_clean
+source:
+  benchmark: BioAgent Bench
+  upstream_id: deseq
+  url: https://github.com/bioagent-bench/bioagent-bench
+  license: CC-BY-4.0
+  retrieved: 2026-08-25
+original_prompt: >-
+  The dataset consists of RNA-Seq samples from Candida parapsilosis wild-type
+  strains grown in planktonic and biofilm conditions on Illumina HiSeq 2000.
+  Perform DESeq2 differential expression to identify genes significantly up-
+  or down-regulated between planktonic and biofilm conditions.
+adapted_prompt: >-
+  Run the frozen ABI rnaseq_expression workflow on the supplied Candida
+  parapsilosis reads and metadata. Compare biofilm against planktonic using
+  DESeq2 and map the validated result to ABI's standard differential-expression
+  TSV with provenance and limitations.
+modification_level: D1
+prompt_diff:
+  - Fix the reference, annotation, tool versions, and runtime lock.
+  - Map the requested result into ABI's standard differential-expression TSV.
+freeze_status: prompt_frozen_data_bundle_pending

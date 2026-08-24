@@ -47,13 +47,21 @@ def prepare_trial(
     (artifact_root / "interface").mkdir()
     authority_root = artifact_root / ".study_authority"
     authority_root.mkdir()
+    gold_source = fixture_root / "gold" / task_id / "gold.json"
+    if gold_source.exists():
+        shutil.copyfile(gold_source, authority_root / "gold.json")
+    contract_source = interface_root / "contract_snapshot" / f"{task['workflow']}.json"
+    if contract_source.exists():
+        shutil.copyfile(contract_source, authority_root / "contract_snapshot.json")
 
-    if condition == "matched_advisory":
+    condition_spec = study["conditions"][condition]
+    knowledge_surface = str(condition_spec["knowledge_surface"])
+    if knowledge_surface == "generated_read_only_advisory_card":
         shutil.copyfile(
             interface_root / "advisory_cards" / f"{task['workflow']}.md",
             artifact_root / "interface" / "advisory_card.md",
         )
-    else:
+    elif knowledge_surface == "abi_agent_tools":
         shutil.copyfile(
             interface_root / "contract_snapshot" / f"{task['workflow']}.json",
             artifact_root / "interface" / "contract_snapshot.json",
@@ -66,7 +74,6 @@ def prepare_trial(
         interface_root / "tool_shims" / "golden_contracts.json",
         artifact_root / "interface" / "tool_contracts.json",
     )
-    condition_spec = study["conditions"][condition]
     control_source = fixture_root / fault_relative / "fixture_control.json"
     fault_controls = (
         json.loads(control_source.read_text(encoding="utf-8")) if control_source.exists() else []
@@ -83,7 +90,7 @@ def prepare_trial(
                 "active_output_contracts": condition_spec["active_output_contracts"],
                 "structured_recovery": condition_spec["structured_recovery"],
                 "forced_provenance": condition_spec["forced_provenance"],
-                "abi_tools_enabled": condition_spec["knowledge_surface"] == "abi_agent_tools",
+                "abi_tools_enabled": knowledge_surface == "abi_agent_tools",
                 "preflight_resource_ids": _preflight_resource_ids(
                     study_root, task["base_fixture"]["recipe"]
                 ),
@@ -174,6 +181,8 @@ def invoke_workspace_operation(
         enforce_authorization=bool(control["active_authorization_gate"]),
         enforce_preflight_contracts=bool(control["active_preflight_contracts"]),
         enforce_output_contracts=bool(control["active_output_contracts"]),
+        structured_recovery=bool(control["structured_recovery"]),
+        forced_provenance=bool(control["forced_provenance"]),
         initial_execution_approved=bool(control["initial_execution_approved"]),
         abi_tools_enabled=bool(control["abi_tools_enabled"]),
         workflow=str(control["workflow"]),

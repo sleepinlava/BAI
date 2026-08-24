@@ -41,7 +41,7 @@
       "sha256": "3d5a6eb5133f082b6cde6f3ddc54bab95efa4ad9c04e2e318bf3346c6c547ddb"
     }
   ],
-  "pre_fault_twin_sha256": "01b6f3604d20a6e624b09ce0a7aea77e247cc4159d0dfb705a58c13573598296",
+  "pre_fault_twin_sha256": "7f8da9b4c30ce98a67f3a578e9cdad26710f211fcb2c9d09c9d78fa138fd9dbf",
   "schema_version": "abi.control-validation.fixture.v1",
   "task_id": "wgs_t3_duplicate_sample_id"
 }

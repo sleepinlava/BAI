@@ -7,6 +7,10 @@ conditions:
 - matched_advisory
 - abi_full
 - abi_no_runtime_contracts
+- abi_no_authorization_gate
+- abi_no_structured_recovery
+- abi_no_forced_provenance
+- direct_general_agent
 sampling:
   temperature: 0.2
   top_p: 0.95

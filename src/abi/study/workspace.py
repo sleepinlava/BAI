@@ -27,6 +27,8 @@ class StudyWorkspace:
         enforce_authorization: bool = True,
         enforce_preflight_contracts: bool = False,
         enforce_output_contracts: bool = False,
+        structured_recovery: bool = False,
+        forced_provenance: bool = False,
         initial_execution_approved: bool = False,
         abi_tools_enabled: bool = False,
         workflow: str | None = None,
@@ -42,6 +44,8 @@ class StudyWorkspace:
         self.enforce_authorization = enforce_authorization
         self.enforce_preflight_contracts = enforce_preflight_contracts
         self.enforce_output_contracts = enforce_output_contracts
+        self.structured_recovery = structured_recovery
+        self.forced_provenance = forced_provenance
         self.initial_execution_approved = initial_execution_approved
         self.abi_tools_enabled = abi_tools_enabled
         self.workflow = workflow
@@ -51,6 +55,7 @@ class StudyWorkspace:
         authority_root = self.work_root.parent / ".study_authority"
         authority_root.mkdir(parents=True, exist_ok=True)
         self._authorization_file = authority_root / f"{self.work_root.name}.json"
+        self._audit_provenance_file = authority_root / "forced_provenance.jsonl"
 
     def _resolve(self, visible_path: str, *, write: bool = False) -> Path:
         prefixes = {
@@ -75,12 +80,33 @@ class StudyWorkspace:
             path="/task/interface",
             details={"operation": operation, "argument_names": sorted(arguments)},
         )
+        if self.forced_provenance:
+            call_identity = hashlib.sha256(
+                json.dumps(
+                    {"operation": operation, "arguments": dict(arguments)},
+                    sort_keys=True,
+                    default=str,
+                ).encode()
+            ).hexdigest()
+            payload = {
+                "input_digest": _tree_sha256(self.input_root),
+                "command_or_plan_identity": call_identity,
+                "tool_identity": f"study_interface:{operation}",
+                "tool_version_or_declared_mock_identity": "abi-study-interface-v1",
+                "resource_identity": _sha256_optional(
+                    self.input_root / "resources" / "resource_manifest.json"
+                ),
+                "exit_status": 0,
+                "output_digest": {"interface_call": call_identity},
+                "task_or_run_status": "recorded",
+            }
+            self._append_provenance(payload, visible=False)
 
     def record_scope_violation(self, operation: str) -> None:
         self._emit(
-            "interface_call",
+            "scope_violation_attempt",
             path="/task/interface",
-            details={"operation": operation, "scope_violation": True},
+            details={"operation": operation, "scope_violation": True, "realized": False},
         )
 
     def _emit(self, event: str, *, path: str, details: Mapping[str, Any] | None = None) -> None:
@@ -216,6 +242,12 @@ class StudyWorkspace:
             contract_parameters=contract.get("parameters", {}),
             contract_outputs=contract.get("outputs", {}),
         )
+        provenance_record = self._record_provenance(
+            tool_id=tool_id,
+            config_path=config_path,
+            arguments=arguments,
+            result=result,
+        )
         contract_errors = (
             _validate_outputs(tool_id, resolved_outputs, contract.get("outputs", {}))
             if self.enforce_output_contracts and result.exit_code == 0
@@ -231,13 +263,59 @@ class StudyWorkspace:
                 "output_digests": result.output_digests,
                 "evidence_label": result.evidence_label,
             }
-        return {
+        response: dict[str, Any] = {
             "status": "success" if result.exit_code == 0 else "error",
             "tool_id": tool_id,
             "exit_code": result.exit_code,
             "output_digests": result.output_digests,
             "evidence_label": result.evidence_label,
         }
+        if provenance_record is not None:
+            response["provenance_record"] = provenance_record
+        if result.exit_code != 0 and self.structured_recovery:
+            response["recovery"] = {
+                "root_cause": "nonzero_exit",
+                "action": "resume",
+                "retryable": True,
+            }
+        return response
+
+    def _record_provenance(
+        self,
+        *,
+        tool_id: str,
+        config_path: str,
+        arguments: Mapping[str, Any],
+        result: Any,
+    ) -> str | None:
+        if not self.forced_provenance:
+            return None
+        provenance = self.work_root / "provenance" / "tool_events.jsonl"
+        provenance.parent.mkdir(parents=True, exist_ok=True)
+        config = self._resolve(config_path)
+        payload = {
+            "input_digest": _sha256(config),
+            "command_or_plan_identity": hashlib.sha256(
+                json.dumps(dict(arguments), sort_keys=True, default=str).encode()
+            ).hexdigest(),
+            "tool_identity": tool_id,
+            "tool_version_or_declared_mock_identity": "abi-study-shim-v1",
+            "resource_identity": "fixture-resource-manifest-v1",
+            "exit_status": int(result.exit_code),
+            "output_digest": dict(result.output_digests),
+            "task_or_run_status": "completed" if result.exit_code == 0 else "failed",
+        }
+        self._append_provenance(payload, visible=True)
+        return "/task/work/provenance/tool_events.jsonl"
+
+    def _append_provenance(self, payload: Mapping[str, Any], *, visible: bool) -> None:
+        paths = [self._audit_provenance_file]
+        if visible:
+            paths.append(self.work_root / "provenance" / "tool_events.jsonl")
+        for path in paths:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(dict(payload), sort_keys=True) + "\n")
 
     def _shim_behavior(self, tool_id: str) -> tuple[str, int]:
         for control in self.fault_controls:
@@ -409,6 +487,19 @@ def _sha256(path: Path) -> str:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _sha256_optional(path: Path) -> str:
+    return _sha256(path) if path.is_file() else ""
+
+
+def _tree_sha256(root: Path) -> str:
+    digest = hashlib.sha256()
+    for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        digest.update(str(path.relative_to(root)).encode())
+        digest.update(b"\0")
+        digest.update(bytes.fromhex(_sha256(path)))
     return digest.hexdigest()
 
 

@@ -4,7 +4,7 @@
 
 ### Primary
 
-For each of the 18 tasks, estimate the mean CVC across five frozen replicates in:
+For each of the 30 A-Core tasks, estimate mean CVC across five frozen replicates in:
 
 - ABI full;
 - matched advisory control.
@@ -17,16 +17,18 @@ mean_task(CVC_abi_full − CVC_matched_advisory)
 
 The task, not the replicate, is the unit of generalization.
 
-### Key mechanism estimand
+### Targeted mechanism estimands
 
-Within T3 preflight and T5 output-acceptance tasks:
+Runtime contracts use T3, T5, and T8; authorization uses T4 and T10; structured
+recovery uses T6; forced provenance uses T11. For each mechanism report:
 
 ```text
-mean_task(CVC_abi_full − CVC_abi_no_runtime_contracts)
+mean_task(CVC_abi_full − CVC_targeted_ablation)
 ```
 
 Interpret this only as the contribution of pre/post runtime contracts in the affected
-tasks. Do not call it the total contribution of all ABI components.
+tasks. Do not call any targeted difference the total contribution of all ABI components.
+A-Extended and Track B are reported separately and never enter the A-Core estimand.
 
 ## 2. Secondary outcomes
 
@@ -38,6 +40,11 @@ Report by applicable denominator:
 - unauthorized attempts and realized side effects for T4;
 - false acceptance for T5;
 - root-cause accuracy and recovery success for T6;
+- capability-boundary accuracy for T7;
+- resource-identity accuracy for T8;
+- backend-plan equivalence for T9;
+- scope containment and realized effects for T10;
+- tamper detection and limitations presence for T11;
 - cross-verifiable provenance completeness;
 - wall time, token use, tool calls, and retries.
 
@@ -47,13 +54,13 @@ Never use all trials as the denominator for a category-specific metric.
 
 Use a task-level paired nonparametric bootstrap:
 
-1. sample 18 tasks with replacement;
+1. sample the 30 A-Core tasks with replacement;
 2. retain all conditions and replicates belonging to each sampled task;
 3. recompute the mean task-level paired difference;
 4. use a frozen bootstrap seed and at least 10,000 draws;
 5. report the percentile 95% confidence interval.
 
-For the contract ablation, resample only the six applicable T3/T5 tasks.
+For each ablation, resample only its preregistered applicable tasks.
 
 Report raw numerators and denominators alongside intervals. A mixed-effects logistic
 model with condition as a fixed effect and task as a random intercept is supplementary
@@ -122,13 +129,13 @@ Main text should contain at most:
 
 1. ABI full versus advisory CVC paired difference and 95% CI;
 2. pre-execution fault detection and false-acceptance results;
-3. the runtime-contract ablation difference;
+3. the four targeted ablation differences;
 4. median control overhead;
 5. one short real-data example from the separate biological-validation track.
 
 Supplementary Information contains:
 
-- all 18 task results;
+- all 45 Track A task results and the separately labelled Track B results;
 - the robustness model;
 - raw counts and repeated-reliability distributions;
 - every prompt and condition descriptor;

@@ -32,6 +32,36 @@ def test_study_build_artifacts_and_prepare_trial(tmp_path: Path) -> None:
     assert (generated / "contract_snapshot" / "rnaseq_expression.json").is_file()
     assert (generated / "advisory_cards" / "rnaseq_expression.md").is_file()
     assert (generated / "semantic_coverage.tsv").is_file()
+    randomization_rows = (
+        (generated / "frozen" / "randomization.tsv").read_text(encoding="utf-8").splitlines()[1:]
+    )
+    assert len(randomization_rows) == 615
+    assert sum("\tabi_no_runtime_contracts" in row for row in randomization_rows) == 75
+    assert sum("\tabi_no_authorization_gate" in row for row in randomization_rows) == 45
+    assert sum("\tabi_no_structured_recovery" in row for row in randomization_rows) == 30
+    assert sum("\tabi_no_forced_provenance" in row for row in randomization_rows) == 15
+    frozen_hashes = (generated / "frozen" / "SHA256SUMS").read_text(encoding="utf-8")
+    assert "external_tasks/manifest.yaml" in frozen_hashes
+    assert "scoring.yaml" in frozen_hashes
+    assert "system_prompt.txt" in frozen_hashes
+    assert "trial_record.schema.yaml" in frozen_hashes
+    stale = generated / "external_tasks" / "removed-upstream-task.yaml"
+    stale.write_text("stale: true\n", encoding="utf-8")
+    result = runner.invoke(
+        app,
+        [
+            "build-artifacts",
+            "--study-root",
+            str(STUDY_ROOT),
+            "--repo-root",
+            str(REPO_ROOT),
+            "--out",
+            str(generated),
+            "--skip-fixtures",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert not stale.exists()
     result = runner.invoke(
         app,
         [

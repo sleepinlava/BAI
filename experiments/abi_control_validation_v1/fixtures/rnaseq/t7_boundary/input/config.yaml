@@ -1,0 +1,30 @@
+alignment:
+  tool: star
+differential_expression:
+  alpha: 0.05
+  comparison: treated_vs_control
+  design: ~ donor + condition
+enrichment:
+  alpha: 0.05
+  annotation_release: GRCh37.75
+  enabled: false
+  gsea_fdr: 0.25
+  max_size: 500
+  min_size: 15
+  permutations: 1000
+  rank_column: stat
+  seed: 20260727
+  top_n: 5
+input:
+  sample_sheet: /task/input/samples.tsv
+log_dir: /task/work/logs
+mode: dry_run
+outdir: /task/work/results
+project_name: rnaseq_expression_run
+resources:
+  annotation_gtf: /task/input/resources/genes.gtf
+  genome_index: /task/input/resources/star_index_valid
+  go_gaf: /task/input/resources/go.gaf
+  go_obo: /task/input/resources/go.obo
+  reactome_gmt: /task/input/resources/reactome.gmt
+threads: 4

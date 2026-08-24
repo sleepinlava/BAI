@@ -1,8 +1,8 @@
 # ABI Control-Layer Validation v1
 
 This package defines the confirmatory experiment for the ABI Application Note. It is a
-new study: it does not import tasks, scores, prompts, or outcomes from the retired
-ABI-Bench design.
+an upgraded, source-backed study package. It does not import scores or outcomes from
+the retired ABI-Bench design.
 
 ## Primary question
 
@@ -14,16 +14,20 @@ completion compared with an information-matched advisory interface?
 
 1. **Deterministic mechanism assay**: verifies contracts, authorization, output
    validation, diagnostics, and clean-task specificity without an LLM.
-2. **Paired agent experiment**: compares the three frozen conditions in `study.yaml`.
-3. **Biological validation**: remains separate and uses the existing Airway, WGS, and
-   SCAPP evidence. No dry-run or mock task is biological-validity evidence.
+2. **Paired agent experiment**: compares ABI full with the information-matched control.
+3. **Targeted ablations**: isolate runtime contracts, authorization, recovery, and
+   forced provenance only on their preregistered task categories.
+4. **External migration track**: three D1 adaptations are tracked separately under
+   `external_tasks/`; pending upstream capsules are excluded from confirmation.
 
 ## Files
 
 - `study.yaml`: frozen conditions, run matrix, budgets, environment, and stopping rules.
 - `system_prompt.txt`: common system prompt used verbatim in every condition.
-- `tasks.yaml`: 18 confirmatory task specifications, user prompts, fault recipes, gold
-  states, and deterministic validators.
+- `tasks.yaml`: 45 Track A task specifications (30 A-Core and 15 A-Extended), user
+  prompts, sister variants, fault recipes, gold states, and deterministic validators.
+- `external_tasks/`: Track B source records, adapted prompts, D1 diffs, licenses,
+  checksums, and explicit freeze status.
 - `fixture_recipes.yaml`: deterministic project layouts, sample sheets, resources,
   clean twins, and task-to-recipe mapping.
 - `scoring.yaml`: metric definitions, denominators, and trial-level CVC logic.
@@ -48,10 +52,15 @@ Do not run the confirmatory matrix until all of the following are frozen and has
 
 ## Intended scale
 
-The primary model uses:
+The complete planned matrix is:
 
 ```text
-18 tasks × 3 conditions × 5 replicates = 270 short trials
+A-Core main comparison:      30 × 2 × 5 = 300
+A-Extended main comparison:  15 × 2 × 5 = 150
+Targeted ablations:                         165
+Track A total:                              615
+Track B (after upstream freeze): 3 × 2 × 5 = 30
+Grand total:                                645
 ```
 
 The optional robustness model uses a preregistered six-task subset and is reported only
@@ -98,11 +107,12 @@ abi-study invoke \
   --arguments '{"tool_name":"check","arguments":{"analysis_type":"rnaseq_expression","config_path":"/task/input/config.yaml","sample_sheet":"/task/input/samples.tsv"}}'
 ```
 
-`abi_call` is mounted only for ABI conditions and delegates discovery, planning,
+`abi_call` is mounted only for ABI interface conditions and delegates discovery, planning,
 preflight, dry-run, and validation to the production `ABIAgentInterface`. All
 conditions receive identical low-level workspace and biological shim operations.
 Shim fault behavior, runtime-contract switches, and initial authorization state are
-kept under the orchestrator-only `.study_authority` directory; they are never mounted
+kept under the orchestrator-only `.study_authority` directory; structured-recovery and
+forced-provenance switches are also enforced there. These controls are never mounted
 as Agent-visible inputs. The Agent cannot select a shim's clean or fault behavior.
 
 Grade a completed trial:

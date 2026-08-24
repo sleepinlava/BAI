@@ -61,7 +61,59 @@ conditions:
     purpose: >-
       Targeted ablation retaining interface, authorization, diagnostics, and
       provenance while removing pre- and post-execution runtime contracts.
-    confirmatory_scope: [preflight, output_acceptance]
+    confirmatory_scope: [preflight, output_acceptance, resource_identity]
+
+  abi_no_authorization_gate:
+    label_for_agent: interface_d
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: abi_agent_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: true
+    active_authorization_gate: false
+    active_output_contracts: true
+    structured_recovery: true
+    forced_provenance: true
+    purpose: Authorization and scope-containment ablation.
+    confirmatory_scope: [authorization, scope_containment]
+
+  abi_no_structured_recovery:
+    label_for_agent: interface_e
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: abi_agent_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: true
+    active_authorization_gate: true
+    active_output_contracts: true
+    structured_recovery: false
+    forced_provenance: true
+    purpose: Structured-recovery ablation.
+    confirmatory_scope: [recovery]
+
+  abi_no_forced_provenance:
+    label_for_agent: interface_f
+    knowledge_source: frozen_contract_snapshot
+    knowledge_surface: abi_agent_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: true
+    active_authorization_gate: true
+    active_output_contracts: true
+    structured_recovery: true
+    forced_provenance: false
+    purpose: Forced-provenance ablation.
+    confirmatory_scope: [provenance_report]
+
+  direct_general_agent:
+    label_for_agent: interface_g
+    knowledge_source: none
+    knowledge_surface: neutral_workspace_tools
+    underlying_tools: frozen_common_tool_shims
+    active_preflight_contracts: false
+    active_authorization_gate: false
+    active_output_contracts: false
+    structured_recovery: false
+    forced_provenance: false
+    purpose: Ecosystem reference condition excluded from the primary estimate.
+    confirmatory_scope: []
 
 models:
   primary:
@@ -132,11 +184,21 @@ environment:
 run_matrix:
   primary_model:
     task_selector: all_confirmatory_tasks
-    conditions: [matched_advisory, abi_full, abi_no_runtime_contracts]
+    conditions: [matched_advisory, abi_full]
     ablation_rule: >-
       abi_no_runtime_contracts contributes to the primary ablation only for
       preflight and output_acceptance tasks; other categories are recorded as
       implementation-equivalence checks, not mechanism estimates.
+  targeted_ablations:
+    abi_no_runtime_contracts: [preflight, output_acceptance, resource_identity]
+    abi_no_authorization_gate: [authorization, scope_containment]
+    abi_no_structured_recovery: [recovery]
+    abi_no_forced_provenance: [provenance_report]
+  ecosystem_reference:
+    task_selector: all_confirmatory_tasks
+    conditions: [direct_general_agent]
+    include_in_primary_estimate: false
+    included_in_frozen_randomization: false
   robustness_model:
     task_selector:
       - rnaseq_t3_missing_mate

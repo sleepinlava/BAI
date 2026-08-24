@@ -1,0 +1,14 @@
+{
+  "bakta": {
+    "identity": "synthetic-bakta-db-v1",
+    "path": "/task/input/resources/bakta_db"
+  },
+  "genomad": {
+    "identity": "synthetic-genomad-db-v1",
+    "path": "/task/input/resources/genomad_db"
+  },
+  "plasmidfinder": {
+    "identity": "synthetic-plasmidfinder-db-v1",
+    "path": "/task/input/resources/plasmidfinder_valid"
+  }
+}

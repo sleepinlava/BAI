@@ -50,10 +50,10 @@
     },
     {
       "path": "samples.tsv",
-      "sha256": "e133031b2952354c9cffd14d67fc115fc9d61e01a748a2c9c3f831294a9d9865"
+      "sha256": "332dd74d18d20aee145c35b304f4e03f53e9acedaf754d4e090db66c33a42f28"
     }
   ],
-  "pre_fault_twin_sha256": "d5577b38dfa8657c1387eb381a9ab037c316701b9409953b93459960814d9900",
+  "pre_fault_twin_sha256": "cae2a40ffc4109c4ce8817d4922b5826129a10014ff44f089a88506f264069a0",
   "schema_version": "abi.control-validation.fixture.v1",
   "task_id": "plasmid_t5_invalid_genomad_output"
 }

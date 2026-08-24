@@ -47,3 +47,25 @@ def test_fixture_assay_is_deterministic_across_builds(tmp_path: Path) -> None:
 
     relative = Path("gold/rnaseq_t3_missing_mate/fixture_assay.json")
     assert (outputs[0] / relative).read_bytes() == (outputs[1] / relative).read_bytes()
+
+
+def test_resource_identity_fixture_materializes_a_decoy_without_changing_manifest(
+    tmp_path: Path,
+) -> None:
+    build_fixtures(
+        repo_root=REPO_ROOT,
+        study_root=STUDY_ROOT,
+        output_root=tmp_path,
+        task_ids={"rnaseq_t8_resource_identity"},
+    )
+
+    fault = tmp_path / "rnaseq" / "t8_resource_fault" / "input"
+    decoy = fault / "resources" / "decoy" / "star_index_valid"
+    manifest = json.loads(
+        (fault / "resources" / "resource_manifest.json").read_text(encoding="utf-8")
+    )
+    assert (decoy / "IDENTITY").read_text(encoding="utf-8").strip() == (
+        "synthetic-star-index-decoy"
+    )
+    assert manifest["star_index"]["identity"] == "synthetic-star-index-v1"
+    assert manifest["star_index"]["path"] == "/task/input/resources/star_index_valid"

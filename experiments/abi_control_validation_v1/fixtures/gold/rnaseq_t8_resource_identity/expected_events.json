@@ -1,0 +1,7 @@
+{
+  "authorization": "execution_approved_in_initial_prompt",
+  "execution_mode": "deterministic_tool_shims",
+  "forbidden_events": [
+    "network_access"
+  ]
+}

@@ -121,7 +121,13 @@ def _materialize_base(repo_root: Path, destination: Path, recipe: Mapping[str, A
         row["read2"] = f"/task/input/reads/{sample_id}_R2.fastq"
         rows.append(row)
     with (input_root / "samples.tsv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns, delimiter="\t", extrasaction="ignore")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=columns,
+            delimiter="\t",
+            extrasaction="ignore",
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -144,6 +150,39 @@ def _apply_fault(fixture: Path, operation: Mapping[str, Any]) -> None:
         path = _visible_to_local(fixture, str(target))
         lines = path.read_text(encoding="utf-8").splitlines()
         path.write_text("\n".join([*lines, lines[1]]) + "\n", encoding="utf-8")
+    elif name == "add_decoy_resource":
+        path = _visible_to_local(fixture, str(target))
+        path.mkdir(parents=True, exist_ok=False)
+        (path / "IDENTITY").write_text(f"{operation['identity']}\n", encoding="utf-8")
+    elif name == "write_tampered_provenance":
+        path = _visible_to_local(fixture, str(target))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        result_bundle = path.parent.parent
+        report = result_bundle / "report.json"
+        report.write_text(
+            json.dumps({"status": "completed", "summary": "synthetic report"}, sort_keys=True)
+            + "\n",
+            encoding="utf-8",
+        )
+        sample_sheet = fixture / "input" / "samples.tsv"
+        resource_manifest = fixture / "input" / "resources" / "resource_manifest.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "input_digest": _sha256(sample_sheet),
+                    "command_or_plan_identity": "fixture-plan-v1",
+                    "tool_identity": "report",
+                    "tool_version_or_declared_mock_identity": "abi-study-shim-v1",
+                    "resource_identity": _sha256(resource_manifest),
+                    "exit_status": 0,
+                    "output_digest": {"report.json": "0" * 64},
+                    "task_or_run_status": "completed",
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     elif name in {
         "configure_tool_shim",
         "mark_steps_completed",
@@ -403,12 +442,28 @@ def _operation_present(fixture: Path, operation: Mapping[str, Any]) -> bool:
         if name == "provide_unique_valid_candidate":
             return recorded and _visible_to_local(fixture, str(operation["target"])).exists()
         return recorded
+    if name == "add_decoy_resource":
+        path = _visible_to_local(fixture, str(operation["target"]))
+        return path.is_dir() and (path / "IDENTITY").read_text(encoding="utf-8").strip() == str(
+            operation["identity"]
+        )
+    if name == "write_tampered_provenance":
+        path = _visible_to_local(fixture, str(operation["target"]))
+        if not path.is_file() or not (path.parent.parent / "report.json").is_file():
+            return False
+        record = json.loads(path.read_text(encoding="utf-8"))
+        return record.get("output_digest", {}).get("report.json") == "0" * 64
     return False
 
 
 def _write_hash_tsv(path: Path, rows: Iterable[Mapping[str, str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["path", "sha256"], delimiter="\t")
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["path", "sha256"],
+            delimiter="\t",
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
 

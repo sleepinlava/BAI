@@ -1,0 +1,22 @@
+{
+  "annotation_gtf": {
+    "identity": "synthetic-gtf-v1",
+    "path": "/task/input/resources/genes.gtf"
+  },
+  "go_gaf": {
+    "identity": "synthetic-go-gaf-v1",
+    "path": "/task/input/resources/go.gaf"
+  },
+  "go_obo": {
+    "identity": "synthetic-go-obo-v1",
+    "path": "/task/input/resources/go.obo"
+  },
+  "reactome_gmt": {
+    "identity": "synthetic-reactome-gmt-v1",
+    "path": "/task/input/resources/reactome.gmt"
+  },
+  "star_index": {
+    "identity": "synthetic-star-index-v1",
+    "path": "/task/input/resources/star_index_valid"
+  }
+}

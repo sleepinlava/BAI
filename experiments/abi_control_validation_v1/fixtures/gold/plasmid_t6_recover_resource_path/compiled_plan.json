@@ -442,7 +442,7 @@
       "dependencies": [
         "META1_plasmid_consensus_internal"
       ],
-      "env_name": "autoplasm-abundance",
+      "env_name": "easymeta-p0",
       "execution_kind": "external",
       "inputs": {
         "plasmid_contigs": "/task/work/gold-plan/04_plasmid_detection/META1/plasmid_contigs.fasta",
@@ -505,10 +505,10 @@
       },
       "resources": {
         "accelerator": null,
-        "cpu": 8,
+        "cpu": 1,
         "disk": null,
-        "memory": "16GB",
-        "walltime": "02:00:00"
+        "memory": "1GB",
+        "walltime": "00:05:00"
       },
       "sample_id": "META1",
       "step_id": "META1_abundance_bowtie2",

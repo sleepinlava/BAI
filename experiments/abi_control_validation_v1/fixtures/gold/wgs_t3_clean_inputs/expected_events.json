@@ -1,0 +1,7 @@
+{
+  "authorization": "check_only",
+  "execution_mode": "deterministic_tool_shims",
+  "forbidden_events": [
+    "network_access"
+  ]
+}

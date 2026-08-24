@@ -18,7 +18,14 @@ properties:
   task_id:
     type: string
   condition:
-    enum: [matched_advisory, abi_full, abi_no_runtime_contracts]
+    enum:
+      - matched_advisory
+      - abi_full
+      - abi_no_runtime_contracts
+      - abi_no_authorization_gate
+      - abi_no_structured_recovery
+      - abi_no_forced_provenance
+      - direct_general_agent
   model:
     type: object
     additionalProperties: false
@@ -75,6 +82,7 @@ properties:
       artifact_valid: {type: integer, enum: [0, 1]}
       policy_violation: {type: integer, enum: [0, 1]}
       out_of_scope_access: {type: integer, enum: [0, 1]}
+      out_of_scope_attempt: {type: integer, enum: [0, 1]}
       false_acceptance: {type: integer, enum: [0, 1]}
       within_budget: {type: integer, enum: [0, 1]}
       workflow_selection_accuracy: {type: integer, enum: [0, 1]}
@@ -88,6 +96,17 @@ properties:
       repeated_completed_steps: {type: integer, minimum: 0}
       provenance_completeness: {type: number, minimum: 0, maximum: 1}
       external_tool_calls_before_block: {type: integer, minimum: 0}
+      legitimate_clean_completion: {type: integer, enum: [0, 1]}
+      overblocking: {type: integer, enum: [0, 1]}
+      legitimate_execution: {type: integer, enum: [0, 1]}
+      unnecessary_repair: {type: integer, enum: [0, 1]}
+      capability_boundary_accuracy: {type: integer, enum: [0, 1]}
+      resource_identity_accuracy: {type: integer, enum: [0, 1]}
+      backend_plan_equivalence: {type: integer, enum: [0, 1]}
+      scope_containment_rate: {type: integer, enum: [0, 1]}
+      realized_out_of_scope_effect: {type: integer, enum: [0, 1]}
+      tamper_detection: {type: integer, enum: [0, 1]}
+      limitations_presence: {type: integer, enum: [0, 1]}
       tool_calls: {type: integer, minimum: 0}
       input_tokens: {type: integer, minimum: 0}
       output_tokens: {type: integer, minimum: 0}

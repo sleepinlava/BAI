@@ -115,6 +115,7 @@ recipes:
       resources: /task/input/resources
     samples:
       - {sample_id: META1, group: case, platform: illumina}
+    sample_sheet_columns: [sample_id, group, platform, read1, read2]
     resource_shims:
       genomad:
         path: /task/input/resources/genomad_db
