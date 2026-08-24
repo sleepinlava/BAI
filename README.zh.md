@@ -41,6 +41,7 @@ ABI 是工作流编排与接口层，不会替代分析所需的底层生物信�
 | 分析 16S 微生物群落 | `amplicon_16s` | ASV、物种注释、系统发育、Alpha/Beta 多样性 |
 | 比较 bulk RNA-seq 表达差异 | `rnaseq_expression` | 计数矩阵、差异表达、通路富集 |
 | 分析细菌分离株基因组 | `wgs_bacteria` | 组装、注释、MLST、耐药基因结果 |
+| 运行 task 级审计的 Bacannot WGS | `wgs_bacannot` | 受管 Bacannot 证据、契约、MLST 与 AMR 标准表（认证待完成） |
 | 定量宏转录组基因表达 | `metatranscriptomics` | 测序质控、比对统计、基因计数 |
 | 分析宏基因组 shotgun reads | `easymetagenome` | 物种组成和功能丰度 |
 | 识别并表征宏基因组病毒 | `viral_viwrap` | 病毒 bin、质量、分类、宿主和标准化丰度 |

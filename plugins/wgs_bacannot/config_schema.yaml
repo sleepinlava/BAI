@@ -1,0 +1,65 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: ABI wgs_bacannot configuration
+type: object
+additionalProperties: false
+required: [project_name, outdir, workflow, input, modules, resources, audit]
+properties:
+  project_name: {type: string, minLength: 1}
+  mode: {type: string}
+  threads: {type: integer, minimum: 1}
+  outdir: {type: string, minLength: 1}
+  log_dir: {type: string, minLength: 1}
+  dry_run: {type: boolean}
+  mock_tools: {type: boolean}
+  workflow:
+    type: object
+    additionalProperties: false
+    required: [source, revision, commit_sha, profile, resume]
+    properties:
+      source: {const: fmalmeida/bacannot}
+      revision: {const: v3.4.4}
+      commit_sha: {const: a78ddb0bffe75139adf1f443260d6d5b1987fe27}
+      profile: {enum: [docker, singularity]}
+      resume: {type: boolean}
+  input:
+    type: object
+    additionalProperties: false
+    required: [sample_sheet, platform, mode]
+    properties:
+      sample_sheet: {type: string, minLength: 1}
+      platform: {const: illumina}
+      mode: {const: paired_end}
+  modules:
+    type: object
+    additionalProperties: false
+    required: [assembly, annotation, mlst, amr]
+    properties:
+      assembly: {const: true}
+      annotation: {const: true}
+      mlst: {const: true}
+      amr: {type: boolean}
+  resources:
+    type: object
+    additionalProperties: false
+    required: [bacannot_db, max_cpus, max_memory, max_time]
+    properties:
+      runtime_resource_root: {type: string}
+      bacannot_db: {type: string, minLength: 1}
+      database_snapshot_id: {type: string}
+      database_sha256: {type: string, pattern: "^$|^[0-9a-f]{64}$"}
+      max_cpus: {type: integer, minimum: 1}
+      max_memory: {type: string, minLength: 1}
+      max_time: {type: string, minLength: 1}
+  audit:
+    type: object
+    additionalProperties: false
+    required: [level, retain_success_command_evidence]
+    properties:
+      level: {const: task_contracts}
+      retain_success_command_evidence: {const: true}
+  execution:
+    type: object
+    additionalProperties: false
+    properties:
+      nextflow_timeout_seconds: {type: number, minimum: 1}
+      progress: {type: boolean}

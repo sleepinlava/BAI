@@ -1,0 +1,26 @@
+project_name: wgs_bacannot_demo
+mode: auto
+threads: 4
+outdir: results/wgs_bacannot_demo
+log_dir: results/wgs_bacannot_demo/logs
+
+workflow:
+  source: fmalmeida/bacannot
+  revision: v3.4.4
+  commit_sha: a78ddb0bffe75139adf1f443260d6d5b1987fe27
+  profile: docker
+  resume: false
+
+input:
+  sample_sheet: examples/wgs_bacannot/samples.tsv
+  platform: illumina
+  mode: paired_end
+
+modules: {assembly: true, annotation: true, mlst: true, amr: true}
+resources:
+  runtime_resource_root: ABI_RUNTIME_RESOURCE_ROOT_NOT_CONFIGURED
+  bacannot_db: BACANNOT_DB_NOT_CONFIGURED
+  max_cpus: 4
+  max_memory: 16.GB
+  max_time: 4.h
+audit: {level: task_contracts, retain_success_command_evidence: true}

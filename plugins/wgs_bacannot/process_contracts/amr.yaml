@@ -1,0 +1,12 @@
+contract_id: bacannot_amr
+contract_version: bacannot-3.4.4-v1
+process_class: amr
+enabled_when: modules.amr == true
+process_patterns: ["(?:^|:)(?:AMRFINDER|CARD_RGI|ARGMINER|RESFINDER)$"]
+cardinality: {per_sample: {min_successful: 1}}
+accepted_statuses: [COMPLETED, CACHED]
+required_outputs:
+  - role: amr_result
+    min_files: 1
+    validators: [non_empty, tsv_parseable]
+publish: true

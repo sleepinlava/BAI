@@ -1,0 +1,6 @@
+tools:
+  - id: bacannot
+    required: true
+    default_enabled: true
+    output_dir_policy: allow_existing
+    skill_path: plugins/wgs_bacannot/skills/bacannot/SKILL.md

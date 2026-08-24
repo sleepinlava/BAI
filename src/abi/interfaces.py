@@ -45,6 +45,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional, Protocol, Sequence, runtime_checkable
 
+from abi.external_workflows.models import ExternalProcessContract, ExternalWorkflowSpec
 from abi.schemas import ABIExecutionPlan
 from abi.tools import ToolRegistry
 
@@ -55,9 +56,26 @@ __all__ = [
     "ABIResultValidationPlugin",
     "ABIPlugin",
     "ABIInternalHandlerPlugin",
+    "ABIExternalWorkflowPlugin",
     "ABIPreflightPlugin",
     "ABIPublishedOutputsPlugin",
 ]
+
+
+@runtime_checkable
+class ABIExternalWorkflowPlugin(Protocol):
+    """Optional capability for task-audited external workflow plugins."""
+
+    def external_workflow_spec(
+        self,
+        config: Mapping[str, Any],
+        plan: ABIExecutionPlan,
+    ) -> ExternalWorkflowSpec: ...
+
+    def external_process_contracts(
+        self,
+        config: Mapping[str, Any],
+    ) -> Sequence[ExternalProcessContract]: ...
 
 
 @runtime_checkable

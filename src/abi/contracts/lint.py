@@ -223,7 +223,9 @@ def lint_dag(dag_spec: Mapping[str, Any]) -> List[LintFinding]:
             if str(dep) in node_ids:
                 has_dependents.add(str(dep))
 
-    for nid in sorted(node_ids):
+    # A one-node workflow is a valid graph (not an orphan).  The warning is
+    # only meaningful when a node is disconnected from other declared nodes.
+    for nid in sorted(node_ids) if len(node_ids) > 1 else []:
         node = node_by_id.get(nid, {})
         deps = node.get("depends_on", [])
         if isinstance(deps, str):

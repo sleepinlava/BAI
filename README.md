@@ -41,6 +41,7 @@ ABI is an orchestration and interface layer. It does not replace the underlying 
 | Profile a 16S microbial community | `amplicon_16s` | ASVs, taxonomy, phylogeny, alpha and beta diversity |
 | Compare bulk RNA-seq expression | `rnaseq_expression` | Count matrix, differential expression, pathway enrichment |
 | Analyze a bacterial isolate genome | `wgs_bacteria` | Assembly, annotation, MLST, antimicrobial resistance calls |
+| Run task-audited Bacannot WGS | `wgs_bacannot` | Managed Bacannot evidence, contracts, MLST, and AMR tables (certification pending) |
 | Quantify metatranscriptomic expression | `metatranscriptomics` | Read QC, alignment summary, per-gene counts |
 | Profile shotgun metagenomic reads | `easymetagenome` | Taxonomic and functional abundance profiles |
 | Identify and characterize viruses | `viral_viwrap` | Viral bins, quality, taxonomy, hosts, normalized abundance |

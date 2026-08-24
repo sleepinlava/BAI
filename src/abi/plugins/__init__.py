@@ -54,6 +54,7 @@ def _builtin_plugins() -> Dict[str, ABIPlugin]:
     from abi.plugins.metatranscriptomics import MetatranscriptomicsPlugin
     from abi.plugins.rnaseq_expression import RNASeqExpressionPlugin
     from abi.plugins.viral_viwrap import ViralViWrapPlugin
+    from abi.plugins.wgs_bacannot import WGSBacannotPlugin
     from abi.plugins.wgs_bacteria import WGSBacteriaPlugin
 
     plugin_classes: List[type[Any]] = [
@@ -63,6 +64,7 @@ def _builtin_plugins() -> Dict[str, ABIPlugin]:
         MetatranscriptomicsPlugin,
         RNASeqExpressionPlugin,
         WGSBacteriaPlugin,
+        WGSBacannotPlugin,
         ViralViWrapPlugin,
     ]
     for cls in plugin_classes:

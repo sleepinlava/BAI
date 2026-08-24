@@ -1,0 +1,22 @@
+abi_version: "0.1"
+plugin_id: wgs_bacannot
+display_name: Bacannot Bacterial Genome Analysis
+description: Managed Bacannot v3.4.4 bacterial WGS with L3 task contracts.
+report_title: Bacannot Bacterial Genome ABI Report
+plugin_type: adapter
+entry_point: abi.plugins.wgs_bacannot:WGSBacannotPlugin
+tool_registry: tool_registry.yaml
+standard_tables: standard_tables.yaml
+tool_contracts: tool_contracts
+config_schema: config_schema.yaml
+core_contracts: [bacannot]
+workflow:
+  name: Managed Bacannot v3.4.4 bacterial WGS
+  citation: "Almeida et al. 2023, F1000Research, doi:10.12688/f1000research.139488.1"
+  note: ABI owns the execution boundary, attempt evidence, contracts, and normalized results.
+  steps:
+    - id: bacannot_workflow
+      tool: bacannot
+      after: []
+      optional: false
+      citation: "Almeida et al. 2023, F1000Research"

@@ -83,6 +83,7 @@ metatranscriptomics = "abi.plugins.metatranscriptomics:MetatranscriptomicsPlugin
 rnaseq_expression = "abi.plugins.rnaseq_expression:RNASeqExpressionPlugin"
 amplicon_16s = "abi.plugins.amplicon_16s:Amplicon16SPlugin"
 wgs_bacteria = "abi.plugins.wgs_bacteria:WGSBacteriaPlugin"
+wgs_bacannot = "abi.plugins.wgs_bacannot:WGSBacannotPlugin"
 easymetagenome = "abi.plugins.easymetagenome:EasyMetagenomePlugin"
 viral_viwrap = "abi.plugins.viral_viwrap:ViralViWrapPlugin"
 
@@ -99,6 +100,8 @@ exclude = ["src/abi/sciplot/tests/"]
 "environments.yaml" = "abi/data/environments.yaml"
 "envs" = "envs"
 "examples" = "examples"
+"examples/wgs_bacannot/demo_R1.fastq" = "examples/wgs_bacannot/demo_R1.fastq"
+"examples/wgs_bacannot/demo_R2.fastq" = "examples/wgs_bacannot/demo_R2.fastq"
 "golden_traces" = "golden_traces"
 "integrations" = "abi/integrations"
 "plugins" = "plugins"
@@ -136,6 +139,8 @@ include = [
 # workflow, so force them into the sdist as well as the wheel.
 [tool.hatch.build.targets.sdist.force-include]
 "envs" = "envs"
+"examples/wgs_bacannot/demo_R1.fastq" = "examples/wgs_bacannot/demo_R1.fastq"
+"examples/wgs_bacannot/demo_R2.fastq" = "examples/wgs_bacannot/demo_R2.fastq"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/abi/sciplot/tests"]

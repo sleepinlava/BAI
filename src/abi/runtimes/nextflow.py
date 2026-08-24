@@ -51,6 +51,10 @@ class NextflowRuntime:
         resolve_nextflow_bin(self.options.nextflow_bin, self.options.mamba_root)
 
     def dry_run(self, plan: object, config: Mapping[str, Any]) -> RuntimeResult:
+        if callable(getattr(self.plugin, "external_workflow_spec", None)):
+            from abi.external_workflows.runtime import ManagedExternalNextflowRuntime
+
+            return ManagedExternalNextflowRuntime(self.plugin, self.options).dry_run(plan, config)
         result_dir = Path(str(config["outdir"]))
         nextflow_dir = result_dir / "nextflow"
         workflow_path = self.options.workflow or nextflow_dir / "workflow.nf"
@@ -98,6 +102,10 @@ class NextflowRuntime:
         return RuntimeResult(status="dry_run", return_code=0, outputs=outputs)
 
     def run(self, plan: object, config: Mapping[str, Any]) -> RuntimeResult:
+        if callable(getattr(self.plugin, "external_workflow_spec", None)):
+            from abi.external_workflows.runtime import ManagedExternalNextflowRuntime
+
+            return ManagedExternalNextflowRuntime(self.plugin, self.options).run(plan, config)
         registry = self.plugin.registry()
         result_dir = Path(str(config["outdir"]))
         nextflow_dir = result_dir / "nextflow"

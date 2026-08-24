@@ -1,0 +1,12 @@
+contract_id: bacannot_mlst
+contract_version: bacannot-3.4.4-v1
+process_class: mlst
+enabled_when: modules.mlst == true
+process_patterns: ["(?:^|:)MLST$"]
+cardinality: {per_sample: {min_successful: 1, max_successful_final: 1}}
+accepted_statuses: [COMPLETED, CACHED]
+required_outputs:
+  - role: mlst_result
+    min_files: 1
+    validators: [non_empty, tsv_parseable]
+publish: true

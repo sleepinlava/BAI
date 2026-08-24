@@ -48,6 +48,16 @@ platform_support:
       - install and validate the upstream ViWrap runtime outside the ABI release scope
       evidence:
       - ViWrap is intentionally excluded from the strict release runtime lock
+    bacannot_unsupported: &bacannot_unsupported
+      status: unsupported
+      blockers:
+      - D2/D3 biological, resume, HPC, and strict runtime-lock certification is incomplete
+      - the Bacannot database bundle and container digest manifest are not release certified
+      alternatives:
+      - use wgs_bacteria for the currently supported lightweight bacterial WGS workflow
+      - run wgs_bacannot only for engineering validation with site-specific preflight evidence
+      evidence:
+      - Bacannot v3.4.4 is pinned and task-attempt evidence is covered by fixture tests
     environment_x86_partial: &environment_x86_partial
       status: partial
       blockers:
@@ -98,6 +108,9 @@ platform_support:
     wgs_bacteria:
       x86_64: *plugin_x86_partial
       aarch64: *plugin_arm_partial
+    wgs_bacannot:
+      x86_64: *bacannot_unsupported
+      aarch64: *bacannot_unsupported
   environments:
     autoplasm-base:
       x86_64: *environment_x86_partial
@@ -587,6 +600,8 @@ tool_assignments:
     prokka: wgs
     mlst: wgs
     amrfinderplus: wgs
+  wgs_bacannot:
+    bacannot: autoplasm-nextflow
   amplicon_16s:
     cutadapt: amplicon
     diversity_metrics: amplicon

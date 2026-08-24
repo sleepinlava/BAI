@@ -43,6 +43,7 @@ PLUGINS = {
     "metatranscriptomics",
     "rnaseq_expression",
     "viral_viwrap",
+    "wgs_bacannot",
     "wgs_bacteria",
 }
 
@@ -138,6 +139,20 @@ def validate_capability_report(report: Any, *, architecture: str) -> None:
     ):
         raise CapabilityVerificationError(
             "viral_viwrap must remain unsupported on x86_64 and aarch64"
+        )
+    bacannot = _mapping(
+        _mapping(support["plugins"]["wgs_bacannot"], "plugins.wgs_bacannot"),
+        "plugins.wgs_bacannot",
+    )
+    if any(
+        _mapping(
+            bacannot[cell_architecture], f"plugins.wgs_bacannot.{cell_architecture}"
+        ).get("status")
+        != "unsupported"
+        for cell_architecture in ARCHITECTURES
+    ):
+        raise CapabilityVerificationError(
+            "wgs_bacannot must remain unsupported until production certification completes"
         )
 
 

@@ -1,0 +1,2 @@
+sample_id	platform	read1	read2
+demo	illumina	examples/wgs_bacannot/demo_R1.fastq	examples/wgs_bacannot/demo_R2.fastq

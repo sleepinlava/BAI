@@ -87,6 +87,10 @@ class TestLintDag:
         orphans = [f for f in findings if f.check == "orphan"]
         assert any("ORPHAN" in f.detail for f in orphans)
 
+    def test_single_node_workflow_is_not_an_orphan(self):
+        findings = lint_dag({"nodes": [{"id": "external_parent", "depends_on": []}]})
+        assert not [finding for finding in findings if finding.check == "orphan"]
+
     def test_node_with_dependents_not_orphan(self):
         dag = {
             "nodes": [

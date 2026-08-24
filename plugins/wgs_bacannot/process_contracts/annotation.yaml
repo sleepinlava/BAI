@@ -1,0 +1,12 @@
+contract_id: bacannot_annotation
+contract_version: bacannot-3.4.4-v1
+process_class: annotation
+enabled_when: modules.annotation == true
+process_patterns: ["(?:^|:)PROKKA$", "(?:^|:)BAKTA$"]
+cardinality: {per_sample: {min_successful: 1, max_successful_final: 1}}
+accepted_statuses: [COMPLETED, CACHED]
+required_outputs:
+  - role: annotation_gff
+    min_files: 1
+    validators: [non_empty, gff_parseable]
+publish: true

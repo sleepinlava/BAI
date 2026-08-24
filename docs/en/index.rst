@@ -116,6 +116,7 @@ The standard lifecycle is ``query -> plan -> check -> dry-run -> run -> inspect
    metagenomic_plasmid
    rnaseq_expression_workflow
    airway_wgs_running_example
+   wgs_bacannot
 
 Develop ABI
 -----------

@@ -1,0 +1,27 @@
+abi_version: "0.1"
+tool_id: bacannot
+name: Bacannot v3.4.4 managed external workflow
+category: external_workflow
+purpose: Run pinned bacterial isolate assembly, annotation, typing, and AMR analysis.
+when_to_use: [bacterial_isolate_wgs, illumina_paired_end]
+inputs:
+  sample_sheet: {type: file, formats: [yaml], required: true}
+  bacannot_db: {type: directory, required: true}
+outputs:
+  output_dir: {type: directory, required: true}
+execution:
+  executable: nextflow
+  version_command: nextflow -version
+  command_template: >-
+    nextflow run fmalmeida/bacannot
+    -r a78ddb0bffe75139adf1f443260d6d5b1987fe27
+    --input {sample_sheet} --bacannot_db {bacannot_db} --output {output_dir}
+  network: true
+  writes_output: true
+normalization:
+  tables: [qc_summary, genome_assembly_stats, genome_annotation, mlst_profile, amr_profile, sample_status]
+failure_handling:
+  missing_input: {hint: Verify the generated samplesheet and pinned database snapshot.}
+  nonzero_exit: {hint: Inspect task_attempts.tsv and archived Nextflow task logs.}
+  tool_not_found: {hint: Install the ABI Nextflow runtime environment.}
+resources: {cpu: 16, memory: 64GB, walltime: "24:00:00", disk: 200GB}
