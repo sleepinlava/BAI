@@ -38,7 +38,6 @@ def test_rebuild_documentation_deliverables_exist() -> None:
         "docs/en/hpc_development.md",
         "docs/en/development.md",
         "docs/en/release.md",
-        "docs/en/devlog.md",
         # Core Chinese docs
         "docs/zh/abi_spec_v0.1.md",
         "docs/zh/agent_usage.md",
@@ -61,7 +60,6 @@ def test_rebuild_documentation_deliverables_exist() -> None:
         "demo_artifacts/README.md",
         "baseline_comparison/README.md",
         "figures/README.md",
-        "metrics.tsv",
     ]
 
     missing = [path for path in required if not (root / path).exists()]

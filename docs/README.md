@@ -24,20 +24,11 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 | 测试指南 | [zh](zh/testing.md) | [en](en/testing.md) |
 | 发布指南 | [zh](zh/release.md) | [en](en/release.md) |
 | 插件开发指南 | [zh](zh/plugin_development_guide.md) | [en](en/plugin_development_guide.md) |
-| 插件报告与图表规范 | — | [en](en/plugin_report_figure_spec.md) |
 | HPC 开发指南 | [zh](zh/hpc_development.md) | [en](en/hpc_development.md) |
 | Job Service | [zh](zh/job_service.md) | [en](en/job_service.md) |
 | ABI SciPlot 设计 | — | [en](en/abi_sciplot_design.md) |
 | 工作流验证 | [zh](zh/workflow_validation.md) | [en](en/workflow_validation.md) |
 | OpenAI 接口标准 | [zh](zh/openai_interface_standard.md) | [en](en/openai_interface_standard.md) |
-
-### 项目规划 / Planning
-
-| 文档 | Language |
-|:---|:---|
-| [ABI 重构计划](../ABI_REFACTOR_PLAN.md) | 中文 |
-| [开发日志](en/devlog.md) | English |
-| [生产验收检查清单](zh/production_manual_acceptance_checklist.md) | 中文 |
 
 ### 规范 / Specification
 

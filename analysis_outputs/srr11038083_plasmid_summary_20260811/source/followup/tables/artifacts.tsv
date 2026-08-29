@@ -1,4 +1,0 @@
-sample_id	tool	artifact_type	path	size_bytes	description
-	report_markdown	md	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_candidate_followup_20260811_resume/report/methods.md	523	Output artifact produced by report_markdown
-	report_markdown	html	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_candidate_followup_20260811_resume/report/report.html	11669	Output artifact produced by report_markdown
-	report_markdown	md	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_candidate_followup_20260811_resume/report/report.md	9680	Output artifact produced by report_markdown

@@ -304,9 +304,6 @@ gh workflow run docker.yml --ref master \
   -f plugin=amplicon -f push=false -f push_to_dockerhub=false
 ```
 
-See the [Linux support plan](docs/en/linux_support_plan.md) for
-cross-machine installation criteria and the manual Docker policy.
-
 ### Nextflow, Snakemake, HPC, cloud, and queued jobs
 
 Export a workflow to Nextflow or Snakemake, select a runtime backend, or submit

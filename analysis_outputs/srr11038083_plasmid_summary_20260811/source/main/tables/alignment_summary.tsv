@@ -1,4 +1,0 @@
-sample_id	tool	artifact_type	record_count	mapped_records	unmapped_records	size_bytes	source_file
-SRR11038083	bowtie2	sam	34294974	9994347	24300627	9649720233	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.sam
-SRR11038083	samtools	sam	34294974	9994347	24300627	9649720233	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.sam
-SRR11038083	samtools	bam				1524586423	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/10_abundance/SRR11038083/SRR11038083.plasmid_alignment.bam

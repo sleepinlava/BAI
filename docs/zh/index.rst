@@ -113,6 +113,7 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    metagenomic_plasmid
    rnaseq_expression_workflow
    airway_wgs_running_example
+   wgs_bacannot
 
 开发 ABI
 ------------------------------
@@ -124,19 +125,10 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    :caption: 开发规范
 
    development_workflow
-   linux_support_plan
    development
-   mcp_protocol_20260728_update_research
    plugin_development_guide
    testing
    workflow_validation
-   current_conclusions_next_steps
-   paper_evaluation
-   paper_outline
-   real_data_validation_datasets
-   abi_real_data_validation_status_20260724
-   scapp_v2_biological_correctness_audit_20260726
-   production_manual_acceptance_checklist
 
 运维与发布
 ------------------------------
@@ -149,7 +141,6 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
 
    runtime_locks
    release
-   devlog
 
 组件摘要
 ------------------------------

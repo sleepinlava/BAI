@@ -174,6 +174,3 @@ Before calling a cluster deployment production-ready:
 6. Verify standard tables, provenance, checksums, report limitations, and
    scheduler IDs.
 7. Capture a strict runtime lock for the release scope.
-
-See the [production manual acceptance checklist](production_manual_acceptance_checklist.md)
-for the full set of local and HPC gates.

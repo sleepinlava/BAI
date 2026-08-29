@@ -112,9 +112,7 @@ provenance:
 `checksum_resource_ids` 以生成内容树 SHA-256。
 
 论文证据包可用 `abi verify-evidence MANIFEST --artifact-root 仓库根目录` 独立校验。
-仓库级命令 `python scripts/verify_paper_evidence.py` 会检查当前三个历史运行证据包，并
-逐一篡改每个 TSV 的隔离副本，证明任意 TSV 被修改后完整性校验必定失败。这三个包明确
-标记为 `verified_legacy_run`；正式归档前仍需使用强制资源身份配置重跑并替换。
+真实运行产生的证据包归档在仓库之外，同样可以用该命令验证完整性。
 
 ### 第 2 阶段：生物学基准
 

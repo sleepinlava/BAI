@@ -46,11 +46,6 @@ featureCounts、DESeq2 与原文 hg19/TopHat/Cuffdiff 不同，因此验证目�
 | 预注册 sentinel genes | 7/7 同向 | 定向端点通过 |
 | 显著集重叠 | 302 genes；Jaccard 0.0627 | 作为方法敏感指标报告，不作为唯一有效性端点 |
 
-![Airway 生物学验证](../_static/paper_examples/airway_biological_validation.png)
-
-图中只放置可比较的一致率；Spearman 相关与显著集 Jaccard 保留在精确数值表中，避免把不同语义的
-指标混在同一柱状轴上。
-
 ## ST93 MRSA WGS
 
 WGS 例子使用 PRJNA286158 的六株 paired-end *Staphylococcus aureus* isolate。插件执行 reads
@@ -65,31 +60,11 @@ WGS 例子使用 PRJNA286158 的六株 paired-end *Staphylococcus aureus* isolat
 | core-SNP pairwise 范围（paper track） | 7-60（中位数 47） | 原版 SPANDx v2.6 在完整 82 株论文上下文上恢复文献六株 pairwise 距离端点 7-60（均值 44）；不是完整 outbreak 结论复现 |
 | core-SNP pairwise 范围（ABI 相邻轨） | 10-73（中位数 55） | BWA mem + bcftools haploid 联合 calling；非原文方法，仅并列对照 |
 
-![WGS 生物学验证](../_static/paper_examples/wgs_biological_validation.png)
-
 core-SNP 距离端点在 pairwise 距离层面由一条外部轨恢复：该轨使用论文原版 SPANDx v2.6 工具链、
 以 JKD6159 CP002114 为参考，并纳入论文上下文队列（PRJEB3144、PRJNA232112）。ABI 的
 `wgs_bacteria` 插件本身仍然没有 core-SNP 模块，因此该恢复归功于严格对比 harness，
 而不是插件能力。文献的“不是近期 clonal outbreak”结论还依赖系统发育树位置和更大 NT/background
 队列中的距离分布，不能只由六株 pairwise 距离范围单独推出。
-
-## 机器可读证据
-
-- [规范主张表](../../metrics.tsv)
-- [Airway 端点](../paper_examples/airway_metrics.tsv)
-- [WGS 端点](../paper_examples/wgs_metrics.tsv)
-- [方法](../paper_examples/methods.tsv)
-- [限制](../paper_examples/limitations.tsv)
-- [Airway FigureSpec](../paper_examples/airway_validation.figure.yaml)
-- [WGS FigureSpec](../paper_examples/wgs_validation.figure.yaml)
-- [SCAPP 描述性 FigureSpec](../paper_examples/scapp_descriptive.figure.yaml)
-- [Airway 显著集数据](../paper_examples/airway_significant_set_overlap.tsv)
-- [WGS isolate 证据矩阵](../paper_examples/wgs_isolate_evidence.tsv)
-- [WGS SNP pairwise 距离（双轨）](../paper_examples/wgs_snp_pairwise_distances.tsv)
-- [WGS SNP 轨道对比摘要](../paper_examples/wgs_snp_track_comparison.tsv)
-- [SCAPP 逐质粒生物学证据](../paper_examples/scapp_biological_evidence.tsv)
-- [生物学图 provenance](../_static/paper_examples/biological_figures.provenance.json)
-- [可复现图形生成器](../../scripts/create_real_data_case_study_figures.py)
 
 ## 旗舰 case study：SCAPP plasmidome
 
@@ -98,20 +73,12 @@ consensus plasmids、54 条具有 terminal-repeat evidence 的候选；补充 mo
 标为 mobilizable。独立 paper-method reconstruction 已通过门禁，可报告 strict reference concordance
 precision = 12/157 = 0.0764、recall = 64/88 = 0.7273、F1 = 0.1383。
 
-![SCAPP 逐质粒生物学证据](../_static/paper_examples/scapp_biological_evidence.png)
-
-散点图使用全部 157 条 consensus candidates 的 length、CoverM abundance、terminal-overlap
-状态、mobility class 与 AMR support；它不使用已失效的历史 reference-matched 分组，也不是
-准确率曲线。
-
 headline precision、recall 和 F1 现在可作为 paper-method reconstruction 报告，但不能称为
 paper-exact reproduction。早期单阶段 PLSDB screen 遗漏了论文的 contig-level gate，已从
-`metrics.tsv` 排除；当前可用的是独立 K127 assembly、两级 coverage gate、重复预测惩罚、
+规范主张表排除；当前可用的是独立 K127 assembly、两级 coverage gate、重复预测惩罚、
 机器证据 manifest 和图形 provenance 全部通过后的 v2 证据。由于论文专用的 13,469-record
 PLSDB 去重清单没有公开，本结果使用官方 14,739-record PLSDB archive 重建 truth；precision
 表示严格参考一致性，不等价于生物学 false-positive rate。
-
-机器可读状态见 [SCAPP status](../paper_examples/scapp_status.tsv)。
 
 ## 本例限制
 

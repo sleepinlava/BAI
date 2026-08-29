@@ -101,9 +101,7 @@ gh workflow run docker.yml --ref master \
 ```
 
 The default sdist-to-wheel build path must still succeed because forced wheel
-inputs must also exist in the sdist and Docker context. See the
-[Linux Support and Delivery Plan](linux_support_plan.md) for the platform
-certification roadmap and complete manual Docker policy.
+inputs must also exist in the sdist and Docker context.
 
 ### Documentation changes
 

@@ -1,5 +1,0 @@
-evidence_source,target,detected,identity_pct,coverage_pct,interpretation
-Bakta,blaTEM-116,1,,,功能注释命中
-ABRicate / CARD,TEM-116,1,100.0,100.0,数据库序列命中
-AMRFinderPlus,blaTEM-116,1,100.0,100.0,独立数据库序列命中
-RGI,未检出,0,,,原始输出为空对象 {}

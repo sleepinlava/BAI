@@ -163,5 +163,3 @@ abi run \
 5. 测试失败、超时、取消和 `--resume`。
 6. 验证标准表、溯源、校验和、报告限制与调度器 ID。
 7. 为发布范围生成严格运行时锁。
-
-完整本地与 HPC 门禁见[生产环境手动验收检查清单](production_manual_acceptance_checklist.md)。

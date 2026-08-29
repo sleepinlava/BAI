@@ -129,15 +129,10 @@ a regression test, and run checks proportional to the affected release surface.
    :caption: Development Standards
 
    development_workflow
-   linux_support_plan
    development
    plugin_development_guide
    testing
    workflow_validation
-   paper_evaluation
-   paper_outline
-   publication_evidence_package
-   production_manual_acceptance_checklist
 
 Operate and release
 -------------------
@@ -152,7 +147,6 @@ representative biological acceptance criteria, and a strict runtime lock.
    runtime_locks
    easymeta_ibd_reproduction
    release
-   devlog
 
 Component summary
 -----------------

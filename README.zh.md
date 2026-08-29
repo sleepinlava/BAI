@@ -293,9 +293,6 @@ gh workflow run docker.yml --ref master \
   -f plugin=amplicon -f push=false -f push_to_dockerhub=false
 ```
 
-跨机器安装验收标准和 Docker 手动策略见
-[Linux 支持与交付计划](docs/zh/linux_support_plan.md)。
-
 ### Nextflow、Snakemake、HPC、云端与队列任务
 
 当本地前台进程无法满足需求时，可以导出 Nextflow 或 Snakemake 工作流、

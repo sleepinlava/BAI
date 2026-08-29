@@ -1,5 +1,0 @@
-sample_id	tool	metric	value	unit	source_file
-SRR11038083	megahit	contig_count	3641	count	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa
-SRR11038083	megahit	total_length	1928285	bp	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa
-SRR11038083	megahit	max_contig_length	11660	bp	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa
-SRR11038083	megahit	n50	498	bp	/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa

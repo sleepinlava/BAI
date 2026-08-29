@@ -1,5 +1,6 @@
 # Figures
 
-Store generated paper and presentation figures here. Keep canonical paper metrics in
-`metrics.tsv`; keep figure-specific machine-readable evidence and specifications in
-`docs/paper_examples/`, with linked provenance manifests beside generated artifacts.
+Tracked content is limited to source diagram assets (`*.drawio`) and the ABI logo.
+Generated paper and presentation figures, canonical paper metrics, and
+figure-specific machine-readable evidence are kept outside the repository, together
+with their provenance manifests.

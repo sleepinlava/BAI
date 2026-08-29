@@ -213,18 +213,14 @@ conda.lock
 /docs/_build/
 /.readthedocs-cache/
 
-# Local generated planning sessions. The benchmark implementation plan is a
-# curated historical record and remains tracked.
-/docs/superpowers/plans/*.md
-!/docs/superpowers/plans/2026-06-19-benchmark-v06-implementation.md
+# Local generated planning sessions (kept local, not for repo).
+/docs/superpowers/
+/docs/wayfinder/
+/docs/**/*development*plan*.md
 
 # Paper, evaluation, and audit drafts (not for repo)
 /docs/*/paper_*.md
 /docs/*/*paper*.md
-!/docs/en/paper_outline.md
-!/docs/zh/paper_outline.md
-!/docs/en/paper_evaluation.md
-!/docs/zh/paper_evaluation.md
 /docs/*/plugin_report_figure_spec.md
 /paper-evaluation/
 /docs/diagrams/
@@ -248,4 +244,54 @@ conda.lock
 
 # Canonical real-data evidence is frozen locally and published through an
 # external archival deposit; individual tables can exceed Git hosting limits.
-/analysis_outputs/canonical_runs_20260819/
+/analysis_outputs/
+
+# Slimmed repository: agent/analysis run outputs, publication evidence
+# packages, one-off paper scripts, and development planning drafts are kept
+# only on the local machine and stay untracked.
+/artifacts/
+/metrics.tsv
+/abi_plasmid_recovery_config*.yaml
+/docs/paper_examples/
+/docs/_static/paper_examples/
+/docs/zh/figures/**
+!/docs/zh/figures/data/
+!/docs/zh/figures/data/easymeta_ibd_20260725/
+!/docs/zh/figures/data/easymeta_ibd_20260725/**
+/docs/*/devlog.md
+/docs/*/linux_support_plan.md
+/docs/*/production_manual_acceptance_checklist.md
+/docs/en/publication_evidence_package.md
+/docs/zh/current_conclusions_next_steps.md
+/docs/zh/mcp_protocol_*_update_research.md
+/docs/zh/abi_real_data_validation_status_*.md
+/docs/zh/experiment_claim_alignment_*.md
+/docs/zh/scapp_v2_biological_correctness_audit_*.md
+/docs/zh/new_validation_experiment_research.md
+/docs/zh/real_data_validation_datasets.md
+/docs/zh/bai_agent_ready_workflow_module_positioning.md
+/docs/zh/easymeta_ibd_transferability_preregistration.md
+/scripts/create_scapp_paper_figure_specs.py
+/scripts/create_real_data_case_study_figures.py
+/scripts/score_scapp_predictions.py
+/scripts/reconstruct_scapp_truth.py
+/scripts/verify_paper_evidence.py
+/scripts/repair_plasmid_standard_tables.py
+/scripts/integrate_plasmid_supplement.py
+/scripts/analyze_scapp_plasmid_evidence.py
+/scripts/build_paper_provenance.py
+/scripts/build_scapp_machine_evidence.py
+/scripts/download_sra_fastq.sh
+/scripts/download_real_biodata.sh
+/scripts/cloud/continue_scapp_k127_and_validate.sh
+/scripts/cloud/run_scapp_paper_method_validation.sh
+/scripts/cloud/recover_scapp_k55_memory_and_validate.sh
+/tests/unit/test_create_scapp_paper_figure_specs.py
+/tests/unit/test_create_real_data_case_study_figures.py
+/tests/unit/test_score_scapp_predictions.py
+/tests/unit/test_reconstruct_scapp_truth.py
+/tests/unit/test_verify_paper_evidence.py
+/tests/unit/test_repair_plasmid_standard_tables.py
+/tests/unit/test_integrate_plasmid_supplement.py
+/tests/unit/test_analyze_scapp_plasmid_evidence.py
+/tests/unit/test_build_scapp_machine_evidence.py

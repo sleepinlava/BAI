@@ -1,2 +1,0 @@
-sample_id	assembler	contig_count	n50	total_length	max_contig	gc_content	source_file	warnings
-SRR11038083	megahit		498	1928285			/root/autodl-tmp/abi-real-data/results/metagenomic_plasmid_srr11038083_codex_20260810_12vcpu_62gb/02_assembly/SRR11038083/final.contigs.fa	

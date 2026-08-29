@@ -138,12 +138,8 @@ directory must also have a declared checksum or be selected in
 `checksum_resource_ids`.
 
 Paper evidence bundles are verified with `abi verify-evidence MANIFEST
---artifact-root REPOSITORY_ROOT`. The repository-level
-`python scripts/verify_paper_evidence.py` command verifies the three checked-in
-legacy-run bundles and independently tampers with every TSV copy to prove the
-integrity check fails. These bundles are marked `verified_legacy_run`; formal
-archival bundles must replace them after rerunning with complete mandatory
-resource identities.
+--artifact-root REPOSITORY_ROOT`. Evidence packages generated from real runs are
+archived outside the repository and can be validated with the same command.
 
 ### Phase 2: Biological Benchmarks
 
