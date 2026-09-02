@@ -216,4 +216,12 @@ def test_openai_tool_schemas_cover_agent_interface_parameters():
         method_params = {name for name in signature.parameters if name != "self"}
         schema_params = set(ABI_AGENT_TOOLS[tool_name]["properties"])
 
-        assert method_params <= schema_params, tool_name
+        # Bidirectional equality (P0-3): a one-directional subset check let
+        # descriptors advertise parameters the method does not accept — the
+        # mismatch only surfaced at runtime as a TypeError error envelope.
+        # 双向相等: 单向子集检查允许描述符广告方法不接受的参数,
+        # 差异只会在运行时以 TypeError 错误信封暴露。
+        assert method_params == schema_params, (
+            f"{tool_name}: method-only={sorted(method_params - schema_params)}, "
+            f"schema-only={sorted(schema_params - method_params)}"
+        )

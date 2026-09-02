@@ -2,20 +2,42 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from abi.filesystem import checksum_file
+
 
 def sha256_file(path: str | Path, *, chunk_size: int = 1024 * 1024) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for chunk in iter(lambda: handle.read(chunk_size), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4).
+
+    ``chunk_size`` is retained for API compatibility; the canonical
+    implementation streams in fixed-size chunks and produces identical
+    digests regardless of chunking.
+    """
+    return checksum_file(path)
+
+
+def sync_manifest_artifacts(manifest: dict[str, Any]) -> None:
+    """Rebuild the canonical ``artifacts`` section from ``files`` rows.
+
+    The managed runtime mutates ``manifest["files"]`` after archiving (path
+    promotion, task-log collection), so the checksum section the core verifier
+    reads must be derived at write time rather than maintained incrementally.
+    派生而非增量维护: 每次写盘前从 files 行重建规范 artifacts 段。
+    """
+    manifest["artifacts"] = [
+        {
+            "path": str(row["path"]),
+            "sha256": str(row["sha256"]),
+            "size_bytes": int(row.get("size", 0) or 0),
+        }
+        for row in manifest.get("files", [])
+        if isinstance(row, dict) and row.get("complete") and row.get("sha256")
+    ]
 
 
 def archive_evidence_files(
@@ -65,6 +87,12 @@ def archive_evidence_files(
         "complete": all(row["complete"] for row in rows),
         "files": rows,
     }
+    # Canonical checksum section: the core verifier (abi.evidence) only reads
+    # the "artifacts" key, so the bundle manifest must carry it to be
+    # verifiable across implementations. Incomplete sources are excluded;
+    # they stay tracked in "files" (which also carries type/source metadata).
+    # 规范校验段: 核心校验器只读 "artifacts" 键, 清单必须携带它才能跨实现校验。
+    sync_manifest_artifacts(manifest)
     path = root / "evidence_manifest.json"
     path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return path
@@ -74,8 +102,31 @@ def verify_evidence_manifest(manifest_path: str | Path) -> dict[str, Any]:
     path = Path(manifest_path)
     manifest = json.loads(path.read_text(encoding="utf-8"))
     errors: list[dict[str, str]] = []
-    for row in manifest.get("files", []):
-        evidence = path.parent / str(row.get("path", ""))
+    # Verify the canonical "artifacts" section when present; fall back to the
+    # legacy "files" rows only when the key is ABSENT (older bundles). An
+    # empty manifest — including an explicit empty "artifacts" list, which
+    # the core verifier judges invalid — verifies nothing and must be
+    # invalid, never vacuously valid.
+    # 存在规范 "artifacts" 段时校验之（即使为空列表，与核心校验器一致判 invalid）；
+    # 仅当键缺失时才回退旧版 "files" 行。空清单校验不到任何内容，
+    # 必须判 invalid，绝不能空洞地判 valid。
+    artifacts = manifest.get("artifacts")
+    if isinstance(artifacts, list):
+        entries = [
+            {"path": str(item.get("path", "")), "sha256": str(item.get("sha256", ""))}
+            for item in artifacts
+            if isinstance(item, dict)
+        ]
+    else:
+        entries = [
+            {"path": str(row.get("path", "")), "sha256": str(row.get("sha256", ""))}
+            for row in manifest.get("files", [])
+            if isinstance(row, dict)
+        ]
+    if not entries:
+        errors.append({"code": "empty_manifest", "path": str(path)})
+    for row in entries:
+        evidence = path.parent / row["path"]
         if not evidence.is_file():
             errors.append({"code": "missing_evidence", "path": str(evidence)})
             continue

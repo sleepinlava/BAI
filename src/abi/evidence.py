@@ -26,6 +26,10 @@ class EvidenceVerification:
     checked: int
     missing: list[str]
     mismatched: list[str]
+    detail: str = ""
+    # Human-readable reason when verification could not establish trust, e.g.
+    # an empty manifest. Empty for ordinary per-artifact results.
+    # 当无法建立信任时的可读原因（如空清单）；常规逐工件校验时为空。
 
 
 def derive_run_id(result_dir: str | Path) -> str:
@@ -107,7 +111,23 @@ def verify_evidence_manifest(
     missing: list[str] = []
     mismatched: list[str] = []
     checked = 0
-    for artifact in payload.get("artifacts", []):
+    artifacts = payload.get("artifacts")
+    # Guard against vacuous trust: a manifest without artifacts (including the
+    # legacy external-workflow "files"-key format) verifies nothing, so it must
+    # never be reported as valid.
+    # 防止空洞信任: 没有 artifacts 的清单(含旧版外部工作流 files 键格式)什么都没校验,
+    # 绝不能报告为 valid。
+    if not isinstance(artifacts, list) or not artifacts:
+        return EvidenceVerification(
+            valid=False,
+            checked=0,
+            missing=[],
+            mismatched=[],
+            detail="manifest contains no artifacts; nothing was verified",
+        )
+    for artifact in artifacts:
+        if not isinstance(artifact, Mapping):
+            raise ValueError(f"Malformed evidence artifact entry: {artifact!r}")
         relative = Path(str(artifact["path"]))
         if relative.is_absolute() or ".." in relative.parts:
             raise ValueError(f"Unsafe evidence artifact path: {relative}")

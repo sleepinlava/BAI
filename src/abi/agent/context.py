@@ -93,6 +93,7 @@ def _canonical_lifecycle_payload() -> List[Dict[str, Any]]:
 # 这些是结果的规范位置, agent 应引用这些文件而非解析原始工具 stdout。
 IMPORTANT_ARTIFACTS = [
     "execution_plan.json",
+    "execution_plan.resolved.json",
     "provenance/commands.tsv",
     "provenance/resolved_inputs.tsv",
     "provenance/tool_versions.tsv",

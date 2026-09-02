@@ -95,6 +95,52 @@ def test_verify_evidence_cli_exits_nonzero_after_tamper(tmp_path: Path) -> None:
     assert json.loads(invalid.output)["mismatched"] == ["metrics.tsv"]
 
 
+def test_verify_rejects_manifest_without_artifacts(tmp_path: Path) -> None:
+    """A manifest that binds no artifacts must never be vacuously valid."""
+
+    manifest = tmp_path / "evidence_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.evidence-manifest.v1",
+                "evidence_id": "case-empty",
+                "run_id": "run-empty",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = verify_evidence_manifest(manifest)
+
+    assert result.valid is False
+    assert result.checked == 0
+    assert "nothing was verified" in result.detail
+
+
+def test_verify_rejects_legacy_files_key_manifest(tmp_path: Path) -> None:
+    """Old external-workflow manifests ("files" key) verify nothing via core."""
+
+    raw = tmp_path / "raw" / "trace.tsv"
+    raw.parent.mkdir()
+    raw.write_text("task_id\tstatus\n1\tCOMPLETED\n", encoding="utf-8")
+    manifest = tmp_path / "evidence_manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.evidence-manifest.v1",
+                "complete": True,
+                "files": [{"path": "raw/trace.tsv", "sha256": "0" * 64}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = verify_evidence_manifest(manifest)
+
+    assert result.valid is False
+    assert result.checked == 0
+
+
 def test_derive_run_id_is_stable_and_changes_with_run_provenance(tmp_path: Path) -> None:
     provenance = tmp_path / "provenance"
     provenance.mkdir()

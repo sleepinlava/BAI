@@ -13,6 +13,7 @@ from abi.permissions import (
     permission_for_tool,
     requires_confirmation,
 )
+from abi.tool_descriptors import ABI_AGENT_TOOLS
 
 
 class TestPermissionLevel:
@@ -40,6 +41,30 @@ class TestPermissionForTool:
         for tool_id, level in TOOL_PERMISSIONS.items():
             assert isinstance(level, PermissionLevel), f"{tool_id}: {type(level)}"
             assert isinstance(level.value, str)
+
+
+class TestPermissionSSOT:
+    """P0-2: the permission table is derived from the descriptor SSOT."""
+
+    def test_every_descriptor_tool_has_derived_permission(self):
+        # Every tool advertised in ABI_AGENT_TOOLS must appear in
+        # TOOL_PERMISSIONS with exactly the permission its descriptor declares.
+        for tool_name, metadata in ABI_AGENT_TOOLS.items():
+            assert tool_name in TOOL_PERMISSIONS, tool_name
+            assert TOOL_PERMISSIONS[tool_name] is PermissionLevel(metadata["permission"])
+
+    def test_no_permission_entries_without_descriptor_or_alias(self):
+        # No hand-written permission entries may exist outside the SSOT plus
+        # the declared legacy alias map.
+        allowed = set(ABI_AGENT_TOOLS) | {"autoplasm_validate_result"}
+        assert set(TOOL_PERMISSIONS) == allowed
+
+    def test_legacy_alias_inherits_canonical_permission(self):
+        assert (
+            permission_for_tool("autoplasm_validate_result")
+            == permission_for_tool("abi_autoplasm_validate_result")
+            == PermissionLevel.READ_ONLY
+        )
 
 
 class TestRequiresConfirmation:

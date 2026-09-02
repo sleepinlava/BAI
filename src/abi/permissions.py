@@ -59,6 +59,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict
 
+from abi.tool_descriptors import ABI_AGENT_TOOLS
+
 __all__ = [
     "PermissionLevel",
     "TOOL_PERMISSIONS",
@@ -99,35 +101,25 @@ class PermissionLevel(str, Enum):
 
 
 # ── Tool permission map / 工具权限映射 ──
-# This is the central registry of which tools require which permission level.
-# The ABI agent runtime reads this table before dispatching any tool call.
-# If a tool is NOT listed here, ``permission_for_tool`` falls back to
-# ``READ_ONLY`` -- the least-privilege default for an unknown operation.
-# 这是工具所需权限级别的中央注册表。ABI 智能体运行时在分派任何工具调用前
-# 读取此表。如果某工具不在此列表中，permission_for_tool 回退到 PLANNING_WRITE
-# -- 一个允许写入但不允许执行的安全默认值。
+# Permissions are **derived** from the tool descriptor SSOT
+# (``abi.tool_descriptors.ABI_AGENT_TOOLS``) so the set advertised to agents
+# and the set enforced at the dispatch gate can never drift apart. The only
+# hand-written additions are legacy dispatch aliases, which inherit the
+# permission of their canonical ``abi_*`` tool.
+# 权限从工具描述符 SSOT 派生, 使广告给 agent 的集合与 dispatch 闸门强制执行的
+# 集合永远不会漂移。唯一手工维护的是遗留别名, 它们继承规范 abi_* 工具的权限。
+
+# Legacy (non-``abi_``-prefixed) dispatch aliases → canonical descriptor name.
+_PERMISSION_ALIAS_TO_CANONICAL: Dict[str, str] = {
+    "autoplasm_validate_result": "abi_autoplasm_validate_result",
+}
 
 TOOL_PERMISSIONS: Dict[str, PermissionLevel] = {
-    # ── READ_ONLY: inspection and validation / 检查和验证 ──
-    "abi_list_types": PermissionLevel.READ_ONLY,
-    "abi_inspect": PermissionLevel.READ_ONLY,
-    "abi_validate_result": PermissionLevel.READ_ONLY,
-    "abi_autoplasm_validate_result": PermissionLevel.READ_ONLY,
-    "autoplasm_validate_result": PermissionLevel.READ_ONLY,
-    "abi_export_agent_context": PermissionLevel.READ_ONLY,
-    "abi_doctor_agent": PermissionLevel.READ_ONLY,
-    "abi_query": PermissionLevel.READ_ONLY,
-    "abi_check": PermissionLevel.READ_ONLY,
-    # ── PLANNING_WRITE: plan and report generation / 计划和报告生成 ──
-    "abi_plan": PermissionLevel.PLANNING_WRITE,
-    "abi_dry_run": PermissionLevel.PLANNING_WRITE,
-    "abi_report": PermissionLevel.PLANNING_WRITE,
-    "abi_export_nextflow": PermissionLevel.PLANNING_WRITE,
-    "abi_export_snakemake": PermissionLevel.PLANNING_WRITE,
-    "abi_install_skills": PermissionLevel.PLANNING_WRITE,
-    # ── EXECUTION: pipeline execution (requires confirmation) / 流水线执行（需要确认） ──
-    "abi_run": PermissionLevel.EXECUTION,
+    tool_name: PermissionLevel(metadata["permission"])
+    for tool_name, metadata in ABI_AGENT_TOOLS.items()
 }
+for _alias, _canonical in _PERMISSION_ALIAS_TO_CANONICAL.items():
+    TOOL_PERMISSIONS[_alias] = TOOL_PERMISSIONS[_canonical]
 
 
 def permission_for_tool(tool_name: str) -> PermissionLevel:

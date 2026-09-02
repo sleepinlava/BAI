@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import replace
@@ -13,7 +14,12 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from abi.config import PROJECT_ROOT
-from abi.external_workflows.evidence import archive_evidence_files, sha256_file
+from abi.external_workflows.diagnostics import summarize_run_diagnostics
+from abi.external_workflows.evidence import (
+    archive_evidence_files,
+    sha256_file,
+    sync_manifest_artifacts,
+)
 from abi.external_workflows.nextflow import import_nextflow_trace, write_task_attempts_tsv
 from abi.results import ABIResultWriter
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
@@ -68,10 +74,18 @@ class ManagedExternalNextflowRuntime:
             config["input"]["sample_sheet"], layout["samplesheet"], check_files=True
         )
         spec = self.plugin.external_workflow_spec(config, plan)
+        lineage = self._archive_previous_run(spec, layout)
         nextflow_bin = resolve_nextflow_bin(self.options.nextflow_bin, self.options.mamba_root)
         command = self._command(nextflow_bin, spec, layout)
         snapshot = self._write_snapshot(
-            plan, config, spec, sheet.sha256, layout["snapshot"], argv=command
+            plan,
+            config,
+            spec,
+            sheet.sha256,
+            layout["snapshot"],
+            argv=command,
+            run_id=lineage["run_id"],
+            lineage=lineage["snapshot_fields"],
         )
         layout["nextflow_dir"].mkdir(parents=True, exist_ok=True)
         layout["work_dir"].mkdir(parents=True, exist_ok=True)
@@ -123,7 +137,7 @@ class ManagedExternalNextflowRuntime:
         )
         attempts = import_nextflow_trace(
             archived_trace,
-            external_workflow_id=spec.workflow_id,
+            external_workflow_id=lineage["run_id"],
             process_mapper=getattr(self.plugin, "map_external_process", None),
         )
         attempts = self._archive_task_logs(attempts, layout, evidence_manifest)
@@ -133,6 +147,13 @@ class ManagedExternalNextflowRuntime:
             evidence_type="task_attempts",
             layout=layout,
             manifest_path=evidence_manifest,
+        )
+        diagnostics = summarize_run_diagnostics(
+            attempts, unmapped_policy=self._unmapped_policy(config)
+        )
+        diagnostics_path = layout["provenance"] / "diagnostics.json"
+        diagnostics_path.write_text(
+            json.dumps(diagnostics, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
         normalized_outputs: Mapping[str, Path] = {}
         validation: Mapping[str, Any] = {"valid": False, "errors": []}
@@ -182,6 +203,9 @@ class ManagedExternalNextflowRuntime:
                     "complete"
                 ],
                 "resume": spec.resume,
+                "resume_lineage": lineage["snapshot_fields"],
+                "resume_reconciliation": _resume_reconciliation(attempts),
+                "diagnostics": diagnostics,
             },
             extra_environment={
                 "external_workflow": spec.to_dict(),
@@ -194,6 +218,7 @@ class ManagedExternalNextflowRuntime:
                 "task_attempts": task_attempts,
                 "evidence_manifest": evidence_manifest,
                 "external_plan_snapshot": layout["snapshot"],
+                "diagnostics": diagnostics_path,
                 "bacannot_samplesheet": layout["samplesheet"],
                 "nextflow_trace": layout["trace"],
                 "nextflow_report": layout["report"],
@@ -204,19 +229,10 @@ class ManagedExternalNextflowRuntime:
             }
         )
         outputs.update(normalized_outputs)
-        if execution_error is not None:
-            raise ABIError(
-                f"Managed external Nextflow execution failed; evidence: {evidence_manifest}"
+        if execution_error is not None or return_code != 0 or validation.get("valid") is not True:
+            raise self._failure_error(
+                return_code, execution_error, validation, diagnostics, evidence_manifest
             ) from execution_error
-        if return_code != 0:
-            raise ABIError(
-                "Managed external Nextflow exited with "
-                f"{return_code}; evidence: {evidence_manifest}"
-            )
-        if validation.get("valid") is not True:
-            raise ABIError(
-                f"Managed external workflow failed L3 result validation; details: {validation_path}"
-            )
         return RuntimeResult(status=status, return_code=return_code, outputs=outputs)
 
     def _write_snapshot(
@@ -228,6 +244,8 @@ class ManagedExternalNextflowRuntime:
         destination: Path,
         *,
         argv: Any,
+        run_id: str | None = None,
+        lineage: Mapping[str, Any] | None = None,
     ) -> Mapping[str, Any]:
         inputs = []
         for sample in plan.samples:
@@ -252,9 +270,10 @@ class ManagedExternalNextflowRuntime:
             abi_version = "source-tree"
         metadata_hook = getattr(self.plugin, "external_snapshot_metadata", None)
         metadata = dict(metadata_hook(config)) if callable(metadata_hook) else {}
+        lineage = dict(lineage or {})
         payload = {
             "schema_version": "abi.external-plan-snapshot.v1",
-            "external_workflow_id": spec.workflow_id,
+            "external_workflow_id": run_id or spec.workflow_id,
             "abi_version": abi_version,
             "abi_commit": self._abi_commit(),
             "plugin_version": str(metadata.get("plugin_version", "1")),
@@ -286,6 +305,8 @@ class ManagedExternalNextflowRuntime:
             },
             "resolved_config": config,
             "generated_samplesheet_sha256": samplesheet_sha256,
+            "resumes_run_id": lineage.get("resumes_run_id"),
+            "previous_run_archive": lineage.get("previous_run_archive"),
             "inputs": inputs,
             "containers": list(metadata.get("containers", [])),
             "container_resolution": metadata.get("container_resolution", {}),
@@ -320,6 +341,112 @@ class ManagedExternalNextflowRuntime:
             return completed.stdout.strip()
         except (OSError, subprocess.SubprocessError):
             return "unavailable:not-a-git-worktree"
+
+    def _archive_previous_run(self, spec: Any, layout: Mapping[str, Path]) -> dict[str, Any]:
+        """Preserve the previous run's evidence before this run rewrites it.
+
+        Resume runs must link to, never mutate, the original run's evidence; a
+        fresh re-run into the same outdir archives the previous evidence too so
+        raw provenance is never silently overwritten.
+        """
+        base = str(spec.workflow_id)
+        lineage: dict[str, Any] = {
+            "run_id": base,
+            "snapshot_fields": {"resumes_run_id": None, "previous_run_archive": None},
+        }
+        previous_snapshot = layout["snapshot"]
+        if not previous_snapshot.is_file():
+            return lineage
+        try:
+            previous = json.loads(previous_snapshot.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            previous = {}
+        previous_id = str(previous.get("external_workflow_id") or base)
+        previous_runs = layout["provenance"] / "previous_runs"
+        archive_root = previous_runs / _safe_archive_name(previous_id)
+        archive_root.mkdir(parents=True, exist_ok=True)
+        bundle_source = layout["external_bundle"]
+        if bundle_source.is_dir():
+            shutil.copytree(
+                bundle_source,
+                archive_root / bundle_source.relative_to(layout["provenance"]),
+                dirs_exist_ok=True,
+            )
+        for name in (
+            "external_plan_snapshot.json",
+            "task_attempts.tsv",
+            "evidence_manifest.json",
+            "validation.json",
+            "diagnostics.json",
+        ):
+            source = layout["provenance"] / name
+            if source.is_file():
+                shutil.copyfile(source, archive_root / name)
+        archived_count = sum(1 for entry in previous_runs.iterdir() if entry.is_dir())
+        lineage["run_id"] = f"{base}-r{archived_count}"
+        lineage["snapshot_fields"] = {
+            "resumes_run_id": previous_id if spec.resume else None,
+            "previous_run_archive": archive_root.relative_to(layout["root"]).as_posix(),
+        }
+        return lineage
+
+    @staticmethod
+    def _failure_error(
+        return_code: int,
+        execution_error: Exception | None,
+        validation: Mapping[str, Any],
+        diagnostics: Mapping[str, Any],
+        evidence_manifest: Path,
+    ) -> ABIError:
+        parts: list[str] = []
+        if execution_error is not None:
+            parts.append(f"Managed external Nextflow raised {type(execution_error).__name__}")
+        if return_code != 0:
+            parts.append(f"Managed external Nextflow exited with {return_code}")
+        primary = str(diagnostics.get("primary_error_code") or "")
+        if primary:
+            parts.append(f"primary_error_code={primary}")
+        failures = diagnostics.get("failed_attempts") or []
+        if failures:
+            first = dict(failures[0])
+            parts.append(
+                "failed task: process={process} sample={sample_id} attempt={attempt} "
+                "exit_code={exit_code} stderr={stderr_path}".format(
+                    **{
+                        key: first.get(key, "")
+                        for key in (
+                            "process",
+                            "sample_id",
+                            "attempt",
+                            "exit_code",
+                            "stderr_path",
+                        )
+                    }
+                )
+            )
+        if (
+            execution_error is None
+            and return_code == 0
+            and isinstance(validation, Mapping)
+            and validation.get("valid") is not True
+        ):
+            errors = validation.get("errors") or []
+            if errors:
+                first = dict(errors[0])
+                detail = first.get("error_code") or first.get("message") or "validation error"
+                parts.append(
+                    f"L3 result validation failed ({detail}); "
+                    "hints: " + "; ".join(str(h) for h in first.get("diagnostic_hints", []))
+                )
+            else:
+                parts.append("L3 result validation failed")
+        parts.append(f"diagnostics and evidence: {evidence_manifest}")
+        return ABIError("; ".join(parts))
+
+    @staticmethod
+    def _unmapped_policy(config: Mapping[str, Any]) -> str:
+        audit = mapping_block(config, "audit")
+        return str(audit.get("unmapped_policy", "warn"))
 
     @staticmethod
     def _archived_evidence_path(manifest_path: Path, *, evidence_type: str) -> Path:
@@ -379,6 +506,7 @@ class ManagedExternalNextflowRuntime:
         bundle_prefix = source.parent.relative_to(destination.parent).as_posix()
         for row in payload["files"]:
             row["path"] = f"{bundle_prefix}/{row['path']}"
+        sync_manifest_artifacts(payload)
         destination.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
@@ -442,6 +570,7 @@ class ManagedExternalNextflowRuntime:
                 )
             )
         manifest["complete"] = all(item.get("complete") for item in manifest["files"])
+        sync_manifest_artifacts(manifest)
         manifest_path.write_text(
             json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
@@ -473,6 +602,7 @@ class ManagedExternalNextflowRuntime:
             }
         )
         manifest["complete"] = all(item.get("complete") for item in manifest["files"])
+        sync_manifest_artifacts(manifest)
         manifest_path.write_text(
             json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
@@ -519,3 +649,14 @@ class ManagedExternalNextflowRuntime:
             value,
             default=DEFAULT_TOOL_TIMEOUT_SECONDS,
         )
+
+
+def _resume_reconciliation(attempts: list[Any]) -> dict[str, int]:
+    """Report CACHED vs re-executed attempts so resume outcomes stay auditable."""
+    cached = sum(1 for row in attempts if row.status == "CACHED")
+    return {"cached": cached, "executed": len(attempts) - cached, "total": len(attempts)}
+
+
+def _safe_archive_name(value: str) -> str:
+    name = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-.")
+    return name or "previous-run"
