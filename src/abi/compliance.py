@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 from collections import Counter
 from pathlib import Path
@@ -11,7 +10,9 @@ from typing import Any
 
 import yaml
 
-from abi.workflow.manifest import checksum_path
+from abi.filesystem import checksum_file, checksum_path
+from abi.interfaces import ABIComplianceAuditPlugin
+from abi.plugins import get_plugin
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -23,11 +24,8 @@ def _json(path: Path) -> dict[str, Any]:
 
 
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _tool_check(path: Path) -> dict[str, Any]:
@@ -134,14 +132,6 @@ def audit_result(result_dir: str | Path, *, output: str | Path | None = None) ->
         "runtime_lock_id": run.get("runtime_lock_id", ""),
         "runtime_lock_strict": run.get("runtime_lock_strict", False),
     }
-    endpoints_path = root / "05_statistics" / "ibd_core53_endpoint_scores.json"
-    endpoints = _json(endpoints_path)
-    endpoint_check = {
-        "pass": set(endpoints.get("endpoints", {})) == {"E1", "E2", "E3", "E4", "E5"}
-        and endpoints.get("status") in {"pass", "divergent"},
-        "status": endpoints.get("status", "missing"),
-        "path": str(endpoints_path),
-    }
     checks = {
         "run_status": {"pass": run.get("status") == "success", "status": run.get("status")},
         "source_identity": source,
@@ -149,24 +139,18 @@ def audit_result(result_dir: str | Path, *, output: str | Path | None = None) ->
         "resource_identity": _resource_check(provenance / "resource_manifest.json", required_ids),
         "checksums": _checksum_check(root, provenance),
     }
-    formal_ibd = config.get("workflow", {}).get("preset") == "ibd_core53_reproduction"
-    if formal_ibd:
-        from abi.plugins import get_plugin
-
-        preflight_fn = getattr(get_plugin("easymetagenome"), "preflight")
-        preflight = preflight_fn(config, engine="local", check_runtime=False)
-        manifest_check = next(
-            (
-                check
-                for check in preflight.get("checks", [])
-                if check.get("name") == "ibd_core53_manifest"
-            ),
-            {"status": "fail", "errors": ["IBD core53 preflight check is missing"]},
-        )
-        manifest_errors = list(manifest_check.get("errors", []))
-        checks["core53_manifest"] = {"pass": not manifest_errors, "errors": manifest_errors}
-    if formal_ibd or endpoints_path.exists():
-        checks["E1_E5"] = endpoint_check
+    # Plugin-owned compliance checkpoints (P2-3): analysis-specific checks —
+    # artifact layouts, preset names, preflight probes — live in the owning
+    # plugin; the core audit only merges their results.
+    # 插件自有合规检查点：分析专属检查属于所属插件，核心审计仅合并结果。
+    analysis_type = str(run.get("analysis_type", "") or config.get("analysis_type", ""))
+    if analysis_type:
+        try:
+            plugin = get_plugin(analysis_type)
+        except ValueError:
+            plugin = None
+        if isinstance(plugin, ABIComplianceAuditPlugin):
+            checks.update(plugin.compliance_checks(root, config))
     valid = all(bool(check.get("pass")) for check in checks.values())
     result = {"schema_version": "1.0", "result_dir": str(root), "valid": valid, "checks": checks}
     if output is not None:

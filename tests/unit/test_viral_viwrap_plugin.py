@@ -259,5 +259,8 @@ out.mkdir(parents=True, exist_ok=True)
 
     summary = json.loads(outputs["summary"].read_text(encoding="utf-8"))
     assert summary["status"] == "success"
+    # P0-4: the core executor must persist the post-resolution plan snapshot.
+    resolved_plan = json.loads(outputs["resolved_plan"].read_text(encoding="utf-8"))
+    assert len(resolved_plan["steps"]) == len(plan.steps)
     virus_table = Path(loaded["outdir"]) / "tables/virus_summary.tsv"
     assert "virus_1" in virus_table.read_text(encoding="utf-8")

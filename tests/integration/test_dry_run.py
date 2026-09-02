@@ -84,7 +84,37 @@ def test_dry_run_uses_existing_output_directory(tmp_path):
 
     assert marker.read_text(encoding="utf-8") == "keep\n"
     assert outputs["plan"].exists()
+    assert outputs["resolved_plan"].exists()
     assert outputs["commands"].exists()
+
+
+def test_resolved_plan_snapshot_is_json_safe_and_complete(tmp_path):
+    """P0-4: the resolved plan records the executed I/O truth.
+
+    The dry-run step loop may rewrite step.inputs/outputs (path resolution),
+    so the snapshot must serialize the post-resolution plan — including any
+    Path objects introduced during resolution — as valid JSON with the same
+    step inventory as the pre-run execution_plan.json.
+    """
+    import json as jsonlib
+
+    outdir = tmp_path / "results"
+    log_dir = tmp_path / "log"
+    config = load_config(
+        "examples/config_minimal.yaml",
+        profile="dry_run",
+        overrides={"outdir": str(outdir), "log_dir": str(log_dir), "mock_tools": True},
+    )
+    plan = build_plan(config)
+
+    executor = PipelineExecutor(ToolRegistry.from_path(), RunLogger(log_dir), mock_tools=True)
+    outputs = executor.dry_run(plan, config)
+
+    resolved = jsonlib.loads(outputs["resolved_plan"].read_text(encoding="utf-8"))
+    planned = jsonlib.loads(outputs["plan"].read_text(encoding="utf-8"))
+    assert len(resolved["steps"]) == len(planned["steps"])
+    # Round-tripping through asdict must not lose step identities.
+    assert [s["step_id"] for s in resolved["steps"]] == [s["step_id"] for s in planned["steps"]]
 
 
 def test_dry_run_rejects_output_path_that_is_file(tmp_path):

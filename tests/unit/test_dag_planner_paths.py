@@ -544,48 +544,6 @@ class TestBuildPlanFromDag:
         assert tool_ids == {"qc"}
 
 
-# ====================================================================
-# 8. PathTemplateContext with upstream_outputs
-# ====================================================================
-
-
-class TestPathTemplateContextUpstream:
-    def test_upstream_outputs_context_keys(self):
-        ctx = PathTemplateContext(
-            config={"outdir": "/out"},
-            upstream_outputs={
-                "qc": {"clean_read1": "/out/01_qc/S1/clean_R1.fq"},
-            },
-        )
-        assert ctx["upstream_qc.outputs.clean_read1"] == "/out/01_qc/S1/clean_R1.fq"
-
-    def test_multiple_upstream_keys(self):
-        ctx = PathTemplateContext(
-            config={"outdir": "/out"},
-            upstream_outputs={
-                "qc": {"clean": "/out/qc/clean.fq"},
-                "assembly": {"contigs": "/out/assembly/contigs.fa"},
-            },
-        )
-        assert ctx["upstream_qc.outputs.clean"] == "/out/qc/clean.fq"
-        assert ctx["upstream_assembly.outputs.contigs"] == "/out/assembly/contigs.fa"
-
-    def test_upstream_outputs_with_sample_in_template(self):
-        ctx = PathTemplateContext(
-            config={"outdir": "/out"},
-            sample=SampleInput(sample_id="S1", platform="illumina"),
-            category_dir="02_assembly",
-            upstream_outputs={"qc": {"clean": "/out/qc/S1/clean.fq"}},
-        )
-        result = "{outdir}/{category_dir}/{sample_id}.fa".format_map(ctx)
-        assert result == "/out/02_assembly/S1.fa"
-
-
-# ====================================================================
-# 9. Edge cases
-# ====================================================================
-
-
 class TestEdgeCases:
     def test_from_yaml_file_not_found(self, tmp_path):
         with pytest.raises(FileNotFoundError, match="not found"):

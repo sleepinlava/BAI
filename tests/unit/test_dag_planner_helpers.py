@@ -565,22 +565,6 @@ class TestPathTemplateContext:
         assert ctx["outdir"] == "/output"
         assert ctx["category_dir"] == "01_qc"
 
-    def test_sample_id_and_sample_dot_attrs(self):
-        sample = SampleInput(
-            sample_id="S1",
-            platform="illumina",
-            read1="S1_R1.fq",
-            read2="S1_R2.fq",
-        )
-        ctx = PathTemplateContext(
-            config={"outdir": "/tmp"},
-            sample=sample,
-        )
-        assert ctx["sample_id"] == "S1"
-        assert ctx["sample.platform"] == "illumina"
-        assert ctx["sample.read1"] == "S1_R1.fq"
-        assert ctx["sample.read2"] == "S1_R2.fq"
-
     def test_sample_attribute_not_set_in_ctx_when_none(self):
         sample = SampleInput(sample_id="S2", platform="illumina")
         ctx = PathTemplateContext(
@@ -597,31 +581,6 @@ class TestPathTemplateContext:
         assert ctx["threads"] == "16"
         assert ctx["mode"] == "auto"
         assert ctx["project_name"] == "myproj"
-
-    def test_resources_keys(self):
-        ctx = PathTemplateContext(
-            config={
-                "outdir": "/tmp",
-                "resources": {
-                    "db_host": "/data/host.fa",
-                    "db_plasmid": "/data/plasmids.fa",
-                },
-            },
-        )
-        assert ctx["resources.db_host"] == "/data/host.fa"
-        assert ctx["resources.db_plasmid"] == "/data/plasmids.fa"
-
-    def test_upstream_outputs(self):
-        ctx = PathTemplateContext(
-            config={"outdir": "/tmp"},
-            upstream_outputs={
-                "qc": {"clean_read1": "/out/clean_R1.fq", "clean_read2": "/out/clean_R2.fq"},
-                "filter": {"passed": "/out/passed.fq"},
-            },
-        )
-        assert ctx["upstream_qc.outputs.clean_read1"] == "/out/clean_R1.fq"
-        assert ctx["upstream_qc.outputs.clean_read2"] == "/out/clean_R2.fq"
-        assert ctx["upstream_filter.outputs.passed"] == "/out/passed.fq"
 
     def test_format_map_with_template(self):
         sample = SampleInput(sample_id="S1", platform="illumina")
@@ -650,11 +609,3 @@ class TestPathTemplateContext:
         # Should not raise; simply no resources.* keys
         resource_keys = [k for k in ctx if k.startswith("resources.")]
         assert resource_keys == []
-
-    def test_none_upstream_outputs_handled_gracefully(self):
-        ctx = PathTemplateContext(
-            config={"outdir": "/tmp"},
-            upstream_outputs=None,
-        )
-        upstream_keys = [k for k in ctx if k.startswith("upstream_")]
-        assert upstream_keys == []

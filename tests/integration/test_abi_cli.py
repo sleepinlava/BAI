@@ -787,3 +787,74 @@ def test_abi_local_smoke_skips_external_tools_and_writes_provenance(tmp_path):
     assert summary["status"] == "success"
     commands = (outdir / "provenance" / "commands.tsv").read_text(encoding="utf-8")
     assert "mock tool execution skipped" in commands
+
+
+def test_run_nextflow_alias_matches_run_engine_nextflow(tmp_path):
+    """P1-2: the alias and the canonical command must stay behaviorally identical.
+
+    Same fake nextflow, same arguments; both code paths must produce the same
+    run summary and artifact inventory (modulo the run directory itself).
+    """
+    runner = CliRunner()
+    nextflow = _fake_nextflow(tmp_path / "nextflow")
+    summaries = {}
+    inventories = {}
+    for name, argv in (
+        (
+            "run",
+            [
+                "run",
+                "--engine",
+                "nextflow",
+            ],
+        ),
+        (
+            "alias",
+            [
+                "run-nextflow",
+            ],
+        ),
+    ):
+        outdir = tmp_path / name / "abi_transcriptomics"
+        result = runner.invoke(
+            app,
+            [
+                *argv,
+                "--type",
+                "metatranscriptomics",
+                "--outdir",
+                str(outdir),
+                "--log-dir",
+                str(tmp_path / name / "log"),
+                "--nextflow-bin",
+                str(nextflow),
+                "--smoke",
+                "--confirm-execution",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        _assert_nextflow_smoke_artifacts(outdir)
+        summaries[name] = json.loads(
+            (outdir / "provenance" / "run_summary.json").read_text(encoding="utf-8")
+        )
+        inventories[name] = sorted(
+            str(p.relative_to(outdir)) for p in outdir.rglob("*") if p.is_file()
+        )
+
+    # run-summary is identical except run-identity fields that necessarily
+    # differ per run (run id, timestamps, and every artifact path embedding
+    # the run directory). Normalize both runs' roots to a placeholder, then
+    # compare the full summaries.
+    def normalize(obj: object, root: str) -> object:
+        if isinstance(obj, dict):
+            return {k: normalize(v, root) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [normalize(v, root) for v in obj]
+        if isinstance(obj, str):
+            return obj.replace(root, "<run_root>")
+        return obj
+
+    assert normalize(summaries["run"], str(tmp_path / "run")) == normalize(
+        summaries["alias"], str(tmp_path / "alias")
+    )
+    assert inventories["run"] == inventories["alias"]
