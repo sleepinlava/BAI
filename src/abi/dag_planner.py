@@ -83,7 +83,6 @@ class PathTemplateContext(dict):
             config=config,
             sample=sample,
             category_dir="01_qc",
-            upstream_outputs={"qc_fastp": {"clean_read1": "/path/to/R1.fq.gz"}},
         )
         resolved = template.format_map(ctx)
     """
@@ -94,7 +93,6 @@ class PathTemplateContext(dict):
         config: Mapping[str, Any],
         sample: SampleInput | None = None,
         category_dir: str = "",
-        upstream_outputs: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> None:
         super().__init__()
         outdir = str(config.get("outdir", "."))
@@ -102,46 +100,21 @@ class PathTemplateContext(dict):
         self["category_dir"] = category_dir
 
         # Per-sample variables / 每个样本的变量
+        # Only flat keys are populated: ``str.format_map`` cannot resolve
+        # dotted field names ({sample.platform} parses as argument attribute
+        # access), so dotted context entries were unreachable dead capability
+        # (P3-2). Plugin workflow presets that need dotted names use their own
+        # namespace-based formatter (easymetagenome ``_FormatContext``).
+        # 仅填充扁平键：format_map 无法解析点号字段名，
+        # 点号上下文条目是不可达的死能力（P3-2）。
         if sample is not None:
             self["sample_id"] = validate_sample_id(sample.sample_id)
-            self["sample.platform"] = sample.platform
-            for attr in (
-                "platform",
-                "read1",
-                "read2",
-                "long_reads",
-                "pod5",
-                "bam",
-                "assembly",
-                "group",
-                "condition",
-                "technology",
-                "host_reference",
-                "notes",
-            ):
-                val = getattr(sample, attr, None)
-                if val:
-                    self[f"sample.{attr}"] = str(val)
 
         # Config-level variables / 配置级变量
         for key in ("threads", "mode", "project_name"):
             val = config.get(key)
             if val is not None:
                 self[str(key)] = str(val)
-
-        # Resources (nested config key) / 资源配置
-        resources = config.get("resources")
-        if isinstance(resources, Mapping):
-            for rkey, rval in resources.items():
-                if rval is not None:
-                    self[f"resources.{rkey}"] = str(rval)
-
-        # Upstream node outputs / 上游节点输出
-        if upstream_outputs:
-            for node_id, outputs in upstream_outputs.items():
-                for out_key, out_val in outputs.items():
-                    if out_val is not None:
-                        self[f"upstream_{node_id}.outputs.{out_key}"] = str(out_val)
 
 
 # ── UniversalDAG ─────────────────────────────────────────────────────────
@@ -826,10 +799,7 @@ def build_plan_from_dag(
         template_ctx = PathTemplateContext(config=config, sample=None, category_dir=category_dir)
         resolved_outputs = _resolve_outputs(dag, node_id, template_ctx)
         params = _resolve_params(dag, node_id, None, config, template_ctx)
-        params["_dag_node_id"] = node_id
-        params["_explicit_dependencies"] = [
-            driver_step_ids[dep] for dep in dag.node_depends_on(node_id) if dep in driver_step_ids
-        ]
+        contract, internal_handler = _step_control_plane(dag, node_id)
         steps.append(
             PlanStep(
                 step_id=node_id,
@@ -849,6 +819,14 @@ def build_plan_from_dag(
                 outputs=resolved_outputs,
                 params=params,
                 reason=f"active driver-scoped DAG node {node_id!r}",
+                contract=contract,
+                internal_handler=internal_handler,
+                dag_node_id=node_id,
+                explicit_dependencies=[
+                    driver_step_ids[dep]
+                    for dep in dag.node_depends_on(node_id)
+                    if dep in driver_step_ids
+                ],
             )
         )
         driver_step_ids[node_id] = node_id
@@ -947,7 +925,6 @@ def build_plan_from_dag(
                 config=sample_config,
                 sample=sample,
                 category_dir=category_dir,
-                upstream_outputs=upstream_outputs,
             )
             resolved_outputs = _resolve_outputs(dag, node_id, template_ctx)
 
@@ -956,15 +933,7 @@ def build_plan_from_dag(
             if any(existing.step_id == step_id for existing in steps):
                 step_id = f"{step_id}_{node_id}"
             params = _resolve_params(dag, node_id, sample, sample_config, template_ctx)
-            params["_dag_node_id"] = node_id
-            params["_explicit_dependencies"] = [
-                dependency_id
-                for dep in dag.node_depends_on(node_id)
-                for dependency_id in (
-                    sample_step_ids[sample.sample_id].get(dep) or driver_step_ids.get(dep),
-                )
-                if dependency_id
-            ]
+            contract, internal_handler = _step_control_plane(dag, node_id)
             step = PlanStep(
                 step_id=step_id,
                 sample_id=sample.sample_id,
@@ -975,6 +944,17 @@ def build_plan_from_dag(
                 outputs=resolved_outputs,
                 params=params,
                 reason=f"active DAG node {node_id!r} for platform {sample_plat!r}",
+                contract=contract,
+                internal_handler=internal_handler,
+                dag_node_id=node_id,
+                explicit_dependencies=[
+                    dependency_id
+                    for dep in dag.node_depends_on(node_id)
+                    for dependency_id in (
+                        sample_step_ids[sample.sample_id].get(dep) or driver_step_ids.get(dep),
+                    )
+                    if dependency_id
+                ],
             )
             steps.append(step)
             sample_step_ids[sample.sample_id][node_id] = step_id
@@ -1077,8 +1057,7 @@ def build_plan_from_dag(
             elif dep in cross_sample_outputs:
                 explicit_dependencies.append(dep)
         params = _resolve_params(dag, node_id, None, config, template_ctx)
-        params["_dag_node_id"] = node_id
-        params["_explicit_dependencies"] = explicit_dependencies
+        contract, internal_handler = _step_control_plane(dag, node_id)
         step = PlanStep(
             step_id=node_id,
             sample_id=None,
@@ -1089,6 +1068,10 @@ def build_plan_from_dag(
             outputs=resolved_outputs,
             params=params,
             reason=f"active cross-sample DAG node {node_id!r}",
+            contract=contract,
+            internal_handler=internal_handler,
+            dag_node_id=node_id,
+            explicit_dependencies=explicit_dependencies,
         )
         steps.append(step)
         cross_sample_outputs[node_id] = resolved_outputs
@@ -1624,26 +1607,38 @@ def _resolve_params(
         if isinstance(tool_overrides, Mapping):
             params.update(tool_overrides)
 
-    # Preserve declarative output contracts and assertions through planning.
-    # The executor consumes this private transport-neutral block before the
-    # tool adapter is invoked, so pipeline_dag.yaml remains the runtime SSOT.
+    return params
+
+
+def _step_control_plane(dag: UniversalDAG, node_id: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """Return ``(contract, internal_handler)`` for a DAG node (P2-4).
+
+    Preserves declarative output contracts, assertions, and internal-handler
+    specs through planning as first-class PlanStep fields (previously smuggled
+    through ``params["_contract"]`` / ``params["_internal_handler"]``), so
+    ``pipeline_dag.yaml`` remains the runtime SSOT without leaking control
+    metadata into tool parameters.
+    将声明式契约/断言/内部处理器规格提升为 PlanStep 一等字段，
+    控制面元数据不再泄入工具参数。
+    """
+    node = dag.get_node(node_id)
     outputs = dag.node_outputs(node_id)
     assertions = node.get("assertions", [])
+    contract: Dict[str, Any] = {}
     if outputs or assertions:
-        params["_contract"] = {
+        contract = {
             "inputs": dag.node_inputs(node_id),
             "outputs": outputs,
             "assertions": list(assertions) if isinstance(assertions, list) else [str(assertions)],
         }
-
     handler_id = node.get("internal_handler")
+    internal_handler: Dict[str, Any] = {}
     if handler_id:
-        params["_internal_handler"] = {
+        internal_handler = {
             "handler_id": str(handler_id),
             "execution_scope": str(node.get("execution_scope", "worker")),
         }
-
-    return params
+    return contract, internal_handler
 
 
 def _lookup_config_path(config: Mapping[str, Any], dotted_path: str) -> Any:

@@ -53,6 +53,7 @@ __all__ = [
     "ABIDryRunPlugin",
     "ABIInitializablePlugin",
     "ABIResourcePlugin",
+    "ABIComplianceAuditPlugin",
     "ABIResultValidationPlugin",
     "ABIPlugin",
     "ABIInternalHandlerPlugin",
@@ -109,6 +110,24 @@ class ABIResultValidationPlugin(Protocol):
         *,
         allow_empty_tables: bool = True,
     ) -> Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class ABIComplianceAuditPlugin(Protocol):
+    """Optional capability: plugin-owned compliance audit checks (P2-3).
+
+    The core audit (``abi.compliance.audit_result``) runs the generic checks
+    (run status, source identity, tool versions, resource identity, checksums)
+    and then merges whatever this hook returns. Returning an empty dict means
+    the plugin declares no extra checkpoints. Any check with ``pass`` falsy
+    fails the whole audit — the core never interprets plugin semantics.
+    """
+
+    def compliance_checks(
+        self,
+        result_dir: str | Path,
+        config: Mapping[str, Any],
+    ) -> Dict[str, Mapping[str, Any]]: ...
 
 
 @runtime_checkable

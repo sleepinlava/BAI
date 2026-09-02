@@ -24,7 +24,7 @@ from typing import Any, Dict, Iterable, List, Mapping
 
 from abi.config import PROJECT_ROOT
 from abi.contracts import WorkflowSpec
-from abi.schemas import ABIError
+from abi.schemas import ABIError, plan_step_contract, plan_step_dependencies
 
 logger = logging.getLogger(__name__)
 
@@ -158,9 +158,9 @@ def infer_dag(
     merged_edges: Dict[str, List[str]] = {str(s.step_id): [] for s in step_list}
     for step in step_list:
         step_id = str(step.step_id)
-        explicit = getattr(step, "params", {}).get("_explicit_dependencies", [])
+        explicit = plan_step_dependencies(step)
         if not isinstance(explicit, list):
-            raise ABIError(f"Step {step_id} _explicit_dependencies must be a list")
+            raise ABIError(f"Step {step_id} explicit_dependencies must be a list")
         unknown = sorted(str(dep) for dep in explicit if str(dep) not in merged_edges)
         if unknown:
             raise ABIError(f"Step {step_id} has unknown explicit dependencies: {unknown}")
@@ -317,9 +317,7 @@ def _normalize_path(value: Any, project_root: Path) -> str:
 
 def _input_is_directory(step: Any, key: str) -> bool:
     """Return whether a consumed input is declared as a directory."""
-    contract = getattr(step, "params", {}).get("_contract", {})
-    if not isinstance(contract, Mapping):
-        return False
+    contract = plan_step_contract(step)
     input_specs = contract.get("inputs", {})
     if not isinstance(input_specs, Mapping):
         return False
@@ -340,16 +338,15 @@ def _normalized_input_paths(key: str, value: Any, project_root: Path) -> List[tu
 
 
 def _is_shared_output_path(step: Any, key: str, normalized_path: str) -> bool:
-    contract = getattr(step, "params", {}).get("_contract", {})
-    if isinstance(contract, Mapping):
-        output_specs = contract.get("outputs", {})
-        spec = output_specs.get(key, {}) if isinstance(output_specs, Mapping) else {}
-        if isinstance(spec, Mapping):
-            declared_type = str(spec.get("type", ""))
-            if declared_type == "directory":
-                return True
-            if declared_type == "file":
-                return False
+    contract = plan_step_contract(step)
+    output_specs = contract.get("outputs", {})
+    spec = output_specs.get(key, {}) if isinstance(output_specs, Mapping) else {}
+    if isinstance(spec, Mapping):
+        declared_type = str(spec.get("type", ""))
+        if declared_type == "directory":
+            return True
+        if declared_type == "file":
+            return False
     if key in {"output_dir", "outdir", "work_dir", "report_dir", "tables_dir"}:
         return True
     path = Path(normalized_path)

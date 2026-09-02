@@ -127,6 +127,7 @@ from abi.provenance import (
     write_resolved_inputs_tsv,
 )
 from abi.report import write_generic_report
+from abi.schemas import plan_step_contract, plan_step_internal_handler
 from abi.tables import StandardTableManager
 from abi.tools import ToolRegistry
 
@@ -412,7 +413,7 @@ class GenericABIExecutor:
                 for step in plan.steps:
                     sid = getattr(step, "sample_id", None)
                     if sid is None:
-                        handler = getattr(step, "params", {}).get("_internal_handler", {})
+                        handler = plan_step_internal_handler(step)
                         if (
                             isinstance(handler, Mapping)
                             and handler.get("execution_scope") == "driver"
@@ -436,6 +437,10 @@ class GenericABIExecutor:
                 if per_sample_steps:
                     per_sample.append(per_sample_steps)
 
+                # Plan-order position map for B36 driver propagation.
+                # B36 驱动步骤传播所需的计划顺序位置映射。
+                plan_positions = {id(s): i for i, s in enumerate(plan.steps)}
+
                 for step in driver_steps:
                     _last_step_id = getattr(step, "step_id", str(step))
                     row, error = self._execute_step(
@@ -453,12 +458,23 @@ class GenericABIExecutor:
                             per_sample = []
                             cross_sample_steps = []
                             break
+                    # B36 (parallel): driver outputs feed every downstream step.
+                    # Propagate resolved paths to all not-yet-executed steps
+                    # (chains included) before the chains start.
+                    # B36（并行）：driver 输出馈入所有下游步骤，
+                    # 在链启动前将解析后的路径传播到所有未执行步骤。
+                    if not error and getattr(step, "tool_id", "") != "internal":
+                        _propagate_resolved_paths(
+                            step,
+                            plan.steps[plan_positions[id(step)] + 1 :],
+                            replacements=self._resolved_output_replacements.pop(step.step_id, {}),
+                        )
 
                 def _run_sample_chain(steps: List[Any], label: str) -> List[tuple]:
                     """Run a chain of steps sequentially in one thread."""
                     nonlocal _last_step_id
                     results: List[tuple] = []
-                    for step in steps:
+                    for j, step in enumerate(steps):
                         if _stop_event.is_set() and error_policy != "continue":
                             break
                         with _state_lock:
@@ -472,6 +488,20 @@ class GenericABIExecutor:
                             progress_recorder=progress_recorder,
                         )
                         results.append((step, row, error))
+                        # B36 (parallel): propagate resolved output paths to the
+                        # remaining steps of the SAME sample chain. The helper's
+                        # sample guard prevents cross-sample leakage; entries are
+                        # kept so cross-sample consumers can be updated later.
+                        # B36（并行）：将解析后的路径传播到同一样本链的剩余步骤；
+                        # 保留条目供后续跨样本步骤使用。
+                        if not error and getattr(step, "tool_id", "") != "internal":
+                            _propagate_resolved_paths(
+                                step,
+                                steps[j + 1 :],
+                                replacements=self._resolved_output_replacements.get(
+                                    step.step_id, {}
+                                ),
+                            )
                         if error and error_policy != "continue":
                             _stop_event.set()
                             break
@@ -511,7 +541,7 @@ class GenericABIExecutor:
                                 (
                                     i
                                     for i, step in enumerate(steps)
-                                    if bool(getattr(step, "params", {}).get("_batch_cleanup"))
+                                    if bool(getattr(step, "batch_cleanup", False))
                                 ),
                                 len(steps),
                             )
@@ -539,10 +569,26 @@ class GenericABIExecutor:
                         if error:
                             failed_errors.append(error)
 
+                # B36 (parallel): chain steps with no in-chain downstream still
+                # hold replacements — propagate them to the cross-sample steps
+                # (sample-guarded) so they see resolved paths, then drop the
+                # consumed entries.
+                # B36（并行）：链内无下游的步骤替换传播到跨样本步骤后清除。
+                if cross_sample_steps and self._resolved_output_replacements:
+                    for index in sorted(completed_chains):
+                        for step, _row, error in completed_chains[index]:
+                            replacements = self._resolved_output_replacements.pop(step.step_id, {})
+                            if replacements and not error:
+                                _propagate_resolved_paths(
+                                    step,
+                                    cross_sample_steps,
+                                    replacements=replacements,
+                                )
+
                 # ── Cross-sample steps (sequential) ──
                 if failed_errors and error_policy != "continue":
                     cross_sample_steps = []
-                for step in cross_sample_steps:
+                for c_idx, step in enumerate(cross_sample_steps):
                     _last_step_id = getattr(step, "step_id", str(step))
                     row, error = self._execute_step(
                         step,
@@ -557,6 +603,12 @@ class GenericABIExecutor:
                         failed_errors.append(error)
                         if error_policy != "continue":
                             break
+                    if not error and getattr(step, "tool_id", "") != "internal":
+                        _propagate_resolved_paths(
+                            step,
+                            cross_sample_steps[c_idx + 1 :],
+                            replacements=self._resolved_output_replacements.pop(step.step_id, {}),
+                        )
             else:
                 # ── Sequential mode (original behavior) ──
                 # ── 顺序模式（原始行为）──
@@ -599,6 +651,70 @@ class GenericABIExecutor:
         # 汇总哪些标准表格已被填充。
         table_summary = self.table_manager.summarize(tables_dir)
 
+        table_summary = self.table_manager.summarize(tables_dir)
+
+        outputs = self._write_run_provenance(
+            plan=plan,
+            config=config,
+            outdir=outdir,
+            provenance=provenance,
+            tables_dir=tables_dir,
+            command_rows=command_rows,
+            failed_errors=failed_errors,
+            progress_recorder=progress_recorder,
+            run_identity=run_identity,
+            plan_path=plan_path,
+            config_path=config_path,
+            resolved_inputs_path=resolved_inputs_path,
+            versions_path=versions_path,
+            checksum_directory_ids=checksum_directory_ids,
+            dry_run=dry_run,
+            parallel=parallel,
+            workers=workers,
+            batch_size=batch_size,
+            table_summary=table_summary,
+        )
+        # Raise after writing all artifacts so callers can inspect provenance
+        # even for failed runs.
+        # 在写出所有产物后抛出，以便调用者即使对失败的运行也能检查溯源。
+        if failed_errors:
+            details = "; ".join(str(error) for error in failed_errors[:3])
+            if len(failed_errors) > 3:
+                details += f"; +{len(failed_errors) - 3} more"
+            raise ToolError(f"{len(failed_errors)} step(s) failed: {details}")
+        return outputs
+
+    def _write_run_provenance(
+        self,
+        *,
+        plan: Any,
+        config: Mapping[str, Any],
+        outdir: Path,
+        provenance: Path,
+        tables_dir: Path,
+        command_rows: List[Dict[str, Any]],
+        failed_errors: List[ToolError],
+        progress_recorder: Any,
+        run_identity: Mapping[str, Any],
+        plan_path: Path,
+        config_path: Path,
+        resolved_inputs_path: Path,
+        versions_path: Path,
+        checksum_directory_ids: List[str],
+        dry_run: bool,
+        parallel: bool,
+        workers: int,
+        batch_size: Any,
+        table_summary: Mapping[str, Any],
+    ) -> Dict[str, Path]:
+        """Write every post-run provenance artifact and build the outputs dict.
+
+        Extracted verbatim from ``run()`` (P3-1): the write-out block is
+        failure-tolerant bookkeeping, not orchestration — separating it
+        keeps ``run()`` on the scheduling side. Always writes, even on
+        failure, so post-mortem diagnostics stay available.
+        从 run() 原样抽出：写盘属于簿记而非编排；即使失败也始终写出。
+        """
         # Write all provenance artifacts — always, even on failure.
         # This ensures post-mortem diagnostics are available.
         # 写出所有溯源产物——即使失败也始终写出，确保事后诊断可用。
@@ -688,6 +804,10 @@ class GenericABIExecutor:
                     "status": run_status,
                     "parallel": parallel,
                     "workers": workers,
+                    # Local executes in plan sequence (the DAG-independent
+                    # declaration: dependencies were resolved at planning).
+                    # 本地按计划顺序执行：依赖已在规划期解析。
+                    "execution_order": "plan_sequence",
                     "batch_size": batch_size,
                     "selected_tools": plan.selected_tools,
                     "standard_tables": table_summary,
@@ -703,11 +823,27 @@ class GenericABIExecutor:
             encoding="utf-8",
         )
 
+        # Persist the plan AS EXECUTED. The step loop may have rewritten
+        # step.inputs/outputs (heuristic output resolution and path
+        # propagation), so this snapshot records the executed I/O truth for
+        # post-run audit — exactly what a human reviewer diffs against the
+        # pre-run execution_plan.json. ``default=str`` keeps Path objects
+        # introduced during resolution JSON-safe.
+        # 持久化"实际执行"的计划。步骤循环可能改写过 inputs/outputs（启发式
+        # 输出解析与路径传播）, 此快照记录执行期 I/O 真相供运行后审计——
+        # 即人类专家与执行前 execution_plan.json 对比的依据。
+        resolved_plan_path = outdir / "execution_plan.resolved.json"
+        resolved_plan_path.write_text(
+            json.dumps(plan.to_dict(), indent=2, ensure_ascii=False, default=str) + "\n",
+            encoding="utf-8",
+        )
+
         # Build the outputs dict — the primary return value consumed by the CLI
         # and by the ABIAgentInterface.dispatch path.
         # 构建输出字典——CLI 和 ABIAgentInterface.dispatch 路径使用的主要返回值。
         outputs = {
             "plan": plan_path,
+            "resolved_plan": resolved_plan_path,
             "config": config_path,
             "commands": commands_path,
             "resolved_inputs": resolved_inputs_path,
@@ -724,14 +860,6 @@ class GenericABIExecutor:
             "progress": progress_paths["snapshot"],
             "progress_events": progress_paths["events"],
         }
-        # Raise after writing all artifacts so callers can inspect provenance
-        # even for failed runs.
-        # 在写出所有产物后抛出，以便调用者即使对失败的运行也能检查溯源。
-        if failed_errors:
-            details = "; ".join(str(error) for error in failed_errors[:3])
-            if len(failed_errors) > 3:
-                details += f"; +{len(failed_errors) - 3} more"
-            raise ToolError(f"{len(failed_errors)} step(s) failed: {details}")
         return outputs
 
     def _execute_step(
@@ -883,7 +1011,7 @@ class GenericABIExecutor:
         """
         if step.tool_id == "internal" or step.skipped:
             return False
-        contract = step.params.get("_contract", {})
+        contract = plan_step_contract(step)
         output_spec = contract.get("outputs", {}) if isinstance(contract, Mapping) else {}
         if not isinstance(output_spec, Mapping) or not output_spec:
             return False
@@ -964,7 +1092,7 @@ class GenericABIExecutor:
                 "standard_tables": "",
             }
 
-        contract = step.params.get("_contract", {})
+        contract = plan_step_contract(step)
         if self.enforce_contracts and contract:
             output_spec = contract.get("outputs", {})
             contract_result = validate_output_contract(step.step_id, step.outputs, output_spec)
@@ -1050,7 +1178,7 @@ class GenericABIExecutor:
 
         # ── Pre-execution contract: invalidate stale checksums + verify inputs ──
         # 执行前契约：清除过期校验和 + 验证输入校验和
-        contract = params.get("_contract", {})
+        contract = plan_step_contract(step)
         if self.enforce_contracts and contract:
             # B25: Invalidate any prior checksums for this step's outputs before
             # re-execution (retry / resume safety).  Match by output directory.
@@ -1143,14 +1271,6 @@ class GenericABIExecutor:
             # 0c. 在合约路径创建指向已解析文件的软链接，
             #     使内部引擎逻辑（如共识构建器）能在预期位置找到输出。
             _symlink_resolved_outputs(planned_outputs, resolved_outputs, output_spec)
-
-            # 0d. Bridge single-detector pipelines: when only genomad runs,
-            #     symlink its plasmid_contigs to the consensus output path
-            #     so that annotation tools (Bakta, AMRFinderPlus) can find
-            #     plasmid contigs without a real consensus step.
-            # 0d. 单检测器管线桥接：当仅 genomad 运行时，
-            #     将其 plasmid_contigs 软链接到共识输出路径。
-            _bridge_consensus_for_single_detector(step, resolved_outputs)
 
             # 1. Validate output files against declared contracts.
             # 1. 根据声明的契约验证输出文件。
@@ -1883,43 +2003,6 @@ def _symlink_resolved_outputs(
                 planned_p.symlink_to(os.path.relpath(resolved_p, planned_p.parent))
             except OSError:
                 pass  # Best-effort; contract validation already passed.
-
-
-def _bridge_consensus_for_single_detector(step: Any, resolved_outputs: Dict[str, Any]) -> None:
-    """When a single detection tool (geNomad) runs, bridge its output to the
-    consensus step's expected output path so annotation tools can proceed."""
-    if step.tool_id != "genomad":
-        return
-    import os
-    from pathlib import Path
-
-    plasmid_contigs = resolved_outputs.get("plasmid_contigs", "")
-    if not plasmid_contigs:
-        return
-    src = Path(str(plasmid_contigs))
-    if not src.exists():
-        return
-
-    # Determine consensus output path for this sample.
-    # Consensus step expects:
-    # {outdir}/plasmid_consensus/{sample_id}/{sample_id}.internal.plasmid_contigs
-    outdir = Path(step.outputs.get("output_dir", ""))
-    sample_id = "" if step.sample_id is None else str(step.sample_id)
-    if not outdir.exists() or not sample_id:
-        return
-
-    # Walk up from genomad output_dir to pipeline root, then to plasmid_consensus.
-    pipeline_root = outdir.parent.parent if outdir.name == sample_id else outdir.parent
-    consensus_dir = pipeline_root / "plasmid_consensus" / sample_id
-    consensus_dir.mkdir(parents=True, exist_ok=True)
-    dest = consensus_dir / f"{sample_id}.internal.plasmid_contigs"
-    if not dest.exists():
-        try:
-            dest.symlink_to(os.path.relpath(src, consensus_dir))
-        except OSError:
-            import shutil
-
-            shutil.copy2(src, dest)
 
 
 def _propagate_resolved_paths(

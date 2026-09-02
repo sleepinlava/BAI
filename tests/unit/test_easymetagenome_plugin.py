@@ -217,7 +217,7 @@ def test_humann4_preset_selects_functional_branch_without_taxonomy(tmp_path):
     assert "kraken2" not in plan.selected_tools
     assert "bracken" not in plan.selected_tools
     join_step = next(step for step in plan.steps if step.step_id == "humann_join_genefamilies")
-    assert join_step.params["_explicit_dependencies"]
+    assert join_step.explicit_dependencies
 
 
 def test_full_p1_config_plans_all_30_samples_with_cleanup_receipts(tmp_path):
@@ -233,9 +233,7 @@ def test_full_p1_config_plans_all_30_samples_with_cleanup_receipts(tmp_path):
 
     plan = plugin.build_plan(config, check_files=False)
     cleanup_steps = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "cleanup_functional_intermediates"
+        step for step in plan.steps if step.dag_node_id == "cleanup_functional_intermediates"
     ]
 
     assert len(plan.samples) == 30
@@ -279,9 +277,7 @@ def test_p0_real30_config_plans_per_sample_low_storage_cleanup(tmp_path):
 
     plan = plugin.build_plan(config, check_files=False)
     cleanup_steps = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
+        step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"
     ]
 
     assert len(plan.samples) == 30
@@ -472,14 +468,8 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
     )
 
     plan = plugin.build_plan(config, check_files=True)
-    downloads = [
-        step for step in plan.steps if step.params.get("_dag_node_id") == "download_ena_reads"
-    ]
-    cleanups = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
-    ]
+    downloads = [step for step in plan.steps if step.dag_node_id == "download_ena_reads"]
+    cleanups = [step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"]
 
     assert len(downloads) == len(cleanups) == 53
     assert all(step.inputs["r1_url"].startswith("https://") for step in downloads)
@@ -508,11 +498,7 @@ def test_real30_validation_config_uses_current_cohort_and_strict_provenance(tmp_
     )
 
     plan = plugin.build_plan(config, check_files=False)
-    cleanups = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
-    ]
+    cleanups = [step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"]
 
     assert len(plan.samples) == len(cleanups) == 30
     group_counts = {
@@ -546,7 +532,7 @@ def test_ibd_core53_download_all_is_a_separate_verified_phase(tmp_path):
     )
 
     plan = plugin.build_plan(config, check_files=True)
-    node_ids = [step.params.get("_dag_node_id") for step in plan.steps]
+    node_ids = [step.dag_node_id for step in plan.steps]
 
     assert len(plan.samples) == 53
     assert node_ids.count("download_ena_reads") == 53
@@ -554,7 +540,7 @@ def test_ibd_core53_download_all_is_a_separate_verified_phase(tmp_path):
     assert all(
         step.outputs["read1"].startswith(str(tmp_path / "raw"))
         for step in plan.steps
-        if step.params.get("_dag_node_id") == "download_ena_reads"
+        if step.dag_node_id == "download_ena_reads"
     )
 
 
@@ -570,12 +556,8 @@ def test_ibd_core53_cloud_analysis_reuses_complete_raw_dataset(tmp_path):
     )
 
     plan = plugin.build_plan(config, check_files=False)
-    node_ids = [step.params.get("_dag_node_id") for step in plan.steps]
-    cleanups = [
-        step
-        for step in plan.steps
-        if step.params.get("_dag_node_id") == "cleanup_taxonomy_intermediates"
-    ]
+    node_ids = [step.dag_node_id for step in plan.steps]
+    cleanups = [step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"]
 
     assert "download_ena_reads" not in node_ids
     assert len(cleanups) == 53

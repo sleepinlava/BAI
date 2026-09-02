@@ -9,6 +9,9 @@ import pytest
 from abi import config as core_config
 from abi import resources
 from abi.errors import ABIError
+from abi.plugins import amplicon_16s as _amplicon_16s_impl
+from abi.plugins import rnaseq_expression as _rnaseq_impl
+from abi.plugins import wgs_bacteria as _wgs_impl
 
 
 def test_public_generic_setup_requires_explicit_mode_and_supports_dry_run_and_mock(
@@ -168,7 +171,7 @@ def test_wgs_resource_setup_safe_non_network_paths(
         # A prior successful install writes the ready sentinel; without it a
         # non-empty dir is now correctly reported as "incomplete" (M6 fix).
         (target / ".abi_ready").write_text("amrfinderplus\n", encoding="utf-8")
-    row = resources._setup_wgs_bacteria(
+    row = _wgs_impl._setup_wgs_bacteria(
         {"resources": {"amrfinder_db": str(target)}},
         resource_ids=["amrfinder_db"],
         dry_run=mode == "dry_run",
@@ -176,7 +179,7 @@ def test_wgs_resource_setup_safe_non_network_paths(
     )[0]
 
     assert row["status"] == expected
-    assert resources._setup_wgs_bacteria({}, resource_ids=["other"], dry_run=True, mock=False) == []
+    assert _wgs_impl._setup_wgs_bacteria({}, resource_ids=["other"], dry_run=True, mock=False) == []
 
 
 def test_wgs_amrfinder_setup_uses_latest_database_dir_when_parent_is_configured(
@@ -190,7 +193,7 @@ def test_wgs_amrfinder_setup_uses_latest_database_dir_when_parent_is_configured(
     (latest / "AMRProt.fa.pin").write_text("pin", encoding="utf-8")
     (latest / "AMRProt.fa.psq").write_text("psq", encoding="utf-8")
 
-    row = resources._setup_wgs_bacteria(
+    row = _wgs_impl._setup_wgs_bacteria(
         {"resources": {"amrfinder_db": str(target)}},
         resource_ids=["amrfinder_db"],
         dry_run=False,
@@ -209,7 +212,7 @@ def test_wgs_amrfinder_setup_reports_incomplete_when_ready_sentinel_lacks_index(
     target.mkdir()
     (target / ".abi_ready").write_text("amrfinderplus\n", encoding="utf-8")
 
-    row = resources._setup_wgs_bacteria(
+    row = _wgs_impl._setup_wgs_bacteria(
         {"resources": {"amrfinder_db": str(target)}},
         resource_ids=["amrfinder_db"],
         dry_run=False,
@@ -229,7 +232,7 @@ def test_wgs_resource_setup_reports_process_failure_and_timeout(
         "run",
         lambda *args, **kwargs: SimpleNamespace(returncode=2, stdout="", stderr="bad db"),
     )
-    failed = resources._setup_wgs_bacteria(
+    failed = _wgs_impl._setup_wgs_bacteria(
         {"resources": {"amrfinder_db": str(target)}},
         resource_ids=None,
         dry_run=False,
@@ -243,7 +246,7 @@ def test_wgs_resource_setup_reports_process_failure_and_timeout(
         "run",
         lambda *args, **kwargs: (_ for _ in ()).throw(subprocess.TimeoutExpired("cmd", 1)),
     )
-    timed_out = resources._setup_wgs_bacteria(
+    timed_out = _wgs_impl._setup_wgs_bacteria(
         {"resources": {"amrfinder_db": str(tmp_path / "timeout")}},
         resource_ids=None,
         dry_run=False,
@@ -259,7 +262,7 @@ def test_rnaseq_special_resource_filter_and_deseq2_detection(tmp_path: Path, mon
         "run",
         lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="OK: 1.42.0", stderr=""),
     )
-    rows = resources._check_rnaseq_expression(
+    rows = _rnaseq_impl._check_rnaseq_expression(
         {"resources": {"genome_index": str(tmp_path)}},
         resource_ids=["deseq2_package"],
     )
@@ -267,7 +270,7 @@ def test_rnaseq_special_resource_filter_and_deseq2_detection(tmp_path: Path, mon
     assert rows[-1]["status"] == "ok"
     assert rows[-1]["version"] == "1.42.0"
     assert (
-        resources._check_rnaseq_expression(
+        _rnaseq_impl._check_rnaseq_expression(
             {"resources": {"genome_index": str(tmp_path)}},
             resource_ids=["genome_index"],
         )[0]["resource_id"]
@@ -279,7 +282,7 @@ def test_rnaseq_special_resource_filter_and_deseq2_detection(tmp_path: Path, mon
         "run",
         lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError("Rscript")),
     )
-    missing = resources._check_rnaseq_expression({}, resource_ids=["deseq2_package"])
+    missing = _rnaseq_impl._check_rnaseq_expression({}, resource_ids=["deseq2_package"])
     assert missing[-1]["status"] == "not_installed"
 
 
@@ -288,18 +291,18 @@ def test_rnaseq_setup_missing_script_and_selected_generic_resource(
 ) -> None:
     monkeypatch.setattr(core_config, "PROJECT_ROOT", tmp_path)
     with pytest.raises(ABIError, match="setup_rnaseq_env.sh not found"):
-        resources._setup_rnaseq_expression({}, resource_ids=None)
+        _rnaseq_impl._setup_rnaseq_expression({}, resource_ids=None)
 
     genome = tmp_path / "genome"
     genome.mkdir()
-    rows = resources._setup_rnaseq_expression(
+    rows = _rnaseq_impl._setup_rnaseq_expression(
         {"resources": {"genome_index": str(genome)}},
         resource_ids=["genome_index"],
     )
     assert [(row["resource_id"], row["status"]) for row in rows] == [("genome_index", "incomplete")]
     assert rows[0]["mock"] is False
 
-    mock_preview = resources._setup_rnaseq_expression(
+    mock_preview = _rnaseq_impl._setup_rnaseq_expression(
         {"resources": {"genome_index": str(genome)}},
         resource_ids=["genome_index"],
         dry_run=True,
@@ -327,7 +330,7 @@ def test_rnaseq_setup_records_environment_marker_and_generic_resources(
         lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="installed", stderr=""),
     )
 
-    rows = resources._setup_rnaseq_expression(
+    rows = _rnaseq_impl._setup_rnaseq_expression(
         {
             "mamba_root": str(mamba_root),
             "resources": {"genome_index": str(genome)},
@@ -350,13 +353,13 @@ def test_amplicon_taxonomy_validation_and_resource_filter(
 ) -> None:
     database = tmp_path / "taxonomy.fa"
     database.write_text(content, encoding="utf-8")
-    rows = resources._check_amplicon_16s(
+    rows = _amplicon_16s_impl._check_amplicon_16s(
         {"resources": {"taxonomy_db": str(database)}}, resource_ids=["taxonomy_db"]
     )
     assert len(rows) == 1
     assert rows[0]["status"] == expected
     assert (
-        resources._check_amplicon_16s(
+        _amplicon_16s_impl._check_amplicon_16s(
             {"resources": {"taxonomy_db": str(database)}}, resource_ids=["other"]
         )
         == []
@@ -367,7 +370,7 @@ def test_amplicon_check_accepts_resource_override_mapping(tmp_path: Path) -> Non
     database = tmp_path / "taxonomy.fa"
     database.write_text(">seq;tax=d:Bacteria,p:Firmicutes\nACGT\n", encoding="utf-8")
 
-    rows = resources._check_amplicon_16s(
+    rows = _amplicon_16s_impl._check_amplicon_16s(
         {"resources": {"taxonomy_db": {"path": str(database)}}},
         resource_ids=["taxonomy_db"],
     )
@@ -377,7 +380,7 @@ def test_amplicon_check_accepts_resource_override_mapping(tmp_path: Path) -> Non
 
 
 def test_amplicon_mock_setup_creates_valid_taxonomy_file(tmp_path: Path) -> None:
-    rows = resources._setup_amplicon_16s(
+    rows = _amplicon_16s_impl._setup_amplicon_16s(
         {"outdir": str(tmp_path / "output")},
         resource_ids=["taxonomy_db"],
         dry_run=False,
@@ -389,7 +392,7 @@ def test_amplicon_mock_setup_creates_valid_taxonomy_file(tmp_path: Path) -> None
     assert taxonomy_path.is_file()
     assert ";tax=" in taxonomy_path.read_text(encoding="utf-8")
 
-    checked = resources._check_amplicon_16s(
+    checked = _amplicon_16s_impl._check_amplicon_16s(
         {"resources": {"taxonomy_db": {"path": str(taxonomy_path)}}},
         resource_ids=["taxonomy_db"],
     )
@@ -405,7 +408,7 @@ def test_amplicon_mock_dry_run_is_planned_and_does_not_execute(tmp_path: Path, m
         subprocess, "run", lambda *args, **kwargs: pytest.fail("dry-run executed subprocess")
     )
 
-    rows = resources._setup_amplicon_16s(
+    rows = _amplicon_16s_impl._setup_amplicon_16s(
         {"outdir": str(tmp_path / "output")},
         resource_ids=["taxonomy_db"],
         dry_run=True,
@@ -416,7 +419,10 @@ def test_amplicon_mock_dry_run_is_planned_and_does_not_execute(tmp_path: Path, m
     assert rows[0]["mock"] is True
     assert "Would generate" in rows[0]["message"]
     assert not (tmp_path / "output" / "taxonomy").exists()
-    assert resources._setup_amplicon_16s({}, resource_ids=["other"], dry_run=True, mock=True) == []
+    assert (
+        _amplicon_16s_impl._setup_amplicon_16s({}, resource_ids=["other"], dry_run=True, mock=True)
+        == []
+    )
 
 
 @pytest.mark.parametrize(
@@ -471,9 +477,9 @@ def test_amplicon_download_failure_uses_synthetic_fallback(tmp_path: Path, monke
         (path / "synthetic_sintax.fa").write_text(">seq1;tax=Bacteria\nACGT\n", encoding="utf-8")
         return True
 
-    monkeypatch.setattr(resources, "_generate_synthetic_fallback", _fake_fallback)
+    monkeypatch.setattr(_amplicon_16s_impl, "_generate_synthetic_fallback", _fake_fallback)
 
-    row = resources._setup_amplicon_16s(
+    row = _amplicon_16s_impl._setup_amplicon_16s(
         {"outdir": str(tmp_path / "output")},
         resource_ids=None,
         dry_run=False,

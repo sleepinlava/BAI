@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import gzip
+import json
 import shutil
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
@@ -427,6 +428,61 @@ class EasyMetagenomePlugin:
         }:
             return {"functional_abundance": _parse_humann(root, tool_id, sample_id)}
         return {}
+
+    # ── Compliance audit (P2-3: plugin-owned checkpoints) ────────────────
+
+    def compliance_checks(
+        self,
+        result_dir: str | Path,
+        config: Mapping[str, Any],
+    ) -> Dict[str, Mapping[str, Any]]:
+        """Return the IBD-reproduction compliance checkpoints for this result.
+
+        Moved here from core ``abi.compliance.audit_result`` (P2-3): the
+        endpoint-scores artifact layout, the ``ibd_core53_reproduction``
+        preset name, and the core53 manifest preflight check are this
+        plugin's domain knowledge — the core audit only merges the result.
+        """
+        root = Path(result_dir)
+
+        def _read_json(path: Path) -> Dict[str, Any]:
+            try:
+                value = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                return {}
+            return value if isinstance(value, dict) else {}
+
+        checks: Dict[str, Mapping[str, Any]] = {}
+        formal_ibd = config.get("workflow", {}).get("preset") == "ibd_core53_reproduction"
+        endpoints_path = root / "05_statistics" / "ibd_core53_endpoint_scores.json"
+        endpoints = _read_json(endpoints_path)
+        endpoint_check = {
+            "pass": set(endpoints.get("endpoints", {})) == {"E1", "E2", "E3", "E4", "E5"}
+            and endpoints.get("status") in {"pass", "divergent"},
+            "status": endpoints.get("status", "missing"),
+            "path": str(endpoints_path),
+        }
+        if formal_ibd:
+            try:
+                preflight = self.preflight(config, engine="local", check_runtime=False)
+                manifest_check = next(
+                    (
+                        check
+                        for check in preflight.get("checks", [])
+                        if check.get("name") == "ibd_core53_manifest"
+                    ),
+                    {"status": "fail", "errors": ["IBD core53 preflight check is missing"]},
+                )
+                manifest_errors = list(manifest_check.get("errors", []))
+            except (OSError, KeyError, ValueError) as exc:
+                # A malformed reproduction config IS a compliance failure —
+                # the audit must report it, not crash.
+                # 畸形的复现配置本身就是合规失败——审计报告之而非崩溃。
+                manifest_errors = [f"{type(exc).__name__}: {exc}"]
+            checks["core53_manifest"] = {"pass": not manifest_errors, "errors": manifest_errors}
+        if formal_ibd or endpoints_path.exists():
+            checks["E1_E5"] = endpoint_check
+        return checks
 
     def write_report(self, plan: Any, result_dir: str | Path) -> Dict[str, Path]:
         return write_plugin_report(self, plan, result_dir)

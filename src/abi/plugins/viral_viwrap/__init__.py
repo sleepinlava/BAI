@@ -212,7 +212,9 @@ class ViralViWrapPlugin:
         for step in plan.steps:
             if step.tool_id == "viwrap":
                 step.outputs["output_dir"] = viwrap_output
-                contract = step.params.get("_contract", {})
+                from abi.schemas import plan_step_contract
+
+                contract = plan_step_contract(step)
                 contract_outputs = contract.get("outputs", {})
                 if "output_dir" in contract_outputs:
                     contract_outputs["output_dir"]["path"] = viwrap_output

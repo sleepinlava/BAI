@@ -100,8 +100,6 @@ class Amplicon16SPlugin:
         *,
         resource_ids: Optional[Sequence[str]] = None,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _check_amplicon_16s
-
         return _check_amplicon_16s(config, resource_ids=resource_ids)
 
     def setup_resources(
@@ -112,8 +110,6 @@ class Amplicon16SPlugin:
         dry_run: bool = False,
         mock: bool = False,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _setup_amplicon_16s
-
         return _setup_amplicon_16s(
             config,
             resource_ids=resource_ids,
@@ -665,3 +661,265 @@ def _parse_beta_diversity(output_dir: Path) -> List[Dict[str, Any]]:
         except (OSError, csv.Error):
             continue
     return rows
+
+
+# ── Resource implementation (moved from core abi/resources.py, P2-2) ──
+# 插件自有的资源实现；通用助手经惰性导入来自 abi.resources（避免顶层循环）。
+
+
+def _check_amplicon_16s(
+    config: Mapping[str, Any],
+    *,
+    resource_ids: Optional[Sequence[str]] = None,
+) -> List[Dict[str, Any]]:
+    """Check amplicon_16s resources including taxonomy database."""
+    from abi.resources import _check_generic_resources
+
+    rows = _check_generic_resources("amplicon_16s", config, resource_ids=resource_ids)
+    selected = set(resource_ids or [])
+    if selected and "taxonomy_db" not in selected:
+        return rows
+
+    # Check taxonomy DB
+    resources = config.get("resources", {})
+    taxonomy_db = (
+        resources.get("taxonomy_db", "TAXONOMY_DB_NOT_CONFIGURED")
+        if isinstance(resources, Mapping)
+        else "TAXONOMY_DB_NOT_CONFIGURED"
+    )
+    if isinstance(taxonomy_db, Mapping):
+        taxonomy_db = taxonomy_db.get("path", "TAXONOMY_DB_NOT_CONFIGURED")
+    tax_path = Path(str(taxonomy_db))
+    tax_status = "missing"
+    tax_entries = 0
+    if tax_path.exists():
+        try:
+            with tax_path.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    if line.startswith(">") and ";tax=" in line:
+                        tax_entries += 1
+            tax_status = "ok" if tax_entries > 0 else "invalid"
+        except (OSError, UnicodeDecodeError):
+            tax_status = "invalid"
+
+    rows.append(
+        {
+            "resource_id": "taxonomy_db",
+            "tool_id": "vsearch_taxonomy",
+            "field": "taxonomy_db",
+            "path": str(tax_path),
+            "status": tax_status,
+            "version": "",
+            "source_url": "https://www.drive5.com/sintax/",
+            "checksum": "",
+            "command": [],
+            "ready_check": "sintax_fasta_valid",
+            "directory_file_count": 0,
+            "directory_size_bytes": tax_path.stat().st_size if tax_path.exists() else 0,
+            "message": (
+                f"Taxonomy DB ready: {tax_entries} SINTAX-annotated sequences."
+                if tax_status == "ok"
+                else "Taxonomy DB missing. Run: abi setup-resources --type amplicon_16s"
+                if tax_status == "missing"
+                else "Taxonomy DB exists but contains no valid SINTAX-annotated sequences."
+            ),
+        }
+    )
+
+    # Filter out generic taxonomy_db row (it was a NOT_CONFIGURED placeholder)
+    rows = [r for r in rows if r.get("resource_id") != "taxonomy_db" or r.get("tool_id")]
+    return rows
+
+
+def _setup_amplicon_16s(
+    config: Mapping[str, Any],
+    *,
+    resource_ids: Optional[Sequence[str]] = None,
+    dry_run: bool = False,
+    mock: bool = False,
+) -> List[Dict[str, Any]]:
+    """Set up amplicon_16s resources: taxonomy database for SINTAX classification.
+
+    Uses ResourceDownloader for mock mode; subprocess for real download
+    (the RDP download script writes to a specific output path).
+    Falls back to synthetic taxonomy if RDP download fails.
+    """
+    from abi.config import PROJECT_ROOT
+    from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
+    from abi.resources import (
+        _download_result_to_row,
+        _resource_timeout,
+    )
+    from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS
+
+    if resource_ids and "taxonomy_db" not in resource_ids:
+        return []
+
+    outdir = Path(str(config.get("outdir", str(PROJECT_ROOT / "data" / "taxonomy"))))
+    if "taxonomy" not in outdir.parts:
+        outdir = outdir / "taxonomy"
+    if not dry_run:
+        outdir.mkdir(parents=True, exist_ok=True)
+
+    download_script = PROJECT_ROOT / "scripts" / "download_rdp_sintax.sh"
+    tax_fasta = outdir / "rdp_16s_v16.fa"
+    synthetic_fasta = outdir / "synthetic_sintax.fa"
+    timeout = _resource_timeout(config)
+
+    # Mock mode creates a tiny valid SINTAX FASTA and a unified resource sentinel.
+    if mock:
+        mock_command = [
+            "python",
+            str(PROJECT_ROOT / "scripts" / "generate_synthetic_taxonomy.py"),
+            "--output",
+            str(tax_fasta),
+            "--entries",
+            "1",
+        ]
+        if dry_run:
+            result = DownloadResult(
+                resource_id="taxonomy_db",
+                path=tax_fasta,
+                status="planned",
+                version="synthetic_test_only",
+                command=mock_command,
+                message="Would generate a synthetic taxonomy DB for testing.",
+            )
+        else:
+            import shutil
+
+            if tax_fasta.exists() and tax_fasta.is_dir():
+                shutil.rmtree(tax_fasta)
+            tax_fasta.parent.mkdir(parents=True, exist_ok=True)
+            tax_fasta.write_text(
+                ">mock_taxon_1;tax=d:Bacteria,p:Firmicutes,c:Bacilli\n"
+                "ACGTACGTACGTACGTACGTACGTACGTACGT\n",
+                encoding="utf-8",
+            )
+            ResourceDownloader(Path(), mock=True).ensure(
+                DownloadSpec(
+                    resource_id="taxonomy_db",
+                    tool_id="vsearch_taxonomy",
+                    destination=outdir,
+                    version="synthetic_test_only",
+                )
+            )
+            result = DownloadResult(
+                resource_id="taxonomy_db",
+                path=tax_fasta,
+                status="ok",
+                version="synthetic_test_only",
+                file_count=1,
+                size_bytes=tax_fasta.stat().st_size,
+                command=mock_command,
+                message=(
+                    "Synthetic taxonomy DB generated for TESTING only. "
+                    "For real analysis, run without --mock to download the RDP training set."
+                ),
+            )
+        return [
+            _download_result_to_row(
+                result,
+                tool_id="vsearch_taxonomy",
+                field="taxonomy_db",
+                source_url="generated by scripts/generate_synthetic_taxonomy.py",
+                ready_check="sintax_fasta_valid",
+                mock=True,
+            )
+        ]
+
+    # Primary: download RDP training set via ResourceDownloader (non-atomic)
+    if tax_fasta.exists():
+        effective_path = tax_fasta
+        status_msg = "ok"
+        message = f"RDP taxonomy DB already exists: {tax_fasta}"
+        command: list[str] = []
+    elif dry_run:
+        effective_path = tax_fasta
+        status_msg = "planned"
+        message = "Would download RDP 16S training set from drive5.com (~50 MB)"
+        command = []
+    elif download_script.exists():
+        downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=False)
+        spec = DownloadSpec(
+            resource_id="taxonomy_db",
+            tool_id="vsearch_taxonomy",
+            command=["bash", str(download_script), "--output", str(outdir)],
+            atomic=False,
+            destination=outdir,
+            ready_check="non_empty_dir",
+            timeout_seconds=timeout or DEFAULT_RESOURCE_TIMEOUT_SECONDS,
+            version="rdp_16s_v16",
+        )
+        result_dl = downloader.ensure(spec)
+        if result_dl.status == "ok":
+            effective_path = tax_fasta
+            status_msg = "ok"
+            message = "RDP 16S training set downloaded successfully."
+            command = result_dl.command
+        else:
+            effective_path = synthetic_fasta
+            status_msg = "fallback"
+            message = f"RDP download failed: {result_dl.message}. Generating synthetic fallback."
+            command = result_dl.command
+            _generate_synthetic_fallback(outdir)
+    else:
+        effective_path = tax_fasta
+        status_msg = "error"
+        message = f"Download script not found: {download_script}"
+        command = []
+
+    if status_msg == "fallback" and not synthetic_fasta.exists():
+        status_msg = "error"
+        message = (
+            "RDP download failed and synthetic fallback generation did not "
+            f"produce {synthetic_fasta}."
+        )
+
+    result = DownloadResult(
+        resource_id="taxonomy_db",
+        path=effective_path,
+        status=status_msg,
+        message=message,
+        command=command,
+    )
+    return [
+        _download_result_to_row(
+            result,
+            tool_id="vsearch_taxonomy",
+            field="taxonomy_db",
+            source_url="https://www.drive5.com/sintax/rdp_16s_v16_sp.fa.gz",
+            ready_check="sintax_fasta_valid",
+            mock=mock,
+        )
+    ]
+
+
+def _generate_synthetic_fallback(outdir: Path) -> bool:
+    """Generate a synthetic taxonomy DB when RDP download fails.
+
+    Returns True if the synthetic FASTA was produced, False otherwise so the
+    caller can report an error instead of silently pointing at a missing file.
+    """
+    import subprocess
+
+    from abi.config import PROJECT_ROOT
+
+    generate_script = PROJECT_ROOT / "scripts" / "generate_synthetic_taxonomy.py"
+    synthetic_path = outdir / "synthetic_sintax.fa"
+    if not generate_script.exists():
+        return False
+    result = subprocess.run(
+        [
+            "python",
+            str(generate_script),
+            "--output",
+            str(synthetic_path),
+            "--entries",
+            "100",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0 and synthetic_path.exists()

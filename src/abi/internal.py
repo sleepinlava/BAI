@@ -89,8 +89,9 @@ def plugin_internal_handlers(plugin: Any) -> dict[str, ABIInternalHandler]:
 
 def internal_handler_spec(step: Any) -> tuple[str, str]:
     """Read the planner-transported handler ID and execution scope from a step."""
-    params = getattr(step, "params", {})
-    raw = params.get("_internal_handler", {}) if isinstance(params, Mapping) else {}
+    from abi.schemas import plan_step_internal_handler
+
+    raw = plan_step_internal_handler(step)
     if not isinstance(raw, Mapping):
         return "", "worker"
     return str(raw.get("handler_id", "")), str(raw.get("execution_scope", "worker"))

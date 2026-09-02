@@ -11,7 +11,6 @@ from abi.contracts.step_contract import ContractViolationError
 from abi.errors import InputPolicyError
 from abi.executor import (
     GenericABIExecutor,
-    _bridge_consensus_for_single_detector,
     _build_assertion_context,
     _cleanup_failed_step_output_dir,
     _execution_options,
@@ -341,7 +340,8 @@ def test_generic_executor_waits_for_batch_cleanup_before_starting_next_samples(
                     step_id=f"{sample.sample_id}_cleanup",
                     sample_id=sample.sample_id,
                     tool_id="internal",
-                    params={**handler, "_batch_cleanup": True},
+                    params={**handler},
+                    batch_cleanup=True,
                 ),
             ]
         )
@@ -665,45 +665,6 @@ def test_execution_and_output_helpers_cover_corrupt_and_unresolved_paths(tmp_pat
     assert resolved["result"] == str(custom)
 
 
-def test_symlink_bridge_propagation_and_scoring_helpers(tmp_path: Path) -> None:
-    actual = tmp_path / "stage" / "actual" / "S1_result.tsv"
-    actual.parent.mkdir(parents=True)
-    actual.write_text("value", encoding="utf-8")
-    planned = tmp_path / "stage" / "planned" / "result.tsv"
-    _symlink_resolved_outputs(
-        {"result": str(planned)},
-        {"result": str(actual)},
-        {"result": {"format": "tsv"}},
-    )
-    assert planned.is_symlink()
-
-    output_dir = tmp_path / "pipeline" / "plasmid_detection" / "S1"
-    output_dir.mkdir(parents=True)
-    plasmid = output_dir / "plasmids.fna"
-    plasmid.write_text(">p\nACGT\n", encoding="utf-8")
-    step = _step(
-        tool_id="genomad",
-        outputs={"output_dir": str(output_dir)},
-    )
-    _bridge_consensus_for_single_detector(step, {"plasmid_contigs": str(plasmid)})
-    consensus = tmp_path / "pipeline" / "plasmid_consensus" / "S1"
-    assert (consensus / "S1.internal.plasmid_contigs").exists()
-
-    downstream = _step(
-        inputs={"table": str(tmp_path / "stage" / "old" / "expected.tsv")},
-        params={"table": str(tmp_path / "stage" / "old" / "expected.tsv")},
-    )
-    _propagate_resolved_paths(SimpleNamespace(outputs={"result": str(actual)}), [downstream])
-    assert downstream.inputs["table"] == str(actual)
-    assert downstream.params["table"] == str(actual)
-
-    assert _read_pair_for_key("clean_read1") == "1"
-    assert _read_pair_for_key("clean_r2") == "2"
-    assert _read_pair_for_key("summary") == ""
-    assert _filename_has_read_pair("sample_R1.fastq.gz", "1")
-    assert _output_candidate_score("clean_read1", "S1", Path("S1_R1.clean.fastq.gz")) > 0
-
-
 def test_propagation_does_not_replace_a_planned_future_input_without_resolution(
     tmp_path: Path,
 ) -> None:
@@ -736,3 +697,98 @@ def test_structured_tool_failure_reason_includes_diagnostic_paths() -> None:
     assert "stderr_path=step.err" in reason
     assert "stdout_path=step.out" in reason
     assert "message=binary missing" in reason
+
+
+def test_propagation_helpers_and_read_pair_scoring(tmp_path: Path) -> None:
+    """P2-1: the legacy genomad consensus bridge is gone from the core executor.
+
+    The declarative pipeline resolves the single-detector case via the
+    consensus internal handler plus ``fallback_depends`` — the executor must
+    stay free of plugin-specific path bridges.
+    """
+    actual = tmp_path / "stage" / "actual" / "S1_result.tsv"
+    actual.parent.mkdir(parents=True)
+    actual.write_text("value", encoding="utf-8")
+    planned = tmp_path / "stage" / "planned" / "result.tsv"
+    _symlink_resolved_outputs(
+        {"result": str(planned)},
+        {"result": str(actual)},
+        {"result": {"format": "tsv"}},
+    )
+    assert planned.is_symlink()
+
+    downstream = _step(
+        inputs={"table": str(tmp_path / "stage" / "old" / "expected.tsv")},
+        params={"table": str(tmp_path / "stage" / "old" / "expected.tsv")},
+    )
+    _propagate_resolved_paths(SimpleNamespace(outputs={"result": str(actual)}), [downstream])
+    assert downstream.inputs["table"] == str(actual)
+    assert downstream.params["table"] == str(actual)
+
+    assert _read_pair_for_key("clean_read1") == "1"
+    assert _read_pair_for_key("clean_r2") == "2"
+    assert _read_pair_for_key("summary") == ""
+    assert _filename_has_read_pair("sample_R1.fastq.gz", "1")
+    assert _output_candidate_score("clean_read1", "S1", Path("S1_R1.clean.fastq.gz")) > 0
+
+
+def test_core_executor_has_no_plugin_specific_tool_ids() -> None:
+    """Architecture guard (P2-1): the generic executor must not special-case tools.
+
+    The only tool_id the core executor may reference is ``internal`` — the
+    marker for core-internal DAG nodes. Plugin-specific logic belongs in the
+    plugin (declarative DAG, contracts, internal handlers).
+    """
+    import re
+    from pathlib import Path as _Path
+
+    import abi.executor as executor_module
+
+    source = _Path(executor_module.__file__).read_text(encoding="utf-8")
+    comparisons = re.findall(r'tool_id\s*(?:!=|==)\s*"([a-z0-9_]+)"', source)
+    offenders = sorted(set(comparisons) - {"internal"})
+    assert offenders == [], (
+        f"Plugin-specific tool_id literals leaked into the core executor: {offenders}"
+    )
+
+
+def test_control_plane_fields_never_reach_tool_params(tmp_path: Path) -> None:
+    """P2-4: control-plane metadata lives on explicit PlanStep fields.
+
+    The declarative contract/internal-handler/dag-node metadata must be
+    readable via the schema accessors (with legacy params fallback) and must
+    not leak into the merged parameter dict passed to ``skill.build_command``.
+    """
+    import json as jsonlib
+
+    from abi.schemas import plan_step_contract, plan_step_dependencies, plan_step_internal_handler
+
+    # Explicit fields serialize through to_dict (plan JSON round-trip).
+    step = _step(
+        step_id="S1_step",
+        contract={"outputs": {"result": {"type": "file"}}},
+        internal_handler={"handler_id": "h", "execution_scope": "worker"},
+        dag_node_id="node_a",
+        explicit_dependencies=["node_0"],
+        batch_cleanup=True,
+    )
+    payload = jsonlib.loads(jsonlib.dumps(step.to_dict()))
+    assert payload["contract"] == {"outputs": {"result": {"type": "file"}}}
+    assert payload["dag_node_id"] == "node_a"
+    assert payload["batch_cleanup"] is True
+
+    # Accessors prefer the explicit fields.
+    assert plan_step_contract(step) == {"outputs": {"result": {"type": "file"}}}
+    assert plan_step_internal_handler(step) == {"handler_id": "h", "execution_scope": "worker"}
+    assert plan_step_dependencies(step) == ["node_0"]
+
+    # Legacy serialized plans (params-based) still audit via the fallback.
+    legacy = _step(params={"_contract": {"legacy": True}, "_dag_node_id": "node_b"})
+    assert plan_step_contract(legacy) == {"legacy": True}
+
+    # The executor's merged params carry no control-plane keys.
+    executor = _executor(tmp_path)
+    merged = executor._params_for_step(step, dry_run=False)
+    for key in ("_contract", "_internal_handler", "_explicit_dependencies", "_dag_node_id"):
+        assert key not in merged, key
+    assert not any(k.startswith("_contract") for k in merged)

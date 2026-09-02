@@ -23,6 +23,7 @@ from abi._shared import (
 )
 from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
 from abi.report import write_plugin_report
+from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
 from abi.schemas import ABIExecutionPlan, ABISample, ABISampleContext
 from abi.tools import ToolRegistry
 
@@ -91,8 +92,6 @@ class WGSBacteriaPlugin:
         dry_run: bool = False,
         mock: bool = False,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _setup_wgs_bacteria
-
         return _setup_wgs_bacteria(
             config,
             resource_ids=resource_ids,
@@ -375,3 +374,157 @@ def _parse_gff_attributes(attr_string: str) -> Dict[str, str]:
             key, _, value = pair.partition("=")
             result[key.strip()] = value.strip()
     return result
+
+
+# ── Resource implementation (moved from core abi/resources.py, P2-2) ──
+
+_AMRFINDERPLUS_PROTEIN_INDEX_SUFFIXES = (".phr", ".pin", ".psq")
+_AMRFINDERPLUS_SOURCE_URL = (
+    "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/"
+)
+
+# 插件自有的资源实现；通用助手经惰性导入来自 abi.resources（避免顶层循环）。
+
+
+def _amrfinderplus_has_protein_index(path: Path) -> bool:
+    return all(
+        (path / f"AMRProt.fa{suffix}").exists() for suffix in _AMRFINDERPLUS_PROTEIN_INDEX_SUFFIXES
+    )
+
+
+def _amrfinderplus_runtime_dir(path: Path) -> Path:
+    """Return the AMRFinderPlus version directory used at runtime.
+
+    ``amrfinder_update`` stores files under a versioned directory and maintains
+    ``latest``. AMRFinderPlus expects ``--database`` to point at that version
+    directory, not the parent that contains the ready sentinel.
+    """
+    if _amrfinderplus_has_protein_index(path):
+        return path
+    latest = path / "latest"
+    if latest.exists() and _amrfinderplus_has_protein_index(latest):
+        return latest
+    return path
+
+
+def _amrfinderplus_row(
+    result: DownloadResult,
+    *,
+    mock: bool,
+) -> Dict[str, Any]:
+    from abi.resources import _download_result_to_row
+
+    return _download_result_to_row(
+        result,
+        tool_id="amrfinderplus",
+        field="amrfinder_db",
+        source_url=_AMRFINDERPLUS_SOURCE_URL,
+        ready_check="amrfinderplus_blast_index",
+        mock=mock,
+    )
+
+
+def _setup_wgs_bacteria(
+    config: Mapping[str, Any],
+    *,
+    resource_ids: Optional[Sequence[str]],
+    dry_run: bool,
+    mock: bool,
+) -> List[Dict[str, Any]]:
+    """Prepare the AMRFinderPlus database used by the WGS DAG.
+
+    Uses ResourceDownloader for atomic, idempotent resource management.
+    """
+    from abi.resource_downloader import DownloadResult
+    from abi.resources import (
+        _configured_or_default_resource_path,
+        _resource_timeout,
+    )
+
+    if resource_ids and "amrfinder_db" not in resource_ids:
+        return []
+    target = _configured_or_default_resource_path(config, "amrfinder_db")
+    runtime_target = _amrfinderplus_runtime_dir(target)
+    command = ["amrfinder_update", "--database", str(target)]
+    timeout = _resource_timeout(config)
+
+    # Existing AMRFinderPlus databases are only usable when both the ready sentinel
+    # and the runtime protein BLAST index are present.  amrfinder_update stores the
+    # index under a versioned/latest subdirectory, while the sentinel lives on the
+    # configured parent directory.
+    legacy_sentinel = target / ".abi_ready"
+    if not dry_run and not mock and target.exists() and any(target.iterdir()):
+        sentinel = target / ResourceDownloader.SENTINEL
+        has_sentinel = sentinel.exists() or legacy_sentinel.exists()
+        if has_sentinel and _amrfinderplus_has_protein_index(runtime_target):
+            return [
+                _amrfinderplus_row(
+                    DownloadResult(
+                        resource_id="amrfinder_db",
+                        path=runtime_target,
+                        status="ok",
+                        command=command,
+                        message="AMRFinderPlus protein BLAST index found.",
+                    ),
+                    mock=mock,
+                )
+            ]
+        message = (
+            "Existing AMRFinderPlus directory has a ready sentinel but lacks "
+            "AMRProt.fa BLAST index files (.phr, .pin, .psq); rerun setup."
+            if has_sentinel
+            else "Existing AMRFinderPlus directory is non-empty but lacks the ready "
+            "sentinel; a prior update may have failed. Remove it or rerun setup."
+        )
+        return [
+            _amrfinderplus_row(
+                DownloadResult(
+                    resource_id="amrfinder_db",
+                    path=target,
+                    status="incomplete",
+                    command=command,
+                    message=message,
+                ),
+                mock=mock,
+            )
+        ]
+
+    spec = DownloadSpec(
+        resource_id="amrfinder_db",
+        tool_id="amrfinderplus",
+        command=command,
+        atomic=False,
+        destination=target,
+        display_name="AMRFinderPlus database",
+        timeout_seconds=timeout or 3600.0,
+    )
+    downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=mock)
+    result = downloader.ensure(spec)
+    if not dry_run and not mock and result.status == "ok":
+        runtime_target = _amrfinderplus_runtime_dir(target)
+        if _amrfinderplus_has_protein_index(runtime_target):
+            result = DownloadResult(
+                resource_id=result.resource_id,
+                path=runtime_target,
+                status="ok",
+                version=result.version,
+                checksum=result.checksum,
+                downloaded_at=result.downloaded_at,
+                command=result.command,
+                message=result.message,
+            )
+        else:
+            result = DownloadResult(
+                resource_id=result.resource_id,
+                path=target,
+                status="incomplete",
+                version=result.version,
+                checksum=result.checksum,
+                command=result.command,
+                message=(
+                    "AMRFinderPlus setup completed but AMRProt.fa BLAST index files "
+                    "(.phr, .pin, .psq) were not found; rerun setup."
+                ),
+            )
+
+    return [_amrfinderplus_row(result, mock=mock)]

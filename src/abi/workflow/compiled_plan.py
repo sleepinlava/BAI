@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Mapping, Set
 from abi.errors import PlanIntegrityError, ToolResolutionError, UnsupportedExecutionError
 from abi.execution_policy import ExecutionPolicy, apply_resource_policy
 from abi.path_policy import InputPolicyError, resolve_within
+from abi.schemas import plan_step_dependencies
 from abi.tool_catalog import ToolCatalog
 from abi.tools import ResourceSpec
 
@@ -121,7 +122,7 @@ class CompiledPlan:
     steps: List[CompiledStep]
     enabled_steps: List[str] = field(default_factory=list)
     selected_tools: List[str] = field(default_factory=list)
-    analysis_type: str = "metagenomic_plasmid"
+    analysis_type: str = ""
 
     # ── Non-fatal compilation notes ──
     warnings: List[CompilationWarning] = field(default_factory=list)
@@ -270,9 +271,12 @@ def compile_plan(
 def _resolve_execution_kind(pstep: Any, warnings: List[CompilationWarning]) -> ExecutionKind:
     """Determine execution kind from step metadata."""
     tool_id = str(getattr(pstep, "tool_id", "") or "")
-    params = dict(getattr(pstep, "params", {}) or {})
-
-    handler = params.get("_internal_handler")
+    # None-vs-empty matters here: an absent handler means EXTERNAL, so keep
+    # the raw sentinel semantics instead of the normalizing helper.
+    # 此处 None（缺席）与 {}（存在但空）语义不同，保留原始哨兵判定。
+    handler = getattr(pstep, "internal_handler", None) or dict(getattr(pstep, "params", {})).get(
+        "_internal_handler"
+    )
     if handler is not None:
         scope = _get_execution_scope(handler)
         if scope == "worker":
@@ -381,11 +385,7 @@ def _resolve_container(
 
 def _resolve_dependencies(pstep: Any) -> List[str]:
     """Resolve step dependencies from explicit params."""
-    params = dict(getattr(pstep, "params", {}) or {})
-    deps = params.get("_explicit_dependencies")
-    if isinstance(deps, list):
-        return [str(d) for d in deps]
-    return []
+    return plan_step_dependencies(pstep)
 
 
 def _validate_paths(pstep: Any, outdir: Path) -> List[str]:
