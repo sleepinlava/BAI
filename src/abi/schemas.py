@@ -34,7 +34,7 @@ Design principles / 设计原则
 from __future__ import annotations
 
 from dataclasses import asdict, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.dataclasses import dataclass
@@ -429,9 +429,74 @@ class PlanStep:
     # 为 True 时，执行器跳过此步骤但仍会在溯源中记录。用于步骤前置条件不满足
     # 的情况（如工具需要短读但样本仅有长读）。
 
+    # ── Control plane / 控制面（P2-4）─────────────────────────────────
+    # Execution-control metadata, promoted out of the legacy
+    # ``params["_contract"]``-style underscore channel so it can never leak
+    # into a tool's command parameters.
+    # 执行控制元数据，从遗留的 params["_contract"] 下划线通道提升为显式字段，
+    # 使其永远不会泄入工具命令参数。
+
+    contract: Dict[str, Any] = field(default_factory=dict)
+    # Declarative output contract from ``pipeline_dag.yaml``:
+    # ``{inputs, outputs, assertions}`` consumed by the executor's
+    # pre/post-execution verification.
+    # 来自 pipeline_dag.yaml 的声明式输出契约，由执行器前/后置校验消费。
+
+    explicit_dependencies: List[str] = field(default_factory=list)
+    # Resolved step IDs this step depends on (post per-sample expansion).
+    # 解析后的依赖步骤 ID（样本展开后）。
+
+    internal_handler: Dict[str, Any] = field(default_factory=dict)
+    # ``{handler_id, execution_scope}`` for ``tool_id: internal`` DAG nodes.
+    # internal DAG 节点的处理器标识与执行范围。
+
+    batch_cleanup: bool = False
+    # Marks the batch-cleanup phase boundary in parallel execution.
+    # 并行执行中批次清理阶段的边界标记。
+
+    dag_node_id: str = ""
+    # Originating ``pipeline_dag.yaml`` node (provenance for plan steps).
+    # 来源 DAG 节点 ID（计划步骤的溯源信息）。
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize plan step for JSON round-tripping."""
         return asdict(self)
+
+
+# ── Control-plane accessors / 控制面读取助手（P2-4）────────────────────────
+
+
+def plan_step_contract(step: Any) -> Dict[str, Any]:
+    """Return the step's output contract, preferring the explicit field.
+
+    Falls back to the legacy ``params["_contract"]`` channel so plans
+    serialized before P2-4 still audit and validate correctly. Legacy values
+    keep the original defensive semantics (non-mappings are ignored).
+    优先显式字段；回退遗留 params["_contract"] 通道并保持原防御语义。
+    """
+    contract = getattr(step, "contract", None)
+    if isinstance(contract, Mapping) and contract:
+        return dict(contract)
+    legacy = getattr(step, "params", {}).get("_contract", {})
+    return dict(legacy) if isinstance(legacy, Mapping) else {}
+
+
+def plan_step_internal_handler(step: Any) -> Dict[str, Any]:
+    """Return the step's internal-handler spec (legacy fallback included)."""
+    handler = getattr(step, "internal_handler", None)
+    if isinstance(handler, Mapping) and handler:
+        return dict(handler)
+    legacy = getattr(step, "params", {}).get("_internal_handler", {})
+    return dict(legacy) if isinstance(legacy, Mapping) else {}
+
+
+def plan_step_dependencies(step: Any) -> List[str]:
+    """Return the step's explicit dependencies (legacy fallback included)."""
+    deps = getattr(step, "explicit_dependencies", None)
+    if isinstance(deps, list) and deps:
+        return list(deps)
+    legacy = getattr(step, "params", {}).get("_explicit_dependencies", [])
+    return list(legacy) if isinstance(legacy, list) else []
 
 
 @dataclass

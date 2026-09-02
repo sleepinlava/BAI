@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from abi.filesystem import checksum_file
+
 PROVENANCE_FIELDS = {
     "input_digest",
     "command_or_plan_identity",
@@ -558,7 +560,10 @@ def _json_optional(path: Path) -> dict[str, Any]:
 
 
 def _sha256_optional(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes() if path.exists() else b"").hexdigest()
+    # Missing files keep their historical identity (the digest of empty bytes)
+    # rather than the canonical "" — recorded digests must not change shape.
+    # 缺失文件保持历史身份（空内容摘要），而非规范的空串。
+    return checksum_file(path) or hashlib.sha256(b"").hexdigest()
 
 
 def _tree_digest(root: Path) -> str:

@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
+from abi.filesystem import checksum_file
+
 
 @dataclass(frozen=True)
 class ShimResult:
@@ -195,7 +197,8 @@ def _emit(path: Path, event: str, details: Mapping[str, Any]) -> None:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _path_digest(path: Path) -> str:

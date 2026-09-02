@@ -10,7 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 from abi.contracts.lint import (
     lint_assertion_syntax,
     lint_dag,
+    lint_registry_execution_fields,
     lint_resource_blocks,
+    lint_template_input_parity,
     lint_tool_contracts,
     run_contract_lint,
     validate_pipeline_template_params,
@@ -548,3 +550,97 @@ class TestLintResourceBlocks:
         result = run_contract_lint(dag, contracts=contracts, registry_tool_ids={"fastp"})
         resource_warnings = [f for f in result["findings"] if f["check"] == "missing_resources"]
         assert len(resource_warnings) >= 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# P1-1: registry execution metadata SSOT
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestLintRegistryExecutionFields:
+    def test_flags_duplicated_execution_fields_when_contracts_exist(self, tmp_path):
+        contracts = tmp_path / "tool_contracts"
+        contracts.mkdir()
+        (contracts / "fastp.yaml").write_text(
+            "tool_id: fastp\ninputs:\n  read1: {type: file, required: true}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "tool_registry.yaml").write_text(
+            "tools:\n"
+            "  - id: fastp\n"
+            "    name: fastp\n"
+            "    executable: fastp\n"
+            "    command_template: fastp -i {read1}\n"
+            "    inputs: [read1]\n",
+            encoding="utf-8",
+        )
+
+        findings = lint_registry_execution_fields(tmp_path)
+
+        checks = {f.check for f in findings}
+        assert checks == {"registry_execution_field"}
+        assert len(findings) == 3  # executable + command_template + inputs
+        assert all(f.severity == "error" for f in findings)
+
+    def test_allows_registry_without_contracts_dir(self, tmp_path):
+        (tmp_path / "tool_registry.yaml").write_text(
+            "tools:\n  - id: fastp\n    executable: fastp\n",
+            encoding="utf-8",
+        )
+
+        findings = lint_registry_execution_fields(tmp_path)
+
+        assert findings == []
+
+    def test_allows_registry_inputs_when_contract_has_none(self, tmp_path):
+        contracts = tmp_path / "tool_contracts"
+        contracts.mkdir()
+        (contracts / "fastp.yaml").write_text(
+            "tool_id: fastp\nexecution:\n  executable: fastp\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "tool_registry.yaml").write_text(
+            "tools:\n  - id: fastp\n    inputs: [read1]\n",
+            encoding="utf-8",
+        )
+
+        findings = lint_registry_execution_fields(tmp_path)
+
+        assert findings == []
+
+
+class TestTemplateInputParityMergedMetadata:
+    def test_contract_shaped_inputs_and_execution_template_are_checked(self):
+        registry_tools = {
+            "fastp": {
+                "id": "fastp",
+                "execution": {
+                    "command_template": "fastp -i {read1} -I {read2}",
+                },
+                "inputs": {
+                    "read1": {"type": "file", "required": True},
+                    "read2": {"type": "file", "required": True},
+                    "unused_field": {"type": "string", "required": False},
+                },
+            }
+        }
+
+        findings = lint_template_input_parity(registry_tools)
+
+        assert len(findings) == 1
+        assert findings[0].check == "unused_registry_input"
+        assert "unused_field" in findings[0].detail
+
+    def test_name_list_inputs_still_checked(self):
+        registry_tools = {
+            "spades": {
+                "id": "spades",
+                "command_template": "spades.py -1 {read1}",
+                "inputs": ["read1", "read2"],
+            }
+        }
+
+        findings = lint_template_input_parity(registry_tools)
+
+        assert len(findings) == 1
+        assert "read2" in findings[0].detail

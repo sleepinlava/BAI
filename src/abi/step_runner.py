@@ -13,13 +13,15 @@ from abi.contracts.step_contract import (
     ContractViolationError,
     compute_output_checksums,
     evaluate_assertions,
+    load_checksums,
     validate_output_contract,
+    verify_input_checksums,
 )
 from abi.executor import _build_assertion_context, _resolve_actual_outputs
 from abi.internal import InternalHandlerContext, internal_handler_spec, plugin_internal_handlers
 from abi.path_policy import resolve_within
 from abi.plugins import get_plugin
-from abi.schemas import PlanStep
+from abi.schemas import PlanStep, plan_step_contract
 
 
 @dataclass
@@ -140,6 +142,26 @@ def execute_step(
             params.update(effective_outputs)
             params["stdout_path"] = str(log_dir / f"{step.step_id}.stdout.log")
             params["stderr_path"] = str(log_dir / f"{step.step_id}.stderr.log")
+
+            # ── Pre-execution integrity check — parity with the local
+            # executor (P1-3). Verify upstream input checksums against the
+            # shared provenance chain before any tool runs. Stale-output
+            # invalidation (B25) happens once on the driver before submission
+            # (race-free single writer); the worker only READS the chain.
+            # Violations fail the step exactly like the local path's
+            # ContractViolationError.
+            # ── 执行前完整性检查 —— 与本地执行器对齐（P1-3）。
+            # 运行工具前对照共享溯源链验证上游输入校验和；
+            # B25 过期失效由 driver 在提交前一次性完成（单写者无竞态），
+            # worker 只读链。违规使步骤失败，与本地路径的
+            # ContractViolationError 语义一致。
+            contract = plan_step_contract(step)
+            if contract:
+                chain = load_checksums(provenance, strict=False)
+                input_violations = verify_input_checksums(step.step_id, params, chain)
+                if input_violations:
+                    raise ContractViolationError(step.step_id, input_violations)
+
             command = skill.build_command(params)
             run_result = skill.run(params, dry_run=False)
             if run_result.return_code != 0:
@@ -160,7 +182,7 @@ def execute_step(
             tables = {name: [dict(row) for row in rows] for name, rows in parsed.items()}
             reason = ""
 
-        contract = step.params.get("_contract", {})
+        contract = plan_step_contract(step)
         resolved_outputs = _resolve_actual_outputs(
             effective_outputs,
             contract.get("outputs", {}),

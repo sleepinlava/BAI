@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence
 
+from abi.filesystem import checksum_file
 from abi.plugins.metagenomic_plasmid._engine.config import (
     PROJECT_ROOT,
     resolved_mamba_root,
@@ -864,11 +865,8 @@ def required_resource_issues(
 
 
 def sha256_path(path: str | Path) -> str:
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _status_for_spec(

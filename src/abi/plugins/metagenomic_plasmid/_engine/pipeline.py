@@ -254,8 +254,18 @@ class PipelineExecutor:
                 indent=2,
                 ensure_ascii=False,
             )
+        # Persist the plan AS EXECUTED (P0-4): the step loop may have rewritten
+        # step.inputs/outputs, so this snapshot records the executed I/O truth
+        # for post-run audit, complementing the pre-run execution_plan.json.
+        # 持久化"实际执行"的计划: 步骤循环可能改写过 inputs/outputs,
+        # 此快照记录执行期 I/O 真相, 与执行前的 execution_plan.json 互补审计。
+        resolved_plan_path = outdir / "execution_plan.resolved.json"
+        with resolved_plan_path.open("w", encoding="utf-8") as handle:
+            json.dump(_plan_payload(plan), handle, indent=2, ensure_ascii=False, default=str)
+            handle.write("\n")
         outputs = {
             "plan": plan_path,
+            "resolved_plan": resolved_plan_path,
             "config": config_path,
             "commands": commands_path,
             "resolved_inputs": resolved_inputs_path,

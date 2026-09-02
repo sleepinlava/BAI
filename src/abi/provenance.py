@@ -36,7 +36,6 @@ events concurrently without corruption.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
@@ -52,7 +51,7 @@ import yaml
 from abi import __version__
 from abi._shared import _display_command
 from abi.config import PROJECT_ROOT
-from abi.filesystem import ensure_directory
+from abi.filesystem import checksum_file, ensure_directory
 
 __all__ = [
     "capture_tool_version",
@@ -137,13 +136,8 @@ def capture_run_identity(
 
 
 def _sha256_file(path: Path) -> str:
-    if not path.is_file():
-        return ""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def capture_tool_version(skill: Any, *, mock_tools: bool = False) -> tuple[str, str]:

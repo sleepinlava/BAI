@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from abi.config import resolved_mamba_root
-from abi.contracts.step_contract import compute_file_checksum, load_checksums
+from abi.contracts.step_contract import (
+    compute_file_checksum,
+    invalidate_step_checksums,
+    load_checksums,
+    save_checksums_atomic,
+)
 from abi.dag import ABIDAG, infer_dag
 from abi.execution_policy import ResourceOverride, resolve_resources_v2
 from abi.internal import internal_handler_spec, run_plugin_preflight
@@ -155,6 +160,7 @@ class HpcRuntime:
         self._result_by_step = {}
         self._resumed_steps = set()
         scripts: list[Path] = []
+        stale_output_dirs: list[str] = []
         for step_id in dag.topological_order:
             binding = dag.binding_for(step_id)
             step = binding.step
@@ -198,6 +204,22 @@ class HpcRuntime:
             self._script_steps[script_path.name] = step
             self._script_by_step[step.step_id] = script_path
             self._result_by_step[step.step_id] = result_path
+            if output_dir := str(step.outputs.get("output_dir", "")):
+                stale_output_dirs.append(output_dir)
+
+        # B25 (P1-3 review): invalidate stale checksums for every step that is
+        # about to (re-)execute, ONCE on the driver before submission — a
+        # single writer, so parallel workers never resurrect each other's
+        # invalidations. Workers only read the chain for input verification;
+        # fresh checksums are merged back at collection time.
+        # B25（P1-3 评审）：对即将（重）执行的步骤，在提交前由 driver 一次性失效
+        # 过期校验和——单写者无竞态。worker 只读链做输入验证；
+        # 新校验和在结果收集时合并回写。
+        if stale_output_dirs:
+            chain = load_checksums(self._provenance_dir(config), strict=False)
+            for output_dir in stale_output_dirs:
+                invalidate_step_checksums(chain, output_dir=output_dir)
+            save_checksums_atomic(self._provenance_dir(config), chain, merge=False)
         return scripts
 
     def _resolve_step_resources(
@@ -510,10 +532,17 @@ class HpcRuntime:
             if result.standard_tables:
                 table_manager.append_rows(tables_dir, result.standard_tables)
             checksums.update(result.checksums)
-        if checksums:
+        # Merge over the existing chain instead of overwriting it (P1-3):
+        # resumed steps' recorded checksums must survive collection, and
+        # worker-side invalidations (B25) are already reflected in the file.
+        # 在既有链上合并非覆盖（P1-3）：续跑步骤的校验和必须保留，
+        # worker 侧的失效（B25）已反映在文件中。
+        merged_checksums = load_checksums(self._provenance_dir(config), strict=False)
+        merged_checksums.update(checksums)
+        if merged_checksums:
             checksum_path = self._provenance_dir(config) / "checksums.json"
             checksum_path.write_text(
-                json.dumps(checksums, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+                json.dumps(merged_checksums, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
         failed = [row for row in command_rows if row["status"] not in {"success", "resumed"}]
         manifest = self._write_hpc_manifest(job_ids, statuses, config)

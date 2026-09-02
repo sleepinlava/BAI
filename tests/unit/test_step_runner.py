@@ -332,3 +332,52 @@ def test_payload_round_trip_uses_private_permissions_and_atomic_result(
     assert actual is expected
     assert json.loads(result_path.read_text(encoding="utf-8")) == expected.to_dict()
     assert not result_path.with_suffix(".json.tmp").exists()
+
+
+class _ProducingSkill:
+    """Fake tool that creates its declared output file when it runs."""
+
+    def __init__(self) -> None:
+        self.ran = False
+
+    def build_command(self, params):
+        return ["tool", "--output", str(params["result"])]
+
+    def run(self, params, *, dry_run: bool):
+        self.ran = True
+        Path(params["result"]).write_text("value\n1\n", encoding="utf-8")
+        return SimpleNamespace(return_code=0, status="success", outputs={})
+
+
+def test_execute_step_verifies_input_checksum_chain(tmp_path: Path) -> None:
+    """P1-3: the HPC worker enforces the checksum chain like the local executor.
+
+    An input whose recorded checksum no longer matches must fail the step
+    before the tool runs — same contract strength as the local path.
+    """
+    input_file = tmp_path / "reads.fastq"
+    input_file.write_text("reads\n", encoding="utf-8")
+    output_dir = tmp_path / "output"
+    result_file = output_dir / "result.tsv"
+    provenance = tmp_path / "provenance"
+    provenance.mkdir()
+    (provenance / "checksums.json").write_text(
+        json.dumps({str(input_file): "0" * 64}), encoding="utf-8"
+    )
+    skill = _ProducingSkill()
+    step = _step(
+        inputs={"input": str(input_file)},
+        outputs={"output_dir": str(output_dir), "result": str(result_file)},
+        params={"_contract": {"outputs": {"result": {"type": "file", "format": "tsv"}}}},
+    )
+
+    result = execute_step(
+        _ExternalPlugin(skill),
+        step,
+        {"outdir": str(tmp_path)},
+        provenance_dir=provenance,
+    )
+
+    assert result.status == "failed"
+    assert "checksum_mismatch" in result.reason
+    assert skill.ran is False

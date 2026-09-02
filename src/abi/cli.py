@@ -815,6 +815,7 @@ def verify_evidence_command(
             "checked": result.checked,
             "missing": result.missing,
             "mismatched": result.mismatched,
+            "detail": result.detail,
         }
         typer.echo(json.dumps(payload, indent=2, ensure_ascii=False))
         if not result.valid:
@@ -1020,6 +1021,120 @@ def export_snakemake_command(
         _fail(exc)
 
 
+def _run_dispatch(
+    *,
+    analysis_type: str,
+    engine: str,
+    config_path: Optional[Path],
+    sample_sheet: Optional[Path],
+    profile: str,
+    mode: Optional[str],
+    threads: Optional[int],
+    outdir: Optional[str],
+    log_dir: Optional[str],
+    workflow: Optional[Path],
+    work_dir: Optional[Path],
+    nxf_home: Optional[Path],
+    nextflow_bin: Optional[Path],
+    nextflow_profile: Optional[str],
+    executor: Optional[str],
+    resume: bool,
+    mamba_root: Optional[Path],
+    smoke: bool,
+    check_files: bool,
+    confirm_execution: bool,
+    output_json: bool,
+    resource_profile: Optional[str] = None,
+    cpu_override: Optional[int] = None,
+    memory_override: Optional[str] = None,
+    walltime_override: Optional[str] = None,
+    accelerator_override: Optional[str] = None,
+    container_image: Optional[str] = None,
+    container_runtime: Optional[str] = None,
+    scheduler: Optional[str] = None,
+    partition: Optional[str] = None,
+    account: Optional[str] = None,
+    qos: Optional[str] = None,
+    hpc_timeout_seconds: Optional[float] = None,
+    poll_interval_seconds: float = 30.0,
+    db_profile: Optional[str] = None,
+    resource_root: Optional[str] = None,
+    resource_overrides_list: Optional[List[str]] = None,
+) -> None:
+    """Shared ``run`` dispatch (P1-2): one confirmation gate, one output path.
+
+    Both ``abi run`` and the ``abi run-nextflow`` compatibility alias parse
+    their own Typer options and delegate here, so dispatch logic cannot drift
+    between the two command surfaces.
+    两个命令各自解析 Typer 选项后委托到这里，分派逻辑不会在命令面之间漂移。
+    """
+    run_kwargs = dict(
+        analysis_type=analysis_type,
+        engine=engine,
+        config_path=config_path,
+        sample_sheet=sample_sheet,
+        profile=profile,
+        mode=mode,
+        threads=threads,
+        outdir=outdir,
+        log_dir=log_dir,
+        workflow=workflow,
+        work_dir=work_dir,
+        nxf_home=nxf_home,
+        nextflow_bin=nextflow_bin,
+        nextflow_profile=nextflow_profile,
+        executor=executor,
+        resume=resume,
+        mamba_root=mamba_root,
+        smoke=smoke,
+        check_files=check_files,
+        resource_profile=resource_profile,
+        cpu_override=cpu_override,
+        memory_override=memory_override,
+        walltime_override=walltime_override,
+        accelerator_override=accelerator_override,
+        container_image=container_image,
+        container_runtime=container_runtime,
+        scheduler=scheduler,
+        partition=partition,
+        account=account,
+        qos=qos,
+        hpc_timeout_seconds=hpc_timeout_seconds,
+        poll_interval_seconds=poll_interval_seconds,
+        db_profile=db_profile,
+        resource_root=resource_root,
+        resource_overrides_list=resource_overrides_list,
+    )
+    if not confirm_execution:
+        # No confirmation and not in output-json mode — route through agent
+        # interface to get the confirmation_required envelope (exit code 2).
+        # 未确认且不在 output-json 模式——通过 agent 接口路由以获取
+        # confirmation_required 信封（退出码 2）。
+        _emit_agent_json(
+            ABIAgentInterface().run(**{**run_kwargs, "confirm_execution": False})  # type: ignore[arg-type]
+        )
+        return
+    if output_json:
+        # Confirmed execution with --output-json: agent interface returns the
+        # result envelope after the run completes.
+        # 已确认执行且带有 --output-json：agent 接口在运行完成后返回结果信封。
+        _emit_agent_json(
+            ABIAgentInterface().run(
+                **{**run_kwargs, "confirm_execution": confirm_execution}  # type: ignore[arg-type]
+            )
+        )
+        return
+    try:
+        result = _agent_result(
+            ABIAgentInterface().run(
+                **{**run_kwargs, "confirm_execution": True}  # type: ignore[arg-type]
+            )
+        )
+        typer.echo(json.dumps(result["outputs"], indent=2))
+    except Exception as exc:
+        _fail(exc)
+
+
 @app.command("run")
 def run_command(
     analysis_type: str = typer.Option(..., "--type", help="ABI analysis type."),
@@ -1148,11 +1263,10 @@ def run_command(
     命令返回 ``confirmation_required`` 信封并以代码 2 退出。这防止意外执行，
     并允许 agent 调用者展示确认提示。
 
-    执行流程：加载插件配置，构建计划，按 ``--engine`` 选择本地、Nextflow、
-    Snakemake 或原生 HPC 运行时，然后执行。
+    资源覆盖与 HPC 选项见 --help；执行需 --confirm-execution。
     """
     resource_overrides_list = [r for r in (resource or []) if "=" in r]
-    run_kwargs = dict(
+    _run_dispatch(
         analysis_type=analysis_type,
         engine=engine,
         config_path=config,
@@ -1172,6 +1286,8 @@ def run_command(
         mamba_root=mamba_root,
         smoke=smoke,
         check_files=check_files,
+        confirm_execution=confirm_execution,
+        output_json=output_json,
         resource_profile=resource_profile,
         cpu_override=cpu_override,
         memory_override=memory_override,
@@ -1189,34 +1305,6 @@ def run_command(
         resource_root=resource_root,
         resource_overrides_list=resource_overrides_list or None,
     )
-    if not confirm_execution:
-        # No confirmation and not in output-json mode — route through agent
-        # interface to get the confirmation_required envelope (exit code 2).
-        # 未确认且不在 output-json 模式——通过 agent 接口路由以获取
-        # confirmation_required 信封（退出码 2）。
-        _emit_agent_json(
-            ABIAgentInterface().run(**{**run_kwargs, "confirm_execution": False})  # type: ignore[arg-type]
-        )
-        return
-    if output_json:
-        # Confirmed execution with --output-json: agent interface returns the
-        # result envelope after the run completes.
-        # 已确认执行且带有 --output-json：agent 接口在运行完成后返回结果信封。
-        _emit_agent_json(
-            ABIAgentInterface().run(
-                **{**run_kwargs, "confirm_execution": confirm_execution}  # type: ignore[arg-type]
-            )
-        )
-        return
-    try:
-        result = _agent_result(
-            ABIAgentInterface().run(
-                **{**run_kwargs, "confirm_execution": True}  # type: ignore[arg-type]
-            )
-        )
-        typer.echo(json.dumps(result["outputs"], indent=2))
-    except Exception as exc:
-        _fail(exc)
 
 
 @app.command("run-nextflow")
@@ -1268,92 +1356,37 @@ def run_nextflow_command(
     and ``--smoke`` to ``True``. This is kept for backward compatibility with
     scripts and agents that use the older ``run-nextflow`` command name.
 
+    The body delegates to the shared ``_run_dispatch`` (P1-2): dispatch, the
+    confirmation gate, output handling, and exit codes live in exactly one place.
+
     ``run --engine nextflow`` 的兼容性别名。
     行为与 ``run`` 相同，但默认 ``--engine`` 为 ``"nextflow"``，``--smoke`` 为 ``True``。
     保留此命令是为了与使用旧 ``run-nextflow`` 命令名的脚本和 agent 保持向后兼容。
+    函数体委托给共享的 ``_run_dispatch``：分派、确认门、输出处理与退出码只维护一处。
     """
-    if not confirm_execution:
-        # Same confirmation gate as run_command.
-        # 与 run_command 相同的确认门。
-        _emit_agent_json(
-            ABIAgentInterface().run(
-                analysis_type=analysis_type,
-                engine="nextflow",
-                config_path=config,
-                sample_sheet=sample_sheet,
-                profile=profile,
-                mode=mode,
-                threads=threads,
-                outdir=outdir,
-                log_dir=log_dir,
-                workflow=workflow,
-                work_dir=work_dir,
-                nxf_home=nxf_home,
-                nextflow_bin=nextflow_bin,
-                nextflow_profile=nextflow_profile,
-                executor=executor,
-                resume=resume,
-                mamba_root=mamba_root,
-                smoke=smoke,
-                check_files=check_files,
-                confirm_execution=False,
-            )
-        )
-        return
-    if output_json:
-        _emit_agent_json(
-            ABIAgentInterface().run(
-                analysis_type=analysis_type,
-                engine="nextflow",
-                config_path=config,
-                sample_sheet=sample_sheet,
-                profile=profile,
-                mode=mode,
-                threads=threads,
-                outdir=outdir,
-                log_dir=log_dir,
-                workflow=workflow,
-                work_dir=work_dir,
-                nxf_home=nxf_home,
-                nextflow_bin=nextflow_bin,
-                nextflow_profile=nextflow_profile,
-                executor=executor,
-                resume=resume,
-                mamba_root=mamba_root,
-                smoke=smoke,
-                check_files=check_files,
-                confirm_execution=confirm_execution,
-            )
-        )
-        return
-    try:
-        result = _agent_result(
-            ABIAgentInterface().run(
-                analysis_type=analysis_type,
-                engine="nextflow",
-                config_path=config,
-                sample_sheet=sample_sheet,
-                profile=profile,
-                mode=mode,
-                threads=threads,
-                outdir=outdir,
-                log_dir=log_dir,
-                workflow=workflow,
-                work_dir=work_dir,
-                nxf_home=nxf_home,
-                nextflow_bin=nextflow_bin,
-                nextflow_profile=nextflow_profile,
-                executor=executor,
-                resume=resume,
-                mamba_root=mamba_root,
-                smoke=smoke,
-                check_files=check_files,
-                confirm_execution=True,
-            )
-        )
-        typer.echo(json.dumps(result["outputs"], indent=2))
-    except Exception as exc:
-        _fail(exc)
+    _run_dispatch(
+        analysis_type=analysis_type,
+        engine="nextflow",
+        config_path=config,
+        sample_sheet=sample_sheet,
+        profile=profile,
+        mode=mode,
+        threads=threads,
+        outdir=outdir,
+        log_dir=log_dir,
+        workflow=workflow,
+        work_dir=work_dir,
+        nxf_home=nxf_home,
+        nextflow_bin=nextflow_bin,
+        nextflow_profile=nextflow_profile,
+        executor=executor,
+        resume=resume,
+        mamba_root=mamba_root,
+        smoke=smoke,
+        check_files=check_files,
+        confirm_execution=confirm_execution,
+        output_json=output_json,
+    )
 
 
 @app.command("export-openai-tools")

@@ -15,6 +15,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from abi.filesystem import checksum_file
 from abi.internal import FunctionInternalHandler, InternalHandlerContext, InternalHandlerResult
 
 from .adapters import ManifestValidator, merge_bracken, parse_fastp_json, taxonomy_diversity
@@ -26,11 +27,8 @@ _GZIP_COMPRESSION_LEVEL = 6
 
 
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _write_tombstone_manifest(

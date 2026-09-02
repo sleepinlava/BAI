@@ -1,125 +1,119 @@
 tools:
-  - id: seqkit
-    name: SeqKit
-    category: input_validation
-    executable: seqkit
-    version_command: seqkit version
-    version_regex: "seqkit v?([^\\s]+)"
-    required: true
-    command_template: seqkit stat -T {read1} {read2} > {stats}
-    inputs: [read1, read2]
-    resources: {cpu: 1, memory: 1GB, walltime: "00:30:00"}
-  - id: fastp
-    name: fastp
-    category: preprocessing
-    executable: fastp
-    version_command: fastp --version
-    version_regex: "fastp ([^\\s]+)"
-    required: true
-    command_template: fastp -i {read1} -I {read2} -o {clean_read1} -O {clean_read2} -j {json} -h {html} --thread {threads}
-    inputs: [read1, read2]
-    resources: {cpu: 4, memory: 8GB, walltime: "02:00:00", disk: 20GB}
-  - id: kneaddata
-    name: KneadData
-    category: host_removal
-    executable: kneaddata
-    version_command: kneaddata --version
-    version_regex: "kneaddata v?([^\\s]+)"
-    required: true
-    command_template: kneaddata -i1 {clean_read1} -i2 {clean_read2} -o {output_dir} -db {host_db} -t {threads} --bypass-trim --bypass-trf --reorder --remove-intermediate-output
-    inputs: [clean_read1, clean_read2, host_db]
-    resources: {cpu: 4, memory: 16GB, walltime: "08:00:00", disk: 40GB}
-  - id: kraken2
-    name: Kraken2
-    category: taxonomy
-    executable: kraken2
-    version_command: kraken2 --version
-    version_regex: "Kraken version ([^\\s]+)"
-    required: true
-    command_template: kraken2 --db {kraken2_db} --memory-mapping --paired {dehost_read1} {dehost_read2} --threads {threads} --use-names --report-zero-counts --report {report} --output {classifications}
-    inputs: [dehost_read1, dehost_read2, kraken2_db]
-    resources: {cpu: 4, memory: 32GB, walltime: "08:00:00", disk: 20GB}
-  - id: bracken
-    name: Bracken
-    category: taxonomy
-    executable: bracken
-    version_command: bracken -v
-    version_regex: "Bracken v?([^\\s]+)"
-    required: true
-    command_template: bracken -d {kraken2_db} -i {kraken2_report} -r {read_length} -l {tax_level} -t 0 -o {bracken_table} -w {bracken_report}
-    inputs: [kraken2_report, kraken2_db]
-    resources: {cpu: 1, memory: 8GB, walltime: "02:00:00"}
-  - id: bowtie2
-    name: Bowtie2 (KneadData dependency)
-    category: host_removal_dependency
-    executable: bowtie2
-    env_name: easymeta-p0
-    version_command: bowtie2 --version
-    version_regex: "version ([^\\s]+)"
-    required: true
-    provenance_only: true
-    command_template: bowtie2 --version
-    inputs: []
-    resources: {cpu: 1, memory: 1GB, walltime: "00:05:00"}
-  - id: trimmomatic
-    name: Trimmomatic (KneadData dependency)
-    category: host_removal_dependency
-    executable: trimmomatic
-    env_name: easymeta-p0
-    version_command: trimmomatic -version
-    version_regex: "^([^\\s]+)"
-    required: true
-    provenance_only: true
-    command_template: trimmomatic -version
-    inputs: []
-    resources: {cpu: 1, memory: 1GB, walltime: "00:05:00"}
-  - id: humann4
-    name: HUMAnN 4
-    category: functional
-    executable: humann
-    required: true
-    command_template: >-
-      humann --input {merged_reads} --output {output_dir}
-      --output-basename {sample_id} --threads {threads}
-      --nucleotide-database {humann_nucleotide_db}
-      --protein-database {humann_protein_db}
-      --metaphlan-options "--bowtie2db {metaphlan_db}"
-    inputs: [merged_reads, humann_nucleotide_db, humann_protein_db, metaphlan_db]
-    resources: {cpu: 16, memory: 64GB, walltime: "2-00:00:00", disk: 100GB}
-  - id: humann_join_tables
-    name: HUMAnN Join Tables
-    category: functional_summary
-    executable: humann_join_tables
-    required: true
-    command_template: >-
-      humann_join_tables --input {humann_samples_dir} --file_name {file_name}
-      --output {joined_table}
-    inputs: [humann_samples_dir]
-    resources: {cpu: 1, memory: 8GB, walltime: "02:00:00"}
-  - id: humann_renorm_table
-    name: HUMAnN Renormalize Table
-    category: functional_summary
-    executable: humann_renorm_table
-    required: true
-    command_template: >-
-      humann_renorm_table --input {input_table} --output {normalized_table} --units {units}
-    inputs: [input_table]
-    resources: {cpu: 1, memory: 8GB, walltime: "02:00:00"}
-  - id: humann_regroup_table
-    name: HUMAnN Regroup Table
-    category: functional_summary
-    executable: humann_regroup_table
-    required: true
-    command_template: >-
-      humann_regroup_table --input {input_table} --output {regrouped_table} --groups {groups}
-    inputs: [input_table]
-    resources: {cpu: 1, memory: 8GB, walltime: "04:00:00"}
-  - id: humann_split_stratified_table
-    name: HUMAnN Split Stratified Table
-    category: functional_summary
-    executable: humann_split_stratified_table
-    required: true
-    command_template: >-
-      humann_split_stratified_table --input {input_table} --output {split_dir}
-    inputs: [input_table]
-    resources: {cpu: 1, memory: 8GB, walltime: "02:00:00"}
+- id: seqkit
+  name: SeqKit
+  category: input_validation
+  version_command: seqkit version
+  version_regex: seqkit v?([^\s]+)
+  required: true
+  resources:
+    cpu: 1
+    memory: 1GB
+    walltime: 00:30:00
+- id: fastp
+  name: fastp
+  category: preprocessing
+  version_command: fastp --version
+  version_regex: fastp ([^\s]+)
+  required: true
+  resources:
+    cpu: 4
+    memory: 8GB
+    walltime: 02:00:00
+    disk: 20GB
+- id: kneaddata
+  name: KneadData
+  category: host_removal
+  version_command: kneaddata --version
+  version_regex: kneaddata v?([^\s]+)
+  required: true
+  resources:
+    cpu: 4
+    memory: 16GB
+    walltime: 08:00:00
+    disk: 40GB
+- id: kraken2
+  name: Kraken2
+  category: taxonomy
+  version_command: kraken2 --version
+  version_regex: Kraken version ([^\s]+)
+  required: true
+  resources:
+    cpu: 4
+    memory: 32GB
+    walltime: 08:00:00
+    disk: 20GB
+- id: bracken
+  name: Bracken
+  category: taxonomy
+  version_command: bracken -v
+  version_regex: Bracken v?([^\s]+)
+  required: true
+  resources:
+    cpu: 1
+    memory: 8GB
+    walltime: 02:00:00
+- id: bowtie2
+  name: Bowtie2 (KneadData dependency)
+  category: host_removal_dependency
+  env_name: easymeta-p0
+  version_command: bowtie2 --version
+  version_regex: version ([^\s]+)
+  required: true
+  provenance_only: true
+  resources:
+    cpu: 1
+    memory: 1GB
+    walltime: 00:05:00
+- id: trimmomatic
+  name: Trimmomatic (KneadData dependency)
+  category: host_removal_dependency
+  env_name: easymeta-p0
+  version_command: trimmomatic -version
+  version_regex: ^([^\s]+)
+  required: true
+  provenance_only: true
+  resources:
+    cpu: 1
+    memory: 1GB
+    walltime: 00:05:00
+- id: humann4
+  name: HUMAnN 4
+  category: functional
+  required: true
+  resources:
+    cpu: 16
+    memory: 64GB
+    walltime: 2-00:00:00
+    disk: 100GB
+- id: humann_join_tables
+  name: HUMAnN Join Tables
+  category: functional_summary
+  required: true
+  resources:
+    cpu: 1
+    memory: 8GB
+    walltime: 02:00:00
+- id: humann_renorm_table
+  name: HUMAnN Renormalize Table
+  category: functional_summary
+  required: true
+  resources:
+    cpu: 1
+    memory: 8GB
+    walltime: 02:00:00
+- id: humann_regroup_table
+  name: HUMAnN Regroup Table
+  category: functional_summary
+  required: true
+  resources:
+    cpu: 1
+    memory: 8GB
+    walltime: 04:00:00
+- id: humann_split_stratified_table
+  name: HUMAnN Split Stratified Table
+  category: functional_summary
+  required: true
+  resources:
+    cpu: 1
+    memory: 8GB
+    walltime: 02:00:00

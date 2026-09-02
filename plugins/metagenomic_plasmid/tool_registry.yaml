@@ -2,35 +2,19 @@ tools:
 - id: dorado
   name: Dorado
   category: basecalling
-  executable: dorado
   default_enabled: false
   required: false
-  command_template: sh -c 'dorado basecaller hac "$1" --emit-fastq > "$2"' autoplasm
-    "{pod5}" "{long_reads}"
-  inputs:
-  - pod5
   limitations: ONT POD5 basecalling is opt-in and records the Dorado version in provenance.
 - id: samtools_fastq
   name: samtools fastq
   category: basecalling
-  executable: samtools
   default_enabled: false
   required: false
-  command_template: samtools fastq -@ {threads} -o {long_reads} {bam}
-  inputs:
-  - bam
 - id: fastp
   name: fastp
   category: qc
-  executable: fastp
   default_enabled: true
   required: true
-  command_template: fastp -i {read1} -I {read2} -o {output_dir}/{sample_id}_R1.clean.fastq.gz
-    -O {output_dir}/{sample_id}_R2.clean.fastq.gz --thread {threads} --html {output_dir}/{sample_id}.fastp.html
-    --json {output_dir}/{sample_id}.fastp.json
-  inputs:
-  - read1
-  - read2
   outputs:
   - clean_reads
   - html
@@ -39,616 +23,345 @@ tools:
 - id: fastqc
   name: FastQC
   category: qc
-  executable: fastqc
   default_enabled: false
   required: false
-  command_template: fastqc --threads {threads} --extract --outdir {output_dir} {read1} {read2}
 - id: multiqc
   name: MultiQC
   category: qc
-  executable: multiqc
   default_enabled: true
   required: false
-  command_template: multiqc {project_outdir}/01_qc --outdir {output_dir} --filename
-    {multiqc_filename}
 - id: nanoplot
   name: NanoPlot
   category: qc
-  executable: NanoPlot
   default_enabled: true
   required: false
-  command_template: NanoPlot --fastq {long_reads} --outdir {output_dir} --threads
-    {threads}
-  inputs:
-  - long_reads
 - id: filtlong
   name: Filtlong
   category: qc
-  executable: filtlong
   default_enabled: true
   required: false
-  command_template: filtlong --min_length 1000 --keep_percent 90 {long_reads} > {output_dir}/{sample_id}.filtlong.fastq
-  inputs:
-  - long_reads
 - id: hifiadapterfilt
   name: HiFiAdapterFilt
   category: qc
-  executable: hifiadapterfilt.sh
   default_enabled: true
   required: false
-  command_template: sh -c 'mkdir -p "$1" && input=$(cd "$(dirname "$2")" && pwd -P)/$(basename
-    "$2") && cd "$1" && hifiadapterfilt.sh -p "$3" "$input" && sh "$4/scripts/normalize_hifiadapterfilt_output.sh"
-    "$3" "$3.hifiadapterfilt.fastq.gz"' autoplasm "{output_dir}" "{long_reads}" "{sample_id}"
-    "{project_root}"
-  inputs:
-  - long_reads
 - id: megahit
   name: MEGAHIT
   category: assembly
-  executable: megahit
   default_enabled: true
   required: true
   output_dir_policy: must_not_exist
-  command_template: megahit -1 {read1} -2 {read2} -o {output_dir} -t {threads} --memory
-    {memory_bytes}
 - id: metaspades
   name: metaSPAdes
   category: assembly
-  executable: metaspades.py
   default_enabled: false
   required: false
-  command_template: metaspades.py -1 {read1} -2 {read2} -o {output_dir} -t {threads}
 - id: metaflye
   name: metaFlye
   category: assembly
-  executable: flye
   default_enabled: true
   required: true
-  command_template: flye --meta --nano-raw {long_reads} --out-dir {output_dir} --threads
-    {threads}
-  inputs:
-  - long_reads
 - id: hifiasm_meta
   name: hifiasm
   category: assembly
-  executable: hifiasm
   default_enabled: true
   required: false
-  command_template: sh -c 'mkdir -p "$1" && hifiasm -t "$2" -o "$1/$3" "$4" && sh
-    "$5/scripts/hifiasm_gfa_to_fasta.sh" "$1/$3" "$1/$3.hifiasm.fasta"' autoplasm
-    "{output_dir}" "{threads}" "{sample_id}" "{long_reads}" "{project_root}"
-  inputs:
-  - long_reads
   limitations: hifiasm-meta is not resolvable from the configured channels under the
     required python=3.9 environments; this registry entry uses hifiasm as the installable
     fallback.
 - id: opera_ms
   name: OPERA-MS
   category: assembly
-  executable: OPERA-MS.pl
   default_enabled: false
   required: false
-  command_template: sh -c 'mkdir -p "$1" && OPERA-MS.pl --short-read1 "$2" --short-read2
-    "$3" --long-read "$4" --out-dir "$1" --num-processors "$5" && sh "$6/scripts/normalize_opera_ms_output.sh"
-    "$1" "$1/contigs.fasta"' autoplasm "{output_dir}" "{read1}" "{read2}" "{long_reads}"
-    "{threads}" "{project_root}"
-  inputs:
-  - read1
-  - read2
-  - long_reads
   limitations: OPERA-MS is no longer available from current bioconda channels; install
     OPERA-MS.pl manually and enable this optional hybrid assembler only when available.
 - id: quast
   name: metaQUAST
   category: assembly_qc
-  executable: metaquast.py
   default_enabled: true
   required: false
-  command_template: metaquast.py {assembly} -o {output_dir} -t {threads} --max-ref-number
-    0
 - id: medaka
   name: Medaka
   category: polishing
-  executable: medaka_consensus
   default_enabled: false
   required: false
-  command_template: medaka_consensus -i {long_reads} -d {assembly} -o {output_dir}
-    -t {threads}
-  inputs:
-  - long_reads
-  - assembly
   limitations: ONT-only consensus polishing; opt in after metaFlye assembly.
 - id: genomad
   name: geNomad
   category: plasmid_detection
-  executable: genomad
   default_enabled: true
   required: true
-  command_template: genomad end-to-end --cleanup --restart --threads {threads} {assembly}
-    {output_dir} {database}
 - id: plasme
   name: PLASMe
   category: plasmid_detection
-  executable: python
-  script_path: "{autoplasm_root}/PLASMe/PLASMe.py"
+  script_path: '{autoplasm_root}/PLASMe/PLASMe.py'
   default_enabled: false
   required: false
-  command_template: python {resource_root}/PLASMe/PLASMe.py {assembly} {output_dir}/{sample_id}.plasme
-    -d {database} -t {threads}
 - id: plasx
   name: PlasX
   category: plasmid_detection
-  executable: plasx
   extra_path_dirs:
-  - "{resource_root}/PlasX"
+  - '{resource_root}/PlasX'
   default_enabled: false
   required: false
-  command_template: plasx predict -a {annotations} -g {gene_calls} -m {model} -o {output_dir}/{sample_id}.plasx.tsv
-    --overwrite
 - id: plasmidfinder
   name: PlasmidFinder
   category: typing
-  executable: python
   default_enabled: false
   required: false
-  command_template: >-
-    python -m plasmidfinder -i {plasmid_contigs} -o {output_dir} -p {database}
-    --legacy -x
 - id: plasmaag
   name: PlasMAAG
   category: plasmid_binning
-  executable: plasmaag
   default_enabled: false
   required: false
-  command_template: plasmaag --reads_and_contigs {reads_contigs_table} --output {output_dir}
-    --threads {threads}
   limitations: Runs through the dedicated repository-local autoplasm-plasmaag Python
     3.11 environment; first real run may initialize the geNomad database.
 - id: gplas2
   name: gplas2
   category: plasmid_binning
-  executable: gplas2
   default_enabled: false
   required: false
-  command_template: gplas2 --input {assembly_graph} --classifier predict --prediction
-    {plasmid_predictions} --name {sample_id}
 - id: mob_typer
   name: MOB-typer
   category: typing
-  executable: mob_typer
   default_enabled: false
   required: false
-  command_template: mob_typer --infile {plasmid_contigs} --out_file {output_dir}/{sample_id}.mob_typer.tsv
-    --database_directory {database} --num_threads {threads} --multi
 - id: copla
   name: COPLA
   category: typing
-  executable: copla
   default_enabled: false
   required: false
-  command_template: copla --input {plasmid_contigs} --refgraph {refgraph} --reflist
-    {reflist} --output-dir {output_dir}
 - id: plasmidhostfinder
   name: PlasmidHostFinder
   category: host_prediction
-  executable: plasmidhostfinder.py
   default_enabled: false
   required: false
-  command_template: plasmidhostfinder.py -i {plasmid_contigs} -o {output_dir} -l {level}
-    -t {threshold} -p {database}
 - id: prodigal
   name: Prodigal
   category: annotation
-  executable: prodigal
   default_enabled: false
   required: false
-  command_template: prodigal -i {plasmid_contigs} -o {output_dir}/{sample_id}.prodigal.gff
-    -a {output_dir}/{sample_id}.prodigal.faa -d {output_dir}/{sample_id}.prodigal.ffn
-    -p meta
-  inputs:
-  - plasmid_contigs
 - id: bakta
   name: Bakta
   category: annotation
-  executable: bakta
   default_enabled: true
   required: false
-  command_template: bakta --db {database} --output {output_dir} --threads {threads}
-    --force --skip-sorf {plasmid_contigs}
 - id: abricate
   name: ABRicate
   category: annotation
-  executable: abricate
   default_enabled: false
   required: false
-  command_template: abricate --threads {threads} --db {abricate_db} {plasmid_contigs}
-    > {output_dir}/{sample_id}.{abricate_db}.tsv
 - id: amrfinderplus
   name: AMRFinderPlus
   category: annotation
-  executable: amrfinder
   default_enabled: true
   required: false
-  command_template: amrfinder -n {plasmid_contigs} -d {database} -o {output_dir}/{sample_id}.amrfinder.tsv
 - id: mob_suite
   name: MOB-suite
   category: annotation
-  executable: mob_recon
   default_enabled: false
   required: false
-  command_template: mob_recon --infile {plasmid_contigs} --outdir {output_dir} --num_threads
-    {threads} --database_directory {database}
 - id: isescan
   name: ISEScan
   category: annotation
-  executable: isescan.py
   default_enabled: false
   required: false
-  command_template: isescan.py --seqfile {plasmid_contigs} --output {output_dir}
   limitations: ISEScan is optional and may be absent from cloud conda channels; enable
     it only after installing isescan.py into the annotation environment.
 - id: integronfinder
   name: IntegronFinder
   category: annotation
-  executable: integron_finder
   default_enabled: true
   required: false
   limitations: Requires the dedicated autoplasm-integronfinder compatibility environment
     with biopython=1.77 because IntegronFinder 2.0rc6 imports the removed Bio.Seq.IUPAC
     API.
-  command_template: integron_finder --outdir {output_dir} {plasmid_contigs}
 - id: bowtie2_host_removal
   name: Bowtie2 host removal
   category: host_removal
-  executable: bowtie2
   default_enabled: false
   required: false
-  command_template: sh -c 'bowtie2-build "$1" "$2/host_index" >/dev/null && bowtie2
-    -x "$2/host_index" -1 "$3" -2 "$4" -p "$5" --un-conc-gz "$2/$6.host_removed.%.fastq.gz"
-    -S "$2/$6.host.sam"' autoplasm "{host_reference}" "{output_dir}" "{read1}"
-    "{read2}" "{threads}" "{sample_id}"
-  inputs:
-  - host_reference
-  - read1
-  - read2
 - id: minimap2_host_removal
   name: minimap2 host removal
   category: host_removal
-  executable: minimap2
   default_enabled: false
   required: false
-  command_template: sh -c 'minimap2 -t "$1" -ax "$2" "$3" "$4" | samtools fastq
-    -f 4 - > "$5"' autoplasm "{threads}" "{minimap2_preset}" "{host_reference}"
-    "{long_reads}" "{clean_long_reads}"
-  inputs:
-  - host_reference
-  - long_reads
 - id: bowtie2
   name: bowtie2
   category: abundance
-  executable: bowtie2
   default_enabled: true
   required: true
-  command_template: sh -c 'bowtie2-build "$1" "$2/$3$4.plasmid_index" >/dev/null &&
-    bowtie2 -x "$2/$3$4.plasmid_index" -1 "$5" -2 "$6" -p "$7" -S "$8"' autoplasm
-    "{plasmid_contigs}" "{output_dir}" "{sample_id}" "{abundance_label}" "{read1}"
-    "{read2}" "{threads}" "{alignment}"
-  inputs:
-  - plasmid_contigs
-  - read1
-  - read2
 - id: minimap2
   name: minimap2
   category: abundance
-  executable: minimap2
   default_enabled: true
   required: true
-  command_template: minimap2 -t {threads} -ax {minimap2_preset} {plasmid_contigs}
-    {long_reads} > {alignment}
-  inputs:
-  - plasmid_contigs
-  - long_reads
 - id: samtools
   name: samtools
   category: abundance
-  executable: samtools
   default_enabled: true
   required: true
-  command_template: samtools sort -@ {threads} -o {bam} {alignment}
-  inputs:
-  - alignment
 - id: coverm
   name: CoverM
   category: abundance
-  executable: coverm
   default_enabled: true
   required: false
-  command_template: coverm contig --bam-files {bam} --output-file {abundance} --methods
-    mean tpm rpkm --min-covered-fraction 0 --threads {threads}
-  inputs:
-  - bam
 - id: kraken2
   name: Kraken2
   category: host_prediction
-  executable: kraken2
   default_enabled: false
   required: false
-  command_template: kraken2 --threads {threads} --db {database} --report {output_dir}/{sample_id}.kraken2.report
-    {read1} {read2}
 - id: metaphlan
   name: MetaPhlAn
   category: host_prediction
-  executable: metaphlan
   default_enabled: false
   required: false
-  command_template: metaphlan {metaphlan_input} --input_type fastq {metaphlan_long_reads_flag}
-    --nproc {threads} --db_dir {database} -o {output_dir}/{sample_id}.metaphlan.tsv --mapout {output_dir}/{sample_id}.map.bowtie2out.txt
 - id: fastspar
   name: FastSpar
   category: network
-  executable: fastspar
   default_enabled: false
   required: false
-  command_template: fastspar --otu_table {abundance_table} --correlation {output_dir}/correlation.tsv
-    --covariance {output_dir}/covariance.tsv --threads {threads}
 - id: deseq2_plasmid
   name: DESeq2 plasmid differential abundance
   category: statistics
-  executable: Rscript
   default_enabled: false
   required: false
-  command_template: Rscript {project_root}/plugins/metagenomic_plasmid/scripts/deseq2_plasmid.R
-    --abundance {abundance_table} --metadata {sample_metadata} --output {differential_plasmids}
-  inputs:
-  - abundance_table
-  - sample_metadata
 - id: blast
   name: BLAST+
   category: comparative_genomics
-  executable: blastn
   default_enabled: false
   required: false
-  command_template: blastn -query {plasmid_contigs} -db {database} -out {output_dir}/{sample_id}.blast.tsv
-    -outfmt 6 -num_threads {threads}
 - id: mmseqs2
   name: MMseqs2
   category: comparative_genomics
-  executable: mmseqs
   default_enabled: false
   required: false
-  command_template: mmseqs easy-cluster {plasmid_contigs} {output_dir}/plasmid_catalog
-    {output_dir}/tmp --min-seq-id 0.95 -c 0.8 --cov-mode 1 --threads {threads}
 - id: mummer
   name: MUMmer/nucmer
   category: comparative_genomics
-  executable: nucmer
   default_enabled: false
   required: false
-  command_template: nucmer --prefix {output_dir}/{sample_id} {reference_plasmids}
-    {plasmid_contigs}
   limitations: Requires a reference plasmid set; optional comparative step.
 - id: clinker
   name: clinker
   category: comparative_genomics
-  executable: clinker
   default_enabled: false
   required: false
-  command_template: clinker {genbank_files} -p {output_dir}/{sample_id}.clinker.html
   limitations: Requires annotated GenBank files.
 - id: report_markdown
   name: AutoPlasm Markdown report
   category: report
-  executable: abi
   default_enabled: true
   required: false
-  command_template: abi report --type metagenomic_plasmid --result-dir {project_outdir}
 - id: metabat2
   name: MetaBAT2
   category: mag_host_genomes
-  executable: metabat2
   default_enabled: false
   required: false
-  command_template: metabat2 -i {assembly} -a {bam} -o {output_dir}/{sample_id}.metabat2
-  inputs:
-  - assembly
-  - bam
 - id: checkm2
   name: CheckM2
   category: mag_host_genomes
-  executable: checkm2
   default_enabled: false
   required: false
-  command_template: checkm2 predict --input {mag_bins} --output-directory {output_dir}
-    --threads {threads}
-  inputs:
-  - mag_bins
 - id: gtdbtk
   name: GTDB-Tk
   category: mag_host_genomes
-  executable: gtdbtk
   default_enabled: false
   required: false
-  command_template: gtdbtk classify_wf --genome_dir {mag_bins} --out_dir {output_dir}
-    --cpus {threads}
-  inputs:
-  - mag_bins
 - id: minced
   name: MinCED
   category: host_plasmid_linking
-  executable: minced
   default_enabled: false
   required: false
-  command_template: minced -spacers {output_dir}/{sample_id}.crispr_spacers.fa {host_genomes}
-    {plasmid_contigs}
-  inputs:
-  - host_genomes
-  - plasmid_contigs
 - id: pycirclize
   name: pyCirclize
   category: visualization
-  executable: python
   default_enabled: false
   required: false
-  command_template: python {project_root}/plugins/metagenomic_plasmid/scripts/pycirclize_viz.py --annotations {annotations} --typing {typing} --contigs {plasmid_contigs} --sample {sample_id} --outdir {output_dir}
-  inputs:
-  - annotations
-  - typing
-  - plasmid_contigs
   limitations: Requires pycirclize Python package; uses adapter script for integration.
 - id: pyvis
   name: pyvis
   category: visualization
-  executable: python
   default_enabled: false
   required: false
-  command_template: python {project_root}/plugins/metagenomic_plasmid/scripts/pyvis_viz.py --links {host_plasmid_links} --sample {sample_id} --outdir {output_dir}
-  inputs:
-  - host_plasmid_links
   limitations: Requires pyvis Python package; uses adapter script for integration.
 - id: platon
   name: Platon
   category: plasmid_detection
-  executable: platon
   extra_path_dirs:
-  - "{resource_root}/platon/bin"
-  - "{resource_root}/platon"
+  - '{resource_root}/platon/bin'
+  - '{resource_root}/platon'
   default_enabled: false
   required: false
-  command_template: platon --threads {threads} --output {output_dir} --prefix {sample_id}
-    --meta --db {database} {assembly}
-  inputs:
-  - assembly
-  - database
 - id: scapp
   name: SCAPP
   category: plasmid_detection
-  executable: scapp
   default_enabled: false
   required: false
-  command_template: scapp -g {assembly_graph} -o {output_dir} -k 77 -p {threads} -r1 {read1} -r2 {read2}
-  inputs:
-  - assembly_graph
-  - read1
-  - read2
-  limitations: Requires a metaSPAdes assembly graph (fastg) and the original
-    paired-end reads for BWA alignment.
+  limitations: Requires a metaSPAdes assembly graph (fastg) and the original paired-end
+    reads for BWA alignment.
 - id: recycler
   name: Recycler
   category: plasmid_binning
-  executable: python
-  script_path: "{autoplasm_root}/Recycler/bin/recycle.py"
+  script_path: '{autoplasm_root}/Recycler/bin/recycle.py'
   default_enabled: false
   required: false
-  command_template: python {resource_root}/Recycler/bin/recycle.py -g {assembly_graph}
-    -k {plasmid_contigs} -b {bam} -o {output_dir}
-  inputs:
-  - assembly_graph
-  - plasmid_contigs
-  - bam
   limitations: Requires plasmid candidate FASTA + assembly graph + BAM.
 - id: conjscan
   name: CONJscan
   category: typing
-  executable: macsyfinder
   extra_path_dirs:
-  - "{resource_root}/macsyfinder/bin"
-  - "{resource_root}/macsyfinder"
+  - '{resource_root}/macsyfinder/bin'
+  - '{resource_root}/macsyfinder'
   default_enabled: false
   required: false
-  command_template: macsyfinder conjscan --db-type ordered_replicon --sequence-db
-    {plasmid_contigs} --output-dir {output_dir} --threads {threads}
-  inputs:
-  - plasmid_contigs
   limitations: Requires MacSyFinder + CONJscan module; detects conjugative systems.
 - id: macsyfinder
   name: MacSyFinder
   category: typing
-  executable: macsyfinder
   extra_path_dirs:
-  - "{resource_root}/macsyfinder/bin"
-  - "{resource_root}/macsyfinder"
+  - '{resource_root}/macsyfinder/bin'
+  - '{resource_root}/macsyfinder'
   default_enabled: false
   required: false
-  command_template: macsyfinder --sequence-db {plasmid_contigs} --db-type ordered_replicon
-    --output-dir {output_dir} --threads {threads}
-  inputs:
-  - plasmid_contigs
 - id: rgi
   name: RGI/CARD
   category: annotation
-  executable: rgi
   default_enabled: false
   required: false
-  command_template: rgi main --input_sequence {plasmid_contigs} --output_file {output_dir}/{sample_id}.rgi.tsv
-    --input_type contig --num_threads {threads}
-  inputs:
-  - plasmid_contigs
   limitations: Requires CARD database; RGI = Resistance Gene Identifier.
 - id: eggnog_mapper
   name: eggNOG-mapper
   category: annotation
-  executable: emapper.py
   default_enabled: false
   required: false
-  command_template: emapper.py -i {plasmid_contigs} --output {output_dir}/{sample_id}.eggnog
-    --cpu {threads}
-  inputs:
-  - plasmid_contigs
   limitations: Requires eggNOG database download; functional annotation.
 - id: concoct
   name: CONCOCT
   category: mag_host_genomes
-  executable: concoct
   default_enabled: false
   required: false
-  command_template: concoct --composition_file {assembly} --coverage_file {abundance}
-    -o {output_dir} -t {threads}
-  inputs:
-  - assembly
-  - abundance
 - id: semibin
   name: SemiBin
   category: mag_host_genomes
-  executable: SemiBin2
   default_enabled: false
   required: false
-  command_template: SemiBin2 single_easy_bin --input_contigs {assembly} --input_bam
-    {bam} --output {output_dir} --threads {threads}
-  inputs:
-  - assembly
-  - bam
 - id: das_tool
   name: DAS Tool
   category: mag_host_genomes
-  executable: DAS_Tool
   default_enabled: false
   required: false
-  command_template: DAS_Tool --inputbasenames {output_dir}/metabat2,{output_dir}/concoct
-    --contigs {assembly} --outputbasename {output_dir}/{sample_id}.das_tool --threads
-    {threads}
-  inputs:
-  - assembly
   limitations: Meta-binner aggregator; requires upstream bins from MetaBAT2 and CONCOCT.
 - id: hybridspades
   name: hybridSPAdes
   category: assembly
-  executable: spades.py
   default_enabled: false
   required: false
-  command_template: spades.py -1 {read1} -2 {read2} --nanopore {long_reads} --meta
-    -o {output_dir} -t {threads}
-  inputs:
-  - read1
-  - read2
-  - long_reads
   limitations: SPAdes hybrid mode for short + long read co-assembly.
 - id: dna_features_viewer
   name: dna-features-viewer
   category: visualization
-  executable: python
   default_enabled: false
   required: false
-  command_template: python {project_root}/plugins/metagenomic_plasmid/scripts/dna_features_viz.py --contigs {plasmid_contigs} --sample {sample_id} --outdir {output_dir}
-  inputs:
-  - plasmid_contigs
   limitations: Requires dna_features_viewer + biopython Python packages.

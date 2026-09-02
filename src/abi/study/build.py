@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
 import random
 import shutil
@@ -14,6 +13,7 @@ from typing import Any, Mapping
 import tomlkit
 import yaml
 
+from abi.filesystem import checksum_file
 from abi.study.artifacts import (
     build_contract_snapshot,
     render_advisory_card,
@@ -378,6 +378,6 @@ def _write_sha256s(root: Path, destination: Path) -> None:
     )
     lines = []
     for path in sorted(set(files)):
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        digest = checksum_file(path)
         lines.append(f"{digest}  {path.relative_to(root)}")
     destination.write_text("\n".join(lines) + "\n", encoding="utf-8")

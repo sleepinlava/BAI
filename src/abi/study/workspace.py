@@ -13,6 +13,7 @@ from typing import Any, Mapping
 import yaml
 
 from abi.agent import ABIAgentInterface
+from abi.filesystem import checksum_file
 from abi.study.tool_shim import run_tool_shim
 
 
@@ -483,11 +484,8 @@ class StudyAuthorizationAuthority:
 
 
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _sha256_optional(path: Path) -> str:

@@ -11,6 +11,7 @@ from abi._shared import _read_tsv
 from abi.config import resolved_mamba_root, write_yaml
 from abi.provenance import (
     write_commands_tsv,
+    write_minimal_progress_artifacts,
     write_resolved_inputs_tsv,
     write_tool_versions,
 )
@@ -133,19 +134,21 @@ class ABIResultWriter:
             provenance / "environment.yml",
         )
         trace_path = _write_trace_tsv(trace_rows or [], provenance / "nextflow_trace.tsv")
-        progress_events_path = provenance / "progress.jsonl"
-        progress_events_path.write_text(
-            json.dumps(
-                {
-                    "event": "run_completed",
-                    "status": status,
-                    "engine": engine,
-                    "completed_step_count": _completed_step_count(command_rows),
-                },
-                ensure_ascii=False,
-            )
-            + "\n",
-            encoding="utf-8",
+        # Progress events use the canonical schema (P1-4b): the same two-event
+        # timestamped JSONL stream the local executor's minimal mode writes, so
+        # audit replay tools see one event schema across all engines. The
+        # snapshot artifact advertised in PROVENANCE_ARTIFACTS is now written
+        # on these paths too.
+        # 进度事件统一用规范 schema：与 local 执行器最小模式相同的双事件
+        # 时间戳 JSONL 流，审计重放工具在所有引擎下看到同一事件 schema。
+        write_minimal_progress_artifacts(
+            provenance,
+            plan,
+            dry_run=smoke,
+            parallel=False,
+            workers=1,
+            status=str(status),
+            command_rows=command_rows,
         )
         table_summary = self.table_manager.summarize(tables_dir)
         # Surface declared standard tables that stayed header-only as a

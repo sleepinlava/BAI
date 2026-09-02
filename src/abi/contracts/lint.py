@@ -58,6 +58,7 @@ __all__ = [
     "lint_source_keys",
     "lint_template_input_parity",
     "lint_tool_contracts",
+    "lint_registry_execution_fields",
     "run_contract_lint",
     "validate_pipeline_template_params",
 ]
@@ -979,44 +980,117 @@ def lint_source_keys(
 def lint_template_input_parity(
     registry_tools: Mapping[str, Mapping[str, Any]],
 ) -> List[LintFinding]:
-    """Check that every declared registry tool input is used by its template.
+    """Check that every declared tool input is used by its template.
 
-    A tool registry entry may declare an ``inputs`` list; each declared
-    input name must appear as a ``{field}`` in the tool's
-    ``command_template``.  A declared-but-unused input is dead metadata
-    (e.g. the historical SCAPP ``assembly`` input) — warning level.
-    Tools without a ``command_template`` or without declared ``inputs``
-    are skipped.
+    A tool may declare ``inputs`` either as a registry-style name list or as
+    the contract-style typed mapping (merged registry metadata uses the
+    contract shape). Each declared input name must appear as a ``{field}`` in
+    the tool's ``command_template`` (top-level or under ``execution.``). A
+    declared-but-unused input is dead metadata (e.g. the historical SCAPP
+    ``assembly`` input) — warning level. Tools without a ``command_template``
+    or without declared ``inputs`` are skipped.
     """
     findings: List[LintFinding] = []
     for tool_id in sorted(registry_tools):
         tool = registry_tools[tool_id]
         template = tool.get("command_template")
+        if not isinstance(template, str) or not template.strip():
+            execution = tool.get("execution")
+            if isinstance(execution, Mapping):
+                template = execution.get("command_template")
         inputs = tool.get("inputs")
         if not isinstance(template, str) or not template.strip():
             continue
-        if not isinstance(inputs, list):
+        if isinstance(inputs, Mapping):
+            declared_names = [str(name) for name in inputs]
+        elif isinstance(inputs, list):
+            declared_names = []
+            for entry in inputs:
+                if isinstance(entry, str):
+                    declared_names.append(entry)
+                elif isinstance(entry, Mapping):
+                    declared_names.append(str(entry.get("name") or entry.get("id") or ""))
+        else:
             continue
         template_fields = _template_field_roots(template)
-        for entry in inputs:
-            if isinstance(entry, str):
-                name = entry
-            elif isinstance(entry, Mapping):
-                name = str(entry.get("name") or entry.get("id") or "")
-            else:
-                continue
+        for name in declared_names:
             if name and name not in template_fields:
                 findings.append(
                     LintFinding(
                         severity="warning",
                         check="unused_registry_input",
                         detail=(
-                            f"Registry tool {tool_id!r} declares input {name!r} that is not "
+                            f"Tool {tool_id!r} declares input {name!r} that is not "
                             "referenced by its command_template"
                         ),
                         location=str(tool_id),
                     )
                 )
+    return findings
+
+
+# Execution metadata that must live in tool_contracts once a plugin ships them.
+_REGISTRY_EXECUTION_FIELDS = ("command_template", "executable")
+
+
+def lint_registry_execution_fields(plugin_root: Path) -> List[LintFinding]:
+    """Forbid duplicated execution metadata in ``tool_registry.yaml`` (P1-1).
+
+    When a plugin ships a ``tool_contracts/`` directory, the contract is the
+    authoritative execution declaration — ``ToolCatalog`` overlays contract
+    execution fields onto the registry entry. Duplicating them in the
+    registry creates a second hand-maintained copy that must be kept in sync
+    manually; this rule turns that duplication into a lint error instead of
+    relying on the overlap validator to catch mismatched copies afterwards.
+    Registry ``inputs`` lists are flagged only when the contract declares its
+    own ``inputs`` mapping (otherwise the registry list is the only source).
+    """
+    findings: List[LintFinding] = []
+    contracts_dir = plugin_root / "tool_contracts"
+    registry_path = plugin_root / "tool_registry.yaml"
+    if not contracts_dir.is_dir() or not registry_path.is_file():
+        return []
+    contract_ids_with_inputs: Set[str] = set()
+    for contract_path in sorted(contracts_dir.glob("*.yaml")):
+        contract = yaml.safe_load(contract_path.read_bytes()) or {}
+        if not isinstance(contract, Mapping):
+            continue
+        tool_id = str(contract.get("tool_id", ""))
+        if isinstance(contract.get("inputs"), Mapping):
+            contract_ids_with_inputs.add(tool_id)
+    data = yaml.safe_load(registry_path.read_bytes()) or {}
+    tools = data.get("tools", []) if isinstance(data, Mapping) else []
+    if not isinstance(tools, list):
+        return []
+    for entry in tools:
+        if not isinstance(entry, Mapping):
+            continue
+        tool_id = str(entry.get("id", "") or entry.get("tool_id", ""))
+        for field in _REGISTRY_EXECUTION_FIELDS:
+            if field in entry:
+                findings.append(
+                    LintFinding(
+                        severity="error",
+                        check="registry_execution_field",
+                        detail=(
+                            f"Registry tool {tool_id!r} declares {field!r}; execution "
+                            "metadata must live in tool_contracts/ (single source of truth)"
+                        ),
+                        location=str(tool_id),
+                    )
+                )
+        if "inputs" in entry and tool_id in contract_ids_with_inputs:
+            findings.append(
+                LintFinding(
+                    severity="error",
+                    check="registry_execution_field",
+                    detail=(
+                        f"Registry tool {tool_id!r} declares 'inputs'; the contract's "
+                        "typed inputs mapping is authoritative"
+                    ),
+                    location=str(tool_id),
+                )
+            )
     return findings
 
 
@@ -1117,6 +1191,11 @@ def run_contract_lint(
     # Registry input/template parity
     if registry_tools is not None:
         all_findings.extend(lint_template_input_parity(registry_tools))
+
+    # Raw registry execution fields (P1-1): when a plugin ships tool_contracts,
+    # execution metadata must live there — not duplicated in the registry.
+    if plugin_root is not None:
+        all_findings.extend(lint_registry_execution_fields(plugin_root))
 
     # Environment assignment references
     if environments is not None:

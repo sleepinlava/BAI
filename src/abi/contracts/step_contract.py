@@ -28,7 +28,6 @@ recovery action.  Downstream steps are blocked.
 from __future__ import annotations
 
 import ast
-import hashlib
 import json
 import math
 import os
@@ -38,6 +37,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from abi.errors import ABIError
+from abi.filesystem import checksum_file
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Data types
@@ -142,7 +142,12 @@ def save_checksums(provenance_dir: str | Path, checksums: Dict[str, str]) -> Pat
     return save_checksums_atomic(provenance_dir, checksums)
 
 
-def save_checksums_atomic(provenance_dir: str | Path, checksums: Dict[str, str]) -> Path:
+def save_checksums_atomic(
+    provenance_dir: str | Path,
+    checksums: Dict[str, str],
+    *,
+    merge: bool = True,
+) -> Path:
     """Persist checksums via tmp+rename for atomicity (B25 fix).
 
     Writes to a ``.tmp`` file, calls ``fsync()``, then uses ``os.replace()``
@@ -151,9 +156,16 @@ def save_checksums_atomic(provenance_dir: str | Path, checksums: Dict[str, str])
     on the directory — for NFS safety, combine with ``B26`` (atomic_write).
 
     Merges with existing checksums identically to ``save_checksums()``.
+    With ``merge=False`` the caller's dict is written as-is — required when
+    it is the authoritative post-invalidation state (e.g. the HPC driver
+    removing stale entries before submission); a merge there would resurrect
+    exactly the stale entries the caller just removed (P1-3 review).
     """
-    existing = load_checksums(provenance_dir)
-    existing.update(checksums)
+    if merge:
+        existing = load_checksums(provenance_dir)
+        existing.update(checksums)
+    else:
+        existing = dict(checksums)
     path = Path(provenance_dir) / CHECKSUMS_FILENAME
     tmp_path = path.with_suffix(".tmp")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -245,13 +257,10 @@ def compute_file_checksum(path: str | Path, *, follow_symlinks: bool = True) -> 
     file_path = Path(path)
     if follow_symlinks and file_path.is_symlink():
         file_path = file_path.resolve()
-    if not file_path.is_file():
-        return ""
-    sha = hashlib.sha256()
-    with file_path.open("rb") as fh:
-        while chunk := fh.read(_READ_SIZE):
-            sha.update(chunk)
-    return sha.hexdigest()
+    # Canonical digest computation (P1-4). Symlink resolution above stays a
+    # no-op for digests (is_file/open follow links identically) but preserves
+    # the documented B7 contract for future policy changes.
+    return checksum_file(file_path)
 
 
 def compute_output_checksums(outputs: Mapping[str, Any]) -> Dict[str, str]:

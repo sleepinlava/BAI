@@ -500,3 +500,74 @@ def test_write_single_script_rejects_scheduler_directive_newlines(tmp_path: Path
             {"outdir": str(tmp_path), "log_dir": str(tmp_path / "logs")},
             dag,
         )
+
+
+def test_dry_run_driver_invalidates_stale_checksums(tmp_path: Path) -> None:
+    """P1-3 review: the driver (single writer) invalidates stale checksums for
+    steps about to re-execute, before any worker can read the chain — workers
+    never write the shared file, so parallel invalidations cannot resurrect
+    each other's removals."""
+    import json as jsonlib
+
+    from abi.dag import ABIDAG, StepBinding
+    from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
+
+    plugin = mock.Mock()
+    plugin.registry.return_value.has.return_value = False
+    plugin.registry.return_value.get.return_value = {}
+
+    rt = HpcRuntime(plugin)
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+    output_dir = outdir / "01_trimmed" / "S1"
+
+    step = PlanStep(
+        step_id="S1_trim_cutadapt",
+        sample_id="S1",
+        step_name="primer_trimming",
+        tool_id="cutadapt",
+        category="qc",
+        inputs={"read1": "/tmp/R1.fq"},
+        outputs={"output_dir": str(output_dir)},
+        params={"sample_id": "S1", "threads": 4},
+    )
+    sample = SampleInput(sample_id="S1", platform="illumina")
+    sample_ctx = SampleContext(samples=[sample], multi_sample=False, has_groups=False)
+    plan = ExecutionPlan(
+        project_name="test",
+        analysis_type="amplicon_16s",
+        mode="local",
+        threads=4,
+        outdir=str(outdir),
+        log_dir=str(outdir / "logs"),
+        samples=[sample],
+        sample_context=sample_ctx,
+        selected_tools=["cutadapt"],
+        steps=[step],
+    )
+    binding = StepBinding(
+        step=step,
+        process_name="S1_trim_cutadapt",
+        dependencies=[],
+        produced_paths={},
+        consumed_paths={},
+    )
+    dag = ABIDAG(
+        bindings=[binding],
+        edges={},
+        roots=["S1_trim_cutadapt"],
+        topological_order=["S1_trim_cutadapt"],
+    )
+    stale_path = str(output_dir / "result.tsv")
+    provenance = outdir / "provenance"
+    provenance.mkdir(parents=True)
+    (provenance / "checksums.json").write_text(
+        jsonlib.dumps({stale_path: "0" * 64}), encoding="utf-8"
+    )
+
+    config = {"outdir": str(outdir), "log_dir": str(outdir / "logs")}
+    with mock.patch("abi.runtimes.hpc.infer_dag", return_value=dag):
+        rt.dry_run(plan, config)
+
+    chain = jsonlib.loads((provenance / "checksums.json").read_text(encoding="utf-8"))
+    assert stale_path not in chain

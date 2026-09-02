@@ -12,26 +12,19 @@ Every figure must have a provenance record that includes:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from abi.filesystem import checksum_file
 from abi.sciplot.schema.figure_spec import FigureSpec
 
 
 def _sha256_file(path: Path) -> str:
-    """Compute SHA256 hex digest of a file."""
-    sha = hashlib.sha256()
-    with open(path, "rb") as fh:
-        while True:
-            chunk = fh.read(65536)
-            if not chunk:
-                break
-            sha.update(chunk)
-    return sha.hexdigest()
+    """Compute the file's SHA-256 via the canonical implementation (P1-4)."""
+    return checksum_file(path)
 
 
 def _get_package_version(pkg_name: str) -> Optional[str]:

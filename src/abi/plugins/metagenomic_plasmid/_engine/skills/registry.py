@@ -99,18 +99,21 @@ class ToolRegistry:
         )
         if not registry_path.exists():
             raise ConfigError(f"Tool registry does not exist: {registry_path}")
-        with registry_path.open("r", encoding="utf-8") as handle:
-            data = yaml.safe_load(handle) or {}
-        tools = data.get("tools")
-        if not isinstance(tools, list):
-            raise ConfigError("tool_registry.yaml must contain a tools list")
 
-        # Auto-detect plugin name from path
-        plugin = registry_path.parent.name if "plugins" in str(registry_path) else "_default"
-        if plugin == "config":
-            plugin = "_default"
+        # P1-1: compile through the core ToolCatalog so registry entries are
+        # merged with their authoritative tool_contracts (execution fields
+        # live there, not in the registry). The raw-dict API of this class is
+        # preserved; ``descriptor.metadata`` is exactly the merged mapping the
+        # core runtime uses.
+        # P1-1: 经核心 ToolCatalog 编译, 使 registry 条目与权威 tool_contracts
+        # 合并(执行字段在 contracts 中)。保留本类的 raw-dict API。
+        from abi.tool_catalog import ToolCatalog
 
-        # Auto-detect environments.yaml
+        catalog = ToolCatalog.from_plugin_dir(registry_path.parent, registry_path=registry_path)
+        tools = [dict(descriptor.metadata) for descriptor in catalog]
+
+        # Auto-detect environments.yaml for the env fallback of any tool the
+        # catalog left without an assignment.
         env_path = registry_path.parent.parent / "environments.yaml"
         if not env_path.exists():
             env_path = PROJECT_ROOT / "environments.yaml"
@@ -118,7 +121,7 @@ class ToolRegistry:
         return cls(
             tools,
             environments_path=env_path if env_path.exists() else None,
-            plugin_name=plugin,
+            plugin_name=registry_path.parent.name,
         )
 
     def ids(self) -> List[str]:

@@ -175,37 +175,35 @@ def test_sciplot_tests_are_excluded_from_wheel():
     assert 'exclude = ["src/abi/sciplot/tests/"]' in wheel_section
 
 
-def test_plasmidfinder_uses_the_installed_python_module():
-    registry = yaml.safe_load(
-        (ROOT / "plugins" / "metagenomic_plasmid" / "tool_registry.yaml").read_text(
-            encoding="utf-8"
-        )
-    )
-    tool = next(item for item in registry["tools"] if item["id"] == "plasmidfinder")
+def _tool_contract(plugin: str, tool_id: str) -> dict:
+    """Load a tool contract — the SSOT for execution metadata (P1-1)."""
+    path = ROOT / "plugins" / plugin / "tool_contracts" / f"{tool_id}.yaml"
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
-    assert tool["executable"] == "python"
-    assert tool["command_template"].startswith("python -m plasmidfinder ")
-    assert "--legacy -x" in tool["command_template"]
+
+def test_plasmidfinder_uses_the_installed_python_module():
+    execution = _tool_contract("metagenomic_plasmid", "plasmidfinder")["execution"]
+
+    assert execution["executable"] == "python"
+    assert execution["command_template"].startswith("python -m plasmidfinder ")
+    assert "--legacy -x" in execution["command_template"]
 
 
 def test_python_script_tools_use_the_canonical_autoplasm_root():
     plugin_root = ROOT / "plugins" / "metagenomic_plasmid"
-    registry = yaml.safe_load((plugin_root / "tool_registry.yaml").read_text(encoding="utf-8"))
 
     for tool_id, relative_path in (
         ("plasme", "PLASMe/PLASMe.py"),
         ("recycler", "Recycler/bin/recycle.py"),
     ):
-        tool = next(item for item in registry["tools"] if item["id"] == tool_id)
-        expected_script = f"{{autoplasm_root}}/{relative_path}"
-        contract = yaml.safe_load(
-            (plugin_root / "tool_contracts" / f"{tool_id}.yaml").read_text(encoding="utf-8")
-        )
-
-        assert tool["script_path"] == expected_script
+        contract = _tool_contract("metagenomic_plasmid", tool_id)
         expected_command_path = f"{{resource_root}}/{relative_path}"
-        assert expected_command_path in tool["command_template"]
         assert expected_command_path in contract["execution"]["command_template"]
+        # script_path is registry policy metadata; keep it aligned with the
+        # contract template's script location.
+        registry = yaml.safe_load((plugin_root / "tool_registry.yaml").read_text(encoding="utf-8"))
+        tool = next(item for item in registry["tools"] if item["id"] == tool_id)
+        assert tool["script_path"] == f"{{autoplasm_root}}/{relative_path}"
 
 
 def test_every_dockerfile_copy_source_exists():
