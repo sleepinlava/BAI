@@ -289,6 +289,7 @@ class WGSBacannotPlugin:
             result_dir,
             load_process_contracts(self.root / "process_contracts"),
             allow_empty_tables=allow_empty_tables,
+            sample_output_root=Path(str(result_dir)) / "raw" / self.external_evidence_namespace,
         )
 
     def write_report(self, plan: Any, result_dir: str | Path) -> dict[str, Path]:
@@ -300,6 +301,8 @@ class WGSBacannotPlugin:
             "task_attempts": root / "provenance" / "task_attempts.tsv",
             "evidence_manifest": root / "provenance" / "evidence_manifest.json",
             "external_plan_snapshot": root / "provenance" / "external_plan_snapshot.json",
+            "diagnostics": root / "provenance" / "diagnostics.json",
+            "result_sources": root / "provenance" / "result_sources.tsv",
         }
         return {key: value for key, value in candidates.items() if value.is_file()}
 

@@ -10,12 +10,15 @@ from typing import Any, Iterable, Mapping, cast
 from abi.external_workflows.evidence import sha256_file, verify_evidence_manifest
 from abi.external_workflows.models import ExternalProcessContract, ExternalTaskAttempt
 
+from .artifacts import evaluate_required_outputs
+
 
 def validate_bacannot_result(
     result_dir: str | Path,
     contracts: Iterable[ExternalProcessContract],
     *,
     allow_empty_tables: bool,
+    sample_output_root: str | Path | None = None,
 ) -> Mapping[str, Any]:
     root = Path(result_dir)
     errors: list[dict[str, Any]] = []
@@ -57,7 +60,27 @@ def validate_bacannot_result(
     modules = snapshot.get("modules", {})
     if not isinstance(modules, Mapping):
         modules = {}
-    contract_status: list[dict[str, str]] = []
+    resolved_config = snapshot.get("resolved_config", {})
+    audit = resolved_config.get("audit", {}) if isinstance(resolved_config, Mapping) else {}
+    unmapped_policy = (
+        str(audit.get("unmapped_policy", "warn")) if isinstance(audit, Mapping) else "warn"
+    )
+    unmapped = [row for row in attempts if row.process_class == "unmapped"]
+    if unmapped_policy == "fail" and unmapped:
+        errors.append(
+            {
+                "error_code": "UNMAPPED_PROCESSES",
+                "message": (
+                    f"{len(unmapped)} task attempt(s) match no process contract; "
+                    "update the contract set before production publication"
+                ),
+                "process_names": sorted({row.process_name for row in unmapped}),
+            }
+        )
+    sample_root = (
+        Path(sample_output_root) if sample_output_root is not None else root / "raw" / "bacannot"
+    )
+    contract_status: list[dict[str, Any]] = []
     for contract in contracts:
         for sample_id in samples:
             if modules and modules.get(contract.process_class, True) is not True:
@@ -75,6 +98,7 @@ def validate_bacannot_result(
                 if row.sample_id == sample_id and row.process_class == contract.process_class
             ]
             successful = [row for row in observed if row.status in contract.accepted_statuses]
+            evidence_row = successful[-1] if successful else None
             if not observed:
                 status = "missing_process"
             elif not successful:
@@ -88,22 +112,41 @@ def validate_bacannot_result(
                 status = "process_failed"
             else:
                 status = "passed"
+            missing: list[dict[str, Any]] = []
+            invalid: list[dict[str, Any]] = []
+            if status == "passed":
+                missing, invalid = evaluate_required_outputs(
+                    contract.required_outputs, sample_root / sample_id
+                )
+                if missing:
+                    status = "artifact_missing"
+                elif invalid:
+                    status = "artifact_invalid"
             contract_status.append(
                 {
                     "sample_id": sample_id,
                     "contract_id": contract.contract_id,
                     "status": status,
+                    "external_task_id": evidence_row.task_id if evidence_row else "",
+                    "task_hash": evidence_row.task_hash if evidence_row else "",
+                    "missing_outputs": missing,
+                    "invalid_outputs": invalid,
                 }
             )
             if status not in {"passed", "not_selected", "not_applicable"}:
-                errors.append(
-                    {
-                        "error_code": "PROCESS_CONTRACT_FAILED",
-                        "sample_id": sample_id,
-                        "contract_id": contract.contract_id,
-                        "status": status,
-                    }
-                )
+                error: dict[str, Any] = {
+                    "error_code": "PROCESS_CONTRACT_FAILED",
+                    "sample_id": sample_id,
+                    "contract_id": contract.contract_id,
+                    "status": status,
+                }
+                if evidence_row is not None:
+                    error["external_task_id"] = evidence_row.task_id
+                if missing:
+                    error["missing_outputs"] = missing
+                if invalid:
+                    error["invalid_outputs"] = invalid
+                errors.append(error)
     sample_status = root / "standard" / "sample_status.tsv"
     if sample_status.is_file():
         with sample_status.open("r", encoding="utf-8", newline="") as handle:
@@ -118,17 +161,20 @@ def validate_bacannot_result(
                             "status": status,
                         }
                     )
-    if not allow_empty_tables:
-        standard = root / "standard"
-        for name in (
-            "qc_summary.tsv",
-            "genome_assembly_stats.tsv",
-            "genome_annotation.tsv",
-            "sample_status.tsv",
-        ):
-            path = standard / name
-            if not path.is_file() or path.stat().st_size == 0:
-                errors.append({"error_code": "OUTPUT_PARSE_FAILED", "message": f"Empty {name}"})
+    standard = root / "standard"
+    required_tables = ["qc_summary.tsv", "genome_assembly_stats.tsv", "genome_annotation.tsv"]
+    if modules.get("mlst", True) is True:
+        required_tables.append("mlst_profile.tsv")
+    if modules.get("amr", True) is True:
+        required_tables.append("amr_profile.tsv")
+    required_tables.append("sample_status.tsv")
+    for name in required_tables:
+        path = standard / name
+        if not path.is_file():
+            errors.append({"error_code": "OUTPUT_PARSE_FAILED", "message": f"Missing {name}"})
+            continue
+        if not allow_empty_tables and path.stat().st_size == 0:
+            errors.append({"error_code": "OUTPUT_PARSE_FAILED", "message": f"Empty {name}"})
     return {"valid": not errors, "errors": errors, "contracts": contract_status}
 
 

@@ -16,7 +16,18 @@
 
 标准结果写入 `standard/`，并镜像到 ABI 兼容目录 `tables/`。`provenance/result_sources.tsv`
 把标准表行关联到来源文件、摘要、task、process 和解析器版本。assembly、annotation、MLST、AMR
-契约对缺 process 和缺关键产物均 fail closed。
+契约对缺 process 和缺关键产物均 fail closed。`validate-result` 会直接对照发布结果树重新校验关键
+产物，删除或破坏任一关键产物都会使验证失败，并定位到样本、契约、task 和文件。
+
+失败会被结构化诊断而不是笼统上报。每次运行都会写入 `provenance/diagnostics.json`，把失败 attempt
+归入稳定错误码（`EXTERNAL_TASK_FAILED`、`RESOURCE_EXHAUSTED`、`DATABASE_MISSING`、
+`TOOL_OR_CONTAINER_UNAVAILABLE`），并给出 process、样本、attempt、退出码、归档日志路径和可执行的
+恢复建议。未映射的 Nextflow process 始终记录在 `task_attempts.tsv`；`audit.unmapped_policy`
+（默认 `warn`）决定未映射 task 是否额外阻断结果验证（`fail`）。
+
+resume 运行保留原运行的证据：前次快照、task-attempt 表、证据 manifest、验证与诊断文件会归档到
+`provenance/previous_runs/<run-id>/`，新快照记录 `resumes_run_id` 和归档位置。每次运行摘要去报
+告 CACHED 与重新执行的 task 数量对账，resume 结果保持可审计。
 
 插件当前明确报告 `production_ready: false`。D2/D3 生物学验收、resume 认证、代表性 HPC 运行、
 容器/数据库 manifest 和 strict release runtime lock 仍是发布门禁；完成前只能用于工程验证，不能宣称

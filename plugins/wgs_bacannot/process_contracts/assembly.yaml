@@ -8,5 +8,6 @@ accepted_statuses: [COMPLETED, CACHED]
 required_outputs:
   - role: assembly_fasta
     min_files: 1
+    patterns: ["assembly/**/assembly.fasta", "annotation/*.fna"]
     validators: [non_empty, fasta_parseable, contains_sequence]
 publish: true

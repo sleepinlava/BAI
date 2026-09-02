@@ -57,6 +57,7 @@ properties:
     properties:
       level: {const: task_contracts}
       retain_success_command_evidence: {const: true}
+      unmapped_policy: {enum: [warn, fail]}
   execution:
     type: object
     additionalProperties: false

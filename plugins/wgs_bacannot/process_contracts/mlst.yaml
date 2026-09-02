@@ -8,5 +8,6 @@ accepted_statuses: [COMPLETED, CACHED]
 required_outputs:
   - role: mlst_result
     min_files: 1
+    patterns: ["MLST/*_mlst_analysis.txt"]
     validators: [non_empty, tsv_parseable]
 publish: true

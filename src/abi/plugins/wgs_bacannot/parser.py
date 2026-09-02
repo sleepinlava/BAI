@@ -11,6 +11,8 @@ from typing import Any, Iterable, Mapping
 from abi.external_workflows.evidence import sha256_file
 from abi.external_workflows.models import ExternalProcessContract, ExternalTaskAttempt
 
+from .artifacts import evaluate_required_outputs
+
 PARSER_VERSION = "bacannot-3.4.4-parser-v1"
 
 
@@ -263,47 +265,12 @@ def _contract_status(
         return "missing_process"
     if not successful:
         return "process_failed"
-    patterns = {
-        "assembly": ["assembly/**/assembly.fasta", "annotation/*.fna"],
-        "annotation": ["annotation/*.gff"],
-        "mlst": ["MLST/*_mlst_analysis.txt"],
-        "amr": ["resistance/AMRFinderPlus/AMRFinder_resistance-only.tsv"],
-    }.get(contract.process_class, [])
-    artifacts = [path for pattern in patterns for path in sample_root.glob(pattern)]
-    if contract.required_outputs and not artifacts:
+    missing, invalid = evaluate_required_outputs(contract.required_outputs, sample_root)
+    if missing:
         return "artifact_missing"
-    if any(not _valid_artifact(contract.process_class, path) for path in artifacts):
+    if invalid:
         return "artifact_invalid"
     return "passed"
-
-
-def _valid_artifact(process_class: str, path: Path) -> bool:
-    if not path.is_file() or path.stat().st_size == 0:
-        return False
-    try:
-        if process_class == "assembly":
-            sequences = [
-                line.strip()
-                for line in path.read_text(encoding="utf-8").splitlines()
-                if line and not line.startswith(">")
-            ]
-            return path.read_text(encoding="utf-8").lstrip().startswith(">") and any(sequences)
-        if process_class == "annotation":
-            return any(
-                len(line.split("\t")) >= 9
-                for line in path.read_text(encoding="utf-8").splitlines()
-                if line and not line.startswith("#")
-            )
-        if process_class == "mlst":
-            fields = path.read_text(encoding="utf-8").strip().split("\t")
-            return len(fields) >= 3 and bool(fields[1]) and bool(fields[2])
-        if process_class == "amr":
-            with path.open("r", encoding="utf-8", newline="") as handle:
-                amr_fields = csv.DictReader(handle, delimiter="\t").fieldnames or []
-            return "Gene symbol" in amr_fields or "Gene" in amr_fields
-    except (OSError, UnicodeError, csv.Error):
-        return False
-    return True
 
 
 def _write_tsv(path: Path, columns: list[str], rows: Iterable[Mapping[str, Any]]) -> None:

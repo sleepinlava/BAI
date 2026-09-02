@@ -45,3 +45,26 @@ def failed_attempt_diagnostics(
     attempts: Iterable[ExternalTaskAttempt],
 ) -> list[Mapping[str, object]]:
     return [classify_external_failure(row) for row in attempts if row.status == "FAILED"]
+
+
+def summarize_run_diagnostics(
+    attempts: Iterable[ExternalTaskAttempt],
+    *,
+    unmapped_policy: str = "warn",
+) -> Mapping[str, object]:
+    """Aggregate run-level diagnostics: failed attempts and unmapped processes."""
+    failures = failed_attempt_diagnostics(attempts)
+    unmapped = [row for row in attempts if row.process_class == "unmapped"]
+    primary = failures[0]["error_code"] if failures else None
+    if primary is None and unmapped and unmapped_policy == "fail":
+        primary = "UNMAPPED_PROCESSES"
+    return {
+        "schema_version": "abi.external-diagnostics.v1",
+        "primary_error_code": primary,
+        "failed_attempts": failures,
+        "unmapped_processes": {
+            "policy": unmapped_policy,
+            "count": len(unmapped),
+            "process_names": sorted({row.process_name for row in unmapped}),
+        },
+    }

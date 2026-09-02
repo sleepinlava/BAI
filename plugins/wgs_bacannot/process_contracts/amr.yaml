@@ -8,5 +8,6 @@ accepted_statuses: [COMPLETED, CACHED]
 required_outputs:
   - role: amr_result
     min_files: 1
+    patterns: ["resistance/AMRFinderPlus/AMRFinder_resistance-only.tsv"]
     validators: [non_empty, tsv_parseable]
 publish: true

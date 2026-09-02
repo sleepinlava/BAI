@@ -35,7 +35,7 @@ ALLOWED_KEYS = {
         "max_memory",
         "max_time",
     },
-    "audit": {"level", "retain_success_command_evidence"},
+    "audit": {"level", "retain_success_command_evidence", "unmapped_policy"},
     "execution": {"nextflow_timeout_seconds", "progress"},
 }
 
@@ -84,6 +84,9 @@ def validate_config(config: Mapping[str, Any]) -> None:
         raise ValueError("wgs_bacannot production integration requires audit.level=task_contracts")
     if audit.get("retain_success_command_evidence") is not True:
         raise ValueError("wgs_bacannot requires audit.retain_success_command_evidence=true")
+    unmapped_policy = audit.get("unmapped_policy", "warn")
+    if unmapped_policy not in {"warn", "fail"}:
+        raise ValueError("wgs_bacannot audit.unmapped_policy must be 'warn' or 'fail'")
 
 
 def _reject_unknown_keys(config: Mapping[str, Any]) -> None:

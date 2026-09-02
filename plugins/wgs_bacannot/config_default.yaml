@@ -34,3 +34,4 @@ resources:
 audit:
   level: task_contracts
   retain_success_command_evidence: true
+  unmapped_policy: warn

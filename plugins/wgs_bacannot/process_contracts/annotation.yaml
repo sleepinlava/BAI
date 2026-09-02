@@ -8,5 +8,6 @@ accepted_statuses: [COMPLETED, CACHED]
 required_outputs:
   - role: annotation_gff
     min_files: 1
+    patterns: ["annotation/*.gff"]
     validators: [non_empty, gff_parseable]
 publish: true
