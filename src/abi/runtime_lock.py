@@ -30,36 +30,6 @@ DEFAULT_ANALYSIS_TYPES = (
     "wgs_bacteria",
 )
 
-PACKAGE_ALIASES: dict[str, tuple[str, ...]] = {
-    "amrfinderplus": ("ncbi-amrfinderplus",),
-    "build_count_matrix": ("python", "pandas"),
-    "conjscan": ("macsyfinder",),
-    "deseq2": ("bioconductor-deseq2",),
-    "deseq2_plasmid": ("bioconductor-deseq2",),
-    "diversity_metrics": ("scikit-bio", "scipy", "pandas"),
-    "eggnog_mapper": ("eggnog-mapper",),
-    "featurecounts": ("subread",),
-    "gplas2": ("gplas2",),
-    "hifiasm_meta": ("hifiasm",),
-    "hybridspades": ("spades",),
-    "humann4": ("humann",),
-    "humann_join_tables": ("humann",),
-    "humann_regroup_table": ("humann",),
-    "humann_renorm_table": ("humann",),
-    "humann_split_stratified_table": ("humann",),
-    "metaflye": ("flye",),
-    "metaspades": ("spades",),
-    "mob_typer": ("mob_suite",),
-    "phylogeny_mafft": ("mafft",),
-    "phylogeny_tree": ("fasttree",),
-    "samtools_fastq": ("samtools",),
-    "vsearch_denoise": ("vsearch",),
-    "vsearch_derep": ("vsearch",),
-    "vsearch_mergepairs": ("vsearch",),
-    "vsearch_otu": ("vsearch",),
-    "vsearch_taxonomy": ("vsearch",),
-}
-
 
 def generate_runtime_locks(
     *,
@@ -322,6 +292,16 @@ def build_tool_lock(
 
     for registry in sorted((project_root / "plugins").glob("*/tool_registry.yaml")):
         plugin = registry.parent.name
+        # Conda package aliases are plugin-declared (P3-3): each manifest maps
+        # its own tool ids to conda package names that differ from the tool id.
+        # Conda 包别名由插件声明：各 manifest 将自身工具 id 映射到与 id 不同的包名。
+        manifest_path = registry.parent / "abi-plugin.yaml"
+        manifest = (
+            yaml.safe_load(manifest_path.read_bytes()) or {} if manifest_path.exists() else {}
+        )
+        conda_aliases: Mapping[str, Any] = (
+            manifest.get("conda_aliases", {}) if isinstance(manifest, Mapping) else {}
+        )
         catalog = ToolCatalog.from_plugin_dir(registry.parent, registry_path=registry)
         for descriptor in catalog:
             tool = descriptor.metadata
@@ -355,6 +335,7 @@ def build_tool_lock(
             matching_packages = _matching_packages(
                 tool_id=tool_id,
                 executable=executable,
+                aliases=tuple(conda_aliases.get(tool_id, ())),
                 packages=env_packages.get(env_name, {}),
             )
             required = bool(tool.get("required", False))
@@ -803,9 +784,10 @@ def _matching_packages(
     tool_id: str,
     executable: str,
     packages: Mapping[str, Mapping[str, Any]],
+    aliases: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     candidates = {_normalize_package_name(tool_id), _normalize_package_name(Path(executable).name)}
-    candidates.update(_normalize_package_name(alias) for alias in PACKAGE_ALIASES.get(tool_id, ()))
+    candidates.update(_normalize_package_name(alias) for alias in aliases)
     matches = []
     for name in sorted(candidates):
         package = packages.get(name)

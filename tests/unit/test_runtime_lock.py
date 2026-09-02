@@ -368,3 +368,26 @@ def test_validate_runtime_locks_rejects_reproducibility_gaps(tmp_path: Path) -> 
         "Git identity audit failed: fatal: not a git repository",
         "Git commit is missing from runtime lock",
     ]
+
+
+def test_plugin_conda_aliases_reference_registered_tools() -> None:
+    """P3-3: manifest conda_aliases must reference the plugin's own tool ids.
+
+    The alias tables moved from core runtime_lock.PACKAGE_ALIASES into each
+    plugin manifest; a renamed/removed tool must not leave a dangling alias.
+    """
+    import yaml
+
+    plugins_root = Path(__file__).resolve().parents[2] / "plugins"
+    for manifest_path in sorted(plugins_root.glob("*/abi-plugin.yaml")):
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        aliases = manifest.get("conda_aliases", {})
+        if not aliases:
+            continue
+        registry_path = manifest_path.parent / str(
+            manifest.get("tool_registry", "tool_registry.yaml")
+        )
+        registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+        tool_ids = {str(tool.get("id")) for tool in registry.get("tools", [])}
+        dangling = sorted(set(aliases) - tool_ids)
+        assert dangling == [], f"{manifest_path.parent.name}: dangling aliases {dangling}"

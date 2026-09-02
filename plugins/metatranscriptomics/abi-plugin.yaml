@@ -8,6 +8,8 @@ entry_point: abi.plugins.metatranscriptomics:MetatranscriptomicsPlugin
 tool_registry: tool_registry.yaml
 standard_tables: standard_tables.yaml
 tool_contracts: tool_contracts
+conda_aliases:
+  featurecounts: [subread]
 core_contracts:
   - fastp
   - star

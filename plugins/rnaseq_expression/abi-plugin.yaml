@@ -8,6 +8,10 @@ entry_point: abi.plugins.rnaseq_expression:RNASeqExpressionPlugin
 tool_registry: tool_registry.yaml
 standard_tables: standard_tables.yaml
 tool_contracts: tool_contracts
+conda_aliases:
+  build_count_matrix: [python, pandas]
+  deseq2: [bioconductor-deseq2]
+  featurecounts: [subread]
 core_contracts:
   - fastp
   - star

@@ -8,6 +8,15 @@ entry_point: abi.plugins.amplicon_16s:Amplicon16SPlugin
 tool_registry: tool_registry.yaml
 standard_tables: standard_tables.yaml
 tool_contracts: tool_contracts
+conda_aliases:
+  vsearch_mergepairs: [vsearch]
+  vsearch_derep: [vsearch]
+  vsearch_denoise: [vsearch]
+  vsearch_otu: [vsearch]
+  vsearch_taxonomy: [vsearch]
+  diversity_metrics: [scikit-bio, scipy, pandas]
+  phylogeny_mafft: [mafft]
+  phylogeny_tree: [fasttree]
 core_contracts:
   - cutadapt
   - vsearch_mergepairs

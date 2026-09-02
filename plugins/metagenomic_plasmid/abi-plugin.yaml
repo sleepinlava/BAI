@@ -8,6 +8,18 @@ entry_point: abi.plugins.metagenomic_plasmid:MetagenomicPlasmidPlugin
 tool_registry: tool_registry.yaml
 standard_tables: standard_tables.yaml
 tool_contracts: tool_contracts
+conda_aliases:
+  amrfinderplus: [ncbi-amrfinderplus]
+  conjscan: [macsyfinder]
+  deseq2_plasmid: [bioconductor-deseq2]
+  eggnog_mapper: [eggnog-mapper]
+  gplas2: [gplas2]
+  hifiasm_meta: [hifiasm]
+  hybridspades: [spades]
+  metaspades: [spades]
+  metaflye: [flye]
+  mob_typer: [mob_suite]
+  samtools_fastq: [samtools]
 core_contracts:
   - fastp
   - fastqc
