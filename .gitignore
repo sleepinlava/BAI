@@ -295,3 +295,6 @@ conda.lock
 /tests/unit/test_integrate_plasmid_supplement.py
 /tests/unit/test_analyze_scapp_plasmid_evidence.py
 /tests/unit/test_build_scapp_machine_evidence.py
+
+# Demo run outputs / 演示运行产物
+/rnaseq-demo/
