@@ -48,7 +48,7 @@ def test_generic_resource_check_handles_nested_values_filters_and_statuses(tmp_p
         }
     }
 
-    rows = resources._check_generic_resources(
+    rows = resources.check_generic_resources(
         "metatranscriptomics",
         config,
         resource_ids=["empty", "placeholder", "missing", "existing"],
@@ -64,7 +64,7 @@ def test_generic_resource_check_handles_nested_values_filters_and_statuses(tmp_p
         next(row for row in rows if row["resource_id"] == "existing")["directory_file_count"] == 1
     )
     assert (
-        resources._check_generic_resources(
+        resources.check_generic_resources(
             "metatranscriptomics", {"resources": []}, resource_ids=None
         )
         == []
@@ -85,16 +85,16 @@ def test_manual_bundle_distinguishes_existing_mock_dry_run_and_manual(tmp_path: 
         },
     }
 
-    ready = resources._setup_manual_resource_bundle(
+    ready = resources.setup_manual_resource_bundle(
         "viral_viwrap", base, resource_ids=["ready"], dry_run=False, mock=False
     )[0]
-    mocked = resources._setup_manual_resource_bundle(
+    mocked = resources.setup_manual_resource_bundle(
         "viral_viwrap", base, resource_ids=["mocked"], dry_run=False, mock=True
     )[0]
-    planned = resources._setup_manual_resource_bundle(
+    planned = resources.setup_manual_resource_bundle(
         "viral_viwrap", base, resource_ids=["planned"], dry_run=True, mock=False
     )[0]
-    manual = resources._setup_manual_resource_bundle(
+    manual = resources.setup_manual_resource_bundle(
         "viral_viwrap", base, resource_ids=["manual"], dry_run=False, mock=False
     )[0]
 
@@ -116,7 +116,7 @@ def test_reference_setup_covers_existing_mock_planned_manual_and_selection(tmp_p
     }
 
     assert (
-        resources._setup_reference_resources(
+        resources.setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["annotation_gtf"],
@@ -125,21 +125,21 @@ def test_reference_setup_covers_existing_mock_planned_manual_and_selection(tmp_p
         )[0]["status"]
         == "ok"
     )
-    mocked = resources._setup_reference_resources(
+    mocked = resources.setup_reference_resources(
         "rnaseq_expression",
         config,
         resource_ids=["genome_index"],
         dry_run=False,
         mock=True,
     )[0]
-    planned = resources._setup_reference_resources(
+    planned = resources.setup_reference_resources(
         "rnaseq_expression",
         {**config, "outdir": str(tmp_path / "planned-out")},
         resource_ids=["genome_index"],
         dry_run=True,
         mock=False,
     )[0]
-    manual = resources._setup_reference_resources(
+    manual = resources.setup_reference_resources(
         "rnaseq_expression",
         {**config, "outdir": str(tmp_path / "manual-out")},
         resource_ids=["genome_index"],

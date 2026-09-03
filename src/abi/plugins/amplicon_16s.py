@@ -673,9 +673,9 @@ def _check_amplicon_16s(
     resource_ids: Optional[Sequence[str]] = None,
 ) -> List[Dict[str, Any]]:
     """Check amplicon_16s resources including taxonomy database."""
-    from abi.resources import _check_generic_resources
+    from abi.resources import check_generic_resources
 
-    rows = _check_generic_resources("amplicon_16s", config, resource_ids=resource_ids)
+    rows = check_generic_resources("amplicon_16s", config, resource_ids=resource_ids)
     selected = set(resource_ids or [])
     if selected and "taxonomy_db" not in selected:
         return rows
@@ -747,8 +747,8 @@ def _setup_amplicon_16s(
     from abi.config import PROJECT_ROOT
     from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
     from abi.resources import (
-        _download_result_to_row,
-        _resource_timeout,
+        download_result_to_row,
+        resource_timeout,
     )
     from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS
 
@@ -764,7 +764,7 @@ def _setup_amplicon_16s(
     download_script = PROJECT_ROOT / "scripts" / "download_rdp_sintax.sh"
     tax_fasta = outdir / "rdp_16s_v16.fa"
     synthetic_fasta = outdir / "synthetic_sintax.fa"
-    timeout = _resource_timeout(config)
+    timeout = resource_timeout(config)
 
     # Mock mode creates a tiny valid SINTAX FASTA and a unified resource sentinel.
     if mock:
@@ -818,7 +818,7 @@ def _setup_amplicon_16s(
                 ),
             )
         return [
-            _download_result_to_row(
+            download_result_to_row(
                 result,
                 tool_id="vsearch_taxonomy",
                 field="taxonomy_db",
@@ -884,7 +884,7 @@ def _setup_amplicon_16s(
         command=command,
     )
     return [
-        _download_result_to_row(
+        download_result_to_row(
             result,
             tool_id="vsearch_taxonomy",
             field="taxonomy_db",

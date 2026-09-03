@@ -529,9 +529,9 @@ def _check_rnaseq_expression(
     import os
     import subprocess
 
-    from abi.resources import _check_generic_resources
+    from abi.resources import check_generic_resources
 
-    rows = _check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids)
+    rows = check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids)
     selected = set(resource_ids or [])
     if selected and "deseq2_package" not in selected:
         return rows
@@ -610,27 +610,27 @@ def _setup_rnaseq_expression(
     from abi.errors import ABIError
     from abi.resource_downloader import DownloadSpec, ResourceDownloader
     from abi.resources import (
-        _check_generic_resources,
-        _configured_or_default_resource_path,
-        _download_result_to_row,
-        _mark_mock_mode,
-        _setup_reference_resources,
+        check_generic_resources,
+        configured_or_default_resource_path,
+        download_result_to_row,
+        mark_mock_mode,
+        setup_reference_resources,
     )
 
     selected = set(resource_ids or [])
     if selected and "rnaseq_environment" not in selected:
-        return _mark_mock_mode(
-            _check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids),
+        return mark_mock_mode(
+            check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids),
             mock=mock,
         )
 
     if mock:
-        target = _configured_or_default_resource_path(config, "rnaseq_environment")
+        target = configured_or_default_resource_path(config, "rnaseq_environment")
         environment = ResourceDownloader(Path(), mock=True).ensure(
             DownloadSpec(resource_id="rnaseq_environment", destination=target)
         )
         mock_rows = [
-            _download_result_to_row(
+            download_result_to_row(
                 environment,
                 tool_id="deseq2",
                 field="env_setup",
@@ -639,7 +639,7 @@ def _setup_rnaseq_expression(
             )
         ]
         mock_rows.extend(
-            _setup_reference_resources(
+            setup_reference_resources(
                 "rnaseq_expression",
                 config,
                 resource_ids=resource_ids,
@@ -714,7 +714,7 @@ def _setup_rnaseq_expression(
     )
 
     # Also run generic resource checks for genomes, annotations, etc.
-    generic_rows = _check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids)
+    generic_rows = check_generic_resources("rnaseq_expression", config, resource_ids=resource_ids)
     for gr in generic_rows:
         if gr["resource_id"] != "rnaseq_environment":
             rows.append(dict(gr, mock=mock))

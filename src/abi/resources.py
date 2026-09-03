@@ -15,11 +15,22 @@ from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS, timeout_from_env_or_v
 
 __path__ = []  # type: ignore[var-annotated]
 sys.modules.setdefault(__name__ + ".downloader", _resource_downloader)
-__all__ = ["check_resources", "setup_resources", "apply_resource_overrides"]
+__all__ = [
+    "apply_resource_overrides",
+    "check_generic_resources",
+    "check_resources",
+    "configured_or_default_resource_path",
+    "download_result_to_row",
+    "mark_mock_mode",
+    "resource_timeout",
+    "setup_manual_resource_bundle",
+    "setup_reference_resources",
+    "setup_resources",
+]
 _PLACEHOLDER_MARKERS = ("NOT_CONFIGURED", "TODO", "PLACEHOLDER")
 
 
-def _resource_timeout(config: Mapping[str, Any]) -> float | None:
+def resource_timeout(config: Mapping[str, Any]) -> float | None:
     execution = config.get("execution", {})
     configured = (
         execution.get("resource_timeout_seconds") if isinstance(execution, Mapping) else None
@@ -41,7 +52,7 @@ def check_resources(
     plugin = get_plugin(analysis_type)
     if isinstance(plugin, ABIResourcePlugin):
         return plugin.check_resources(config, resource_ids=resource_ids)
-    return _check_generic_resources(analysis_type, config, resource_ids=resource_ids)
+    return check_generic_resources(analysis_type, config, resource_ids=resource_ids)
 
 
 def setup_resources(
@@ -61,13 +72,13 @@ def setup_resources(
             dry_run=dry_run,
             mock=mock,
         )
-        return _mark_mock_mode(rows, mock=mock)
+        return mark_mock_mode(rows, mock=mock)
     if not dry_run and not mock:
         raise ABIError(
             f"Resource setup is not implemented for analysis type {analysis_type!r}. "
             "Use --dry-run to inspect the resource plan or configure paths manually."
         )
-    rows = _check_generic_resources(analysis_type, config, resource_ids=resource_ids)
+    rows = check_generic_resources(analysis_type, config, resource_ids=resource_ids)
     planned = []
     for row in rows:
         planned_row = dict(row)
@@ -88,12 +99,12 @@ def setup_resources(
     return planned
 
 
-def _mark_mock_mode(rows: Sequence[Mapping[str, Any]], *, mock: bool) -> List[Dict[str, Any]]:
+def mark_mock_mode(rows: Sequence[Mapping[str, Any]], *, mock: bool) -> List[Dict[str, Any]]:
     """Return resource setup rows with an explicit mock-mode marker."""
     return [dict(row, mock=mock) for row in rows]
 
 
-def _setup_manual_resource_bundle(
+def setup_manual_resource_bundle(
     analysis_type: str,
     config: Mapping[str, Any],
     *,
@@ -107,13 +118,13 @@ def _setup_manual_resource_bundle(
     multi-environment installation. Automatically choosing or partially
     downloading such resources would create a misleading runnable state.
     """
-    rows = _check_generic_resources(analysis_type, config, resource_ids=resource_ids)
+    rows = check_generic_resources(analysis_type, config, resource_ids=resource_ids)
     downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=mock)
     planned: List[Dict[str, Any]] = []
     for row in rows:
         current = dict(row)
         current["mock"] = mock
-        target = _configured_or_default_resource_path(config, str(current["resource_id"]))
+        target = configured_or_default_resource_path(config, str(current["resource_id"]))
         current["path"] = str(target)
         if dry_run:
             current["status"] = "planned"
@@ -144,7 +155,7 @@ def _setup_manual_resource_bundle(
     return planned
 
 
-def _configured_or_default_resource_path(config: Mapping[str, Any], resource_id: str) -> Path:
+def configured_or_default_resource_path(config: Mapping[str, Any], resource_id: str) -> Path:
     resources = config.get("resources", {})
     value = resources.get(resource_id) if isinstance(resources, Mapping) else None
     if isinstance(value, Mapping):
@@ -163,7 +174,7 @@ def _is_placeholder_resource_value(value: Any) -> bool:
     return normalized.startswith(("/path/to/", "path/to/", "/your/path/", "your/path/"))
 
 
-def _setup_reference_resources(
+def setup_reference_resources(
     analysis_type: str,
     config: Mapping[str, Any],
     *,
@@ -183,7 +194,7 @@ def _setup_reference_resources(
     for resource_id in ("genome_index", "annotation_gtf"):
         if selected and resource_id not in selected:
             continue
-        target = _configured_or_default_resource_path(config, resource_id)
+        target = configured_or_default_resource_path(config, resource_id)
         if dry_run:
             status = "planned"
             message = (
@@ -232,7 +243,7 @@ def _setup_reference_resources(
     return rows
 
 
-def _check_generic_resources(
+def check_generic_resources(
     analysis_type: str,
     config: Mapping[str, Any],
     *,
@@ -307,7 +318,7 @@ def _directory_file_count(path: Path) -> int:
     return sum(1 for child in path.rglob("*") if child.is_file())
 
 
-def _download_result_to_row(
+def download_result_to_row(
     result: DownloadResult,
     *,
     tool_id: str = "",

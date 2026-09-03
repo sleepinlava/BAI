@@ -1,7 +1,7 @@
 """Tests for uncovered code paths in abi.resources.
 
-Targets _configured_or_default_resource_path, _wgs_impl._setup_wgs_bacteria,
-_setup_reference_resources, _download_result_to_row, and
+Targets configured_or_default_resource_path, _wgs_impl._setup_wgs_bacteria,
+setup_reference_resources, download_result_to_row, and
 _rnaseq_impl._check_rnaseq_expression with mock-based subprocess/downloader paths.
 """
 
@@ -16,25 +16,25 @@ from abi.plugins import rnaseq_expression as _rnaseq_impl
 from abi.plugins import wgs_bacteria as _wgs_impl
 from abi.resource_downloader import DownloadResult, ResourceDownloader
 from abi.resources import (
-    _configured_or_default_resource_path,
-    _download_result_to_row,
-    _setup_reference_resources,
+    configured_or_default_resource_path,
+    download_result_to_row,
+    setup_reference_resources,
 )
 
 # --------------------------------------------------------------------------- #
-#  _configured_or_default_resource_path
+#  configured_or_default_resource_path
 # --------------------------------------------------------------------------- #
 
 
 class TestConfiguredOrDefaultResourcePath:
-    """Tests for _configured_or_default_resource_path."""
+    """Tests for configured_or_default_resource_path."""
 
     def test_configured_path_resolved(self, tmp_path: Path) -> None:
         """When a valid, non-placeholder path is configured, use it directly."""
         target = tmp_path / "my_db"
         target.mkdir()
         config = {"resources": {"my_resource": str(target)}}
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == target
 
     def test_mapping_value_with_path_key(self, tmp_path: Path) -> None:
@@ -42,7 +42,7 @@ class TestConfiguredOrDefaultResourcePath:
         target = tmp_path / "nested_db"
         target.mkdir()
         config = {"resources": {"my_resource": {"path": str(target), "version": "1.0"}}}
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == target
 
     def test_mapping_value_without_path_key_falls_back_to_outdir(self, tmp_path: Path) -> None:
@@ -51,7 +51,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"my_resource": {"version": "1.0", "database": str(tmp_path / "ignored")}},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == tmp_path / "results" / "resources" / "my_resource"
 
     def test_placeholder_value_falls_back_to_outdir(self, tmp_path: Path) -> None:
@@ -60,7 +60,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"my_resource": "DB_NOT_CONFIGURED"},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == tmp_path / "results" / "resources" / "my_resource"
 
     def test_placeholder_in_mapping_falls_back_to_outdir(self, tmp_path: Path) -> None:
@@ -69,7 +69,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"my_resource": {"path": "NOT_CONFIGURED"}},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == tmp_path / "results" / "resources" / "my_resource"
 
     def test_path_prefix_placeholder_falls_back(self, tmp_path: Path) -> None:
@@ -78,7 +78,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"my_resource": "/path/to/amrfinderplus/database"},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == tmp_path / "results" / "resources" / "my_resource"
 
     def test_resource_not_in_config_falls_back(self, tmp_path: Path) -> None:
@@ -87,7 +87,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"other": "/real/path"},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "missing_resource")
+        result = configured_or_default_resource_path(config, "missing_resource")
         assert result == tmp_path / "results" / "resources" / "missing_resource"
 
     def test_resources_is_not_mapping_falls_back(self, tmp_path: Path) -> None:
@@ -96,13 +96,13 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": ["list_not_dict"],
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "any_resource")
+        result = configured_or_default_resource_path(config, "any_resource")
         assert result == tmp_path / "results" / "resources" / "any_resource"
 
     def test_default_outdir_when_not_set(self) -> None:
         """When outdir is not configured, use results as default."""
         config: dict = {"resources": {"my_resource": "PLACEHOLDER"}}
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == Path("results") / "resources" / "my_resource"
 
     def test_empty_string_value_falls_back(self, tmp_path: Path) -> None:
@@ -111,7 +111,7 @@ class TestConfiguredOrDefaultResourcePath:
             "resources": {"my_resource": ""},
             "outdir": str(tmp_path / "results"),
         }
-        result = _configured_or_default_resource_path(config, "my_resource")
+        result = configured_or_default_resource_path(config, "my_resource")
         assert result == tmp_path / "results" / "resources" / "my_resource"
 
 
@@ -281,17 +281,17 @@ class TestSetupWGSBacteria:
 
 
 # --------------------------------------------------------------------------- #
-#  _setup_reference_resources
+#  setup_reference_resources
 # --------------------------------------------------------------------------- #
 
 
 class TestSetupReferenceResources:
-    """Tests for _setup_reference_resources covering mock/dry_run/existing paths."""
+    """Tests for setup_reference_resources covering mock/dry_run/existing paths."""
 
     def test_dry_run_planned(self, tmp_path: Path) -> None:
         """Dry run returns planned status for both resources."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression", config, resource_ids=None, dry_run=True, mock=False
         )
         assert len(rows) == 2
@@ -303,7 +303,7 @@ class TestSetupReferenceResources:
     def test_dry_run_with_mock_message(self, tmp_path: Path) -> None:
         """Dry run with mock=True includes mock-specific message."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["genome_index"],
@@ -318,7 +318,7 @@ class TestSetupReferenceResources:
     def test_mock_genome_index_creates_resource(self, tmp_path: Path) -> None:
         """Mock mode for genome_index creates ResourceDownloader mock."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["genome_index"],
@@ -334,7 +334,7 @@ class TestSetupReferenceResources:
     def test_mock_annotation_gtf_writes_file(self, tmp_path: Path) -> None:
         """Mock mode for annotation_gtf writes a GTF snippet."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["annotation_gtf"],
@@ -358,7 +358,7 @@ class TestSetupReferenceResources:
             "outdir": str(tmp_path / "results"),
             "resources": {"genome_index": str(target)},
         }
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["genome_index"],
@@ -371,7 +371,7 @@ class TestSetupReferenceResources:
     def test_missing_target_is_manual_required(self, tmp_path: Path) -> None:
         """When target does not exist, status is manual_required."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["genome_index"],
@@ -383,7 +383,7 @@ class TestSetupReferenceResources:
     def test_resource_filter_includes_only_selected(self, tmp_path: Path) -> None:
         """When resource_ids is specified, only include those resources."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=["genome_index"],
@@ -396,7 +396,7 @@ class TestSetupReferenceResources:
     def test_both_resources_with_mock(self, tmp_path: Path) -> None:
         """Both genome_index and annotation_gtf are created in mock mode."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
-        rows = _setup_reference_resources(
+        rows = setup_reference_resources(
             "rnaseq_expression",
             config,
             resource_ids=None,
@@ -412,12 +412,12 @@ class TestSetupReferenceResources:
 
 
 # --------------------------------------------------------------------------- #
-#  _download_result_to_row
+#  download_result_to_row
 # --------------------------------------------------------------------------- #
 
 
 class TestDownloadResultToRow:
-    """Tests for _download_result_to_row."""
+    """Tests for download_result_to_row."""
 
     def test_basic_conversion(self, tmp_path: Path) -> None:
         """Basic DownloadResult conversion to row dict."""
@@ -437,7 +437,7 @@ class TestDownloadResultToRow:
             message="All good.",
             command=["cmd", "arg"],
         )
-        row = _download_result_to_row(
+        row = download_result_to_row(
             result,
             tool_id="test_tool",
             field="test_field",
@@ -467,7 +467,7 @@ class TestDownloadResultToRow:
             path=tmp_path,
             status="ok",
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["field"] == "my_resource"
 
     def test_file_count_from_filesystem_when_not_in_result(self, tmp_path: Path) -> None:
@@ -485,7 +485,7 @@ class TestDownloadResultToRow:
             status="ok",
             file_count=0,
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["directory_file_count"] == 3
 
     def test_size_bytes_from_filesystem_when_not_in_result(self, tmp_path: Path) -> None:
@@ -499,7 +499,7 @@ class TestDownloadResultToRow:
             status="ok",
             size_bytes=0,
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["directory_size_bytes"] == 5
 
     def test_file_count_zero_for_non_directory(self, tmp_path: Path) -> None:
@@ -511,7 +511,7 @@ class TestDownloadResultToRow:
             file_count=0,
             size_bytes=0,
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["directory_file_count"] == 0
         assert row["directory_size_bytes"] == 0
 
@@ -522,7 +522,7 @@ class TestDownloadResultToRow:
             path=tmp_path,
             status="ok",
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["tool_id"] == ""
         assert row["field"] == "def_test"
         assert row["source_url"] == ""
@@ -537,7 +537,7 @@ class TestDownloadResultToRow:
             status="ok",
             command=[],
         )
-        row = _download_result_to_row(result)
+        row = download_result_to_row(result)
         assert row["command"] == []
 
         result2 = DownloadResult(
@@ -545,7 +545,7 @@ class TestDownloadResultToRow:
             path=tmp_path,
             status="ok",
         )
-        row2 = _download_result_to_row(result2)
+        row2 = download_result_to_row(result2)
         assert row2["command"] == []
 
 

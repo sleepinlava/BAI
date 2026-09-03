@@ -80,9 +80,9 @@ class WGSBacteriaPlugin:
         *,
         resource_ids: Optional[Sequence[str]] = None,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _check_generic_resources
+        from abi.resources import check_generic_resources
 
-        return _check_generic_resources(self.plugin_id, config, resource_ids=resource_ids)
+        return check_generic_resources(self.plugin_id, config, resource_ids=resource_ids)
 
     def setup_resources(
         self,
@@ -412,9 +412,9 @@ def _amrfinderplus_row(
     *,
     mock: bool,
 ) -> Dict[str, Any]:
-    from abi.resources import _download_result_to_row
+    from abi.resources import download_result_to_row
 
-    return _download_result_to_row(
+    return download_result_to_row(
         result,
         tool_id="amrfinderplus",
         field="amrfinder_db",
@@ -437,16 +437,16 @@ def _setup_wgs_bacteria(
     """
     from abi.resource_downloader import DownloadResult
     from abi.resources import (
-        _configured_or_default_resource_path,
-        _resource_timeout,
+        configured_or_default_resource_path,
+        resource_timeout,
     )
 
     if resource_ids and "amrfinder_db" not in resource_ids:
         return []
-    target = _configured_or_default_resource_path(config, "amrfinder_db")
+    target = configured_or_default_resource_path(config, "amrfinder_db")
     runtime_target = _amrfinderplus_runtime_dir(target)
     command = ["amrfinder_update", "--database", str(target)]
-    timeout = _resource_timeout(config)
+    timeout = resource_timeout(config)
 
     # Existing AMRFinderPlus databases are only usable when both the ready sentinel
     # and the runtime protein BLAST index are present.  amrfinder_update stores the

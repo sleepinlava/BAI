@@ -95,7 +95,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Mapping
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from abi._shared import _display_command
 from abi.config import resolved_mamba_root, write_yaml
@@ -443,13 +443,18 @@ class GenericABIExecutor:
 
                 for step in driver_steps:
                     _last_step_id = getattr(step, "step_id", str(step))
-                    row, error = self._execute_step(
+                    row, error = self._execute_and_propagate(
                         step,
                         dry_run=dry_run,
                         resume=resume,
                         provenance=provenance,
                         tables_dir=tables_dir,
                         progress_recorder=progress_recorder,
+                        # Driver outputs feed every downstream step (chains
+                        # included) before the chains start.
+                        # driver 输出馈入所有下游步骤（含样本链）。
+                        downstream_steps=plan.steps[plan_positions[id(step)] + 1 :],
+                        consume_replacements=True,
                     )
                     command_rows.append(row)
                     if error:
@@ -458,17 +463,6 @@ class GenericABIExecutor:
                             per_sample = []
                             cross_sample_steps = []
                             break
-                    # B36 (parallel): driver outputs feed every downstream step.
-                    # Propagate resolved paths to all not-yet-executed steps
-                    # (chains included) before the chains start.
-                    # B36（并行）：driver 输出馈入所有下游步骤，
-                    # 在链启动前将解析后的路径传播到所有未执行步骤。
-                    if not error and getattr(step, "tool_id", "") != "internal":
-                        _propagate_resolved_paths(
-                            step,
-                            plan.steps[plan_positions[id(step)] + 1 :],
-                            replacements=self._resolved_output_replacements.pop(step.step_id, {}),
-                        )
 
                 def _run_sample_chain(steps: List[Any], label: str) -> List[tuple]:
                     """Run a chain of steps sequentially in one thread."""
@@ -479,29 +473,22 @@ class GenericABIExecutor:
                             break
                         with _state_lock:
                             _last_step_id = getattr(step, "step_id", str(step))
-                        row, error = self._execute_step(
+                        row, error = self._execute_and_propagate(
                             step,
                             dry_run=dry_run,
                             resume=resume,
                             provenance=provenance,
                             tables_dir=tables_dir,
                             progress_recorder=progress_recorder,
+                            # Propagate to the remaining steps of the SAME
+                            # sample chain; entries are kept (not consumed) so
+                            # cross-sample consumers can be updated later. The
+                            # helper's sample guard prevents leakage.
+                            # 传播到同一样本链的剩余步骤；条目保留供跨样本使用。
+                            downstream_steps=steps[j + 1 :],
+                            consume_replacements=False,
                         )
                         results.append((step, row, error))
-                        # B36 (parallel): propagate resolved output paths to the
-                        # remaining steps of the SAME sample chain. The helper's
-                        # sample guard prevents cross-sample leakage; entries are
-                        # kept so cross-sample consumers can be updated later.
-                        # B36（并行）：将解析后的路径传播到同一样本链的剩余步骤；
-                        # 保留条目供后续跨样本步骤使用。
-                        if not error and getattr(step, "tool_id", "") != "internal":
-                            _propagate_resolved_paths(
-                                step,
-                                steps[j + 1 :],
-                                replacements=self._resolved_output_replacements.get(
-                                    step.step_id, {}
-                                ),
-                            )
                         if error and error_policy != "continue":
                             _stop_event.set()
                             break
@@ -590,37 +577,39 @@ class GenericABIExecutor:
                     cross_sample_steps = []
                 for c_idx, step in enumerate(cross_sample_steps):
                     _last_step_id = getattr(step, "step_id", str(step))
-                    row, error = self._execute_step(
+                    row, error = self._execute_and_propagate(
                         step,
                         dry_run=dry_run,
                         resume=resume,
                         provenance=provenance,
                         tables_dir=tables_dir,
                         progress_recorder=progress_recorder,
+                        downstream_steps=cross_sample_steps[c_idx + 1 :],
+                        consume_replacements=True,
                     )
                     command_rows.append(row)
                     if error:
                         failed_errors.append(error)
                         if error_policy != "continue":
                             break
-                    if not error and getattr(step, "tool_id", "") != "internal":
-                        _propagate_resolved_paths(
-                            step,
-                            cross_sample_steps[c_idx + 1 :],
-                            replacements=self._resolved_output_replacements.pop(step.step_id, {}),
-                        )
             else:
                 # ── Sequential mode (original behavior) ──
                 # ── 顺序模式（原始行为）──
                 for i, step in enumerate(plan.steps):
                     _last_step_id = getattr(step, "step_id", str(step))
-                    row, error = self._execute_step(
+                    row, error = self._execute_and_propagate(
                         step,
                         dry_run=dry_run,
                         resume=resume,
                         provenance=provenance,
                         tables_dir=tables_dir,
                         progress_recorder=progress_recorder,
+                        # B36: propagate resolved output paths (which may differ
+                        # from the abstract contract paths) to the remaining
+                        # steps so they receive real paths.
+                        # B36：将解析后的真实路径传播到剩余步骤。
+                        downstream_steps=plan.steps[i + 1 :],
+                        consume_replacements=True,
                     )
                     command_rows.append(row)
                     if error:
@@ -628,21 +617,6 @@ class GenericABIExecutor:
                         if error_policy == "continue":
                             continue
                         break
-                    # B36 fix: Propagate resolved output paths to downstream steps.
-                    # After _execute_step completes, step.outputs may contain
-                    # actual on-disk paths (from _resolve_actual_outputs) that
-                    # differ from the abstract contract paths.  Update the
-                    # remaining steps' inputs/params so they receive real paths.
-                    # B36 修复：将解析后的输出路径传播到下游步骤。
-                    # _execute_step 完成后，step.outputs 可能包含
-                    # 实际磁盘路径（来自 _resolve_actual_outputs），
-                    # 这些路径与抽象合约路径不同。更新剩余步骤的 inputs/params。
-                    if step.tool_id != "internal":
-                        _propagate_resolved_paths(
-                            step,
-                            plan.steps[i + 1 :],
-                            replacements=self._resolved_output_replacements.pop(step.step_id, {}),
-                        )
         except Exception as exc:
             failed_errors.append(ToolError(f"Unexpected error during {_last_step_id}: {exc}"))
             failed_errors[-1].__cause__ = exc
@@ -861,6 +835,46 @@ class GenericABIExecutor:
             "progress_events": progress_paths["events"],
         }
         return outputs
+
+    def _execute_and_propagate(
+        self,
+        step: Any,
+        *,
+        dry_run: bool,
+        resume: bool,
+        provenance: Path,
+        tables_dir: Path,
+        progress_recorder: Any,
+        downstream_steps: List[Any],
+        consume_replacements: bool,
+    ) -> Tuple[Dict[str, Any], Optional[ToolError]]:
+        """Execute one step, then propagate resolved output paths downstream.
+
+        The shared rhythm of every execution loop (serial, driver,
+        per-sample chain, cross-sample): run the step, hand resolved paths
+        to the declared downstream steps, and return the row and error for
+        the caller to record. ``consume_replacements`` pops the step's
+        replacement entries when no later loop will apply them again.
+        所有执行循环（串行/驱动/样本链/跨样本）的共享节奏：
+        执行步骤 → 向声明的下游传播解析路径 → 返回 row 与 error 供调用方记录。
+        """
+        row, error = self._execute_step(
+            step,
+            dry_run=dry_run,
+            resume=resume,
+            provenance=provenance,
+            tables_dir=tables_dir,
+            progress_recorder=progress_recorder,
+        )
+        if not error and getattr(step, "tool_id", "") != "internal":
+            replacements = self._resolved_output_replacements
+            lookup = replacements.pop if consume_replacements else replacements.get
+            _propagate_resolved_paths(
+                step,
+                downstream_steps,
+                replacements=lookup(step.step_id, {}),
+            )
+        return row, error
 
     def _execute_step(
         self,

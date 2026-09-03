@@ -111,7 +111,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Write changes (default: dry-run report only).",
+        help="Write changes (default: dry-run report only; exits 1 when a "
+        "dry-run finds pending changes).",
     )
     parser.add_argument(
         "--plugin",

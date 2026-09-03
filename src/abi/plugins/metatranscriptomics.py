@@ -146,9 +146,9 @@ class MetatranscriptomicsPlugin(DeclarativeABIPlugin):
         *,
         resource_ids: Optional[Sequence[str]] = None,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _check_generic_resources
+        from abi.resources import check_generic_resources
 
-        return _check_generic_resources(self.plugin_id, config, resource_ids=resource_ids)
+        return check_generic_resources(self.plugin_id, config, resource_ids=resource_ids)
 
     def setup_resources(
         self,
@@ -158,9 +158,9 @@ class MetatranscriptomicsPlugin(DeclarativeABIPlugin):
         dry_run: bool = False,
         mock: bool = False,
     ) -> list[dict[str, Any]]:
-        from abi.resources import _setup_reference_resources
+        from abi.resources import setup_reference_resources
 
-        return _setup_reference_resources(
+        return setup_reference_resources(
             self.plugin_id,
             config,
             resource_ids=resource_ids,

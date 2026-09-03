@@ -8,8 +8,8 @@ from types import SimpleNamespace
 from abi.config import _resolve_project_root, env_resource_overrides, load_resource_profile
 from abi.internal import _run_generic_preflight
 from abi.resources import (
-    _configured_or_default_resource_path,
     _is_placeholder_resource_value,
+    configured_or_default_resource_path,
 )
 
 # --------------------------------------------------------------------------- #
@@ -298,25 +298,25 @@ class TestIsPlaceholderResourceValue:
 class TestConfiguredOrDefaultResourcePath:
     def test_configured_path_takes_precedence(self):
         config = {"resources": {"mytool": "/custom/path"}}
-        result = _configured_or_default_resource_path(config, "mytool")
+        result = configured_or_default_resource_path(config, "mytool")
         assert result == Path("/custom/path")
 
     def test_placeholder_value_falls_back_to_default(self):
         config = {"resources": {"mytool": "NOT_CONFIGURED"}, "outdir": "results"}
-        result = _configured_or_default_resource_path(config, "mytool")
+        result = configured_or_default_resource_path(config, "mytool")
         assert result == Path("results") / "resources" / "mytool"
 
     def test_default_fallback_when_resource_not_in_config(self):
         config = {"resources": {}, "outdir": "results"}
-        result = _configured_or_default_resource_path(config, "mytool")
+        result = configured_or_default_resource_path(config, "mytool")
         assert result == Path("results") / "resources" / "mytool"
 
     def test_default_fallback_when_resources_key_missing(self):
         config = {"outdir": "my_outdir"}
-        result = _configured_or_default_resource_path(config, "mytool")
+        result = configured_or_default_resource_path(config, "mytool")
         assert result == Path("my_outdir") / "resources" / "mytool"
 
     def test_default_fallback_when_outdir_missing(self):
         config: dict = {}
-        result = _configured_or_default_resource_path(config, "mytool")
+        result = configured_or_default_resource_path(config, "mytool")
         assert result == Path("results") / "resources" / "mytool"
