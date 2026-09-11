@@ -2,6 +2,7 @@
 
 # Usage / 用法
     from abi.report import (
+        build_run_facts,          # actual execution facts for reports (WP5)
         write_generic_report,     # Markdown + HTML + JSON summary (simple)
         write_full_report,        # Complete report with methods, figures, citations
         write_methods,            # methods.md generator
@@ -29,6 +30,7 @@ from abi.report.citations import (
     load_citations,
 )
 from abi.report.generic_report import (
+    build_run_facts,
     render_figures_via_sciplot,
     write_full_report,
     write_generic_report,
@@ -52,6 +54,7 @@ __all__ = [
     "load_limitations",
     "render_figures_via_sciplot",
     "write_full_report",
+    "build_run_facts",
     "write_generic_report",
     "write_html_report",
     "write_methods",

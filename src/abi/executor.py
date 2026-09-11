@@ -128,7 +128,7 @@ from abi.provenance import (
     write_minimal_progress_artifacts,
     write_resolved_inputs_tsv,
 )
-from abi.report import write_generic_report
+from abi.report import build_run_facts, write_generic_report
 from abi.schemas import plan_step_contract, plan_step_internal_handler
 from abi.tables import StandardTableManager
 from abi.tools import ToolRegistry
@@ -755,16 +755,23 @@ class GenericABIExecutor:
             resource_manifest.get("resources", []),
             path=methods_path,
         )
+        run_status = "failed" if failed_errors else "success"
         report_paths = write_generic_report(
             plan,
             outdir,
             table_summary=table_summary,
             title=self.report_title,
+            run_facts=build_run_facts(
+                command_rows,
+                {
+                    **run_identity,
+                    "status": run_status,
+                },
+            ),
         )
 
         # Finalize progress recording with the run status.
         # 以运行状态完成进度记录。
-        run_status = "failed" if failed_errors else "success"
         if progress_recorder:
             progress_recorder.finish_run(status=run_status)
             progress_paths = progress_recorder.paths

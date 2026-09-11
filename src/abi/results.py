@@ -18,7 +18,7 @@ from abi.provenance import (
     write_resolved_inputs_tsv,
     write_tool_versions,
 )
-from abi.report import write_generic_report
+from abi.report import build_run_facts, write_generic_report
 from abi.tables import StandardTableManager
 
 __all__ = ["ABIResultWriter", "completed_abi_result_outputs", "validate_abi_result_dir"]
@@ -182,10 +182,18 @@ class ABIResultWriter:
             result_dir,
             table_summary=table_summary,
             title=self.plugin.report_title,
+            run_facts=build_run_facts(
+                command_rows,
+                {
+                    **run_identity,
+                    "status": str(status),
+                    "return_code": return_code,
+                },
+            ),
         )
+        run_identity["plan_id"] = str(plan_id or "")
         summary = {
             **run_identity,
-            "plan_id": str(plan_id or ""),
             "project_name": plan.project_name,
             "analysis_type": getattr(plan, "analysis_type", ""),
             "engine": engine,

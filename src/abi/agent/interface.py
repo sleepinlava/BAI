@@ -1131,6 +1131,11 @@ class ABIAgentInterface:
         dry_run = bool(summary.get("dry_run", False))
         smoke = bool(summary.get("smoke", False))
         status = str(summary.get("status", "unknown"))
+        resumed = [row.get("step_id", "") for row in commands if row.get("status") == "resumed"]
+        status_counts: Dict[str, int] = {}
+        for row in commands:
+            row_status = str(row.get("status") or "unknown")
+            status_counts[row_status] = status_counts.get(row_status, 0) + 1
         return {
             "result_dir": root,
             "status": status,
@@ -1140,9 +1145,21 @@ class ABIAgentInterface:
                 status == "success" and not dry_run and not smoke and not failed
             ),
             "step_count": len(commands),
+            "step_status_counts": status_counts,
             "failed_steps": failed,
             "skipped_steps": skipped,
+            "reused_steps": resumed,
             "missing_or_placeholder_inputs": missing_inputs,
+            # History linkage from the run summary (WP3/WP5): what this run
+            # resumed, where prior evidence lives, and which confirmed plan
+            # identity it executed. Fields absent in old summaries stay None.
+            # 来自 run_summary 的历史关联（WP3/WP5）：本次恢复了什么、先前证据
+            # 在哪里、执行的是哪个已确认计划身份。旧摘要缺失的字段保持 None。
+            "run_id": summary.get("run_id"),
+            "plan_id": summary.get("plan_id"),
+            "resumes_run_id": summary.get("resumes_run_id"),
+            "previous_run_archive": summary.get("previous_run_archive"),
+            "audit_snapshot_found": (provenance / "audit_snapshot.json").is_file(),
         }
 
     def _report(
@@ -1190,7 +1207,7 @@ class ABIAgentInterface:
         # Basic, plugin-independent report from saved facts + audit snapshot.
         # 基于保存事实与审计快照的、与插件无关的基础报告。
         from abi.audit import load_audit_snapshot
-        from abi.report.generic_report import write_generic_report
+        from abi.report.generic_report import build_run_facts, write_generic_report
 
         snapshot = load_audit_snapshot(root)
         limitations = [str(item) for item in snapshot.get("limitations", [])] if snapshot else []
@@ -1211,12 +1228,19 @@ class ABIAgentInterface:
             if snapshot
             else "ABI Report (basic)"
         )
+        commands = _read_tsv(root / "provenance" / "commands.tsv")
+        run_summary = (
+            load_json_object(root / "provenance" / "run_summary.json")
+            if (root / "provenance" / "run_summary.json").exists()
+            else {}
+        )
         outputs = write_generic_report(
             plan_data,
             root,
             table_summary=table_summary,
             title=title,
             limitations=limitations,
+            run_facts=build_run_facts(commands, run_summary),
         )
         output_files = dict(outputs)
         return {

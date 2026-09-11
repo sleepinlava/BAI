@@ -32,9 +32,49 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from abi.report.limitations import FALLBACK_LIMITATION
 
-__all__ = ["write_generic_report", "write_full_report", "write_plugin_report"]
+__all__ = ["write_generic_report", "write_full_report", "write_plugin_report", "build_run_facts"]
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def build_run_facts(
+    command_rows: Any,
+    run_summary: Mapping[str, Any] | None = None,
+) -> Dict[str, Any]:
+    """Distill actual execution facts from command rows and the run summary.
+
+    WP5 requires reports to record failed calls and reused steps explicitly —
+    not just the plan tables. The returned mapping drives the report's
+    "Execution Facts" section and stays honest when facts are missing.
+    WP5 要求报告明确记录失败调用与步骤复用，而非只展示计划表。
+    """
+    rows = list(command_rows or [])
+    counts: Dict[str, int] = {}
+    for row in rows:
+        status = str(row.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+    failed_steps = [
+        {
+            "step_id": str(row.get("step_id", "")),
+            "tool_id": str(row.get("tool_id", "")),
+            "reason": str(row.get("reason", "")),
+        }
+        for row in rows
+        if row.get("status") == "failed"
+    ]
+    resumed_steps = [str(row.get("step_id", "")) for row in rows if row.get("status") == "resumed"]
+    summary = dict(run_summary or {})
+    facts: Dict[str, Any] = {
+        "status": str(summary.get("status", "")),
+        "run_id": summary.get("run_id"),
+        "plan_id": summary.get("plan_id"),
+        "resumes_run_id": summary.get("resumes_run_id"),
+        "previous_run_archive": summary.get("previous_run_archive"),
+        "step_status_counts": counts,
+        "failed_steps": failed_steps,
+        "resumed_steps": resumed_steps,
+    }
+    return facts
 
 
 def write_generic_report(
@@ -44,6 +84,7 @@ def write_generic_report(
     table_summary: Mapping[str, Mapping[str, Any]],
     title: str = "ABI Report",
     limitations: Optional[List[str]] = None,
+    run_facts: Mapping[str, Any] | None = None,
 ) -> Dict[str, Path]:
     """Write a human-readable + machine-readable pipeline report.
 
@@ -88,6 +129,58 @@ def write_generic_report(
         else f"<p>{escape(FALLBACK_LIMITATION)}</p>"
     )
 
+    # ── Execution facts / 实际执行事实 ──
+    # WP5: failed calls and reused steps must be explicit; a report that only
+    # restates the plan table hides what actually happened.
+    # WP5：失败调用与复用步骤必须显式呈现；只复述计划表的报告会掩盖实际
+    # 发生的事。
+    facts = dict(run_facts) if run_facts else None
+    facts_md_lines: List[str] = []
+    facts_html_rows: List[str] = []
+    if facts is None:
+        facts_md_lines = ["_Execution facts were not provided for this report._"]
+    else:
+        counts = facts.get("step_status_counts") or {}
+        if counts:
+            facts_md_lines.append("| Status | Steps |")
+            facts_md_lines.append("| --- | ---: |")
+            for status in sorted(counts):
+                facts_md_lines.append(f"| {status} | {counts[status]} |")
+            facts_md_lines.append("")
+            facts_html_rows = [
+                (f"<tr><td>{escape(status)}</td><td>{escape(str(counts[status]))}</td></tr>")
+                for status in sorted(counts)
+            ]
+        else:
+            facts_md_lines.append("_No step-level command records available._")
+            facts_md_lines.append("")
+        failed_steps = facts.get("failed_steps") or []
+        if failed_steps:
+            facts_md_lines.append("**Failed calls:**")
+            facts_md_lines.extend(
+                f"- `{item['step_id']}` ({item['tool_id']}): {item['reason']}"
+                for item in failed_steps
+            )
+        else:
+            facts_md_lines.append("Failed calls: none recorded.")
+        resumed_steps = facts.get("resumed_steps") or []
+        if resumed_steps:
+            facts_md_lines.append(
+                "**Reused steps (validated resume):** " + ", ".join(f"`{s}`" for s in resumed_steps)
+            )
+        else:
+            facts_md_lines.append("Reused steps: none recorded.")
+        linkage = []
+        if facts.get("resumes_run_id"):
+            linkage.append(f"resumes run `{facts['resumes_run_id']}`")
+        if facts.get("previous_run_archive"):
+            linkage.append(f"prior evidence archived at `{facts['previous_run_archive']}`")
+        if facts.get("plan_id"):
+            linkage.append(f"plan identity `{facts['plan_id']}`")
+        if linkage:
+            facts_md_lines.append("")
+            facts_md_lines.append("History: " + "; ".join(linkage) + ".")
+
     # ── Markdown report / Markdown 格式 ──
     # Build line by line via join() for clarity (f-strings would be unwieldy
     # with this many lines). / 逐行构建，比 f-string 更清晰。
@@ -109,6 +202,10 @@ def write_generic_report(
                     f"| `{table}.tsv` | {meta.get('rows', 0)} | `{meta.get('path', '')}` |"
                     for table, meta in sorted(table_summary.items())
                 ],
+                "",
+                "## Execution Facts",
+                "",
+                *facts_md_lines,
                 "",
                 "## Known Limitations",
                 "",
@@ -154,6 +251,16 @@ def write_generic_report(
                 "<tbody>",
                 *html_rows,
                 "</tbody></table>",
+                "<h2>Execution Facts</h2>",
+                *(
+                    [
+                        "<table><thead><tr><th>Status</th><th>Steps</th></tr></thead><tbody>",
+                        *facts_html_rows,
+                        "</tbody></table>",
+                    ]
+                    if facts_html_rows
+                    else ["<p><em>No step-level command records available.</em></p>"]
+                ),
                 "<h2>Known Limitations</h2>",
                 limitations_html,
                 "<p>Dry-run artifacts prove planning, command rendering, provenance, and "
@@ -177,6 +284,7 @@ def write_generic_report(
                 "selected_tools": selected_tools,
                 "standard_tables": dict(table_summary),
                 "limitations": limitations_list,
+                "execution_facts": facts,
             },
             indent=2,
             ensure_ascii=False,  # Allow Unicode in project names / 允许中文项目名

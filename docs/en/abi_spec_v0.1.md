@@ -140,6 +140,13 @@ real outcome (`succeeded`/`failed`) with the unconfirmed request preserved
 in the job's `termination` field; killing the dispatch worker is never
 claimed as termination of downstream engine or scheduler processes.
 
+Basic reports include an "Execution Facts" section — step status counts,
+failed calls with reasons, reused (validated-resume) steps, and history
+linkage — so a report never restates only the plan tables. `inspect` exposes
+the same linkage fields (`run_id`, `plan_id`, `resumes_run_id`,
+`previous_run_archive`) plus the reused-step list and whether an audit
+snapshot is present.
+
 ## Error Codes
 
 ABI uses 19 stable error codes from `abi.diagnostics`, enumerating every

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from abi.report.generic_report import (
@@ -448,3 +449,73 @@ def test_write_generic_report_with_tables(tmp_path: Path) -> None:
     assert "samples.tsv" in md
     assert "qc.tsv" in md
     assert "tool1" in md
+
+
+def test_generic_report_records_execution_facts(tmp_path):
+    """WP5: failed calls and reused steps are explicit; not just plan tables."""
+    from abi.report.generic_report import build_run_facts, write_generic_report
+
+    plan = SimpleNamespace(
+        to_dict=lambda: {
+            "project_name": "facts",
+            "analysis_type": "test",
+            "selected_tools": ["tool"],
+            "steps": [{"step_id": "s1"}, {"step_id": "s2"}],
+        }
+    )
+    command_rows = [
+        {"step_id": "s1", "tool_id": "tool", "status": "success", "reason": ""},
+        {
+            "step_id": "s2",
+            "tool_id": "tool",
+            "status": "failed",
+            "reason": "resume reuse rejected: output checksum mismatch",
+        },
+        {"step_id": "s3", "tool_id": "tool", "status": "resumed", "reason": ""},
+    ]
+    run_summary = {
+        "status": "failed",
+        "run_id": "run-1",
+        "plan_id": "sha256:abc",
+        "resumes_run_id": "run-0",
+        "previous_run_archive": "previous_runs/run-0",
+    }
+
+    outputs = write_generic_report(
+        plan,
+        tmp_path,
+        table_summary={"summary": {"rows": 1, "path": "tables/summary.tsv"}},
+        run_facts=build_run_facts(command_rows, run_summary),
+    )
+
+    md = outputs["report"].read_text(encoding="utf-8")
+    assert "## Execution Facts" in md
+    assert "Failed calls:" in md
+    assert "resume reuse rejected" in md
+    assert "Reused steps (validated resume):** `s3`" in md
+    assert "resumes run `run-0`" in md
+    assert "prior evidence archived at `previous_runs/run-0`" in md
+    assert "plan identity `sha256:abc`" in md
+
+    summary = json.loads((tmp_path / "report" / "report_summary.json").read_text())
+    facts = summary["execution_facts"]
+    assert facts["step_status_counts"] == {"failed": 1, "resumed": 1, "success": 1}
+    assert facts["failed_steps"][0]["step_id"] == "s2"
+    assert facts["resumed_steps"] == ["s3"]
+
+
+def test_generic_report_states_when_facts_are_absent(tmp_path):
+    """WP5: a report without command facts says so instead of implying them."""
+    from abi.report.generic_report import write_generic_report
+
+    plan = SimpleNamespace(
+        to_dict=lambda: {"project_name": "nofacts", "analysis_type": "t", "steps": []}
+    )
+    outputs = write_generic_report(
+        plan,
+        tmp_path,
+        table_summary={},
+    )
+    md = outputs["report"].read_text(encoding="utf-8")
+    assert "Execution Facts" in md
+    assert "not provided" in md
