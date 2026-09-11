@@ -358,7 +358,6 @@ class TestPathTemplateContext:
         assert ctx["outdir"] == "/tmp/abi-test"
         assert ctx["sample_id"] == "SRR123"
         assert ctx["category_dir"] == "01_qc"
-        assert ctx["resources.genome_index"] == "/data/star_index"
 
     def test_template_resolution(self) -> None:
         sample = _make_sample("SRR123")
@@ -371,22 +370,6 @@ class TestPathTemplateContext:
         resolved = template.format_map(ctx)
         assert resolved == "/tmp/abi-test/01_qc/SRR123/SRR123_R1.clean.fastq.gz"
 
-    def test_exposes_all_typed_sample_path_variables(self) -> None:
-        sample = _make_sample(
-            read1=None,
-            read2=None,
-            pod5="/data/input.pod5",
-            bam="/data/input.bam",
-            host_reference="/data/host.fasta",
-            notes="priority sample",
-        )
-        ctx = PathTemplateContext(config=_make_config(), sample=sample)
-
-        assert ctx["sample.pod5"] == "/data/input.pod5"
-        assert ctx["sample.bam"] == "/data/input.bam"
-        assert ctx["sample.host_reference"] == "/data/host.fasta"
-        assert ctx["sample.notes"] == "priority sample"
-
     def test_missing_variable_raises(self) -> None:
         ctx = PathTemplateContext(
             config=_make_config(),
@@ -395,17 +378,6 @@ class TestPathTemplateContext:
         )
         with pytest.raises(KeyError):
             "{unknown_var}".format_map(ctx)
-
-    def test_upstream_outputs(self) -> None:
-        sample = _make_sample("S1")
-        upstream = {"qc_fastp": {"clean_read1": "/path/to/R1.fq.gz"}}
-        ctx = PathTemplateContext(
-            config=_make_config(),
-            sample=sample,
-            category_dir="02_align",
-            upstream_outputs=upstream,
-        )
-        assert ctx["upstream_qc_fastp.outputs.clean_read1"] == "/path/to/R1.fq.gz"
 
 
 # ── Plan generation (requires updated DAG with category_dirs + path templates) ──

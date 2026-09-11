@@ -5,11 +5,57 @@ import pytest
 
 import abi.plugins as plugin_registry
 from abi.agent import ABIAgentInterface
-from abi.plugins import get_plugin, list_plugins
+from abi.plugins import (
+    PluginLoadError,
+    PluginSelectionError,
+    get_plugin,
+    list_plugin_metadata,
+    list_plugins,
+)
 from abi.testing import assert_plugin_contract
 from abi.tool_descriptors import ABI_AGENT_TOOLS, TOOL_ALIASES, export_openai_tools
 
 FIXTURES = Path("tests/fixtures/tool_outputs")
+
+
+class _RegistryTestPlugin:
+    plugin_id = "registry_test"
+    display_name = "Registry Test"
+    description = "Test-only plugin."
+    report_title = "Registry Test Report"
+
+    def load_config(self, config_path=None, *, profile=None, db_profile=None, overrides=None):
+        return {}
+
+    def build_plan(self, config, check_files=True):
+        return None
+
+    def registry(self):
+        from abi.tools import ToolRegistry
+
+        return ToolRegistry({})
+
+    def table_schemas(self):
+        return {}
+
+    def parse_outputs(self, tool_id, output_dir, sample_id):
+        return {}
+
+    def write_report(self, plan, result_dir):
+        return {}
+
+
+class _FakeEntryPoint:
+    def __init__(self, name, value="", plugin_class=None, error=None):
+        self.name = name
+        self.value = value
+        self._plugin_class = plugin_class
+        self._error = error
+
+    def load(self):
+        if self._error:
+            raise self._error
+        return self._plugin_class
 
 
 def test_abi_lists_builtin_plugins():
@@ -167,6 +213,116 @@ def test_abi_skips_broken_entry_point_plugins(monkeypatch):
 
     assert "broken" not in plugin_ids
     assert {"metagenomic_plasmid", "metatranscriptomics"} <= plugin_ids
+
+
+def test_metadata_discovery_does_not_load_entry_points(monkeypatch):
+    entry_point = _FakeEntryPoint(
+        "metadata_only",
+        "missing.module:Plugin",
+        error=AssertionError("metadata discovery imported implementation"),
+    )
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [entry_point])
+
+    metadata = {item.plugin_id: item for item in list_plugin_metadata()}
+
+    assert metadata["metadata_only"].metadata_available is False
+    assert metadata["metadata_only"].entry_point == "missing.module:Plugin"
+
+
+def test_selected_plugin_ignores_unrelated_entry_point_failure(monkeypatch):
+    monkeypatch.setattr(_RegistryTestPlugin, "plugin_id", "selected")
+    good = _FakeEntryPoint(
+        "selected", "tests.unit.test_abi_plugins:_RegistryTestPlugin", _RegistryTestPlugin
+    )
+    broken = _FakeEntryPoint("unrelated", "broken.module:Plugin", error=ImportError("broken"))
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [broken, good])
+
+    assert get_plugin("selected").plugin_id == "selected"
+
+
+def test_selected_plugin_failure_is_explicit(monkeypatch):
+    broken = _FakeEntryPoint(
+        "selected_failure", "broken.module:Plugin", error=ImportError("broken")
+    )
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [broken])
+
+    with pytest.raises(PluginLoadError, match="selected_failure"):
+        get_plugin("selected_failure")
+
+
+def test_competing_entry_points_fail_deterministically(monkeypatch):
+    first = _FakeEntryPoint("collision", "one.module:Plugin", _RegistryTestPlugin)
+    second = _FakeEntryPoint("collision", "two.module:Plugin", _RegistryTestPlugin)
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [second, first])
+
+    with pytest.raises(PluginSelectionError, match="competing implementations"):
+        get_plugin("collision")
+
+
+def test_manifest_and_different_entry_point_do_not_get_silently_merged(monkeypatch, tmp_path):
+    plugin_root = tmp_path / "plugins"
+    manifest_root = plugin_root / "manifested"
+    manifest_root.mkdir(parents=True)
+    (manifest_root / "abi-plugin.yaml").write_text(
+        "\n".join(
+            [
+                'abi_version: "0.1"',
+                "plugin_id: manifested",
+                "display_name: Manifested",
+                "description: Manifested plugin",
+                "report_title: Manifested report",
+                "entry_point: one.module:Plugin",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    competing = _FakeEntryPoint("manifested", "two.module:Plugin", _RegistryTestPlugin)
+    monkeypatch.setattr(plugin_registry, "PLUGIN_ROOT", plugin_root)
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [competing])
+
+    metadata = next(item for item in list_plugin_metadata() if item.plugin_id == "manifested")
+
+    assert metadata.status == "conflict"
+    with pytest.raises(PluginSelectionError, match="competing implementations"):
+        get_plugin("manifested")
+
+
+def test_invalid_manifest_cannot_be_bypassed_by_entry_point(monkeypatch, tmp_path):
+    plugin_root = tmp_path / "plugins"
+    manifest_root = plugin_root / "invalid"
+    manifest_root.mkdir(parents=True)
+    (manifest_root / "abi-plugin.yaml").write_text("plugin_id: invalid\n", encoding="utf-8")
+    invalid = _FakeEntryPoint("invalid", "invalid.module:Plugin", _RegistryTestPlugin)
+    monkeypatch.setattr(plugin_registry, "PLUGIN_ROOT", plugin_root)
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [invalid])
+
+    with pytest.raises(PluginLoadError, match="invalid manifest metadata"):
+        get_plugin("invalid")
+
+
+def test_competing_manifests_fail_without_entry_points(monkeypatch, tmp_path):
+    plugin_root = tmp_path / "plugins"
+    for directory, target in (("one", "one.module:Plugin"), ("two", "two.module:Plugin")):
+        manifest_root = plugin_root / directory
+        manifest_root.mkdir(parents=True)
+        (manifest_root / "abi-plugin.yaml").write_text(
+            "\n".join(
+                [
+                    'abi_version: "0.1"',
+                    "plugin_id: duplicated",
+                    "display_name: Duplicated",
+                    "description: Duplicated plugin",
+                    "report_title: Duplicated report",
+                    f"entry_point: {target}",
+                ]
+            ),
+            encoding="utf-8",
+        )
+    monkeypatch.setattr(plugin_registry, "PLUGIN_ROOT", plugin_root)
+    monkeypatch.setattr(plugin_registry, "_entry_points", lambda: [])
+
+    with pytest.raises(PluginSelectionError, match="competing implementations"):
+        get_plugin("duplicated")
 
 
 def test_openai_tool_export_uses_agent_permissions_and_keeps_execution_opt_in():

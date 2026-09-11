@@ -29,6 +29,12 @@ build_lang() {
     else
         budget="$ZH_DIAGNOSTIC_BUDGET"
     fi
+
+    # Sphinx rebuilds source files but does not remove pages whose sources were
+    # retired. Clean only this language's generated output before each build
+    # so a fresh build cannot publish stale local pages.
+    rm -rf "$BUILD_DIR/$lang"
+
     log_file="$(mktemp)"
     echo "==> Building $lang docs..."
     set +e

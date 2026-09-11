@@ -148,12 +148,20 @@ exclude_patterns = [
     "en",
     "zh",
     # Local-only drafts — intentionally git-ignored ("not for repo"), so they
-    # are absent from CI checkouts.  Exclude them from the build to keep
-    # local and CI builds identical.
+    # are absent from CI checkouts. Exclude them from both language builds to
+    # keep local and CI outputs identical without modifying local drafts.
+    "devlog.md",
+    "linux_support_plan.md",
+    "production_manual_acceptance_checklist.md",
     "plugin_report_figure_spec.md",
-    # Local research/positioning drafts. Keep them outside the published
-    # navigation until they are reviewed and intentionally promoted.
+    "bacannot_integration_development_plan.md",
+    "mcp_protocol_*_update_research.md",
+    "current_conclusions_next_steps.md",
+    "abi_real_data_validation_status_*.md",
     "bai_agent_ready_workflow_module_positioning.md",
     "easymeta_ibd_transferability_preregistration.md",
     "experiment_claim_alignment_20260726.md",
+    "scapp_v2_biological_correctness_audit_*.md",
+    "new_validation_experiment_research.md",
+    "real_data_validation_datasets.md",
 ]

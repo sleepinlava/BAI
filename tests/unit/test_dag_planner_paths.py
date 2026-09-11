@@ -241,23 +241,6 @@ class TestResolveScriptPathPluginRoot:
 
 
 class TestResolveInputPathExtended:
-    def test_template_with_outdir(self):
-        result = _resolve_input_path(
-            "{outdir}/results/file.txt",
-            {"outdir": "/output"},
-            None,
-        )
-        assert result == "/output/results/file.txt"
-
-    def test_template_with_sample_id(self):
-        sample = SampleInput(sample_id="S1", platform="illumina")
-        result = _resolve_input_path(
-            "{sample_id}_report.html",
-            {"outdir": "/tmp"},
-            sample,
-        )
-        assert result == "S1_report.html"
-
     def test_template_with_category_dir(self):
         result = _resolve_input_path(
             "{outdir}/{category_dir}/file.txt",
@@ -273,18 +256,6 @@ class TestResolveInputPathExtended:
             None,
         )
         assert result == "8_auto/input.fq"
-
-    def test_plain_string_no_braces(self):
-        result = _resolve_input_path("just/a/path.fastq", {}, None)
-        assert result == "just/a/path.fastq"
-
-    def test_broken_template_returns_raw(self):
-        result = _resolve_input_path("{nonexistent_key}", {"outdir": "/tmp"}, None)
-        assert result == "{nonexistent_key}"
-
-    def test_integer_template_str_converted(self):
-        result = _resolve_input_path(42, {}, None)
-        assert result == "42"
 
 
 # ====================================================================

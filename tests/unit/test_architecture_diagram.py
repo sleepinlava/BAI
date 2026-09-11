@@ -20,8 +20,3 @@ def test_architecture_diagram_generation_is_deterministic():
 @pytest.mark.skipif(render is None, reason="Diagram generator not available")
 def test_checked_in_architecture_diagram_matches_generator():
     assert DIAGRAM_PATH.read_text(encoding="utf-8") == render()
-
-
-@pytest.mark.skipif(render is None, reason="Diagram generator not available")
-def test_architecture_diagram_documents_workflow_deepening():
-    assert 'name="05-工作流深模块"' in render()

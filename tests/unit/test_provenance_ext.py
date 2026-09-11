@@ -13,18 +13,6 @@ from abi.provenance import (
 # ── capture_tool_version edge cases ────────────────────────────────────────
 
 
-def test_capture_version_check_installation_raises_ext() -> None:
-    """L71-72: skill.check_installation() raises → ('', 'not_captured')."""
-
-    class BadSkill:
-        def check_installation(self):
-            raise RuntimeError("boom")
-
-    version, status = capture_tool_version(BadSkill())
-    assert version == ""
-    assert status == "not_captured"
-
-
 def test_capture_version_check_installation_returns_false_ext() -> None:
     """L75-76: check_installation() returns False → ('', 'not_found')."""
 

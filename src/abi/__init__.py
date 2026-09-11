@@ -122,15 +122,22 @@ def list_plugins_summary() -> list[dict[str, str]]:
     # 每个字典包含 analysis_type / name / description。
     """
     try:
-        from abi.plugins import list_plugins
+        from abi.plugins import list_plugin_metadata
 
-        return [
+        metadata_items = list_plugin_metadata()
+        summaries = [
             {
-                "analysis_type": p.plugin_id,
-                "name": p.display_name,
-                "description": p.description,
+                "analysis_type": metadata.plugin_id,
+                "name": metadata.display_name,
+                "description": metadata.description,
             }
-            for p in list_plugins()
+            for metadata in metadata_items
         ]
+        for summary, metadata in zip(summaries, metadata_items):
+            if metadata.status != "available":
+                summary["status"] = metadata.status
+            if metadata.metadata_error:
+                summary["error"] = metadata.metadata_error
+        return summaries
     except ImportError:
         return []

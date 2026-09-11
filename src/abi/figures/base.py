@@ -4,14 +4,14 @@
 The figure engine provides a declarative, plugin-agnostic way to generate
 figures from ABI standard tables. Plugins declare figure specs in YAML;
 the engine validates them against table schemas and renders them with
-matplotlib (primary) or plotly (interactive fallback).
+matplotlib.
 
 # Design / 设计
 - **Declarative**: Plugins declare *what* to plot, not *how* to render.
 - **Schema-validated**: Figure specs are validated against standard table schemas
   before rendering — no runtime KeyError from a renamed column.
-- **Lazy imports**: matplotlib and plotly are imported at render time so plugins
-  that don't use figures never pay the import cost.
+- **Lazy imports**: matplotlib is imported at render time so plugins that do
+  not use figures never pay the import cost.
 - **Consistent styling**: All figures share a default style; plugins can
   override via spec fields (title, xlabel, ylabel, figsize, colormap).
 

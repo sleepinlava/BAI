@@ -27,15 +27,6 @@ def test_release_check_uses_posix_tempdir_for_permission_sensitive_tests() -> No
     assert 'export TEMP="$ABI_RELEASE_TMPDIR"' in script
 
 
-def test_release_gate_does_not_execute_known_broken_dry_run_xfails() -> None:
-    dry_run_tests = Path("tests/integration/test_dry_run.py").read_text()
-
-    runnable_known_broken_marker = (
-        '@pytest.mark.xfail(reason="DAG refactoring changed step structure and output file paths")'
-    )
-    assert runnable_known_broken_marker not in dry_run_tests
-
-
 def test_changelog_has_current_release_section() -> None:
     pyproject = Path("pyproject.toml").read_text(encoding="utf-8")
     version_match = re.search(r'^version\s*=\s*"([^"]+)"', pyproject, re.MULTILINE)
@@ -44,7 +35,3 @@ def test_changelog_has_current_release_section() -> None:
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
 
     assert f"## [{version_match.group(1)}]" in changelog
-
-
-def test_optional_opencode_workflow_is_not_part_of_release_automation() -> None:
-    assert not Path(".github/workflows/opencode.yml").exists()

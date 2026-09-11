@@ -81,15 +81,35 @@ class Doctor:
     @staticmethod
     def _check_plugins() -> HealthCheck:
         try:
-            from abi.plugins import list_plugins
+            from abi.plugins import list_plugin_metadata
 
-            plugins = list_plugins()
+            plugins = list_plugin_metadata()
             ids = sorted(p.plugin_id for p in plugins)
+            issues = [p for p in plugins if p.status != "available"]
+            has_fatal_issue = any(p.status in {"metadata_error", "conflict"} for p in issues)
+            status = "failed" if has_fatal_issue else ("warning" if issues else "passed")
+            issue_text = "; ".join(
+                f"{p.plugin_id}: {p.status}"
+                + (f" ({p.metadata_error})" if p.metadata_error else "")
+                for p in issues
+            )
             return HealthCheck(
                 name="plugins",
-                status="passed" if plugins else "warning",
-                message=f"{len(plugins)} plugins: {'; '.join(ids)}",
-                details={"count": len(plugins), "plugins": ids},
+                status=status if plugins else "warning",
+                message=f"{len(plugins)} plugins: {'; '.join(ids)}"
+                + (f"; issues: {issue_text}" if issue_text else ""),
+                details={
+                    "count": len(plugins),
+                    "plugins": ids,
+                    "issues": [
+                        {
+                            "plugin_id": p.plugin_id,
+                            "status": p.status,
+                            "error": p.metadata_error,
+                        }
+                        for p in issues
+                    ],
+                },
             )
         except Exception as e:
             return HealthCheck(

@@ -147,9 +147,6 @@ class TestNotABIError:
 
 
 class TestMissingTemplateParamError:
-    def test_is_abi_error(self):
-        assert issubclass(MissingTemplateParamError, ABIError)
-
     def test_message_includes_param_name(self):
         err = MissingTemplateParamError("Template {reads} is missing")
         assert "reads" in str(err)

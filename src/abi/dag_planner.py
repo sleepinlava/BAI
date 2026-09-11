@@ -65,8 +65,8 @@ class UnresolvableSourceError(ValueError):
 
 # ── PathTemplateContext ──────────────────────────────────────────────────
 # A dict subclass that resolves {variable} references in output path
-# templates.  Pre-flattens nested access (sample.platform, resources.key)
-# into simple keys so that str.format_map() works without dotted lookups.
+# templates. It exposes the flat variables supported by the DAG path
+# template contract so that str.format_map() can resolve them directly.
 # / 用于解析输出路径模板中 {variable} 引用的字典子类。
 
 

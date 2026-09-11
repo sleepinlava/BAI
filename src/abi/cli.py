@@ -99,8 +99,7 @@ from abi.compliance import audit_result
 from abi.evidence import verify_evidence_manifest
 from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.json_utils import load_json_object, loads_json
-from abi.openai_contracts import export_openai_tools  # backward compat
-from abi.plugins import get_plugin, list_plugins
+from abi.plugins import get_plugin, list_plugin_metadata
 from abi.resources import setup_resources
 from abi.results import validate_abi_result_dir
 from abi.runtime_lock import (
@@ -115,6 +114,7 @@ from abi.tool_descriptors import (
     export_anthropic,
     export_gemini,
     export_openai_compatible,
+    export_openai_tools,
 )
 
 # Main Typer app. ``no_args_is_help=True`` means running ``abi`` with no
@@ -288,13 +288,16 @@ def list_types(
     if output_json:
         _emit_agent_json(ABIAgentInterface().list_types())
         return
+    metadata = list_plugin_metadata()
     rows = [
         {
             "type": plugin.plugin_id,
             "name": plugin.display_name,
             "description": plugin.description,
+            **({"status": plugin.status} if plugin.status != "available" else {}),
+            **({"error": plugin.metadata_error} if plugin.metadata_error else {}),
         }
-        for plugin in list_plugins()
+        for plugin in metadata
     ]
     typer.echo(json.dumps(rows, indent=2, ensure_ascii=False))
 
