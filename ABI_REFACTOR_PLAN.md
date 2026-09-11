@@ -448,3 +448,20 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 本批新增/更新测试：恢复身份绑定四例（产物校验和不匹配重跑、输入校验和不匹配重跑、匹配则复用、整跑链条继承+篡改重跑+证据行）；取消语义三态（迟到请求不声称终止、信号死亡确认终止、排队取消 confirmed）；`ABIResultWriter` 共享身份与历史语义；query 从插件根解析 DAG。
 - Ruff（lint + format）与 mypy 全部通过；双语文档构建 0/0 诊断。
 - 未运行完整 CI、真实生物信息学工具或集群取消验证；HPC 远端调度任务的终止确认仍是缺口，属后续批次。
+
+## 12. v1.6.0 发布记录与 B3 开工
+
+### 发布记录（2026-09-11）
+
+- 版本 1.6.0：版本提升（pyproject、CHANGELOG、双插件清单 manifest）→ `check_release_identity` 通过 → 本地与远端完整 CI 门槛通过 → `python -m build`（sdist→wheel）+ `twine check` 通过 → 干净 venv 从官方 PyPI 安装 wheel 冒烟（`abi list-types` 八种能力、入口点、wheel 布局）→ 远端核查（PyPI 无 1.6.0、无同名标签）→ 推送 master 与 `v1.6.0` 标签 → Release 工作流（质量门 + 构建 + GitHub Release）→ publish-pypi 手动 dispatch → PyPI 上线并验证哈希与干净安装。
+- 发布前修复了阻塞 CI 的既有红灯：arm64 的过期 `PathTemplateContext` 断言（Phase A 已修剪，断言的是 f7dbd7e 退役的点号变量能力）；strict contract-lint 的四条 `unused_registry_input` 告警（metabat2/threads、plasmidfinder/assembly→plasmid_contigs、scapp 死 max_k、wgs_bacteria mlst 死 scheme）——渲染命令零变化；scapp `-k 77` 与声明 `max_k` 的不一致记录待科学复核。
+- 已知缺口：`release.yml` 以默认 GITHUB_TOKEN 创建 Release，GitHub 为防递归不触发 `release.published`，publish-pypi 需按其 `workflow_dispatch` 入口手动启动（1.5.12 亦如此）。后续可改为 PAT 创建 Release 或 workflow_call 链接以闭环。
+- 本地 3 个测试失败均为本地专属：两个属于未跟踪的 `test_create_real_data_case_study_figures.py`（依赖 gitignored 的论文材料），一个依赖 sparse-checkout 隐藏的 Linux 证据文件（CI 有该文件并通过）。
+
+### B3 开工：工作包 5 审计快照（已实施部分）
+
+- 新增 `src/abi/audit.py`：`audit_snapshot.json`（schema_version、analysis_type、report_title、standard_table_schemas、limitations、references、abi_version、captured_at）由 `ABIResultWriter`（四后端）与 `LocalRuntime`（本地执行器）在每次运行时写入 `provenance/`。
+- `validate_abi_result_dir` 的表 schema 解析回退到审计快照并报告 `schema_source`（plugin/audit_snapshot/unavailable）；无插件且无快照时如实报错，不伪造 schema 检查。
+- `report` 在插件不可用时回退到基于保存事实与快照的基础报告，信封明确 `plugin_report_generated: false` 与 `audit_snapshot_found`；旧目录无快照时渲染缺失说明。
+- 兼容别名路径 `autoplasm_validate_result` 同样携带 `plugin_validation_executed` 诚实标志。
+- 尚未完成（WP5 余项）：inspect 的历史关联字段展示、失败调用与步骤复用的报告呈现增强、限制性章节与引用快照在旧记录中的缺失项渲染细节、与 WP2 退役后的基础报告收口。
