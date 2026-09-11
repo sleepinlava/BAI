@@ -166,6 +166,8 @@ class SnakemakeRuntime:
             return_code=result.returncode,
             engine="snakemake",
             smoke=self.options.smoke,
+            resume=self.options.resume,
+            plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
             extra_summary={
                 "snakefile": str(snakefile_path),
                 "stdout": str(stdout_path),

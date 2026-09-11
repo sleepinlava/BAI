@@ -14,12 +14,20 @@ error envelope.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Set
+from types import MappingProxyType
+from typing import Any, Dict, List, Mapping, Sequence, Set
 
-from abi.errors import PlanIntegrityError, ToolResolutionError, UnsupportedExecutionError
+from abi.errors import (
+    PlanDriftError,
+    PlanIntegrityError,
+    ToolResolutionError,
+    UnsupportedExecutionError,
+)
 from abi.execution_policy import ExecutionPolicy, apply_resource_policy
 from abi.path_policy import InputPolicyError, resolve_within
 from abi.schemas import plan_step_dependencies
@@ -32,6 +40,9 @@ __all__ = [
     "CompiledPlan",
     "compile_plan",
     "CompilationWarning",
+    "bind_confirmed_plan",
+    "load_compiled_plan",
+    "write_compiled_plan",
 ]
 
 
@@ -61,6 +72,11 @@ class CompiledStep:
 
     All fields that downstream adapters need are resolved here; adapters
     must not re-resolve resources, environments, or execution kinds.
+
+    Immutability is deep, not shallow: ``__post_init__`` replaces nested
+    lists/dicts with read-only views and freezes the resource spec, so a
+    confirmed plan cannot be mutated after construction (WP4: nested lists,
+    dicts, and resource objects must not bypass immutability constraints).
     """
 
     step_id: str
@@ -70,7 +86,7 @@ class CompiledStep:
     execution_kind: ExecutionKind
 
     # ── Dependencies ──
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: Sequence[str] = field(default_factory=list)
 
     # ── Resolved resources ──
     resources: ResourceSpec = field(default_factory=ResourceSpec)
@@ -80,12 +96,27 @@ class CompiledStep:
     container_image: str | None = None
 
     # ── I/O ──
-    inputs: Dict[str, Any] = field(default_factory=dict)
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    params: Dict[str, Any] = field(default_factory=dict)
+    inputs: Mapping[str, Any] = field(default_factory=dict)
+    outputs: Mapping[str, Any] = field(default_factory=dict)
+    params: Mapping[str, Any] = field(default_factory=dict)
 
     # ── Validation ──
-    validated_paths: List[str] = field(default_factory=list)
+    validated_paths: Sequence[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "dependencies", tuple(self.dependencies))
+        object.__setattr__(self, "validated_paths", tuple(self.validated_paths))
+        object.__setattr__(self, "inputs", MappingProxyType(dict(self.inputs)))
+        object.__setattr__(self, "outputs", MappingProxyType(dict(self.outputs)))
+        object.__setattr__(self, "params", MappingProxyType(dict(self.params)))
+        # ResourceSpec is a frozen value object; accept a raw mapping for
+        # deserialization convenience, otherwise store it as-is.
+        # ResourceSpec 是冻结值对象；为反序列化便利接受原始映射，否则原样存储。
+        if isinstance(self.resources, Mapping) and not isinstance(self.resources, ResourceSpec):
+            resource_kwargs = {
+                name: self.resources[name] for name in _RESOURCE_FIELDS if name in self.resources
+            }
+            object.__setattr__(self, "resources", ResourceSpec(**resource_kwargs))
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the compiled step for JSON persistence."""
@@ -99,11 +130,91 @@ class CompiledStep:
             "resources": asdict(self.resources),
             "env_name": self.env_name,
             "container_image": self.container_image,
-            "inputs": self.inputs,
-            "outputs": self.outputs,
-            "params": self.params,
+            "inputs": dict(self.inputs),
+            "outputs": dict(self.outputs),
+            "params": dict(self.params),
             "validated_paths": list(self.validated_paths),
         }
+
+    _REQUIRED_FIELDS = (
+        "step_id",
+        "tool_id",
+        "category",
+        "execution_kind",
+    )
+    _KNOWN_FIELDS = frozenset(
+        {
+            "step_id",
+            "tool_id",
+            "category",
+            "sample_id",
+            "execution_kind",
+            "dependencies",
+            "resources",
+            "env_name",
+            "container_image",
+            "inputs",
+            "outputs",
+            "params",
+            "validated_paths",
+        }
+    )
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "CompiledStep":
+        """Deserialize and validate one compiled step (strict ``v1`` schema).
+
+        Raises :class:`PlanIntegrityError` on unknown fields, missing required
+        fields, or an unrecognized execution kind. Loaded nested containers
+        are frozen exactly like compiler-produced steps.
+        """
+        _require_mapping(data, "compiled step")
+        unknown = sorted(set(data) - cls._KNOWN_FIELDS)
+        if unknown:
+            raise PlanIntegrityError(
+                f"Compiled step {data.get('step_id')!r} has unknown field(s): {', '.join(unknown)}"
+            )
+        missing = [name for name in cls._REQUIRED_FIELDS if not data.get(name)]
+        if missing:
+            raise PlanIntegrityError(
+                f"Compiled step is missing required field(s): {', '.join(missing)}"
+            )
+        kind_value = str(data["execution_kind"])
+        try:
+            kind = ExecutionKind(kind_value)
+        except ValueError as exc:
+            raise PlanIntegrityError(
+                f"Compiled step {data['step_id']!r} has unknown execution kind {kind_value!r}"
+            ) from exc
+        resources_data = data.get("resources") or {}
+        _require_mapping(resources_data, f"compiled step {data['step_id']!r} resources")
+        unknown_resources = sorted(set(resources_data) - set(_RESOURCE_FIELDS))
+        if unknown_resources:
+            raise PlanIntegrityError(
+                f"Compiled step {data['step_id']!r} resources have unknown field(s): "
+                + ", ".join(unknown_resources)
+            )
+        resources = ResourceSpec(
+            **{name: resources_data[name] for name in _RESOURCE_FIELDS if name in resources_data}
+        )
+        sample_id_value = data.get("sample_id")
+        return cls(
+            step_id=str(data["step_id"]),
+            tool_id=str(data["tool_id"]),
+            category=str(data["category"]),
+            sample_id=None if sample_id_value is None else str(sample_id_value),
+            execution_kind=kind,
+            dependencies=[str(dep) for dep in (data.get("dependencies") or [])],
+            resources=resources,
+            env_name=str(data.get("env_name") or ""),
+            container_image=(
+                None if data.get("container_image") is None else str(data["container_image"])
+            ),
+            inputs=_string_keyed_mapping(data.get("inputs"), "inputs"),
+            outputs=_string_keyed_mapping(data.get("outputs"), "outputs"),
+            params=_string_keyed_mapping(data.get("params"), "params"),
+            validated_paths=[str(p) for p in (data.get("validated_paths") or [])],
+        )
 
 
 @dataclass(frozen=True)
@@ -112,20 +223,35 @@ class CompiledPlan:
 
     Every invariant tested by :func:`compile_plan` is guaranteed by
     construction after a successful compile.
+
+    ``plan_id`` is the SHA-256 content digest of the compiled plan (excluding
+    ``plan_id`` itself).  It is the identity that authorization, run records,
+    and audit artifacts use to prove "this run executed the confirmed plan".
     """
+
+    SCHEMA_VERSION = "abi.compiled_plan.v1"
 
     project_name: str
     mode: str
     threads: int
     outdir: Path
 
-    steps: List[CompiledStep]
-    enabled_steps: List[str] = field(default_factory=list)
-    selected_tools: List[str] = field(default_factory=list)
+    steps: Sequence[CompiledStep]
+    enabled_steps: Sequence[str] = field(default_factory=list)
+    selected_tools: Sequence[str] = field(default_factory=list)
     analysis_type: str = ""
 
     # ── Non-fatal compilation notes ──
-    warnings: List[CompilationWarning] = field(default_factory=list)
+    warnings: Sequence[CompilationWarning] = field(default_factory=list)
+
+    # ── Content identity (set by compile_plan / from_dict) ──
+    plan_id: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "steps", tuple(self.steps))
+        object.__setattr__(self, "enabled_steps", tuple(self.enabled_steps))
+        object.__setattr__(self, "selected_tools", tuple(self.selected_tools))
+        object.__setattr__(self, "warnings", tuple(self.warnings))
 
     def get(self, step_id: str) -> CompiledStep:
         """Return the compiled step for *step_id*."""
@@ -150,10 +276,16 @@ class CompiledPlan:
     def internal_driver_steps(self) -> List[CompiledStep]:
         return [s for s in self.steps if s.execution_kind == ExecutionKind.INTERNAL_DRIVER]
 
+    @property
+    def content_digest(self) -> str:
+        """SHA-256 content identity of this compiled plan (excl. ``plan_id``)."""
+        return plan_content_digest(self)
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the compiled plan for persistence as ``compiled_plan.json``."""
         return {
-            "schema_version": "abi.compiled_plan.v1",
+            "schema_version": self.SCHEMA_VERSION,
+            "plan_id": self.plan_id,
             "project_name": self.project_name,
             "analysis_type": self.analysis_type,
             "mode": self.mode,
@@ -165,8 +297,103 @@ class CompiledPlan:
             "warnings": [warning.to_dict() for warning in self.warnings],
         }
 
+    _KNOWN_FIELDS = frozenset(
+        {
+            "schema_version",
+            "plan_id",
+            "project_name",
+            "analysis_type",
+            "mode",
+            "threads",
+            "outdir",
+            "steps",
+            "enabled_steps",
+            "selected_tools",
+            "warnings",
+        }
+    )
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "CompiledPlan":
+        """Deserialize and validate a compiled plan (strict ``v1`` schema).
+
+        Re-validates structural invariants and — when ``plan_id`` is present —
+        verifies that the stored identity matches the file's own content, so a
+        persisted plan edited after signing is rejected instead of trusted.
+        Legacy files written before identity binding have no ``plan_id``; they
+        load without the self-check and are verified against the rebuilt plan
+        by :func:`bind_confirmed_plan`.
+        """
+        _require_mapping(data, "compiled plan")
+        if data.get("schema_version") != cls.SCHEMA_VERSION:
+            raise PlanIntegrityError(
+                f"Unsupported compiled plan schema_version {data.get('schema_version')!r}; "
+                f"expected {cls.SCHEMA_VERSION!r}"
+            )
+        unknown = sorted(set(data) - cls._KNOWN_FIELDS)
+        if unknown:
+            raise PlanIntegrityError(f"Compiled plan has unknown field(s): {', '.join(unknown)}")
+        steps_raw = data.get("steps")
+        if not isinstance(steps_raw, list):
+            raise PlanIntegrityError("Compiled plan 'steps' must be a list")
+        steps = [CompiledStep.from_dict(step) for step in steps_raw]
+        threads = data.get("threads")
+        if not isinstance(threads, int) or isinstance(threads, bool):
+            raise PlanIntegrityError("Compiled plan 'threads' must be an integer")
+        outdir = data.get("outdir")
+        if not isinstance(outdir, str) or not outdir:
+            raise PlanIntegrityError("Compiled plan 'outdir' must be a non-empty path string")
+        enabled_raw = data.get("enabled_steps") or []
+        selected_raw = data.get("selected_tools") or []
+        if not isinstance(enabled_raw, list) or not isinstance(selected_raw, list):
+            raise PlanIntegrityError(
+                "Compiled plan 'enabled_steps' and 'selected_tools' must be lists"
+            )
+        warnings_raw = data.get("warnings") or []
+        if not isinstance(warnings_raw, list):
+            raise PlanIntegrityError("Compiled plan 'warnings' must be a list")
+        warnings = []
+        for item in warnings_raw:
+            _require_mapping(item, "compiled plan warning")
+            warnings.append(
+                CompilationWarning(
+                    step_id=str(item.get("step_id", "")),
+                    message=str(item.get("message", "")),
+                )
+            )
+        plan = cls(
+            project_name=str(data.get("project_name") or ""),
+            mode=str(data.get("mode") or "auto"),
+            threads=threads,
+            outdir=Path(outdir),
+            steps=steps,
+            enabled_steps=[str(sid) for sid in enabled_raw],
+            selected_tools=[str(tool) for tool in selected_raw],
+            analysis_type=str(data.get("analysis_type") or ""),
+            warnings=warnings,
+            plan_id=str(data.get("plan_id") or ""),
+        )
+        if set(plan.enabled_steps) != set(plan.step_ids):
+            raise PlanIntegrityError(
+                "Compiled plan 'enabled_steps' does not match its steps: "
+                f"enabled={sorted(plan.enabled_steps)} steps={plan.step_ids}"
+            )
+        _validate_invariants(plan, set(plan.enabled_steps))
+        if plan.plan_id and plan.plan_id != plan.content_digest:
+            raise PlanIntegrityError(
+                f"Compiled plan identity mismatch: stored plan_id {plan.plan_id!r} does not "
+                f"match the file's content digest {plan.content_digest!r} "
+                "(plan file modified after planning)"
+            )
+        return plan
+
 
 # ── Compilation ──────────────────────────────────────────────────────────────
+
+
+# Serializable field names of the frozen ResourceSpec value object.
+# 冻结值对象 ResourceSpec 的可序列化字段名。
+_RESOURCE_FIELDS = ("cpu", "memory", "walltime", "accelerator", "disk")
 
 
 def compile_plan(
@@ -262,6 +489,10 @@ def compile_plan(
     )
 
     _validate_invariants(compiled, enabled_step_ids)
+    # Bind the content identity: authorization, run records, and audit
+    # artifacts reference this digest to prove which plan actually ran.
+    # 绑定内容身份：授权、运行记录与审计产物引用该摘要证明实际执行的计划。
+    object.__setattr__(compiled, "plan_id", plan_content_digest(compiled))
     return compiled
 
 
@@ -483,3 +714,111 @@ def _check_acyclic(compiled: CompiledPlan) -> None:
     if removed != len(graph):
         remaining = [sid for sid, deg in in_degree.items() if deg > 0]
         raise PlanIntegrityError(f"Cycle detected in compiled plan: {sorted(remaining)}")
+
+
+# ── Persistence & confirmed-plan binding ─────────────────────────────────
+
+
+def _require_mapping(value: Any, label: str) -> None:
+    if not isinstance(value, Mapping):
+        raise PlanIntegrityError(f"{label} must be a JSON object, got {type(value).__name__}")
+
+
+def _string_keyed_mapping(value: Any, label: str) -> Dict[str, Any]:
+    """Validate a loaded I/O mapping: object with string keys."""
+    _require_mapping(value, label)
+    for key in value:
+        if not isinstance(key, str):
+            raise PlanIntegrityError(f"{label} has non-string key {key!r}")
+    return dict(value)
+
+
+def plan_content_digest(compiled: CompiledPlan) -> str:
+    """Return the canonical SHA-256 content digest of a compiled plan.
+
+    The digest covers every serialized field except ``plan_id`` itself, with
+    sorted keys, so it is stable across processes and independent of dict
+    insertion order. This is the identity that binds execution, run records,
+    and audit artifacts to the confirmed plan.
+    """
+    content = compiled.to_dict()
+    content.pop("plan_id", None)
+    payload = json.dumps(content, sort_keys=True, ensure_ascii=False, default=str)
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def write_compiled_plan(compiled: CompiledPlan, path: str | Path) -> Path:
+    """Persist *compiled* as ``compiled_plan.json`` in the canonical format."""
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(compiled.to_dict(), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return destination
+
+
+def load_compiled_plan(path: str | Path) -> CompiledPlan:
+    """Load, validate, and deep-freeze a persisted ``compiled_plan.json``.
+
+    Raises :class:`PlanIntegrityError` on unreadable or malformed JSON, unknown
+    schema versions, unknown/missing fields, violated invariants, or a stored
+    ``plan_id`` that does not match the file's own content digest.
+    """
+    source = Path(path)
+    try:
+        raw = source.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise PlanIntegrityError(f"Cannot read compiled plan {source}: {exc}") from exc
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise PlanIntegrityError(f"Invalid JSON in compiled plan {source}: {exc}") from exc
+    try:
+        return CompiledPlan.from_dict(data)
+    except PlanIntegrityError as exc:
+        raise PlanIntegrityError(f"{source}: {exc}") from exc
+
+
+def bind_confirmed_plan(prepared: Any) -> str:
+    """Compile *prepared*'s plan and bind the run to the confirmed compiled plan.
+
+    This is the seam that makes actual execution correspond to the plan the
+    user approved (WP4): the plan is recompiled from the prepared workflow and
+    its content identity is compared against the confirmed
+    ``compiled_plan.json`` in the output directory.
+
+    - Confirmed file matches → return the verified ``plan_id``.
+    - Confirmed file missing (direct run without a prior ``abi plan``) →
+      persist the verified plan first, then return its ``plan_id``.
+    - Confirmed file differs → raise :class:`PlanDriftError`; the caller must
+      re-plan and obtain fresh user approval.
+    - Persisted file fails structural or self-identity validation → raise
+      :class:`PlanIntegrityError`.
+    """
+    plan = getattr(prepared, "plan", None)
+    config = getattr(prepared, "config", None)
+    outdir_value = (config or {}).get("outdir") or getattr(plan, "outdir", None)
+    if outdir_value is None:
+        raise PlanIntegrityError(
+            "Cannot bind the confirmed plan: the prepared workflow has no resolved output directory"
+        )
+    outdir = Path(outdir_value)
+    compiled = compile_plan(plan, outdir=outdir)
+    confirmed_path = outdir / "compiled_plan.json"
+    if confirmed_path.exists():
+        confirmed = load_compiled_plan(confirmed_path)
+        if confirmed.content_digest != compiled.plan_id:
+            raise PlanDriftError(
+                f"Confirmed plan drift detected for output directory {outdir}: the persisted "
+                f"compiled plan ({confirmed.content_digest}) does not match the plan rebuilt "
+                f"from the current configuration ({compiled.plan_id}). Re-run `abi plan` for "
+                "this output directory, review the regenerated plan, and re-run with "
+                "confirm_execution=true after user approval."
+            )
+    else:
+        # First bind: persist the verified identity so later runs (retry,
+        # resume) verify against the same confirmed artifact.
+        # 首次绑定：持久化已验证的身份，让后续运行（重试、恢复）对同一产物验证。
+        write_compiled_plan(compiled, confirmed_path)
+    return compiled.plan_id

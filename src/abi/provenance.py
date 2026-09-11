@@ -168,24 +168,85 @@ def capture_tool_version(skill: Any, *, mock_tools: bool = False) -> tuple[str, 
     return version, "captured"
 
 
-def reset_run_provenance(provenance_dir: str | Path) -> None:
-    """Remove artifacts that cannot be safely carried into a new local run."""
+# Mutable per-run provenance artifacts: archived into previous_runs/ (when a
+# prior run left evidence) and then removed before each new local run.
+# 可变的单次运行溯源产物：先归档到 previous_runs/（若先前运行留有证据），
+# 再在每次新的本地运行前移除。
+_RESETTABLE_ARTIFACTS = (
+    "checksums.json",
+    "commands.tsv",
+    "config.resolved.yaml",
+    "environment.yml",
+    "progress.json",
+    "progress.jsonl",
+    "resolved_inputs.tsv",
+    "resources.json",
+    "resource_manifest.json",
+    "run_summary.json",
+    "tool_versions.tsv",
+)
+
+
+def reset_run_provenance(provenance_dir: str | Path) -> dict[str, str | None]:
+    """Archive prior run evidence, then remove artifacts a new run rewrites.
+
+    History must never be overwritten by a retry, resume, or reset: before any
+    mutable artifact is deleted, the prior run's evidence is copied into
+    ``previous_runs/<prior_run_id>/`` inside the provenance directory. The new
+    run links to that archive through ``previous_run_archive`` in its run
+    summary (and ``resumes_run_id`` when resuming).
+
+    Returns a lineage dict ``{"previous_run_id": ..., "previous_run_archive":
+    ...}``; both values are ``None`` when no prior evidence existed. Runs that
+    crashed before writing ``run_summary.json`` are archived under an
+    ``unidentified-<timestamp>`` name instead of being silently discarded.
+
+    历史不能被重试、恢复或重置覆盖：删除任何可变产物之前，先前运行的证据
+    会先复制到 provenance 目录内的 ``previous_runs/<prior_run_id>/``。新运行
+    通过 run_summary 中的 ``previous_run_archive``（恢复时还有
+    ``resumes_run_id``）关联该归档。返回血缘字典；无先前证据时两个值均为
+    ``None``。崩溃于写 run_summary 之前的运行以 ``unidentified-<时间戳>``
+    归档，不会被静默丢弃。
+    """
     root = Path(provenance_dir)
-    for name in (
-        "checksums.json",
-        "commands.tsv",
-        "config.resolved.yaml",
-        "environment.yml",
-        "progress.json",
-        "progress.jsonl",
-        "resolved_inputs.tsv",
-        "resources.json",
-        "resource_manifest.json",
-        "run_summary.json",
-        "tool_versions.tsv",
-    ):
+    lineage: dict[str, str | None] = {"previous_run_id": None, "previous_run_archive": None}
+    prior_id: str | None = None
+    summary_path = root / "run_summary.json"
+    if summary_path.is_file():
+        try:
+            prior = json.loads(summary_path.read_text(encoding="utf-8"))
+            if isinstance(prior, Mapping):
+                prior_id = str(prior.get("run_id") or "") or None
+        except (OSError, json.JSONDecodeError):
+            prior_id = None
+    has_evidence = prior_id is not None or any(
+        (root / name).exists() for name in _RESETTABLE_ARTIFACTS
+    )
+    if has_evidence:
+        if prior_id:
+            archive_name = _safe_archive_name(prior_id)
+        else:
+            archive_name = f"unidentified-{datetime.now():%Y%m%dT%H%M%S%f}"
+        archive_root = root / "previous_runs" / archive_name
+        archive_root.mkdir(parents=True, exist_ok=True)
+        for name in _RESETTABLE_ARTIFACTS:
+            source = root / name
+            if source.is_file():
+                shutil.copyfile(source, archive_root / name)
+        if (root / "step_logs").is_dir():
+            shutil.copytree(root / "step_logs", archive_root / "step_logs", dirs_exist_ok=True)
+        lineage["previous_run_id"] = prior_id
+        lineage["previous_run_archive"] = archive_root.relative_to(root).as_posix()
+    for name in _RESETTABLE_ARTIFACTS:
         (root / name).unlink(missing_ok=True)
     shutil.rmtree(root / "step_logs", ignore_errors=True)
+    return lineage
+
+
+def _safe_archive_name(run_id: str) -> str:
+    """Reduce a run identity to a single safe path segment."""
+    cleaned = "".join(char if char.isalnum() or char in "-_." else "_" for char in run_id)
+    return cleaned.strip("._") or "unnamed"
 
 
 # ── RunLogger ──────────────────────────────────────────────────────────

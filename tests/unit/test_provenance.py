@@ -47,12 +47,55 @@ def test_reset_run_provenance_removes_stale_attempt_artifacts(tmp_path: Path) ->
         (provenance / name).write_text("old")
     (provenance / "commands.tsv").write_text("old")
 
-    reset_run_provenance(provenance)
+    lineage = reset_run_provenance(provenance)
 
     assert not step_logs.exists()
     assert not (provenance / "checksums.json").exists()
     assert not (provenance / "progress.jsonl").exists()
     assert not (provenance / "commands.tsv").exists()
+    # Crash-truncated evidence (no readable run_summary) is archived under an
+    # unidentified name instead of being silently discarded.
+    # 崩溃残留（无可读 run_summary）以 unidentified 名称归档，不被静默丢弃。
+    assert lineage["previous_run_id"] is None
+    assert lineage["previous_run_archive"].startswith("previous_runs/unidentified-")
+    archive = provenance / lineage["previous_run_archive"]
+    assert (archive / "commands.tsv").read_text(encoding="utf-8") == "old"
+
+
+def test_reset_run_provenance_archives_prior_run_before_reset(tmp_path: Path) -> None:
+    provenance = tmp_path / "provenance"
+    step_logs = provenance / "step_logs"
+    step_logs.mkdir(parents=True)
+    (step_logs / "s1.stderr.log").write_text("boom")
+    (provenance / "run_summary.json").write_text(
+        json.dumps({"run_id": "run-abc", "status": "failed"}), encoding="utf-8"
+    )
+    (provenance / "commands.tsv").write_text("step\tstatus\ns1\tfailed\n", encoding="utf-8")
+
+    lineage = reset_run_provenance(provenance)
+
+    assert lineage == {
+        "previous_run_id": "run-abc",
+        "previous_run_archive": "previous_runs/run-abc",
+    }
+    archive = provenance / "previous_runs" / "run-abc"
+    assert (archive / "run_summary.json").is_file()
+    assert (archive / "commands.tsv").read_text(encoding="utf-8").endswith("s1\tfailed\n")
+    assert (archive / "step_logs" / "s1.stderr.log").read_text(encoding="utf-8") == "boom"
+    # The current view is reset for the new run; only the archive holds prior
+    # evidence.
+    # 当前视图为新运行重置；先前证据只保留在归档中。
+    assert not (provenance / "commands.tsv").exists()
+    assert not (provenance / "step_logs").exists()
+
+
+def test_reset_run_provenance_without_prior_evidence_writes_no_archive(tmp_path: Path) -> None:
+    provenance = tmp_path / "provenance"
+
+    lineage = reset_run_provenance(provenance)
+
+    assert lineage == {"previous_run_id": None, "previous_run_archive": None}
+    assert not (provenance / "previous_runs").exists()
 
 
 # ── _tsv_value ───────────────────────────────────────────────────────────

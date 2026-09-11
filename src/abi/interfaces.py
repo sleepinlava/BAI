@@ -195,6 +195,15 @@ class ABIPlugin(Protocol):
     # Title used in the generated report (e.g. "PlasmidFinder Results").
     # 在生成的报告中使用的标题（如 "PlasmidFinder Results"）。
 
+    root: Path
+    # Filesystem root for the plugin's own data (DAG, tool registry, schemas,
+    # limitations). Bundled plugins point at their directory under the global
+    # PLUGIN_ROOT; externally installed plugins resolve their own location, so
+    # core callers must never assume the global root (11A).
+    # 插件自身数据（DAG、工具注册表、schema、局限性）的文件系统根目录。捆绑
+    # 插件指向全局 PLUGIN_ROOT 下的目录；外部安装的插件解析自己的位置，核心
+    # 调用者不得假设全局根（11A）。
+
     # ── Lifecycle methods / 生命周期方法 ──
 
     def load_config(

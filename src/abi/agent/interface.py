@@ -86,7 +86,7 @@ from abi.schemas import ABIError
 from abi.skill_installer import install_bundled_skills
 from abi.tool_descriptors import TOOL_ALIASES
 from abi.workflow import WorkflowCoordinator
-from abi.workflow.compiled_plan import compile_plan
+from abi.workflow.compiled_plan import bind_confirmed_plan, compile_plan, write_compiled_plan
 
 
 def _validate_plugin_result_dir(
@@ -773,7 +773,7 @@ class ABIAgentInterface:
             canonical = f"abi_{method_name}"
             if canonical in TOOL_ALIASES:
                 permission_name = canonical
-        if requires_confirmation(permission_name) and not bool(args.get("confirm_execution")):
+        if requires_confirmation(permission_name) and args.get("confirm_execution") is not True:
             return json_dumps(
                 confirmation_required_envelope(
                     method_name,
@@ -938,16 +938,18 @@ class ABIAgentInterface:
             json.dumps(plan_data, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
-        compiled_path = outdir_path / "compiled_plan.json"
-        compiled_path.write_text(
-            json.dumps(compiled.to_dict(), indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        # Persist the compiled plan with its content identity (plan_id). This
+        # is the artifact later runs verify against before executing: it is
+        # the machine-checkable record of the plan being confirmed.
+        # 持久化带内容身份（plan_id）的编译计划。这是后续运行执行前验证的
+        # 产物，也是“哪个计划获得确认”的机器可查记录。
+        compiled_path = write_compiled_plan(compiled, outdir_path / "compiled_plan.json")
         steps = getattr(plan, "steps", [])
         return {
             "analysis_type": analysis_type,
             "plan_path": plan_path,
             "compiled_plan_path": compiled_path,
+            "plan_id": compiled.plan_id,
             "steps": len(steps),
             "summary": _build_plan_summary(plan, analysis_type),
             "written_files": [plan_path, compiled_path],
@@ -1187,7 +1189,7 @@ class ABIAgentInterface:
             )
         # Safety gate: require explicit user confirmation before execution.
         # 安全闸门: 执行前需要显式用户确认。
-        if not confirm_execution:
+        if confirm_execution is not True:
             return {
                 "status": "confirmation_required",
                 "result": {
@@ -1254,6 +1256,20 @@ class ABIAgentInterface:
             check_files=check_files,
             options=options,
         )
+        # Bind actual execution to the confirmed plan (WP4): recompile the
+        # prepared plan and verify its content identity against the confirmed
+        # ``compiled_plan.json`` in the output directory. Drift after
+        # confirmation — changed config, plugin declarations, or tool catalog,
+        # including drift while a queued job waits — refuses to start instead
+        # of silently executing an unapproved plan. When no plan was persisted
+        # yet, the verified plan is bound (persisted) here so later runs
+        # verify against the same identity.
+        # 将实际执行绑定到已确认的计划（WP4）：重新编译准备好的计划，并将其
+        # 内容身份与输出目录中已确认的 compiled_plan.json 比对。确认后发生
+        # 漂移（配置、插件声明或工具目录变化，包括排队等待期间的漂移）时拒
+        # 绝启动，而不是静默执行未经批准的计划；尚无持久化计划时在此绑定
+        # （持久化）已验证计划，使后续运行对同一身份验证。
+        options.confirmed_plan_id = bind_confirmed_plan(prepared)
         result = coordinator.run(prepared)
         return {
             "analysis_type": analysis_type,
@@ -1439,12 +1455,13 @@ class ABIAgentInterface:
         Reads ``pipeline_dag.yaml`` (if present) and the tool registry to answer
         structural questions about the pipeline without constructing a full plan.
         """
-        from abi.config import PLUGIN_ROOT
-
         plugin = get_plugin(analysis_type)
 
         # ── Load pipeline DAG (optional — not all plugins have one) ──────────
-        dag_path = PLUGIN_ROOT / analysis_type / "pipeline_dag.yaml"
+        # Resolve from the plugin's own root so externally installed plugins
+        # (11A) answer queries without assuming the global PLUGIN_ROOT.
+        # 从插件自身根目录解析，使外部安装的插件（11A）无需假设全局根即可响应查询。
+        dag_path = plugin.root / "pipeline_dag.yaml"
         dag: Optional[Dict[str, Any]] = None
         if dag_path.is_file():
             dag = yaml.safe_load(dag_path.read_text(encoding="utf-8")) or {}
@@ -1468,7 +1485,7 @@ class ABIAgentInterface:
         if what_lower == "workflows":
             from abi.workflow import WorkflowCatalog
 
-            workflows = WorkflowCatalog.for_plugin(analysis_type).rows()
+            workflows = WorkflowCatalog.for_plugin(analysis_type, plugin_root=plugin.root).rows()
             return {
                 "pipeline": analysis_type,
                 "workflows": workflows,

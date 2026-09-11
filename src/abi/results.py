@@ -10,6 +10,8 @@ from typing import Any, Dict, Iterable, Mapping, Optional
 from abi._shared import _read_tsv
 from abi.config import resolved_mamba_root, write_yaml
 from abi.provenance import (
+    capture_run_identity,
+    reset_run_provenance,
     write_commands_tsv,
     write_minimal_progress_artifacts,
     write_resolved_inputs_tsv,
@@ -91,6 +93,8 @@ class ABIResultWriter:
         return_code: int | str = "",
         engine: str = "local",
         smoke: bool = False,
+        resume: bool = False,
+        plan_id: str = "",
         extra_summary: Optional[Mapping[str, Any]] = None,
         extra_environment: Optional[Mapping[str, Any]] = None,
         trace_rows: Optional[Iterable[Mapping[str, Any]]] = None,
@@ -101,6 +105,16 @@ class ABIResultWriter:
         tables_dir = result_dir / "tables"
         provenance.mkdir(parents=True, exist_ok=True)
         tables_dir.mkdir(parents=True, exist_ok=True)
+        # Shared history semantics with the local executor (WP3): archive the
+        # prior run's evidence before this run rewrites the provenance view,
+        # and carry the same run identity fields into the summary so all four
+        # backends produce comparable evidence.
+        # 与本地执行器共享的历史语义（WP3）：本轮改写溯源视图前先归档先前运
+        # 行的证据，并把相同的运行身份字段写入摘要，使四个后端产出可比证据。
+        prior_lineage = reset_run_provenance(provenance)
+        run_identity = capture_run_identity(config)
+        run_identity["previous_run_archive"] = prior_lineage["previous_run_archive"]
+        run_identity["resumes_run_id"] = prior_lineage["previous_run_id"] if resume else None
         self.table_manager.ensure_tables(tables_dir)
 
         plan_path = result_dir / "execution_plan.json"
@@ -164,6 +178,8 @@ class ABIResultWriter:
             title=self.plugin.report_title,
         )
         summary = {
+            **run_identity,
+            "plan_id": str(plan_id or ""),
             "project_name": plan.project_name,
             "analysis_type": getattr(plan, "analysis_type", ""),
             "engine": engine,

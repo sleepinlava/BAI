@@ -1,5 +1,8 @@
 import json
 from types import SimpleNamespace
+from unittest.mock import Mock
+
+import pytest
 
 from abi.agent import ABIAgentInterface, interface
 
@@ -51,6 +54,64 @@ def test_agent_interface_run_requires_confirmation():
     assert payload["status"] == "confirmation_required"
     assert payload["command"] == "run"
     assert payload["result"]["message"].startswith("Re-run with confirm_execution=true")
+
+
+@pytest.mark.parametrize(
+    "confirm_execution",
+    ["false", "true", 1, ["approved"], {"approved": True}],
+)
+def test_agent_interface_run_rejects_truthy_non_boolean_confirmation_before_prepare(
+    monkeypatch, confirm_execution
+):
+    coordinator_factory = Mock(name="WorkflowCoordinator")
+    monkeypatch.setattr(interface, "WorkflowCoordinator", coordinator_factory)
+
+    payload = json.loads(
+        ABIAgentInterface().run(
+            analysis_type="metatranscriptomics",
+            confirm_execution=confirm_execution,
+        )
+    )
+
+    assert payload["status"] == "confirmation_required"
+    assert payload["command"] == "run"
+    coordinator_factory.assert_not_called()
+
+
+def test_agent_interface_run_accepts_boolean_true(monkeypatch):
+    prepared = SimpleNamespace(
+        plan=object(),
+        config={"outdir": "results/agent-boolean-true"},
+    )
+    bound_ids: list[str] = []
+
+    class StubCoordinator:
+        def prepare(self, *args, **kwargs):
+            return prepared
+
+        def run(self, received_prepared):
+            assert received_prepared is prepared
+            return SimpleNamespace(status="success", return_code=0, outputs={})
+
+    monkeypatch.setattr(interface, "WorkflowCoordinator", StubCoordinator)
+
+    def _fake_bind(received_prepared):
+        assert received_prepared is prepared
+        bound_ids.append("sha256:stub")
+        return bound_ids[-1]
+
+    monkeypatch.setattr(interface, "bind_confirmed_plan", _fake_bind)
+
+    payload = json.loads(
+        ABIAgentInterface().run(
+            analysis_type="metatranscriptomics",
+            confirm_execution=True,
+        )
+    )
+
+    assert payload["status"] == "success"
+    assert payload["result"]["runtime_status"] == "success"
+    assert bound_ids == ["sha256:stub"]
 
 
 def test_agent_interface_reports_invalid_json_file(tmp_path):
@@ -138,6 +199,28 @@ def test_agent_dispatch_enforces_execution_permission_before_handler(monkeypatch
     assert payload["result"]["tool"] == "abi_run"
 
 
+@pytest.mark.parametrize(
+    "confirm_execution",
+    ["false", "true", 1, ["approved"], {"approved": True}],
+)
+def test_agent_dispatch_rejects_truthy_non_boolean_confirmation_before_handler(
+    monkeypatch, confirm_execution
+):
+    agent = ABIAgentInterface()
+    run_handler = Mock(name="run_handler")
+    monkeypatch.setattr(agent, "run", run_handler)
+    payload = json.loads(
+        agent.dispatch(
+            "run",
+            {"analysis_type": "metatranscriptomics", "confirm_execution": confirm_execution},
+        )
+    )
+
+    assert payload["status"] == "confirmation_required"
+    assert payload["result"]["tool"] == "abi_run"
+    run_handler.assert_not_called()
+
+
 def test_agent_install_skills_is_dispatchable(tmp_path):
     payload = json.loads(
         ABIAgentInterface().dispatch(
@@ -170,3 +253,26 @@ def test_autoplasm_result_alias_uses_plugin_validation_capability(monkeypatch, t
     assert payload["status"] == "success"
     assert payload["result"] == {"valid": True}
     assert calls == [(tmp_path, False)]
+
+
+def test_query_resolves_dag_from_plugin_root_not_global_constant(tmp_path, monkeypatch):
+    """11A: query reads the DAG from the selected plugin's own root so an
+    externally installed plugin answers without assuming the global root."""
+    from abi.plugins import get_plugin
+
+    plugin = get_plugin("metatranscriptomics")
+    monkeypatch.setattr(type(plugin), "root", property(lambda self: tmp_path), raising=False)
+    (tmp_path / "pipeline_dag.yaml").write_text(
+        "nodes: []\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "tool_registry.yaml").write_text(
+        "tools:\n- id: fastp\n  default_enabled: true\n  required: true\n",
+        encoding="utf-8",
+    )
+
+    payload = json.loads(
+        ABIAgentInterface().query(analysis_type="metatranscriptomics", what="stages")
+    )
+
+    assert payload["status"] == "success"

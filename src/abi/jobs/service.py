@@ -215,6 +215,14 @@ class JobRecord:
     # ── Job ID from a remote scheduler (Nextflow/SLURM, etc.)
     #    远程调度器（Nextflow/SLURM 等）的作业 ID ──
     remote_scheduler_job_id: Optional[str] = None
+    # ── Termination evidence: request vs confirmed termination (WP3).
+    #    ``confirmed`` is True only when execution actually ended because of
+    #    the cancel (signal death, or never started); a completed dispatch is
+    #    never claimed as a confirmed cancellation.
+    #    终止证据：请求与确认终止之分（WP3）。仅当执行确实因取消而结束
+    #    （信号死亡或从未启动）时 confirmed 才为 True；已完成的调度不得
+    #    被声称为已确认取消。
+    termination: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -231,6 +239,7 @@ class JobRecord:
             "error": self.error,
             "error_type": self.error_type,
             "cancel_requested": self.cancel_requested,
+            "termination": dict(self.termination),
             "job_provenance_path": self.job_provenance_path,
             "job_provenance_error": self.job_provenance_error,
             "worker_pid": self.worker_pid,
@@ -332,7 +341,7 @@ class ABIJobService:
         backend = _backend_for(command, arguments)
         # Safety gate: execution commands must be explicitly confirmed
         # 安全关卡：执行命令必须明确确认
-        if _is_execution_command(command) and not bool(arguments.get("confirm_execution")):
+        if _is_execution_command(command) and arguments.get("confirm_execution") is not True:
             raise ConfirmationRequiredError(
                 "Execution jobs require confirm_execution=true after user approval.",
                 payload={
@@ -419,17 +428,45 @@ class ABIJobService:
             if record is None:
                 raise JobNotFoundError(f"Unknown ABI job: {job_id}")
             if record.status == "queued":
-                # Never started -- cancel immediately / 从未开始——立即取消
+                # Never started -- cancel immediately; confirmed because there
+                # was never any execution to terminate.
+                # 从未开始——立即取消；因无任何执行需要终止，视为已确认。
                 record.status = "cancelled"
                 record.finished_at = time.time()
-            elif record.status not in TERMINAL_STATUSES:
-                # Running -- request cancellation; may be honoured cooperatively or via force-kill /
-                # 运行中——请求取消；可能通过协作方式或强制终止来响应
+                record.termination = {
+                    "method": "never_started",
+                    "confirmed": True,
+                    "detail": "job cancelled before a worker picked it up",
+                }
+            elif record.status == "running":
+                # Running -- record the request BEFORE initiating termination,
+                # so the dispatch path's confirmed-termination evidence (if it
+                # lands) is the last writer and is never clobbered by this
+                # request record.
+                # 运行中——在发起终止之前记录请求，使调度路径的确认终止证据
+                # （若产生）成为最后写入者，不会被本请求记录覆盖。
                 record.status = "cancel_requested"
                 record.cancel_requested = True
-                # Force-kill subprocess worker when available / 如果有子进程 worker，强制终止
+                record.termination = {
+                    "method": "cooperative",
+                    "confirmed": False,
+                    "scope": "dispatch_worker",
+                    "detail": (
+                        "cancel request recorded; downstream engine or scheduler "
+                        "processes are not confirmed terminated by this request"
+                    ),
+                }
                 proc = self._processes.get(job_id)
                 if proc is not None and proc.poll() is None:
+                    record.termination = {
+                        "method": "sigterm",
+                        "confirmed": False,
+                        "scope": "dispatch_worker",
+                        "detail": (
+                            "cancel request recorded; downstream engine or scheduler "
+                            "processes are not confirmed terminated by this request"
+                        ),
+                    }
                     _kill_process(proc, record.worker_pid)
             record.updated_at = time.time()
             self._write_job_provenance_locked(record)
@@ -520,11 +557,38 @@ class ABIJobService:
                 # Extract remote scheduler job ID from the result envelope
                 # 从结果信使中提取远程调度器作业 ID
                 self._capture_remote_scheduler_id(record, envelope)
-                # Determine terminal status from envelope + cancel state
-                # 从信使和取消状态确定终止状态
-                if self._cancel_requested_or_cancelled(record):
+                # Determine terminal status from what actually happened. A
+                # cancel request alone never proves termination: the dispatch
+                # outcome decides (WP3 — request recorded ≠ execution ended).
+                # 依据实际结果确定终止状态。取消请求本身不证明终止：由调度结果
+                # 决定（WP3——请求已记录 ≠ 执行已终止）。
+                envelope_status = str(envelope.get("status") or "")
+                if envelope_status == "cancelled":
+                    # Only the dispatch path emits this, backed by exit
+                    # evidence of confirmed termination.
+                    # 仅调度路径在具备确认终止的退出证据时才返回该状态。
                     record.status = "cancelled"
-                elif envelope.get("status") == "success":
+                elif self._cancel_requested_or_cancelled(record):
+                    if envelope_status == "success":
+                        # The work completed before termination landed; claim
+                        # the fact, not a successful cancellation.
+                        # 工作在终止生效前已完成；记录事实而非声称取消成功。
+                        record.status = "succeeded"
+                        if not record.termination.get("confirmed"):
+                            record.termination = {
+                                "confirmed": False,
+                                "detail": (
+                                    "cancel request was recorded but dispatch "
+                                    "completed successfully before termination"
+                                ),
+                            }
+                    else:
+                        record.status = "failed"
+                        record.error = str(envelope.get("error") or envelope.get("status"))
+                        record.error_type = str(
+                            envelope.get("error_type") or envelope.get("status")
+                        )
+                elif envelope_status == "success":
                     record.status = "succeeded"
                 else:
                     record.status = "failed"
@@ -587,14 +651,49 @@ class ABIJobService:
             record.worker_pid = proc.pid
         # Block until the subprocess exits / 阻塞直到子进程退出
         stdout, stderr = proc.communicate()
-        # If cancel was requested while the subprocess ran, override the result
-        # 如果子进程运行期间请求取消，覆盖结果
+        # Classify the exit against any cancel request: exit evidence decides
+        # whether termination is confirmed (WP3). A worker killed by a signal
+        # is confirmed termination; a worker that exited normally completed
+        # its work and must not be reported as cancelled.
+        # 依据退出证据对取消请求分类（WP3）：被信号杀死的 worker 是已确认终
+        # 止；正常退出的 worker 已完成工作，不得报告为已取消。
         if self._cancel_requested_or_cancelled(record):
-            return {
-                "status": "cancelled",
-                "command": record.command,
-                "result": {},
-                "error": "Job was cancelled.",
+            if proc.returncode < 0:
+                signal_number = -proc.returncode
+                record.termination = {
+                    "method": "sigkill" if signal_number == 9 else f"signal_{signal_number}",
+                    "confirmed": True,
+                    "returncode": proc.returncode,
+                    "scope": "dispatch_worker",
+                    "detail": (
+                        "dispatch worker terminated by signal; downstream engine "
+                        "or scheduler processes are not confirmed by this evidence"
+                    ),
+                }
+                return {
+                    "status": "cancelled",
+                    "command": record.command,
+                    "result": {},
+                    "error": "Job was cancelled.",
+                }
+            if proc.returncode == 0:
+                record.termination = {
+                    "method": str(record.termination.get("method") or "sigterm"),
+                    "confirmed": False,
+                    "returncode": 0,
+                    "scope": "dispatch_worker",
+                    "detail": (
+                        "dispatch worker exited 0 after the cancel request; "
+                        "the work completed and its outputs stand"
+                    ),
+                }
+                return loads_json(stdout, label=f"subprocess dispatch stdout for {job_id}")
+            record.termination = {
+                "method": str(record.termination.get("method") or "sigterm"),
+                "confirmed": False,
+                "returncode": proc.returncode,
+                "scope": "dispatch_worker",
+                "detail": "dispatch worker exited non-zero after the cancel request",
             }
         if proc.returncode != 0:
             raise JobServiceError(

@@ -158,13 +158,19 @@ RESOURCE_FIELDS = {
 # / 单个工具调用的计算资源请求，由多个层级解析得出。
 
 
-@dataclass
+@dataclass(frozen=True)
 class ResourceSpec:
     """Compute resource request for a tool invocation.
 
     Stored as human-readable strings (``"8GB"``, ``"04:00:00"``) and
     rendered to scheduler-specific formats via ``to_nextflow_directives()``
     and ``to_slurm_directives()``.
+
+    Frozen value object: resolution layers build new instances instead of
+    mutating existing ones, so a resolved spec (e.g. inside a compiled plan)
+    cannot be changed in place.
+    冻结的值对象：各解析层构造新实例而不原地修改，已解析的规格（如编译计
+    划内部）无法被就地篡改。
 
     # Resolution precedence / 解析优先级
     Tool contract (authoritative default) < resource profile < user config

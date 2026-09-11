@@ -558,6 +558,9 @@ class HpcRuntime:
             status="success" if not failed else "partial_failure",
             return_code=0 if not failed else 1,
             engine="hpc",
+            smoke=self.options.smoke,
+            resume=self.options.resume,
+            plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
             extra_summary={
                 "job_ids": job_ids,
                 "statuses": statuses,

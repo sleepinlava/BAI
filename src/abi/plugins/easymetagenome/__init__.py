@@ -50,7 +50,9 @@ class EasyMetagenomePlugin:
         config = deep_merge(config, compact_overrides(overrides))
         workflow = dict(config.get("workflow", {}))
         preset = str(workflow.get("preset", "p0_taxonomy"))
-        resolved_workflow = WorkflowCatalog.for_plugin(self.plugin_id).resolve(preset)
+        resolved_workflow = WorkflowCatalog.for_plugin(
+            self.plugin_id, plugin_root=self.root
+        ).resolve(preset)
         workflow.setdefault("include_nodes", list(resolved_workflow.include_nodes))
         workflow["required_resources"] = list(resolved_workflow.required_resources)
         workflow["functional_enabled"] = "functional" in resolved_workflow.capabilities

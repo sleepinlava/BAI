@@ -107,8 +107,15 @@ def test_snakemake_dry_run_writes_snakefile_and_provenance_without_executing(
     runtime = SnakemakeRuntime(plugin, options=RuntimeOptions(engine="snakemake", smoke=True))
 
     def _forbidden(*args, **kwargs):  # pragma: no cover - must never run
-        raise AssertionError("dry_run must not execute snakemake")
+        command = args[0] if args else kwargs.get("args") or []
+        if command and "snakemake" in str(command[0]):
+            raise AssertionError("dry_run must not execute snakemake")
+        # Non-engine subprocesses (e.g. git identity capture in provenance)
+        # go through the real runner.
+        # 非引擎子进程（如溯源中的 git 身份捕获）走真实 runner。
+        return real_run(*args, **kwargs)
 
+    real_run = subprocess.run
     monkeypatch.setattr(subprocess, "run", _forbidden)
     result = runtime.dry_run(plan, config)
 

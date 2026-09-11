@@ -13,6 +13,7 @@ def test_all_public_error_types_are_exported() -> None:
         "InputPolicyError",
         "MissingTemplateParamError",
         "PackagingError",
+        "PlanDriftError",
         "PlanIntegrityError",
         "ResourcePolicyError",
         "SampleSheetError",

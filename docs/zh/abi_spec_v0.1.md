@@ -69,7 +69,8 @@
   `export_snakemake`、`install_skills`
 - `execution`：`run`
 
-执行需要 `confirm_execution=true`。描述符默认不导出 `abi_run`。
+执行需要 `confirm_execution=true`。描述符默认不导出 `abi_run`。该值必须是
+布尔值 `true`；此门控只检查请求值，不认证人类身份。
 
 ## 标准产物
 
@@ -96,6 +97,32 @@ outdir/
 `provenance/commands.tsv` 记录 provenance schema 定义的生命周期字段。Nextflow
 运行在 trace 暴露调度器/原生 ID 时（例如 Slurm 或云端批量执行器）也会填充
 `remote_scheduler_job_id`。
+
+`compiled_plan.json` 携带 `plan_id` —— 编译计划内容的 SHA-256 摘要。实际执行
+绑定到该身份：`run` 在启动前重新编译准备好的计划，并与已确认的
+`compiled_plan.json` 比对；若确认后配置、插件声明或工具目录发生变化，运行
+以 `invalid_config`（计划漂移）拒绝启动，而不是执行未经批准的计划。没有先
+执行 `plan` 的直接运行会先持久化已验证的计划，使后续运行对同一身份验证。
+`run_summary.json` 记录 `plan_id`，把运行记录与已确认计划关联起来。
+
+运行历史不会被覆盖：重试或恢复改写溯源视图之前，先前运行的证据先归档到
+`provenance/previous_runs/<prior_run_id>/`。恢复运行在 `run_summary.json`
+中记录 `resumes_run_id`（先前运行的 `run_id`）；全新重跑在
+`previous_run_archive` 记录归档路径，不声称恢复关联。
+
+四个后端（local、Nextflow、Snakemake、HPC）共享这些证据语义：其运行摘要
+携带相同的运行身份、`plan_id` 与历史关联字段。
+
+恢复时，被复用的步骤额外绑定到先前运行记录的校验和：步骤声明的产物或输
+入与先前运行的 `checksums.json` 不再一致时不予复用——该步骤重新执行，且
+命令记录写明原因（`resume reuse rejected: …`）。无校验和记录的旧产物回
+退到存在性与契约检查。
+
+取消区分“请求已记录”与“执行已确认终止”。取消请求以未确认证据记录；只有
+实际终止的退出证据（信号死亡，或从未启动）才把作业标为 `cancelled`。在
+取消请求已记录后仍完成的工作按真实结果报告（`succeeded`/`failed`），未
+确认的请求保留在作业的 `termination` 字段中；终止调度 worker 绝不被声称
+为已终止下游引擎或调度器进程。
 
 ## 错误码
 
@@ -137,9 +164,13 @@ ABI 使用来自 `abi.diagnostics` 的 19 个稳定错误码，枚举每一种�
 
 `abi.testing.assert_plugin_contract()` 验证运行时 Python 接口和机器可读的插件资产。校验同时强制执行输出契约覆盖率：`pipeline_dag.yaml` 中每个调用外部工具的节点必须声明 `contract:` 块；无产出的聚合节点必须显式声明 `contract: {exempt: true, reason: ...}`。
 
+## 插件发现与加载
+
+`list_types`、Agent summary 和 `doctor` 使用 `list_plugin_metadata()` 读取插件声明，不实例化所有插件实现。`get_plugin()` 只加载选中的插件；旧 SDK 的 `list_plugins()` 仍作为显式全量加载兼容接口保留。ABI 尚未提供独立可选安装的插件包，仍假设全局资源根的 `query`/catalog 调用方迁移留待后续。
+
 ## 步骤合约与可复现性
 
-运行时步骤合约由共享 DAG 规划器嵌入 `PlanStep.params["_contract"]`。全部 7 个
+运行时步骤合约由共享 DAG 规划器嵌入 `PlanStep.params["_contract"]`。全部 8 个
 内置插件都从各自的 `pipeline_dag.yaml` 复制此块。
 
 支持的输出检查包括：

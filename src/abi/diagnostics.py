@@ -312,6 +312,18 @@ def classify_exception(exc: Exception, *, command: str) -> tuple[str, List[Dict[
             ),
             artifact=_extract_path(message),
         )
+    if error_type == "PlanDriftError" or "plan drift" in lowered:
+        # The confirmed plan no longer matches the rebuilt plan — ABI refuses
+        # to start unapproved work instead of silently executing drift.
+        # 已确认计划与重建计划不再一致 — ABI 拒绝启动未经批准的工作。
+        return _diagnosis(
+            "invalid_config",
+            "The confirmed plan no longer matches the plan rebuilt from the current state.",
+            (
+                "Re-run abi plan for this output directory, review the regenerated plan, "
+                "and re-run with confirm_execution=true after user approval."
+            ),
+        )
     if error_type in {"PlanIntegrityError", "ToolResolutionError", "UnsupportedExecutionError"}:
         # Compiled-plan invariant validation aborted plan compilation — the
         # plugin declaration or config produced an invalid plan.

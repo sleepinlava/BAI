@@ -101,8 +101,10 @@ from abi._shared import _display_command
 from abi.config import resolved_mamba_root, write_yaml
 from abi.contracts.step_contract import (
     ContractViolationError,
+    compute_file_checksum,
     evaluate_assertions,
     invalidate_step_checksums,
+    load_checksums,
     save_checksums_atomic,
     validate_output_contract,
     verify_input_checksums,
@@ -184,6 +186,10 @@ class GenericABIExecutor:
         # Accumulated checksum map across all executed steps.
         # 跨所有已执行步骤累积的校验和映射。
         self._checksums: Dict[str, str] = {}
+        # Checksum map recorded by the prior run (resume only): the identity
+        # reference reused outputs and inputs are verified against.
+        # 先前运行记录的校验和映射（仅恢复时使用）：复用产物与输入的验证基准。
+        self._prior_checksums: Dict[str, str] = {}
         # Actual output paths that differ from the paths recorded in the plan.
         # Only these are eligible for downstream path propagation.
         self._resolved_output_replacements: Dict[str, Dict[str, str]] = {}
@@ -211,20 +217,29 @@ class GenericABIExecutor:
         *,
         dry_run: bool = False,
         resume: bool = False,
+        confirmed_plan_id: str = "",
     ) -> Dict[str, Path]:
         """Execute a plan and write all provenance artifacts.
 
         This is the main entry point. It orchestrates the entire pipeline:
 
-        1. Ensures output directory structure (outdir/, provenance/, tables/).
-        2. Writes the execution plan JSON and resolved config YAML.
-        3. Resolves input file paths and writes a resolved_inputs.tsv.
-        4. Iterates over plan steps, executing each via ``_execute_step``.
+        1. Archives any prior run's provenance into ``provenance/previous_runs/``
+           (history is never overwritten by retry or resume), then resets the
+           mutable provenance artifacts for this run.
+        2. Ensures output directory structure (outdir/, provenance/, tables/).
+        3. Writes the execution plan JSON and resolved config YAML.
+        4. Resolves input file paths and writes a resolved_inputs.tsv.
+        5. Iterates over plan steps, executing each via ``_execute_step``.
            When ``resume`` is enabled, completed steps with valid non-empty
            outputs are recorded as resumed instead of being run again.
-        5. On the first failure, records the error and breaks (fail-fast).
-        6. Writes all remaining provenance artifacts regardless of outcome.
-        7. Returns a mapping of artifact labels to file paths.
+        6. On the first failure, records the error and breaks (fail-fast).
+        7. Writes all remaining provenance artifacts regardless of outcome.
+        8. Returns a mapping of artifact labels to file paths.
+
+        ``confirmed_plan_id`` is the identity of the confirmed compiled plan
+        this run was verified against (empty for legacy direct callers); it is
+        recorded in ``run_summary.json`` so authorization and execution stay
+        verifiably linked.
 
         Returns a dict with keys: plan, config, commands, resolved_inputs,
         tool_versions, resources, environment, summary, tables, report,
@@ -233,13 +248,15 @@ class GenericABIExecutor:
         Raises ``ToolError`` if any step failed.
 
         执行计划并写出所有溯源产物。这是主入口点，编排整个管线：
-        1. 确保输出目录结构。
-        2. 写出执行计划 JSON 和解析后的配置 YAML。
-        3. 解析输入文件路径并写出 resolved_inputs.tsv。
-        4. 遍历计划步骤，通过 ``_execute_step`` 执行每个步骤。
-        5. 遇到第一个失败时记录错误并停止（fail-fast）。
-        6. 无论结果如何，写出所有剩余的溯源产物。
-        7. 返回产物标签到文件路径的映射。
+        1. 将先前运行的溯源归档到 provenance/previous_runs/（历史不会被重试
+           或恢复覆盖），然后为本轮重置可变溯源产物。
+        2. 确保输出目录结构。
+        3. 写出执行计划 JSON 和解析后的配置 YAML。
+        4. 解析输入文件路径并写出 resolved_inputs.tsv。
+        5. 遍历计划步骤，通过 ``_execute_step`` 执行每个步骤。
+        6. 遇到第一个失败时记录错误并停止（fail-fast）。
+        7. 无论结果如何，写出所有剩余的溯源产物。
+        8. 返回产物标签到文件路径的映射。
 
         如果任何步骤失败，抛出 ``ToolError``。
         """
@@ -253,11 +270,32 @@ class GenericABIExecutor:
             configured_provenance or outdir / "provenance",
             label="Provenance directory",
         )
-        reset_run_provenance(provenance)
+        # Archive any prior run's evidence, then reset mutable artifacts.
+        # The prior run identity links this run to the history it replaces:
+        # resume records ``resumes_run_id``, retry records the archive path.
+        # 归档先前运行的证据，再重置可变产物。先前运行身份将本轮与被替代的
+        # 历史关联：恢复记录 resumes_run_id，重试记录归档路径。
+        prior_lineage = reset_run_provenance(provenance)
         # Executor instances may be reused for multiple runs.  Checksums from a
-        # prior plan must never participate in the next plan's integrity chain.
+        # prior plan must never participate in the next plan's integrity chain
+        # — except on resume, where the archived prior chain is exactly what
+        # binds reused outputs to their recorded identity (WP3): the prior
+        # output checksums keep downstream input verification working, and a
+        # changed checksum marks a step not resumable.
+        # 执行器实例可被多次运行复用。先前计划的校验和不得参与下一计划的完整
+        # 性链——恢复（resume）除外：归档的先前链条正是把被复用产物绑定到其
+        # 记录身份的依据（WP3）：先前输出校验和让下游输入验证继续有效，校验
+        # 和变化则标记步骤不可复用。
+        prior_checksums: Dict[str, str] = {}
+        prior_archive = prior_lineage.get("previous_run_archive")
+        if resume and prior_archive:
+            prior_checksums = load_checksums(
+                provenance / prior_archive,
+                strict=False,
+            )
         with self._checksum_lock:
-            self._checksums = {}
+            self._checksums = dict(prior_checksums) if resume else {}
+        self._prior_checksums = dict(prior_checksums)
         tables_dir = ensure_directory(outdir / "tables", label="Standard tables directory")
         self.table_manager.ensure_tables(tables_dir)
         # Pre-create per-step output directories so tools don't fail on missing dirs.
@@ -334,6 +372,8 @@ class GenericABIExecutor:
             ),
         )
         run_identity = capture_run_identity(config)
+        run_identity["previous_run_archive"] = prior_lineage["previous_run_archive"]
+        run_identity["resumes_run_id"] = prior_lineage["previous_run_id"] if resume else None
         if isinstance(provenance_options, Mapping):
             identity_failures = []
             if provenance_options.get("require_clean_git") and (
@@ -647,6 +687,7 @@ class GenericABIExecutor:
             workers=workers,
             batch_size=batch_size,
             table_summary=table_summary,
+            confirmed_plan_id=confirmed_plan_id,
         )
         # Raise after writing all artifacts so callers can inspect provenance
         # even for failed runs.
@@ -678,6 +719,7 @@ class GenericABIExecutor:
         dry_run: bool,
         parallel: bool,
         workers: int,
+        confirmed_plan_id: str = "",
         batch_size: Any,
         table_summary: Mapping[str, Any],
     ) -> Dict[str, Path]:
@@ -769,6 +811,7 @@ class GenericABIExecutor:
             json.dumps(
                 {
                     **run_identity,
+                    "plan_id": str(confirmed_plan_id or ""),
                     "project_name": plan.project_name,
                     "analysis_type": getattr(plan, "analysis_type", ""),
                     "dry_run": dry_run,
@@ -919,6 +962,12 @@ class GenericABIExecutor:
         parsed_status = ""
         standard_tables = ""
         failed_error: ToolError | None = None
+        # Why validated reuse was refused (empty when not applicable). Recorded
+        # in the command row so the evidence shows a step re-ran because its
+        # recorded identity no longer matched.
+        # 拒绝复用的原因（不适用时为空）。记入命令行，使证据显示步骤因记录
+        # 身份不再匹配而重跑。
+        resume_rejection = ""
 
         # Notify progress recorder that a step is starting.
         # 通知进度记录器步骤开始。
@@ -929,11 +978,19 @@ class GenericABIExecutor:
         # explicit skip > validated resume > dry-run/internal > unregistered > real execution.
         # 根据步骤状态进行分发。顺序很重要：
         # skipped > dry_run/internal > 未注册 > 真实执行。
+        # Validated reuse is decided before the dispatch chain so that a
+        # refused resume falls through to normal execution (original order:
+        # skipped > validated resume > dry-run/internal > unregistered > real).
+        # 在分发链之前决定验证复用，被拒绝的恢复落入正常执行（原顺序：
+        # skipped > 验证恢复 > dry-run/internal > 未注册 > 真实执行）。
+        resumable = False
+        if resume and not dry_run and not step.skipped and step.tool_id != "internal":
+            resumable, resume_rejection = self._step_is_resumable(step)
         if step.skipped:
             # Step was explicitly skipped (e.g., already completed in a prior run).
             # 步骤被显式跳过（例如在之前的运行中已完成）。
             status = "skipped"
-        elif resume and not dry_run and self._step_is_resumable(step):
+        elif resumable:
             status = "resumed"
             return_code = 0
             reason = "validated existing outputs reused"
@@ -988,6 +1045,12 @@ class GenericABIExecutor:
 
         # Assemble the standardized command metadata row for commands.tsv.
         # 组装用于 commands.tsv 的标准化命令元数据行。
+        if resume_rejection and status in {"success", "failed"}:
+            reason = (
+                f"{reason}; resume reuse rejected: {resume_rejection}"
+                if reason
+                else f"resume reuse rejected: {resume_rejection}"
+            )
         row = {
             "step_id": step.step_id,
             "sample_id": step.sample_id,
@@ -1015,20 +1078,29 @@ class GenericABIExecutor:
             )
         return row, failed_error
 
-    def _step_is_resumable(self, step: Any) -> bool:
+    def _step_is_resumable(self, step: Any) -> tuple[bool, str]:
         """Validate whether a completed external step can be safely reused.
 
         A local retry can occur after the initial run has already written valid
         outputs but before the final summary.  Reusing an output directory by
         itself is unsafe, so every declared file output must exist and be
         non-empty; declared contract checks and assertions must also pass.
+
+        Resume further binds identities (WP3): when the prior run recorded
+        checksums, a step's outputs and inputs must still match them.  A
+        mismatch means the underlying data changed since the recorded run —
+        the step is not reused (it re-executes, and the downstream checksum
+        chain is refreshed by normal execution).
+
+        Returns ``(resumable, rejection_reason)``; the reason is empty when
+        resumable and otherwise records why reuse was refused.
         """
         if step.tool_id == "internal" or step.skipped:
-            return False
+            return False, ""
         contract = plan_step_contract(step)
         output_spec = contract.get("outputs", {}) if isinstance(contract, Mapping) else {}
         if not isinstance(output_spec, Mapping) or not output_spec:
-            return False
+            return False, ""
 
         planned_outputs = dict(step.outputs)
         resolved_outputs = _resolve_actual_outputs(step.outputs, output_spec, step.sample_id)
@@ -1038,22 +1110,47 @@ class GenericABIExecutor:
                 continue
             value = resolved_outputs.get(key)
             if not value:
-                return False
+                return False, ""
             path = Path(str(value))
             if not path.is_file() or path.stat().st_size == 0:
-                return False
+                return False, ""
             file_outputs.append(path)
+            # Identity binding: the artifact must still match the checksum the
+            # prior run recorded for it. Old archives without checksums fall
+            # back to the existence/contract checks above.
+            # 身份绑定：产物必须仍与先前运行记录的校验和一致。无校验和的旧
+            # 归档回退到上述存在性/契约检查。
+            expected = self._prior_checksums.get(str(path))
+            if expected:
+                actual = compute_file_checksum(path)
+                if actual != expected:
+                    return False, (
+                        f"output {key!r} changed since the prior run (checksum mismatch for {path})"
+                    )
         if not file_outputs:
-            return False
+            return False, ""
 
         contract_result = validate_output_contract(step.step_id, resolved_outputs, output_spec)
         if not contract_result.passed:
-            return False
+            return False, ""
         assertions = contract.get("assertions", [])
         if assertions and evaluate_assertions(
             assertions, _build_assertion_context(step, resolved_outputs)
         ):
-            return False
+            return False, ""
+
+        # Input identity binding: files this step consumes that the prior run
+        # checksummed must be unchanged, otherwise the reuse would silently
+        # pair old outputs with new data.
+        # 输入身份绑定：本步骤消费、且先前运行记录过校验和的文件必须未变化，
+        # 否则复用会把旧产物与新数据静默搭配。
+        if self._prior_checksums:
+            input_violations = verify_input_checksums(
+                step.step_id, dict(step.inputs), self._prior_checksums
+            )
+            if input_violations:
+                first = input_violations[0]
+                return False, f"input changed since the prior run ({first.path})"
 
         self._resolved_output_replacements[step.step_id] = {
             key: str(value)
@@ -1067,7 +1164,7 @@ class GenericABIExecutor:
         for key, value in resolved_outputs.items():
             if key != "output_dir" and value != step.outputs.get(key):
                 step.outputs[key] = value
-        return True
+        return True, ""
 
     def _run_internal_step(
         self,

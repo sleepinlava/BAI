@@ -70,7 +70,7 @@ results/first-dry-run/
 Open these files first:
 
 - `execution_plan.json` — the commands, inputs, outputs, and step order ABI selected;
-- `compiled_plan.json` — the validated, backend-neutral compiled view of the same plan;
+- `compiled_plan.json` — the validated, backend-neutral compiled view of the same plan; its `plan_id` is the content digest that actual execution is verified against;
 - `provenance/commands.tsv` — the command record;
 - `provenance/config.resolved.yaml` — the effective configuration;
 - `report/report.html` — the report layout your real result will use.

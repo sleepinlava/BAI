@@ -45,6 +45,7 @@ __all__ = [
     "InputPolicyError",
     "MissingTemplateParamError",
     "PackagingError",
+    "PlanDriftError",
     "PlanIntegrityError",
     "ResourcePolicyError",
     "SampleSheetError",
@@ -153,6 +154,24 @@ class ToolError(ABIError):
 
 class PlanIntegrityError(ABIError):
     """Raised when a DAG or compiled-plan invariant is violated."""
+
+
+class PlanDriftError(PlanIntegrityError):
+    """Raised when runtime state no longer matches the confirmed compiled plan.
+
+    A confirmed ``compiled_plan.json`` binds a run to the plan the user
+    approved.  If configuration, plugin declarations, or the tool catalog
+    change after confirmation, the rebuilt plan no longer matches and ABI
+    refuses to start work instead of silently executing a drifted plan.
+    Recovery is always: re-run ``abi plan``, review the regenerated plan, and
+    obtain a fresh user approval.
+
+    当运行时状态与已确认的编译计划不再一致时抛出。已确认的
+    ``compiled_plan.json`` 将运行绑定到用户批准的计划；若确认后配置、插件
+    声明或工具目录发生变化，重建的计划不再匹配，ABI 拒绝启动而不是静默
+    执行漂移后的计划。恢复方式永远是：重新执行 ``abi plan``，复查再生的
+    计划，并重新获得用户批准。
+    """
 
 
 class UnsupportedExecutionError(ABIError):

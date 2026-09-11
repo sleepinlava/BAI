@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from abi.contracts.step_contract import ContractViolationError
+from abi.contracts.step_contract import ContractViolationError, compute_file_checksum
 from abi.errors import InputPolicyError
 from abi.executor import (
     GenericABIExecutor,
@@ -42,6 +42,12 @@ class _Tables:
     def __init__(self) -> None:
         self.rows = []
 
+    def ensure_tables(self, path):
+        return None
+
+    def summarize(self, path):
+        return {}
+
     def append_rows(self, path, rows):
         self.rows.append(rows)
         return list(rows)
@@ -54,6 +60,16 @@ class _Registry:
 
     def has(self, tool_id: str) -> bool:
         return self.registered and tool_id == "tool"
+
+    def get(self, tool_id: str, *, mock_tools: bool = False):
+        """Registry metadata lookup used by output-directory policies."""
+        return {}
+
+    def list_tools(self):
+        return [{"id": "tool", "executable": "tool"}]
+
+    def check_tools(self, *, mock_tools: bool = False, config=None):
+        return []
 
     def create(self, tool_id: str, *, mock_tools: bool = False):
         return self.skill
@@ -792,3 +808,170 @@ def test_control_plane_fields_never_reach_tool_params(tmp_path: Path) -> None:
     for key in ("_contract", "_internal_handler", "_explicit_dependencies", "_dag_node_id"):
         assert key not in merged, key
     assert not any(k.startswith("_contract") for k in merged)
+
+
+# ── Resume identity binding (WP3) ────────────────────────────────────────────
+
+
+def test_resume_refuses_reuse_when_output_checksum_changed(tmp_path: Path) -> None:
+    output = tmp_path / "result.tsv"
+    output.write_text("value\n1\n", encoding="utf-8")
+    skill = _Skill()
+    executor = _executor(tmp_path, skill=skill)
+    executor._prior_checksums = {str(output): "sha256:" + "0" * 64}
+    step = _step(
+        outputs={"result": str(output), "output_dir": str(tmp_path)},
+        params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+    )
+
+    row, error = executor._execute_step(
+        step,
+        dry_run=False,
+        resume=True,
+        provenance=tmp_path / "provenance",
+        tables_dir=tmp_path / "tables",
+        progress_recorder=None,
+    )
+
+    assert error is None
+    assert row["status"] == "success"
+    assert "resume reuse rejected" in row["reason"]
+    assert "checksum mismatch" in row["reason"]
+    assert skill.params is not None  # re-executed instead of reused
+
+
+def test_resume_refuses_reuse_when_input_checksum_changed(tmp_path: Path) -> None:
+    output = tmp_path / "result.tsv"
+    output.write_text("value\n1\n", encoding="utf-8")
+    upstream_input = tmp_path / "input.tsv"
+    upstream_input.write_text("changed\n", encoding="utf-8")
+    skill = _Skill()
+    executor = _executor(tmp_path, skill=skill)
+    executor._prior_checksums = {
+        str(output): compute_file_checksum(output),
+        str(upstream_input): "sha256:" + "1" * 64,  # recorded digest no longer matches
+    }
+    step = _step(
+        inputs={"table": str(upstream_input)},
+        outputs={"result": str(output), "output_dir": str(tmp_path)},
+        params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+    )
+
+    row, error = executor._execute_step(
+        step,
+        dry_run=False,
+        resume=True,
+        provenance=tmp_path / "provenance",
+        tables_dir=tmp_path / "tables",
+        progress_recorder=None,
+    )
+
+    assert error is None
+    assert row["status"] == "success"
+    assert "resume reuse rejected" in row["reason"]
+    assert "input changed" in row["reason"]
+    assert skill.params is not None
+
+
+def test_resume_reuses_step_when_prior_checksums_match(tmp_path: Path) -> None:
+    output = tmp_path / "result.tsv"
+    output.write_text("value\n1\n", encoding="utf-8")
+    skill = _Skill()
+    executor = _executor(tmp_path, skill=skill)
+    executor._prior_checksums = {str(output): compute_file_checksum(output)}
+    step = _step(
+        outputs={"result": str(output), "output_dir": str(tmp_path)},
+        params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+    )
+
+    row, error = executor._execute_step(
+        step,
+        dry_run=False,
+        resume=True,
+        provenance=tmp_path / "provenance",
+        tables_dir=tmp_path / "tables",
+        progress_recorder=None,
+    )
+
+    assert error is None
+    assert row["status"] == "resumed"
+    assert skill.params is None
+
+
+def test_resume_run_carries_prior_checksum_chain_and_reruns_tampered_output(tmp_path: Path) -> None:
+    """WP3: resume binds reused artifacts to the prior run's recorded identity."""
+    outdir = tmp_path / "out"
+    output = outdir / "steps" / "s1" / "result.tsv"
+    output.parent.mkdir(parents=True)
+
+    def _plan() -> ExecutionPlan:
+        return ExecutionPlan(
+            project_name="resume-binding",
+            mode="auto",
+            threads=1,
+            outdir=str(outdir),
+            log_dir=str(tmp_path / "log"),
+            samples=[SampleInput(sample_id="S1")],
+            sample_context=SampleContext([SampleInput(sample_id="S1")], True, False),
+            steps=[
+                PlanStep(
+                    step_id="s1",
+                    step_name="S1",
+                    tool_id="tool",
+                    category="test",
+                    sample_id="S1",
+                    inputs={},
+                    outputs={"result": str(output), "output_dir": str(output.parent)},
+                    params={"_contract": {"outputs": {"result": {"contract": {"type": "file"}}}}},
+                )
+            ],
+            selected_tools=["tool"],
+            analysis_type="test",
+        )
+
+    class _WritingSkill:
+        def __init__(self) -> None:
+            self.content = "value\n1\n"
+            self.calls = 0
+
+        def build_command(self, params):
+            return ["tool"]
+
+        def run(self, params, *, dry_run: bool):
+            self.calls += 1
+            Path(str(params["result"])).write_text(self.content, encoding="utf-8")
+            return SimpleNamespace(return_code=0, status="success", outputs={})
+
+    first_skill = _WritingSkill()
+    executor = _executor(tmp_path, skill=first_skill)
+    executor.run(_plan(), {"outdir": str(outdir), "log_dir": str(tmp_path / "log")})
+    first_summary = json.loads(
+        (outdir / "provenance" / "run_summary.json").read_text(encoding="utf-8")
+    )
+    recorded = json.loads((outdir / "provenance" / "checksums.json").read_text(encoding="utf-8"))
+    assert str(output) in recorded
+
+    # Tamper with the completed step's output, then resume: the recorded
+    # identity no longer matches, so the step must re-execute.
+    # 篡改已完成步骤的产物后恢复：记录身份不再匹配，步骤必须重跑。
+    output.write_text("tampered\n", encoding="utf-8")
+    tamper_skill = _WritingSkill()
+    tamper_skill.content = "fresh\n"
+    executor_tamper = _executor(tmp_path, skill=tamper_skill)
+    executor_tamper.run(
+        _plan(),
+        {"outdir": str(outdir), "log_dir": str(tmp_path / "log")},
+        resume=True,
+    )
+    second_summary = json.loads(
+        (outdir / "provenance" / "run_summary.json").read_text(encoding="utf-8")
+    )
+    assert second_summary["resumes_run_id"] == first_summary["run_id"]
+    assert tamper_skill.calls == 1  # re-executed, not reused
+
+    commands = (outdir / "provenance" / "commands.tsv").read_text(encoding="utf-8")
+    assert "resume reuse rejected" in commands
+    assert "checksum mismatch" in commands
+    # The refreshed checksum chain records the new content for downstream runs.
+    refreshed = json.loads((outdir / "provenance" / "checksums.json").read_text(encoding="utf-8"))
+    assert refreshed[str(output)] != recorded[str(output)]

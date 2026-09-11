@@ -121,6 +121,21 @@ class TestClassifyException:
         code, hints = self._classify(exc)
         assert code in ("permission_required", "internal_error")
 
+    def test_plan_drift_classified_with_replan_recovery(self):
+        from abi.errors import PlanDriftError
+
+        exc = PlanDriftError(
+            "Confirmed plan drift detected for output directory /tmp/out: the persisted "
+            "compiled plan does not match the plan rebuilt from the current configuration."
+        )
+        code, hints = self._classify(exc, command="run")
+        assert code == "invalid_config"
+        assert "abi plan" in hints[0]["suggested_next_action"]
+        # Not a confirmation gate: drift already had user approval; the plan
+        # itself changed. Recovery is re-planning, not re-asking permission.
+        # 不是确认闸门：漂移发生在已批准之后，恢复方式是重新规划。
+        assert hints[0]["code"] == "invalid_config"
+
     def test_contract_violation_classified(self):
         exc = ContractViolationError(
             "step_1",

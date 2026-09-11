@@ -16,6 +16,7 @@ class CompletePlugin:
     display_name = "Complete"
     description = "Complete protocol implementation"
     report_title = "Complete Report"
+    root = Path("/tmp/plugins/complete")  # 11A: plugin-owned resource root
 
     def load_config(self, config_path=None, *, profile=None, overrides=None):
         return {}
@@ -70,7 +71,16 @@ def test_dry_run_protocol_requires_dedicated_method():
 
 def test_initializable_protocol_requires_root_attribute():
     assert isinstance(InitializablePlugin(), ABIInitializablePlugin)
-    assert not isinstance(CompletePlugin(), ABIInitializablePlugin)
+    # 11A: ``root`` moved to the base ABIPlugin protocol, so every plugin now
+    # carries its own resource root at runtime and the Initializable marker
+    # adds no further runtime member. The guarantee under test is that a
+    # minimal structural plugin satisfies the base protocol including root.
+    # 11A：root 上移到基础 ABIPlugin 协议，每个插件在运行时都携带自己的资源
+    # 根，Initializable 标记不再新增运行时成员。被测保证是：最小结构插件
+    # 满足含 root 的基础协议。
+    assert isinstance(CompletePlugin(), ABIInitializablePlugin)
+    assert isinstance(CompletePlugin(), ABIPlugin)
+    assert CompletePlugin.root == Path("/tmp/plugins/complete")
 
 
 def test_resource_protocol_requires_check_and_setup_methods():

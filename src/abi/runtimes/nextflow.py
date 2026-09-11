@@ -197,6 +197,8 @@ class NextflowRuntime:
             return_code=result.returncode,
             engine="nextflow",
             smoke=self.options.smoke,
+            resume=self.options.resume,
+            plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
             trace_rows=trace_rows,
             extra_summary={
                 "workflow": str(workflow_path),

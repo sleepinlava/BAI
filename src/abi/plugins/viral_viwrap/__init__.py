@@ -100,7 +100,7 @@ class ViralViWrapPlugin:
                 "Unknown viral_viwrap workflow field(s): " + ", ".join(unknown_workflow_keys)
             )
         preset = str(workflow.get("preset", "viwrap_compat"))
-        WorkflowCatalog.for_plugin(self.plugin_id).resolve(preset)
+        WorkflowCatalog.for_plugin(self.plugin_id, plugin_root=self.root).resolve(preset)
         workflow["preset"] = preset
         config["workflow"] = workflow
         nested = config.get("input", {})

@@ -6,6 +6,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from unittest.mock import Mock
 
 import pytest
 from typer.testing import CliRunner
@@ -72,6 +73,38 @@ def test_job_service_requires_confirmation_for_execution_jobs():
         service.shutdown()
 
 
+@pytest.mark.parametrize(
+    "confirm_execution",
+    ["false", "true", 1, ["approved"], {"approved": True}],
+)
+def test_job_service_rejects_truthy_non_boolean_confirmation_before_backend_preparation(
+    monkeypatch, confirm_execution
+):
+    normalizer = Mock(name="normalize_backend_arguments")
+    monkeypatch.setattr("abi.jobs.service._normalize_backend_arguments", normalizer)
+    agent = Mock(name="agent")
+    service = ABIJobService(agent=agent)
+    try:
+        with pytest.raises(ConfirmationRequiredError) as exc_info:
+            service.submit(
+                {
+                    "command": "run",
+                    "arguments": {
+                        "analysis_type": "metatranscriptomics",
+                        "confirm_execution": confirm_execution,
+                    },
+                }
+            )
+
+        assert exc_info.value.payload["status"] == "confirmation_required"
+        assert exc_info.value.payload["command"] == "abi_run"
+        assert service.list_jobs() == {"jobs": [], "count": 0}
+        normalizer.assert_not_called()
+        agent.dispatch.assert_not_called()
+    finally:
+        service.shutdown()
+
+
 def test_job_service_can_cancel_queued_job():
     started = threading.Event()
     release = threading.Event()
@@ -99,7 +132,13 @@ def test_job_service_can_cancel_queued_job():
         service.shutdown()
 
 
-def test_job_service_records_running_cancel_request_after_dispatch_finishes():
+def test_job_service_records_running_cancel_request_without_claiming_termination():
+    """WP3: a cancel request recorded during dispatch must not erase what the
+    work actually did. A dispatch that completes successfully stands as
+    succeeded, with the late cancel request visible as unconfirmed evidence.
+    WP3：调度期间记录的取消请求不得抹去工作实际完成的事实。成功完成的调度
+    应为 succeeded，迟到的取消请求作为未确认证据可见。
+    """
     started = threading.Event()
     release = threading.Event()
 
@@ -121,6 +160,7 @@ def test_job_service_records_running_cancel_request_after_dispatch_finishes():
 
         assert cancelled["status"] == "cancel_requested"
         assert cancelled["cancel_requested"] is True
+        assert cancelled["termination"]["confirmed"] is False
 
         release.set()
         deadline = time.time() + 2
@@ -131,11 +171,52 @@ def test_job_service_records_running_cancel_request_after_dispatch_finishes():
                 break
             time.sleep(0.05)
 
-        assert job["status"] == "cancelled"
+        # The dispatch completed successfully before termination landed: the
+        # terminal status records the real outcome, not a fabricated cancel.
+        # 调度在终止生效前成功完成：终止状态记录真实结果，而非伪造取消。
+        assert job["status"] == "succeeded"
         assert job["cancel_requested"] is True
+        assert job["termination"]["confirmed"] is False
         assert job["finished_at"] is not None
     finally:
         release.set()
+        service.shutdown()
+
+
+def test_job_service_confirms_cancellation_from_signal_death(monkeypatch):
+    """WP3: only exit evidence of death-by-signal confirms cancellation."""
+
+    class InstantAgent:
+        def dispatch(self, command, arguments):
+            del command, arguments
+            return json.dumps({"status": "success", "command": "abi_plan", "result": {}})
+
+    service = ABIJobService(agent=InstantAgent(), max_workers=1, subprocess_workers=True)
+    try:
+        submitted = service.submit(
+            {"command": "plan", "arguments": {"analysis_type": "metatranscriptomics"}}
+        )
+        deadline = time.time() + 2
+        while time.time() < deadline:
+            record = service._record(submitted["job_id"])
+            if record.started_at is not None and service._processes.get(submitted["job_id"]):
+                break
+            time.sleep(0.02)
+
+        service.cancel(submitted["job_id"])
+
+        deadline = time.time() + 2
+        job = {}
+        while time.time() < deadline:
+            job = service.get_job(submitted["job_id"])
+            if job["finished_at"] is not None:
+                break
+            time.sleep(0.02)
+
+        assert job["status"] == "cancelled"
+        assert job["termination"]["confirmed"] is True
+        assert str(job["termination"]["method"]).startswith("signal_")
+    finally:
         service.shutdown()
 
 

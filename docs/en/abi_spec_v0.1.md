@@ -75,6 +75,8 @@ Python exception class for debugging.
 
 Execution requires `confirm_execution=true`. Descriptors do not export
 `abi_run` by default.
+The value must be the Boolean `true`; this gate checks the request value and
+does not authenticate a human identity.
 
 ## Standard Artifacts
 
@@ -102,6 +104,41 @@ outdir/
 provenance schema. Nextflow-backed runs also populate
 `remote_scheduler_job_id` when the Nextflow trace exposes a scheduler/native
 ID, for example from Slurm or a cloud batch executor.
+
+`compiled_plan.json` carries a `plan_id` — the SHA-256 content digest of the
+compiled plan. Actual execution binds to this identity: `run` recompiles the
+prepared plan and verifies it against the confirmed `compiled_plan.json`
+before starting; when configuration, plugin declarations, or the tool catalog
+changed after confirmation, the run refuses with `invalid_config` (plan
+drift) instead of executing an unapproved plan. A direct run without a prior
+`plan` persists the verified plan first, so later runs verify against the
+same identity. `run_summary.json` records `plan_id`, linking the run record
+to the confirmed plan.
+
+Run history is never overwritten: before a retry or resume rewrites the
+provenance view, the prior run's evidence is archived under
+`provenance/previous_runs/<prior_run_id>/`. A resume records
+`resumes_run_id` (the prior run's `run_id`) in its `run_summary.json`; a
+fresh re-run records the archive path in `previous_run_archive` without
+claiming a resume link.
+
+All four backends (local, Nextflow, Snakemake, HPC) share these evidence
+semantics: their run summaries carry the same run identity, `plan_id`, and
+history-linkage fields.
+
+On resume, reused steps are additionally bound to the prior run's recorded
+checksums: a step whose declared outputs or inputs no longer match the
+prior run's `checksums.json` is not reused — it re-executes, and the
+command record states why (`resume reuse rejected: …`). Artifacts from old
+runs without recorded checksums fall back to existence and contract checks.
+
+Cancellation distinguishes the request from confirmed termination. A cancel
+request is recorded with unconfirmed evidence; only exit evidence of actual
+termination (death by signal, or never started) marks a job `cancelled`.
+Work that completes despite a recorded cancel request is reported by its
+real outcome (`succeeded`/`failed`) with the unconfirmed request preserved
+in the job's `termination` field; killing the dispatch worker is never
+claimed as termination of downstream engine or scheduler processes.
 
 ## Error Codes
 
@@ -154,6 +191,16 @@ coverage: every external-tool node in `pipeline_dag.yaml` must declare a
 `contract:` block, or an explicit `contract: {exempt: true, reason: ...}` for
 output-less aggregation nodes.
 
+## Plugin Discovery and Loading
+
+`list_types`, agent summaries, and `doctor` use
+`list_plugin_metadata()` to read plugin declarations without instantiating
+every implementation. `get_plugin()` loads only the selected plugin; the
+legacy SDK `list_plugins()` remains an explicit full-load compatibility API.
+ABI does not yet provide independently installable plugin packages, and
+`query`/catalog callers that still assume global resource roots remain a
+future migration.
+
 ## Plan Summary
 
 `plan` envelopes include a `summary` field so agents understand workflow
@@ -195,7 +242,7 @@ that only need metadata (available tools, pipeline structure, step I/O).
 ## Step Contracts and Reproducibility
 
 Runtime step contracts are embedded in `PlanStep.params["_contract"]` by the
-shared DAG planner. All seven built-in plugins copy this block from their
+shared DAG planner. All eight built-in plugins copy this block from their
 `pipeline_dag.yaml`.
 
 Supported output checks include:

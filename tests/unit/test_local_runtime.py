@@ -51,8 +51,14 @@ def test_local_runtime_dry_run_forces_mock_execution(tmp_path: Path, monkeypatch
         def __init__(self, registry, logger, **kwargs):
             captured.update(registry=registry, logger=logger, kwargs=kwargs)
 
-        def run(self, plan, config, *, dry_run, resume):
-            captured.update(plan=plan, config=config, dry_run=dry_run, resume=resume)
+        def run(self, plan, config, *, dry_run, resume, confirmed_plan_id=""):
+            captured.update(
+                plan=plan,
+                config=config,
+                dry_run=dry_run,
+                resume=resume,
+                confirmed_plan_id=confirmed_plan_id,
+            )
             return {"summary": tmp_path / "summary.json"}
 
     monkeypatch.setattr(local, "GenericABIExecutor", FakeExecutor)
@@ -104,9 +110,10 @@ def test_local_runtime_skips_preflight_for_explicit_mock_mode(tmp_path: Path, mo
             assert kwargs["mock_tools"] is True
             assert "handler" in kwargs["internal_handlers"]
 
-        def run(self, plan, config, *, dry_run, resume):
+        def run(self, plan, config, *, dry_run, resume, confirmed_plan_id=""):
             assert dry_run is False
             assert resume is False
+            assert confirmed_plan_id == ""
             return {"summary": tmp_path / "summary.json"}
 
     monkeypatch.setattr(local, "GenericABIExecutor", FakeExecutor)
@@ -125,8 +132,8 @@ def test_local_runtime_passes_resume_option_to_executor(tmp_path: Path, monkeypa
         def __init__(self, *args, **kwargs):
             pass
 
-        def run(self, plan, config, *, dry_run, resume):
-            captured.update(dry_run=dry_run, resume=resume)
+        def run(self, plan, config, *, dry_run, resume, confirmed_plan_id=""):
+            captured.update(dry_run=dry_run, resume=resume, confirmed_plan_id=confirmed_plan_id)
             return {"summary": tmp_path / "summary.json"}
 
     monkeypatch.setattr(local, "GenericABIExecutor", FakeExecutor)
@@ -134,7 +141,11 @@ def test_local_runtime_passes_resume_option_to_executor(tmp_path: Path, monkeypa
     result = runtime.run("plan", {"mock_tools": True})
 
     assert result.return_code == 0
-    assert captured == {"dry_run": False, "resume": True}
+    assert captured == {
+        "dry_run": False,
+        "resume": True,
+        "confirmed_plan_id": "",
+    }
 
 
 def test_local_runtime_check_is_noop() -> None:

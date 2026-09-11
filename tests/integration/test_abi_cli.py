@@ -843,11 +843,20 @@ def test_run_nextflow_alias_matches_run_engine_nextflow(tmp_path):
 
     # run-summary is identical except run-identity fields that necessarily
     # differ per run (run id, timestamps, and every artifact path embedding
-    # the run directory). Normalize both runs' roots to a placeholder, then
-    # compare the full summaries.
+    # the run directory; plan_id binds the outdir, so the two run roots also
+    # produce different digests by design). Normalize both runs' roots and
+    # per-run identity fields to placeholders, then compare the summaries.
+    # run-summary 除每次运行必然不同的身份字段外完全一致（run id、时间戳、
+    # 以及每个嵌入运行目录的产物路径；plan_id 绑定 outdir，两个运行根按设
+    # 计产生不同摘要）。归一化运行根与身份字段后比较完整摘要。
+    per_run_keys = ("run_id", "plan_id", "resumes_run_id", "previous_run_archive")
+
     def normalize(obj: object, root: str) -> object:
         if isinstance(obj, dict):
-            return {k: normalize(v, root) for k, v in obj.items()}
+            return {
+                k: ("<per_run>" if k in per_run_keys else normalize(v, root))
+                for k, v in obj.items()
+            }
         if isinstance(obj, list):
             return [normalize(v, root) for v in obj]
         if isinstance(obj, str):

@@ -52,6 +52,8 @@ class ManagedExternalNextflowRuntime:
             return_code=0,
             engine="nextflow",
             smoke=self.options.smoke,
+            resume=self.options.resume,
+            plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
             extra_summary={
                 "managed_external_workflow": True,
                 "plan_fidelity": snapshot["plan_fidelity"],
@@ -193,6 +195,8 @@ class ManagedExternalNextflowRuntime:
             return_code=return_code,
             engine="nextflow",
             smoke=self.options.smoke,
+            resume=self.options.resume,
+            plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
             trace_rows=parse_nextflow_trace(archived_trace),
             extra_summary={
                 "managed_external_workflow": True,

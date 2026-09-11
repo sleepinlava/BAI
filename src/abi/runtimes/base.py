@@ -44,6 +44,11 @@ class RuntimeOptions:
     mail_user: str | None = None
     hpc_strategy: str | None = None
     poll_interval_seconds: float = 30.0
+    # Identity of the confirmed compiled plan this run was verified against
+    # (set by the agent boundary after plan binding; recorded in run_summary).
+    # 本次运行绑定验证的已确认编译计划身份（由 agent 边界在计划绑定后设置，
+    # 记录到 run_summary）。
+    confirmed_plan_id: str = ""
 
 
 @dataclass
