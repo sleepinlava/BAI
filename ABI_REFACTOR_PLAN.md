@@ -465,3 +465,20 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - `report` 在插件不可用时回退到基于保存事实与快照的基础报告，信封明确 `plugin_report_generated: false` 与 `audit_snapshot_found`；旧目录无快照时渲染缺失说明。
 - 兼容别名路径 `autoplasm_validate_result` 同样携带 `plugin_validation_executed` 诚实标志。
 - 尚未完成（WP5 余项）：inspect 的历史关联字段展示、失败调用与步骤复用的报告呈现增强、限制性章节与引用快照在旧记录中的缺失项渲染细节、与 WP2 退役后的基础报告收口。
+
+### B3 续：WP5 余项完成（执行事实与历史关联）
+
+- `write_generic_report` 新增 `build_run_facts` 与"Execution Facts"章节：步骤状态计数、失败调用及原因、复用（验证恢复）步骤、历史关联（resumes_run_id/previous_run_archive/plan_id）；JSON 摘要同载。无命令事实的报告如实声明，不暗示。
+- 本地执行器、`ABIResultWriter`（四后端）与无插件基础报告均灌入真实命令行。
+- `inspect` 暴露 `run_id`/`plan_id`/`resumes_run_id`/`previous_run_archive`、复用步骤列表、状态计数与审计快照存在性；旧摘要缺失字段保持 None。
+- 双语规范同步；全量测试通过（仅本地专属 3 项失败）；CI 绿（4c54cd9）。
+
+### WP2 专门批次：dry-run 迁移验收依据（已勘察，未实施）
+
+旧 `PipelineExecutor` 重复共享执行器的全流程，差异点即迁移验收清单：
+
+1. `analysis_status` 标准表：`*_not_run` 跳过步骤的 not_run 行（module/status/reason/sample_count/eligible_sample_count/group_counts/threshold 列），重复 dry-run 必须替换而非追加（append=False 语义）。该表属插件报告职责，需在插件侧实现（候选：共享执行器调用的可选插件钩子，如 `write_plugin_tables(tables_dir, plan, command_rows)`），共享路径不硬编码。
+2. `commands.tsv` 渲染命令（如 genomad）与 `run_summary.json` 产物标签名（outputs["commands"]/["summary"]）需与共享路径对齐或映射。
+3. `write_resolved_config` 与 `_plan_payload` 为旧引擎自有序列化；共享路径已有等价产物，迁移后以共享产物为准。
+4. `tests/integration/test_dry_run.py`（14 项）直接从 `abi.autoplasm.*` 导入并直接构造 `PipelineExecutor`——迁移时同步改为经 `WorkflowCoordinator`/共享入口验收。
+5. 退役顺序：插件钩子落地 → 删除 `execute_dry_run` 覆写（LocalRuntime 回退共享 dry-run）→ test_dry_run 换入口 → `abi.autoplasm` 转发与 `_engine.pipeline/cli` 退役。每步一个提交。
