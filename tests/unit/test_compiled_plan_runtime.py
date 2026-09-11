@@ -330,3 +330,29 @@ def test_rerun_without_resume_archives_history_without_resume_link(tmp_path):
     archive = outdir / "provenance" / second_summary["previous_run_archive"]
     prior = json.loads((archive / "run_summary.json").read_text(encoding="utf-8"))
     assert prior["run_id"] == first_summary["run_id"]
+
+
+def test_run_writes_audit_snapshot(tmp_path):
+    """WP5: execution persists the audit snapshot for plugin-free audit."""
+    outdir = tmp_path / "results"
+
+    payload = json.loads(
+        ABIAgentInterface().run(
+            analysis_type="metatranscriptomics",
+            outdir=str(outdir),
+            log_dir=str(tmp_path / "logs"),
+            smoke=True,
+            confirm_execution=True,
+            check_files=False,
+        )
+    )
+    assert payload["status"] == "success"
+
+    snapshot = json.loads(
+        (outdir / "provenance" / "audit_snapshot.json").read_text(encoding="utf-8")
+    )
+    assert snapshot["schema_version"] == "abi.audit_snapshot.v1"
+    assert snapshot["analysis_type"] == "metatranscriptomics"
+    assert snapshot["limitations"], "plugin-declared limitations must be captured"
+    assert snapshot["standard_table_schemas"]
+    assert snapshot["abi_version"]

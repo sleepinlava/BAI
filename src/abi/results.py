@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 from abi._shared import _read_tsv
+from abi.audit import write_audit_snapshot
 from abi.config import resolved_mamba_root, write_yaml
 from abi.provenance import (
     capture_run_identity,
@@ -124,6 +125,11 @@ class ABIResultWriter:
             encoding="utf-8",
         )
         write_yaml(config, provenance / "config.resolved.yaml")
+        # WP5: persist the audit snapshot (schemas, limitations, references,
+        # plugin identity) so basic audit works without the plugin installed.
+        # WP5：持久化审计快照（schema、局限性、引用、插件身份），使基础审计
+        # 不依赖已安装的插件。
+        write_audit_snapshot(self.plugin, provenance)
         write_commands_tsv(command_rows, provenance / "commands.tsv")
         write_resolved_inputs_tsv(
             _resolved_input_rows(plan, smoke=smoke),
@@ -265,7 +271,7 @@ def validate_abi_result_dir(
 
     analysis_type = _analysis_type(plan, summary)
     schemas: Mapping[str, Iterable[str]] = {}
-    plugin: Any = None
+    schema_source = "unavailable"
     if not analysis_type:
         errors.append("Cannot determine analysis_type from execution_plan.json or run_summary.json")
     else:
@@ -274,8 +280,27 @@ def validate_abi_result_dir(
 
             plugin = get_plugin(analysis_type)
             schemas = plugin.table_schemas()
-        except Exception as exc:
-            errors.append(f"Cannot load table schema for analysis_type {analysis_type!r}: {exc}")
+            schema_source = "plugin"
+        except Exception:
+            # WP5: plugin-independent audit — fall back to the audit snapshot
+            # captured at execution time. Old directories without a snapshot
+            # report the gap instead of faking schema-based checks.
+            # WP5：与插件无关的审计——回退到执行时捕获的审计快照。无快照的
+            # 旧目录如实报告缺失，而不伪造基于 schema 的检查。
+            from abi.audit import load_audit_snapshot
+
+            snapshot = load_audit_snapshot(root)
+            snapshot_schemas = (
+                snapshot.get("standard_table_schemas") if isinstance(snapshot, Mapping) else None
+            )
+            if isinstance(snapshot_schemas, Mapping) and snapshot_schemas:
+                schemas = snapshot_schemas
+                schema_source = "audit_snapshot"
+            else:
+                errors.append(
+                    f"Cannot resolve table schema for analysis_type {analysis_type!r}: "
+                    "plugin unavailable and no audit snapshot recorded"
+                )
 
     tables = _table_status(root / "tables", schemas)
     missing_tables = [name for name, table in tables.items() if not table["exists"]]
@@ -320,6 +345,7 @@ def validate_abi_result_dir(
         "status": status,
         "failed_steps": failed_steps,
         "tables": tables,
+        "schema_source": schema_source,
         "artifacts": artifacts,
     }
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Mapping
 
 from abi.executor import GenericABIExecutor
@@ -75,6 +76,7 @@ class LocalRuntime:
                     + "; ".join(str(item) for item in report.get("recommendations", []))
                 )
         table_manager = StandardTableManager(self.plugin.table_schemas())
+        _write_audit_snapshot(self.plugin, config)
         executor = GenericABIExecutor(
             self.plugin.registry(),
             RunLogger(str(config.get("log_dir", ""))),
@@ -92,3 +94,19 @@ class LocalRuntime:
             confirmed_plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
         )
         return RuntimeResult(status="success", return_code=0, outputs=dict(outputs))
+
+
+def _write_audit_snapshot(plugin: Any, config: Mapping[str, object]) -> None:
+    """Persist the WP5 audit snapshot before the run rewrites provenance.
+
+    The snapshot is plugin-owned declaration (schemas, limitations,
+    references), not run history; ``reset_run_provenance`` does not remove it.
+    写入 WP5 审计快照。快照是插件声明（schema、局限性、引用）而非运行历史，
+    reset 不会移除它。
+    """
+    from abi.audit import write_audit_snapshot
+
+    outdir = str(config.get("outdir") or "")
+    if not outdir:
+        return
+    write_audit_snapshot(plugin, Path(outdir) / "provenance")

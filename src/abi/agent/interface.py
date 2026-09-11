@@ -95,13 +95,55 @@ def _validate_plugin_result_dir(
     *,
     allow_empty_tables: bool = True,
 ) -> Mapping[str, Any]:
-    plugin = get_plugin(plugin_id)
+    """Validate a result directory, falling back to basic audit checks (WP5).
+
+    When the analysis plugin is installed it owns specialized validation and
+    the envelope reports ``plugin_validation_executed: true``. When it is not
+    — or provides no specialized validation — the plugin-independent structural
+    validation runs against saved facts and the audit snapshot, and the
+    envelope reports ``plugin_validation_executed: false`` so plugin-specific
+    scientific checks are never implied.
+    校验结果目录，无插件时回退到基础审计检查（WP5）。已安装插件时由插件执
+    行专有校验并报告 plugin_validation_executed: true；否则运行与插件无关
+    的结构校验并如实报告插件专有校验未执行。
+    """
+    from abi.audit import load_audit_snapshot
+    from abi.results import validate_abi_result_dir
+
+    def _basic() -> Dict[str, Any]:
+        result = dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
+        snapshot = load_audit_snapshot(result_dir)
+        result["plugin_validation_executed"] = False
+        result["audit_snapshot_found"] = snapshot is not None
+        result["notes"] = [
+            (
+                "Plugin-specific scientific validation was not executed: "
+                f"plugin {plugin_id!r} is not available here."
+            )
+        ]
+        return result
+
+    try:
+        plugin = get_plugin(plugin_id)
+    except Exception:
+        return _basic()
     if not isinstance(plugin, ABIResultValidationPlugin):
-        raise ABIError(f"Plugin {plugin_id!r} does not provide specialized result validation")
-    return plugin.validate_result_dir(
-        result_dir,
-        allow_empty_tables=allow_empty_tables,
+        result = dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
+        result["plugin_validation_executed"] = False
+        result["audit_snapshot_found"] = load_audit_snapshot(result_dir) is not None
+        result["notes"] = [
+            f"Plugin {plugin_id!r} does not provide specialized result validation; "
+            "only structural checks ran."
+        ]
+        return result
+    result = dict(
+        plugin.validate_result_dir(
+            result_dir,
+            allow_empty_tables=allow_empty_tables,
+        )
     )
+    result.setdefault("plugin_validation_executed", True)
+    return result
 
 
 class ABIAgentInterface:
@@ -1114,8 +1156,17 @@ class ABIAgentInterface:
         Reads ``execution_plan.json`` for context and calls the plugin's
         ``write_report()`` hook to produce markdown/HTML reports. The
         ``analysis_type`` is auto-detected from the plan when not provided.
-        # 从已完成运行目录重新生成报告。
-        # 读取 execution_plan.json 获取上下文, 调用插件 write_report() 生成报告。
+
+        When the analysis plugin is not installed (WP5: independent human
+        audit), a basic report is generated from the saved facts and the
+        run's audit snapshot instead; the envelope states explicitly that the
+        plugin-specific report did not run. Old directories without an audit
+        snapshot report the gap rather than faking completeness.
+        # 从已完成运行目录重新生成报告。读取 execution_plan.json 获取上下文,
+        # 调用插件 write_report() 生成报告。
+        # 当分析插件不可用时（WP5：独立人类审计），改为用保存的事实与运行
+        # 的审计快照生成基础报告，并在信封中明确插件专有报告未执行；无审计
+        # 快照的旧目录如实报告缺失，不伪造完整性。
         """
         root = Path(result_dir)
         plan_path = root / "execution_plan.json"
@@ -1123,11 +1174,56 @@ class ABIAgentInterface:
             raise ABIError(f"Missing execution plan: {plan_path}")
         plan_data = load_json_object(plan_path)
         plugin_id = analysis_type or str(plan_data.get("analysis_type") or "metagenomic_plasmid")
-        plugin = get_plugin(plugin_id)
-        outputs = plugin.write_report(plan_data, root)
+        try:
+            plugin = get_plugin(plugin_id)
+        except Exception:
+            plugin = None
+        if plugin is not None:
+            outputs = plugin.write_report(plan_data, root)
+            output_files = dict(outputs)
+            return {
+                "analysis_type": plugin_id,
+                "plugin_report_generated": True,
+                "outputs": output_files,
+                "written_files": _path_values(output_files),
+            }
+        # Basic, plugin-independent report from saved facts + audit snapshot.
+        # 基于保存事实与审计快照的、与插件无关的基础报告。
+        from abi.audit import load_audit_snapshot
+        from abi.report.generic_report import write_generic_report
+
+        snapshot = load_audit_snapshot(root)
+        limitations = [str(item) for item in snapshot.get("limitations", [])] if snapshot else []
+        if not limitations and not snapshot:
+            limitations = [
+                "Audit snapshot missing: this result predates snapshot capture; "
+                "plugin-declared limitations are unknown here."
+            ]
+        tables_dir = root / "tables"
+        table_summary: Dict[str, Any] = {}
+        if tables_dir.is_dir():
+            for tsv in sorted(tables_dir.glob("*.tsv")):
+                with tsv.open(encoding="utf-8") as handle:
+                    rows = max(sum(1 for _ in handle) - 1, 0)
+                table_summary[tsv.stem] = {"path": str(tsv), "rows": rows}
+        title = (
+            str(snapshot.get("report_title") or "ABI Report (basic)")
+            if snapshot
+            else "ABI Report (basic)"
+        )
+        outputs = write_generic_report(
+            plan_data,
+            root,
+            table_summary=table_summary,
+            title=title,
+            limitations=limitations,
+        )
         output_files = dict(outputs)
         return {
             "analysis_type": plugin_id,
+            "plugin_report_generated": False,
+            "plugin_available": False,
+            "audit_snapshot_found": snapshot is not None,
             "outputs": output_files,
             "written_files": _path_values(output_files),
         }

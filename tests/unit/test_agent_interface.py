@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -251,7 +252,11 @@ def test_autoplasm_result_alias_uses_plugin_validation_capability(monkeypatch, t
     )
 
     assert payload["status"] == "success"
-    assert payload["result"] == {"valid": True}
+    # WP5: the honest plugin-validation flag rides along with the plugin's
+    # own validation result.
+    # WP5：诚实的插件校验标志随插件自身校验结果一并返回。
+    assert payload["result"]["valid"] is True
+    assert payload["result"]["plugin_validation_executed"] is True
     assert calls == [(tmp_path, False)]
 
 
@@ -276,3 +281,133 @@ def test_query_resolves_dag_from_plugin_root_not_global_constant(tmp_path, monke
     )
 
     assert payload["status"] == "success"
+
+
+def _make_result_dir(tmp_path, analysis_type="metatranscriptomics"):
+    """Minimal successful result directory (pre-snapshot layout)."""
+    outdir = tmp_path / "results"
+    (outdir / "provenance").mkdir(parents=True)
+    (outdir / "tables").mkdir()
+    (outdir / "execution_plan.json").write_text(
+        json.dumps({"analysis_type": analysis_type, "project_name": "t", "steps": []}),
+        encoding="utf-8",
+    )
+    (outdir / "provenance" / "run_summary.json").write_text(
+        json.dumps({"status": "success", "analysis_type": analysis_type}),
+        encoding="utf-8",
+    )
+    (outdir / "provenance" / "commands.tsv").write_text(
+        "step_id\tstatus\ns1\tsuccess\n", encoding="utf-8"
+    )
+    return outdir
+
+
+def test_report_falls_back_to_basic_report_without_plugin(tmp_path, monkeypatch):
+    """WP5: basic report works with the plugin uninstalled, using saved facts."""
+    outdir = _make_result_dir(tmp_path)
+    (outdir / "tables" / "qc_summary.tsv").write_text("metric\tvalue\nx\t1\n", encoding="utf-8")
+
+    def _unknown(plugin_id):
+        raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
+
+    monkeypatch.setattr("abi.agent.interface.get_plugin", _unknown)
+
+    payload = json.loads(
+        ABIAgentInterface().report(result_dir=str(outdir), analysis_type="metatranscriptomics")
+    )
+
+    assert payload["status"] == "success"
+    assert payload["result"]["plugin_report_generated"] is False
+    assert payload["result"]["plugin_available"] is False
+    assert payload["result"]["audit_snapshot_found"] is False
+    written = [Path(p) for p in payload["result"]["written_files"]]
+    assert written and all(p.exists() for p in written)
+    report_md = (outdir / "report" / "report.md").read_text(encoding="utf-8")
+    assert "Audit snapshot missing" in report_md
+
+
+def test_report_uses_audit_snapshot_limitations_without_plugin(tmp_path, monkeypatch):
+    outdir = _make_result_dir(tmp_path)
+    (outdir / "provenance" / "audit_snapshot.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.audit_snapshot.v1",
+                "analysis_type": "metatranscriptomics",
+                "report_title": "Tx Report",
+                "limitations": ["mock limitation for audit"],
+                "standard_table_schemas": {"qc_summary": ["metric", "value"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _unknown(plugin_id):
+        raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
+
+    monkeypatch.setattr("abi.agent.interface.get_plugin", _unknown)
+
+    payload = json.loads(
+        ABIAgentInterface().report(result_dir=str(outdir), analysis_type="metatranscriptomics")
+    )
+
+    assert payload["status"] == "success"
+    assert payload["result"]["audit_snapshot_found"] is True
+    report_md = (outdir / "report" / "report.md").read_text(encoding="utf-8")
+    assert "mock limitation for audit" in report_md
+    assert "Tx Report" in report_md
+
+
+def test_validate_result_falls_back_to_structural_checks_without_plugin(tmp_path, monkeypatch):
+    """WP5: structural validation runs without the plugin and never implies
+    plugin-specific scientific validation happened."""
+    outdir = _make_result_dir(tmp_path)
+
+    def _unknown(plugin_id):
+        raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
+
+    monkeypatch.setattr("abi.plugins.get_plugin", _unknown)
+
+    payload = json.loads(
+        ABIAgentInterface().abi_validate_result(result_dir=str(outdir), allow_empty_tables=True)
+    )
+
+    # The minimal fixture lacks full artifacts, so structural errors are
+    # expected; the contract under test is the honest plugin-validation flag.
+    # 最小夹具缺完整产物，结构错误属预期；被测契约是诚实的插件校验标志。
+    assert payload["status"] == "success"
+    result = payload["result"]
+    # Without the plugin and without a snapshot, schema-based checks report
+    # the gap honestly instead of silently passing.
+    # 无插件且无快照时，基于 schema 的检查如实报告缺失而不是静默通过。
+    assert result["schema_source"] == "unavailable"
+    assert any("audit snapshot" in error for error in result["errors"])
+
+
+def test_validate_result_uses_audit_snapshot_schema_without_plugin(tmp_path, monkeypatch):
+    """WP5: table-schema checks run from the audit snapshot when the plugin
+    that produced them is not installed."""
+    outdir = _make_result_dir(tmp_path)
+    (outdir / "tables" / "qc_summary.tsv").write_text("metric\tvalue\nx\t1\n", encoding="utf-8")
+    (outdir / "provenance" / "audit_snapshot.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.audit_snapshot.v1",
+                "analysis_type": "metatranscriptomics",
+                "standard_table_schemas": {"qc_summary": ["metric", "value"]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _unknown(plugin_id):
+        raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
+
+    monkeypatch.setattr("abi.plugins.get_plugin", _unknown)
+
+    payload = json.loads(ABIAgentInterface().abi_validate_result(result_dir=str(outdir)))
+
+    assert payload["status"] == "success"
+    result = payload["result"]
+    assert result["schema_source"] == "audit_snapshot"
+    assert result["tables"]["qc_summary"]["exists"] is True
+    assert result["tables"]["qc_summary"]["missing_fields"] == []
