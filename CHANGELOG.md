@@ -34,6 +34,15 @@
 - Documentation build excludes local-only draft sources and clears stale
   generated pages per language.
 
+### Fixed
+
+- Strict `abi contract-lint` passes for all seven built-in plugins: removed
+  registry-input declarations that the command templates never referenced
+  (metabat2 `threads`, plasmidfinder `assembly` replaced by the template's
+  actual `plasmid_contigs`, scapp dead `max_k`, wgs_bacteria mlst dead
+  `scheme`). Rendered commands are unchanged; the scapp `-k 77` versus
+  declared `max_k` inconsistency is recorded for scientific review.
+
 ### Removed
 
 - The shadowing `src/abi/testing.py` module (the `abi.testing` package is

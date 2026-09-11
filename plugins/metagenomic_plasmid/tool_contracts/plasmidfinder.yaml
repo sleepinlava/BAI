@@ -6,8 +6,9 @@ purpose: Run PlasmidFinder as registered by the metagenomic_plasmid plugin.
 when_to_use:
 - typing
 inputs:
-  assembly:
-    type: path
+  plasmid_contigs:
+    type: file
+    format: fasta
     required: true
   database:
     type: path

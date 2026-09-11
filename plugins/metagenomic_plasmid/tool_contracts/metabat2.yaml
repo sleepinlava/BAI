@@ -15,9 +15,6 @@ inputs:
     type: file
     format: bam
     required: true
-  threads:
-    type: integer
-    minimum: 1
   sample_id:
     type: string
     required: true

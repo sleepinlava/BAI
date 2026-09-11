@@ -14,9 +14,6 @@ inputs:
     formats:
     - fasta
     required: true
-  scheme:
-    type: string
-    required: false
 outputs:
   output_dir:
     type: directory

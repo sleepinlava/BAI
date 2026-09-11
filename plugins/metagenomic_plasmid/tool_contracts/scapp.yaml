@@ -20,9 +20,6 @@ inputs:
     type: file
     format: fastq.gz
     required: true
-  max_k:
-    type: integer
-    minimum: 1
   threads:
     type: integer
     minimum: 1

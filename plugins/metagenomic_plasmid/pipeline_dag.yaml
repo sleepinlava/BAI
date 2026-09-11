@@ -1361,9 +1361,6 @@ nodes:
         format: fastq.gz
         source: host_removal_bowtie2.clean_read2
         fallback: qc_fastp.clean_read2
-      max_k:
-        type: integer
-        default: 55
       threads:
         type: integer
         default: 1
