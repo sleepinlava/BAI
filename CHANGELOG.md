@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.6.0] - 2026-09-11
+
+### Added
+
+- Compiled plans now carry a verified content identity (`plan_id`): every
+  run recompiles the prepared plan and verifies it against the confirmed
+  `compiled_plan.json` before starting, refusing to execute drifted plans
+  (`PlanDriftError`) across CLI, MCP, HTTP jobs, and all four backends.
+- Immutable run history: prior-run provenance is archived under
+  `provenance/previous_runs/<run_id>/` before any retry or resume rewrites
+  the provenance view; resumes record `resumes_run_id`, re-runs record
+  `previous_run_archive`.
+- Resume reuse is bound to the prior run's recorded checksums: steps whose
+  outputs or inputs no longer match the archived chain re-execute, with the
+  rejection reason written to the command record.
+- Nextflow, Snakemake, and HPC run summaries now share the local executor's
+  run identity (`run_id`, source/lock identity, `plan_id`, history linkage).
+- Job cancellation distinguishes the recorded request from confirmed
+  termination (`JobRecord.termination`); work completing after a cancel
+  request reports its real outcome instead of a fabricated cancellation.
+
+### Changed
+
+- Compiled-plan nested lists, mappings, and resource specs are deeply
+  immutable; `ResourceSpec` is a frozen value object.
+- Plugin queries and workflow catalogs resolve resources from the plugin's
+  own root (`ABIPlugin.root`), preparing externally installed plugin layouts.
+- Plugin discovery reads manifest metadata without importing implementations;
+  the legacy full-load `list_plugins()` behavior is retained.
+- Agent interfaces require the literal Boolean `true` for `confirm_execution`;
+  string or truthy values are rejected before any preparation.
+- Documentation build excludes local-only draft sources and clears stale
+  generated pages per language.
+
+### Removed
+
+- The shadowing `src/abi/testing.py` module (the `abi.testing` package is
+  retained), the stale database-download guide, and behavior-duplicate or
+  stale-documentation test assertions.
+
 ## [1.5.12] - 2026-08-21
 
 ### Added
