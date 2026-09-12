@@ -529,3 +529,12 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - preflight 保留 ibd_core53 manifest 校验、kraken2 策略与资源检查，移除 ENA 后端/脚本检查；download-only 工作流预设与其 cohort 配置退役。
 - 验证：easymetagenome strict contract-lint 通过；冻结队列计划 31 节点无下载步骤；dry-run 端到端工作；全量测试通过（仅 3 个已知本地专属失败）；CI 绿。
 - 剩余 WP8：manage_environments 环境创建职责、nextflow/容器隐式获取核查；剩余阶段 C：Study 退出核心（6）、绘图退出核心（7）。
+
+### 阶段 C 续：WP8 步骤 3 续（环境创建退役）
+
+- `abi env install/update` 命令与 `manage_environments`（及其求解器调用、spec 渲染、写根 helper）退役；`abi env discover/doctor`（只读发现与诊断）保留，求解器发现链路完整。
+- Snakemake 运行移除 `--use-conda`：运行时不再隐式创建环境；导出的 `conda:` 指令仅作声明性记录。
+- CI 能力检查直接伪造受管环境结构（不再驱动已退役命令）；docker-configuration 断言更新；双语 linux_support_plan 指向外部准备脚本（scripts/cloud/01_envs.sh）。
+- 容器镜像核查：无工具契约声明 container_image，container 指令默认不渲染——隐式镜像获取当前无活跃面（记录为核查结论）。
+- 工具链同步：本地 ruff 升级至 0.16.7 与 CI 一致（消除版本漂移导致的格式门差异）。
+- 剩余 WP8 项：无（获取/安装退役完成，等待阶段 C 其余工作包）。下一批：WP6 Study 退出核心、WP7 绘图退出核心。
