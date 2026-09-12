@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-import sys
+import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from abi import resource_downloader as _resource_downloader
 from abi.errors import ABIError
 from abi.interfaces import ABIResourcePlugin, ABIResourceSetupPlugin
 from abi.plugins import get_plugin
-from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
 from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS, timeout_from_env_or_value
 
-__path__ = []  # type: ignore[var-annotated]
-sys.modules.setdefault(__name__ + ".downloader", _resource_downloader)
 __all__ = [
     "apply_resource_overrides",
     "check_generic_resources",
@@ -28,6 +25,45 @@ __all__ = [
     "setup_resources",
 ]
 _PLACEHOLDER_MARKERS = ("NOT_CONFIGURED", "TODO", "PLACEHOLDER")
+
+ABIR_RESOURCE_SENTINEL = ".abi_resource.json"
+
+
+@dataclass
+class DownloadResult:
+    """Resource preparation result row (WP8: no downloads — planning/mock/report)."""
+
+    resource_id: str
+    path: Path
+    status: str  # ok | missing | manual_required | error | skipped | planned
+    version: str = ""
+    checksum: str = ""
+    file_count: int = 0
+    size_bytes: int = 0
+    downloaded_at: str = ""
+    message: str = ""
+    command: list[str] = field(default_factory=list)
+
+
+def write_mock_resource(dest: Path, resource_id: str) -> None:
+    """Fabricate a mock resource directory with a ready sentinel (tests only).
+
+    Replaces the retired downloader's mock fabrication: an empty directory plus
+    a ``.abi_resource.json`` sentinel marking the resource as fixture data.
+    生成 mock 资源目录与就绪哨兵（仅测试用）：空目录 + ``.abi_resource.json``
+    哨兵，标记该资源为夹具数据。
+    """
+    dest.mkdir(parents=True, exist_ok=True)
+    sentinel = dest / ABIR_RESOURCE_SENTINEL
+    if not sentinel.exists():
+        sentinel.write_text(
+            json.dumps(
+                {"resource_id": resource_id, "kind": "mock", "note": "test fixture only"},
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
 
 def resource_timeout(config: Mapping[str, Any]) -> float | None:
@@ -130,7 +166,6 @@ def setup_manual_resource_bundle(
     downloading such resources would create a misleading runnable state.
     """
     rows = check_generic_resources(analysis_type, config, resource_ids=resource_ids)
-    downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=mock)
     planned: List[Dict[str, Any]] = []
     for row in rows:
         current = dict(row)
@@ -148,7 +183,7 @@ def setup_manual_resource_bundle(
         elif current["status"] == "ok":
             current["message"] = "Configured resource exists."
         elif mock:
-            downloader._mock_resource(DownloadSpec(resource_id=str(current["resource_id"])), target)
+            write_mock_resource(target, str(current["resource_id"]))
             current["status"] = "ok"
             current["message"] = "Mock resource directory prepared."
         else:
@@ -196,11 +231,9 @@ def setup_reference_resources(
     """Plan or mock organism-specific reference resources.
 
     Genome indices and annotations cannot be downloaded automatically ---
-    the user must pick an organism/genome build. Mock mode uses
-    ResourceDownloader for consistent mock resource creation.
+    the user must pick an organism/genome build (WP8: no downloads).
     """
     selected = set(resource_ids or [])
-    downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=mock)
     rows: List[Dict[str, Any]] = []
     for resource_id in ("genome_index", "annotation_gtf"):
         if selected and resource_id not in selected:
@@ -215,7 +248,7 @@ def setup_reference_resources(
             )
         elif mock:
             if resource_id == "genome_index":
-                downloader._mock_resource(DownloadSpec(resource_id=resource_id), target)
+                write_mock_resource(target, resource_id)
             else:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(

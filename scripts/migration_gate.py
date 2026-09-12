@@ -9,7 +9,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC = PROJECT_ROOT / "src" / "abi"
-PLUGIN_DIR = SRC / "plugins" / "metagenomic_plasmid" / "_engine"
+PLUGIN_DIR = SRC / "plugins" / "metagenomic_plasmid" / "lib"
 
 
 def ok(msg):
@@ -82,25 +82,12 @@ def check_phase1_files():
     for p, label in [
         (SRC / "mcp" / "_tool_factory.py", "MCP tool factory"),
         (SRC / "contracts" / "lint_template.py", "Lint template"),
-        (SRC / "resource_downloader.py", "ResourceDownloader"),
+        (SRC / "resources.py", "Resource orchestration (WP8: no downloads)"),
     ]:
         if p.exists():
             ok(label + ": " + str(p))
         else:
             fail(label + ": " + str(p) + " -- MISSING")
-            passed = False
-    rd = SRC / "resource_downloader.py"
-    if rd.exists():
-        c = rd.read_text(encoding="utf-8")
-        if "source_files" in c:
-            ok("source_files field in DownloadSpec")
-        else:
-            fail("source_files missing")
-            passed = False
-        if "atomic" in c:
-            ok("atomic field in DownloadSpec")
-        else:
-            fail("atomic missing")
             passed = False
     return passed
 

@@ -738,19 +738,13 @@ def _setup_amplicon_16s(
     dry_run: bool = False,
     mock: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Set up amplicon_16s resources: taxonomy database for SINTAX classification.
-
-    Uses ResourceDownloader for mock mode; subprocess for real download
-    (the RDP download script writes to a specific output path).
-    Falls back to synthetic taxonomy if RDP download fails.
-    """
+    """Set up amplicon_16s resources: taxonomy database for SINTAX classification."""
     from abi.config import PROJECT_ROOT
-    from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
     from abi.resources import (
+        DownloadResult,
         download_result_to_row,
-        resource_timeout,
+        write_mock_resource,
     )
-    from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS
 
     if resource_ids and "taxonomy_db" not in resource_ids:
         return []
@@ -763,8 +757,6 @@ def _setup_amplicon_16s(
 
     download_script = PROJECT_ROOT / "scripts" / "download_rdp_sintax.sh"
     tax_fasta = outdir / "rdp_16s_v16.fa"
-    synthetic_fasta = outdir / "synthetic_sintax.fa"
-    timeout = resource_timeout(config)
 
     # Mock mode creates a tiny valid SINTAX FASTA and a unified resource sentinel.
     if mock:
@@ -796,14 +788,7 @@ def _setup_amplicon_16s(
                 "ACGTACGTACGTACGTACGTACGTACGTACGT\n",
                 encoding="utf-8",
             )
-            ResourceDownloader(Path(), mock=True).ensure(
-                DownloadSpec(
-                    resource_id="taxonomy_db",
-                    tool_id="vsearch_taxonomy",
-                    destination=outdir,
-                    version="synthetic_test_only",
-                )
-            )
+            write_mock_resource(outdir, "taxonomy_db")
             result = DownloadResult(
                 resource_id="taxonomy_db",
                 path=tax_fasta,
@@ -828,52 +813,31 @@ def _setup_amplicon_16s(
             )
         ]
 
-    # Primary: download RDP training set via ResourceDownloader (non-atomic)
+    # WP8: ABI never downloads. An existing SINTAX FASTA reports ok; anything
+    # else reports the external preparation requirement (the RDP download
+    # script remains available as an external provisioning tool). The retired
+    # silent synthetic fallback is gone: real analysis must never run against
+    # fabricated data.
+    # WP8：ABI 绝不下载。已存在的 SINTAX FASTA 报告 ok；其余报告外部准备要求
+    # （RDP 下载脚本仍可作为外部准备工具）。已退役的静默合成回退一并移除：
+    # 真实分析绝不能对伪造数据运行。
+    command = ["bash", str(download_script), "--output", str(outdir)]
     if tax_fasta.exists():
         effective_path = tax_fasta
         status_msg = "ok"
         message = f"RDP taxonomy DB already exists: {tax_fasta}"
-        command: list[str] = []
     elif dry_run:
         effective_path = tax_fasta
         status_msg = "planned"
-        message = "Would download RDP 16S training set from drive5.com (~50 MB)"
-        command = []
-    elif download_script.exists():
-        downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=False)
-        spec = DownloadSpec(
-            resource_id="taxonomy_db",
-            tool_id="vsearch_taxonomy",
-            command=["bash", str(download_script), "--output", str(outdir)],
-            atomic=False,
-            destination=outdir,
-            ready_check="non_empty_dir",
-            timeout_seconds=timeout or DEFAULT_RESOURCE_TIMEOUT_SECONDS,
-            version="rdp_16s_v16",
-        )
-        result_dl = downloader.ensure(spec)
-        if result_dl.status == "ok":
-            effective_path = tax_fasta
-            status_msg = "ok"
-            message = "RDP 16S training set downloaded successfully."
-            command = result_dl.command
-        else:
-            effective_path = synthetic_fasta
-            status_msg = "fallback"
-            message = f"RDP download failed: {result_dl.message}. Generating synthetic fallback."
-            command = result_dl.command
-            _generate_synthetic_fallback(outdir)
+        message = "External preparation required; nothing was executed."
     else:
         effective_path = tax_fasta
-        status_msg = "error"
-        message = f"Download script not found: {download_script}"
-        command = []
-
-    if status_msg == "fallback" and not synthetic_fasta.exists():
-        status_msg = "error"
+        status_msg = "manual_required"
         message = (
-            "RDP download failed and synthetic fallback generation did not "
-            f"produce {synthetic_fasta}."
+            "External preparation required: provision the RDP 16S SINTAX training "
+            f"set (e.g. `{' '.join(command)}`), then verify with "
+            "`abi check-resources`. ABI does not download or install; the retired "
+            "synthetic fallback no longer masks a missing database."
         )
 
     result = DownloadResult(

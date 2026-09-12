@@ -8,7 +8,6 @@ import pytest
 
 from abi import config as core_config
 from abi import resources
-from abi.errors import ABIError
 from abi.plugins import amplicon_16s as _amplicon_16s_impl
 from abi.plugins import rnaseq_expression as _rnaseq_impl
 from abi.plugins import wgs_bacteria as _wgs_impl
@@ -227,36 +226,17 @@ def test_wgs_amrfinder_setup_reports_incomplete_when_ready_sentinel_lacks_index(
     assert "AMRProt.fa" in row["message"]
 
 
-def test_wgs_resource_setup_reports_process_failure_and_timeout(
-    tmp_path: Path, monkeypatch
-) -> None:
-    target = tmp_path / "amrfinder"
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=2, stdout="", stderr="bad db"),
-    )
-    failed = _wgs_impl._setup_wgs_bacteria(
-        {"resources": {"amrfinder_db": str(target)}},
+def test_wgs_resource_setup_missing_target_is_manual_required(tmp_path: Path) -> None:
+    """WP8: the retired download subprocess is gone; a missing target reports
+    external preparation guidance instead of process failures."""
+    row = _wgs_impl._setup_wgs_bacteria(
+        {"resources": {"amrfinder_db": str(tmp_path / "amrfinder")}},
         resource_ids=None,
         dry_run=False,
         mock=False,
     )[0]
-    assert failed["status"] == "error"
-    assert "bad db" in failed["message"]
-
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: (_ for _ in ()).throw(subprocess.TimeoutExpired("cmd", 1)),
-    )
-    timed_out = _wgs_impl._setup_wgs_bacteria(
-        {"resources": {"amrfinder_db": str(tmp_path / "timeout")}},
-        resource_ids=None,
-        dry_run=False,
-        mock=False,
-    )[0]
-    assert timed_out["status"] == "error"
+    assert row["status"] == "manual_required"
+    assert "External preparation required" in row["message"]
 
 
 def test_rnaseq_special_resource_filter_and_deseq2_detection(tmp_path: Path, monkeypatch) -> None:
@@ -294,8 +274,12 @@ def test_rnaseq_setup_missing_script_and_selected_generic_resource(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.setattr(core_config, "PROJECT_ROOT", tmp_path)
-    with pytest.raises(ABIError, match="setup_rnaseq_env.sh not found"):
-        _rnaseq_impl._setup_rnaseq_expression({}, resource_ids=None)
+    # WP8: the missing setup script no longer raises — the env row reports
+    # external preparation guidance instead.
+    # WP8：缺失的准备脚本不再抛错——环境行报告外部准备指引。
+    env_rows = _rnaseq_impl._setup_rnaseq_expression({}, resource_ids=["rnaseq_environment"])
+    assert env_rows[0]["status"] == "manual_required"
+    assert "setup_rnaseq_env.sh" in env_rows[0]["message"] or env_rows[0]["command"]
 
     genome = tmp_path / "genome"
     genome.mkdir()
@@ -463,25 +447,10 @@ def test_every_plugin_marks_mock_dry_run_without_writing(
     assert not target.exists()
 
 
-def test_amplicon_download_failure_uses_synthetic_fallback(tmp_path: Path, monkeypatch) -> None:
-    scripts = tmp_path / "scripts"
-    scripts.mkdir()
-    (scripts / "download_rdp_sintax.sh").write_text("# test", encoding="utf-8")
+def test_amplicon_missing_taxonomy_reports_manual_required(tmp_path: Path, monkeypatch) -> None:
+    """WP8: the silent synthetic fallback is retired; a missing SINTAX DB
+    reports external preparation guidance instead of fabricating data."""
     monkeypatch.setattr(core_config, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=1, stdout="", stderr="offline"),
-    )
-    called = []
-
-    def _fake_fallback(path: Path) -> bool:
-        called.append(path)
-        path.mkdir(parents=True, exist_ok=True)
-        (path / "synthetic_sintax.fa").write_text(">seq1;tax=Bacteria\nACGT\n", encoding="utf-8")
-        return True
-
-    monkeypatch.setattr(_amplicon_16s_impl, "_generate_synthetic_fallback", _fake_fallback)
 
     row = _amplicon_16s_impl._setup_amplicon_16s(
         {"outdir": str(tmp_path / "output")},
@@ -490,9 +459,7 @@ def test_amplicon_download_failure_uses_synthetic_fallback(tmp_path: Path, monke
         mock=False,
     )[0]
 
-    assert row["status"] == "fallback"
-    assert called == [tmp_path / "output" / "taxonomy"]
-    # M7 fix: the returned path must point to the synthetic file that actually
-    # exists, not the missing RDP FASTA path.
-    assert Path(row["path"]).exists()
-    assert row["path"].endswith("synthetic_sintax.fa")
+    assert row["status"] == "manual_required"
+    assert "External preparation required" in row["message"]
+    assert "download_rdp_sintax.sh" in row["message"]
+    assert not (tmp_path / "output" / "taxonomy" / "synthetic_sintax.fa").exists()

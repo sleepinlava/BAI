@@ -604,17 +604,16 @@ def _setup_rnaseq_expression(
     from Bioconductor.
     """
     import os
-    import subprocess
 
     from abi.config import PROJECT_ROOT, resolved_mamba_root
-    from abi.errors import ABIError
-    from abi.resource_downloader import DownloadSpec, ResourceDownloader
     from abi.resources import (
+        DownloadResult,
         check_generic_resources,
         configured_or_default_resource_path,
         download_result_to_row,
         mark_mock_mode,
         setup_reference_resources,
+        write_mock_resource,
     )
 
     selected = set(resource_ids or [])
@@ -626,12 +625,15 @@ def _setup_rnaseq_expression(
 
     if mock:
         target = configured_or_default_resource_path(config, "rnaseq_environment")
-        environment = ResourceDownloader(Path(), mock=True).ensure(
-            DownloadSpec(resource_id="rnaseq_environment", destination=target)
-        )
+        write_mock_resource(target, "rnaseq_environment")
         mock_rows = [
             download_result_to_row(
-                environment,
+                DownloadResult(
+                    resource_id="rnaseq_environment",
+                    path=target,
+                    status="ok",
+                    message="Mock rnaseq environment resource prepared.",
+                ),
                 tool_id="deseq2",
                 field="env_setup",
                 ready_check="sentinel",
@@ -649,13 +651,12 @@ def _setup_rnaseq_expression(
         )
         return mock_rows
 
+    # WP8: ABI never creates environments. Report readiness and the external
+    # preparation requirement; the setup script remains available as an
+    # external provisioning tool.
+    # WP8：ABI 绝不创建环境。报告就绪状态与外部准备要求；准备脚本仍可作为
+    # 外部准备工具使用。
     setup_script = PROJECT_ROOT / "scripts" / "setup_rnaseq_env.sh"
-    if not setup_script.exists():
-        raise ABIError(
-            "setup_rnaseq_env.sh not found. "
-            "Reinstall ABI or create the rnaseq environment manually."
-        )
-
     mamba_root = str(
         config.get("mamba_root")
         or os.environ.get("ABI_MAMBA_ROOT")
@@ -663,21 +664,33 @@ def _setup_rnaseq_expression(
         or os.environ.get("MAMBA_ROOT")
         or resolved_mamba_root()
     )
-
     cmd = ["bash", str(setup_script), "--mamba-root", mamba_root]
-    if dry_run:
-        cmd.append("--dry-run")
 
     rows: List[Dict[str, Any]] = []
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        status = "ok" if result.returncode == 0 else "error"
-        message = result.stdout.strip()[-500:] if result.stdout else ""
-        if result.returncode != 0:
-            message = (result.stderr or result.stdout or "")[-500:]
-    except OSError as exc:
-        status = "error"
-        message = str(exc)
+    rnaseq_env = Path(mamba_root) / "envs" / "rnaseq"
+    r_lib = rnaseq_env / "lib" / "R" / "library"
+    marker = r_lib / ".abi_deseq2_installed"
+    deseq2_installed = marker.exists()
+    if not deseq2_installed:
+        for lib_path in (".R", "R"):  # common system R library dirs
+            for marker_candidate in (Path.home() / lib_path).glob("**/.abi_deseq2_installed"):
+                if marker_candidate.exists():
+                    deseq2_installed = True
+                    break
+
+    if dry_run:
+        env_status = "planned"
+        message = "External preparation required; nothing was executed."
+    elif deseq2_installed:
+        env_status = "ok"
+        message = "rnaseq environment ready (DESeq2 marker found)."
+    else:
+        env_status = "manual_required"
+        message = (
+            "External preparation required: create the rnaseq environment with your "
+            f"provisioning system (e.g. `{' '.join(cmd)}`), then verify with "
+            "`abi check-resources`. ABI does not create environments."
+        )
 
     # Check for the marker file written by install_deseq2.R
     rnaseq_env = Path(mamba_root) / "envs" / "rnaseq"
@@ -700,7 +713,7 @@ def _setup_rnaseq_expression(
             "tool_id": "deseq2",
             "field": "env_setup",
             "path": str(setup_script),
-            "status": status if not dry_run else "planned",
+            "status": env_status,
             "version": "",
             "source_url": "https://bioconductor.org/packages/DESeq2/",
             "checksum": "",

@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 from abi.plugins import rnaseq_expression as _rnaseq_impl
 from abi.plugins import wgs_bacteria as _wgs_impl
-from abi.resource_downloader import DownloadResult, ResourceDownloader
 from abi.resources import (
+    DownloadResult,
     configured_or_default_resource_path,
     download_result_to_row,
     setup_reference_resources,
@@ -131,7 +131,7 @@ class TestSetupWGSBacteria:
         assert result == []
 
     def test_dry_run_returns_planned(self, tmp_path: Path) -> None:
-        """Dry run returns planned status via ResourceDownloader."""
+        """Dry run returns a planned status without executing anything."""
         target = tmp_path / "results" / "resources" / "amrfinder_db"
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
         rows = _wgs_impl._setup_wgs_bacteria(config, resource_ids=None, dry_run=True, mock=False)
@@ -142,7 +142,7 @@ class TestSetupWGSBacteria:
         assert rows[0]["path"] == str(target)
 
     def test_mock_creates_mock_resource(self, tmp_path: Path) -> None:
-        """Mock mode uses ResourceDownloader mock path to create resource."""
+        """Mock mode fabricates the resource directory with a ready sentinel."""
         target = tmp_path / "results" / "resources" / "amrfinder_db"
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
         rows = _wgs_impl._setup_wgs_bacteria(config, resource_ids=None, dry_run=False, mock=True)
@@ -219,25 +219,17 @@ class TestSetupWGSBacteria:
         assert rows[0]["status"] == "incomplete"
         assert "AMRProt.fa" in rows[0]["message"]
 
-    def test_download_error_propagates(self, tmp_path: Path) -> None:
-        """When downloader.ensure returns error status, it is propagated."""
+    def test_missing_target_reports_manual_required(self, tmp_path: Path) -> None:
+        """WP8: a missing target reports external preparation guidance."""
         target = tmp_path / "results" / "resources" / "amrfinder_db"
         config = {
             "outdir": str(tmp_path / "results"),
             "resources": {"amrfinder_db": str(target)},
         }
-        with patch.object(ResourceDownloader, "ensure") as mock_ensure:
-            mock_ensure.return_value = DownloadResult(
-                resource_id="amrfinder_db",
-                path=target,
-                status="error",
-                message="Download failed: network unreachable",
-            )
-            rows = _wgs_impl._setup_wgs_bacteria(
-                config, resource_ids=None, dry_run=False, mock=False
-            )
-            assert rows[0]["status"] == "error"
-            assert "network unreachable" in rows[0]["message"]
+        rows = _wgs_impl._setup_wgs_bacteria(config, resource_ids=None, dry_run=False, mock=False)
+        assert rows[0]["status"] == "manual_required"
+        assert "External preparation required" in rows[0]["message"]
+        assert "amrfinder_update" in rows[0]["command"][0]
 
     def test_configured_resource_id_as_mapping(self, tmp_path: Path) -> None:
         """When amrfinder_db is configured as a Mapping with path key."""
@@ -246,38 +238,11 @@ class TestSetupWGSBacteria:
         config = {
             "resources": {"amrfinder_db": {"path": str(target)}},
         }
-        with patch.object(ResourceDownloader, "ensure") as mock_ensure:
-            mock_ensure.return_value = DownloadResult(
-                resource_id="amrfinder_db",
-                path=target,
-                status="ok",
-                message="Already ready.",
-            )
-            rows = _wgs_impl._setup_wgs_bacteria(
-                config, resource_ids=None, dry_run=False, mock=False
-            )
-            assert rows[0]["path"] == str(target)
-
-    def test_successful_downloader_without_index_reports_incomplete(self, tmp_path: Path) -> None:
-        """Downloader success is not enough unless AMRFinderPlus index files exist."""
-        target = tmp_path / "results" / "resources" / "amrfinder_db"
-        target.mkdir(parents=True)
-        config = {
-            "outdir": str(tmp_path / "results"),
-            "resources": {"amrfinder_db": str(target)},
-        }
-        with patch.object(ResourceDownloader, "ensure") as mock_ensure:
-            mock_ensure.return_value = DownloadResult(
-                resource_id="amrfinder_db",
-                path=target,
-                status="ok",
-                message="Ready.",
-            )
-            rows = _wgs_impl._setup_wgs_bacteria(
-                config, resource_ids=None, dry_run=False, mock=False
-            )
-            assert rows[0]["status"] == "incomplete"
-            assert "AMRProt.fa" in rows[0]["message"]
+        rows = _wgs_impl._setup_wgs_bacteria(config, resource_ids=None, dry_run=False, mock=False)
+        # WP8: an empty configured directory has nothing to classify — it
+        # reports the external preparation requirement.
+        assert rows[0]["path"] == str(target)
+        assert rows[0]["status"] == "manual_required"
 
 
 # --------------------------------------------------------------------------- #
@@ -316,7 +281,7 @@ class TestSetupReferenceResources:
         assert "mock" in rows[0]["message"].lower()
 
     def test_mock_genome_index_creates_resource(self, tmp_path: Path) -> None:
-        """Mock mode for genome_index creates ResourceDownloader mock."""
+        """Mock mode for genome_index fabricates the resource directory."""
         config = {"outdir": str(tmp_path / "results"), "resources": {}}
         rows = setup_reference_resources(
             "rnaseq_expression",
@@ -406,7 +371,7 @@ class TestSetupReferenceResources:
         assert len(rows) == 2
         assert all(r["status"] == "ok" for r in rows)
         assert all(r["mock"] is True for r in rows)
-        # genome_index uses ResourceDownloader mock, annotation_gtf writes a file
+        # genome_index fabricates a sentinel directory, annotation_gtf writes a file
         gtf_row = next(r for r in rows if r["resource_id"] == "annotation_gtf")
         assert Path(gtf_row["path"]).is_file()
 

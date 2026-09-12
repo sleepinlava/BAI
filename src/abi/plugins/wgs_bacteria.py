@@ -23,7 +23,7 @@ from abi._shared import (
 )
 from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
 from abi.report import write_plugin_report
-from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
+from abi.resources import DownloadResult
 from abi.schemas import ABIExecutionPlan, ABISample, ABISampleContext
 from abi.tools import ToolRegistry
 
@@ -433,12 +433,14 @@ def _setup_wgs_bacteria(
 ) -> List[Dict[str, Any]]:
     """Prepare the AMRFinderPlus database used by the WGS DAG.
 
-    Uses ResourceDownloader for atomic, idempotent resource management.
+    WP8: reports external preparation requirements; never downloads.
     """
-    from abi.resource_downloader import DownloadResult
     from abi.resources import (
+        ABIR_RESOURCE_SENTINEL,
+        DownloadResult,
         configured_or_default_resource_path,
         resource_timeout,
+        write_mock_resource,
     )
 
     if resource_ids and "amrfinder_db" not in resource_ids:
@@ -454,7 +456,7 @@ def _setup_wgs_bacteria(
     # configured parent directory.
     legacy_sentinel = target / ".abi_ready"
     if not dry_run and not mock and target.exists() and any(target.iterdir()):
-        sentinel = target / ResourceDownloader.SENTINEL
+        sentinel = target / ABIR_RESOURCE_SENTINEL
         has_sentinel = sentinel.exists() or legacy_sentinel.exists()
         if has_sentinel and _amrfinderplus_has_protein_index(runtime_target):
             return [
@@ -489,42 +491,41 @@ def _setup_wgs_bacteria(
             )
         ]
 
-    spec = DownloadSpec(
-        resource_id="amrfinder_db",
-        tool_id="amrfinderplus",
-        command=command,
-        atomic=False,
-        destination=target,
-        display_name="AMRFinderPlus database",
-        timeout_seconds=timeout or 3600.0,
-    )
-    downloader = ResourceDownloader(Path(), dry_run=dry_run, mock=mock)
-    result = downloader.ensure(spec)
-    if not dry_run and not mock and result.status == "ok":
+    # WP8: ABI never downloads or installs. A missing/empty target reports the
+    # external preparation requirement; existing directories were classified
+    # above (ok / incomplete).
+    # WP8：ABI 绝不下载或安装。缺失/空目标报告外部准备要求；已存在目录由上
+    # 方分类（ok / incomplete）。
+    if dry_run:
+        result = DownloadResult(
+            resource_id="amrfinder_db",
+            path=target,
+            status="planned",
+            command=command,
+            message="External preparation required; nothing was executed.",
+        )
+    elif mock:
+        target.mkdir(parents=True, exist_ok=True)
+        write_mock_resource(target, "amrfinder_db")
         runtime_target = _amrfinderplus_runtime_dir(target)
-        if _amrfinderplus_has_protein_index(runtime_target):
-            result = DownloadResult(
-                resource_id=result.resource_id,
-                path=runtime_target,
-                status="ok",
-                version=result.version,
-                checksum=result.checksum,
-                downloaded_at=result.downloaded_at,
-                command=result.command,
-                message=result.message,
-            )
-        else:
-            result = DownloadResult(
-                resource_id=result.resource_id,
-                path=target,
-                status="incomplete",
-                version=result.version,
-                checksum=result.checksum,
-                command=result.command,
-                message=(
-                    "AMRFinderPlus setup completed but AMRProt.fa BLAST index files "
-                    "(.phr, .pin, .psq) were not found; rerun setup."
-                ),
-            )
+        result = DownloadResult(
+            resource_id="amrfinder_db",
+            path=runtime_target,
+            status="ok",
+            command=command,
+            message="Mock AMRFinderPlus resource prepared.",
+        )
+    else:
+        result = DownloadResult(
+            resource_id="amrfinder_db",
+            path=target,
+            status="manual_required",
+            command=command,
+            message=(
+                "External preparation required: provision the AMRFinderPlus database "
+                f"(e.g. `{command[0]} --database {target}`), then verify with "
+                "`abi check-resources`. ABI does not download or install."
+            ),
+        )
 
     return [_amrfinderplus_row(result, mock=mock)]
