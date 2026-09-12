@@ -504,3 +504,11 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - `src/abi/plugins/metagenomic_plasmid/_engine/` 整体更名为 `lib/`：旧执行目录名退役，剩余的生物/数据支持库（parsers、normalize、report、statistics、schemas、resources setup、skills 等）以插件支持库身份归位。55 个文件导入 swept；wheel 打包验证 lib 在、_engine 无；Migration Gate 同步（PLUGIN_DIR → lib）并保持 5/5 通过。
 - 入口无隐藏调用者确认：dry-run 已走共享路径（WP2 步骤 1-3），执行核心已删除，剩余模块为声明与生物处理，符合"生物学处理保留在插件"的边界。
 - WP2 至此完成：插件私有执行入口、兼容命名空间、旧执行核心与旧目录名全部退役；剩余 WP8 承接 setup-resources 的下载职责。
+
+### 阶段 C 开工：WP8 步骤 1（运行/运维接口停止下载）
+
+- `ABIResourcePlugin` 拆分：仅保留只读发现/诊断；setup 移至新 `ABIResourceSetupPlugin` 协议（契约禁止下载）。
+- metagenomic_plasmid 的真实下载执行器删除（约 400 行：资源命令执行、kraken2 aria2c 管线、plasmidfinder 安装、tool_git/pip/download 安装器、ENA 示例数据抓取）。真实运行 setup 逐资源报告就绪状态：就绪=ok，其余=manual_required 外部准备指引；绝不触碰资源路径。
+- `abi setup-resources` 移除 `--confirm` 下载门：正常=报告就绪与指引，--dry-run=计划，--mock=夹具；通用分发路径同样输出 manual_required。
+- 受保护行为（ready/incomplete 分类、ready_check 字段）移至检查路径测试；13 项下载专属测试随特性退役。
+- 剩余 WP8：其余三插件的 ResourceDownloader 真实路径、EasyMeta ENA 节点迁移、环境创建（manage_environments）、运行时隐式工作流/镜像获取。
