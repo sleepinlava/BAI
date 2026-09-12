@@ -1,7 +1,10 @@
 import json
 
-from abi.autoplasm.result_validation import validate_result_dir
-from abi.autoplasm.standard_tables import append_standard_rows, ensure_standard_tables
+from abi.plugins.metagenomic_plasmid._engine.result_validation import validate_result_dir
+from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
+    append_standard_rows,
+    ensure_standard_tables,
+)
 
 
 def test_validate_result_rejects_failed_run(tmp_path):

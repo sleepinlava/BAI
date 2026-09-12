@@ -1,8 +1,13 @@
 import json
 
-from abi.autoplasm.dashboard import _handler_for, dashboard_state
-from abi.autoplasm.progress import PipelineProgressRecorder
-from abi.autoplasm.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
+from abi.plugins.metagenomic_plasmid._engine.dashboard import _handler_for, dashboard_state
+from abi.plugins.metagenomic_plasmid._engine.progress import PipelineProgressRecorder
+from abi.plugins.metagenomic_plasmid._engine.schemas import (
+    ExecutionPlan,
+    PlanStep,
+    SampleContext,
+    SampleInput,
+)
 
 
 def test_progress_recorder_writes_snapshot_and_events(tmp_path):

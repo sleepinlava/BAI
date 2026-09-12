@@ -1,13 +1,16 @@
 from pathlib import Path
 
-from abi.autoplasm.parsers import parse_standard_outputs, supports_standard_parsing
-from abi.autoplasm.standard_tables import (
+from abi.plugins import get_plugin
+from abi.plugins.metagenomic_plasmid._engine.parsers import (
+    parse_standard_outputs,
+    supports_standard_parsing,
+)
+from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
     append_standard_rows,
     expand_standard_rows,
     read_standard_table,
     write_consensus_table,
 )
-from abi.plugins import get_plugin
 
 FIXTURES = Path("tests/fixtures/tool_outputs")
 

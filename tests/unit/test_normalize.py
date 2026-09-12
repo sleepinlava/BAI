@@ -1,5 +1,8 @@
-from abi.autoplasm.normalize.abundance import tpm
-from abi.autoplasm.normalize.plasmid_prediction import integrate_calls, normalize_prediction_rows
+from abi.plugins.metagenomic_plasmid._engine.normalize.abundance import tpm
+from abi.plugins.metagenomic_plasmid._engine.normalize.plasmid_prediction import (
+    integrate_calls,
+    normalize_prediction_rows,
+)
 
 
 def test_integrate_majority_vote():

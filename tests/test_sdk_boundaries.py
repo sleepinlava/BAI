@@ -57,6 +57,7 @@ def test_no_autoplasm_imports_from_public_sdk_and_standalone_plugin():
             or "import autoplasm." in text
             or "from abi.autoplasm" in text
             or "import abi.autoplasm" in text
+            or "from plugins.metagenomic_plasmid._engine" in text
         ):
             leaks.append(str(path.relative_to(root)))
     assert leaks == []
@@ -67,7 +68,6 @@ def test_core_does_not_import_concrete_plugin_implementations():
     source_root = root / "src" / "abi"
     excluded_roots = {
         source_root / "plugins",
-        source_root / "autoplasm",
     }
     pattern = re.compile(r"^\s*(?:from|import)\s+abi\.plugins\.", re.MULTILINE)
     leaks = []

@@ -22,7 +22,6 @@ src/abi/
     wgs_bacteria.py        Bacterial WGS (5 tools)
     amplicon_16s.py        16S microbiome (10 tools)
     metatranscriptomics.py Metatranscriptomics (3 tools)
-  autoplasm/          Backward-compatible re-export shim → plugins/metagenomic_plasmid/_engine/
   sciplot/            Publication-grade Matplotlib figure compiler — FigureSpec → Validate →
                       Render → Export → Lint → Provenance. Pydantic schema, 15 plot types,
                       3 themes, lint rules, SHA-256 provenance.
@@ -51,13 +50,14 @@ src/abi/
   exporters/          Nextflow DSL2 and Snakemake exporters
   mcp/                Optional MCP stdio server (exposed via ``abi-mcp``)
   skills/             Agent skill files → installed via ``abi install-skills``
-  cli.py              Typer CLI (abi, abi-mcp, autoplasm, abi-sciplot entry points)
+  cli.py              Typer CLI (abi, abi-mcp, abi-sciplot entry points)
 ```
 
-The `abi.autoplasm` package is a backward-compatible re-export shim that proxies
-to `abi.plugins.metagenomic_plasmid._engine`. Internal code should import from
-`abi.plugins.metagenomic_plasmid._engine` for the plasmid engine or from the ABI
-core modules for shared infrastructure.
+The plasmid engine lives inside the plugin package
+(`abi.plugins.metagenomic_plasmid._engine`); the retired `abi.autoplasm`
+compatibility shim namespace was removed in WP2 and must not be
+reintroduced. Internal code imports the engine from the plugin package and
+shared infrastructure from the ABI core modules.
 
 ## Public SDK
 

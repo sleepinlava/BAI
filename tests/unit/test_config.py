@@ -4,10 +4,10 @@ import pytest
 import yaml
 
 from abi import config as core_config
-from abi.autoplasm.config import load_config
-from abi.autoplasm.schemas import ConfigError
 from abi.config import load_yaml
 from abi.plugins.metagenomic_plasmid._engine import config as plasmid_config
+from abi.plugins.metagenomic_plasmid._engine.config import load_config
+from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
 
 
 def test_plasmid_engine_uses_canonical_project_root():

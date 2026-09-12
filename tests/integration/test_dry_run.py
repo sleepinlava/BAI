@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from abi.autoplasm.config import load_config
-from abi.autoplasm.logger import RunLogger
-from abi.autoplasm.pipeline import PipelineExecutor
-from abi.autoplasm.planner import build_plan
-from abi.autoplasm.schemas import (
+from abi.plugins.metagenomic_plasmid import build_plan_from_dag as build_plan
+from abi.plugins.metagenomic_plasmid._engine.config import load_config
+from abi.plugins.metagenomic_plasmid._engine.logger import RunLogger
+from abi.plugins.metagenomic_plasmid._engine.pipeline import PipelineExecutor
+from abi.plugins.metagenomic_plasmid._engine.schemas import (
     AutoPlasmError,
     ExecutionPlan,
     PlanStep,
@@ -14,8 +14,8 @@ from abi.autoplasm.schemas import (
     SampleInput,
     ToolError,
 )
-from abi.autoplasm.skills.registry import ToolRegistry
-from abi.autoplasm.standard_tables import read_standard_table
+from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
+from abi.plugins.metagenomic_plasmid._engine.standard_tables import read_standard_table
 
 
 def test_dry_run_writes_provenance(tmp_path):

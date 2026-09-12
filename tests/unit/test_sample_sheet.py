@@ -2,8 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from abi.autoplasm.config import PROJECT_ROOT
-from abi.autoplasm.sample_sheet import SampleSheetError, parse_sample_sheet
+from abi.plugins.metagenomic_plasmid._engine.config import PROJECT_ROOT
+from abi.plugins.metagenomic_plasmid._engine.sample_sheet import (
+    SampleSheetError,
+    parse_sample_sheet,
+)
 
 
 def test_parse_sample_sheet_detects_multi_sample_and_groups():

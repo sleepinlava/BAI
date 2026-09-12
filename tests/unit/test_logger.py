@@ -1,7 +1,7 @@
 import json
 
-from abi.autoplasm.logger import RunLogger
-from abi.autoplasm.schemas import PlanStep
+from abi.plugins.metagenomic_plasmid._engine.logger import RunLogger
+from abi.plugins.metagenomic_plasmid._engine.schemas import PlanStep
 
 
 def test_logger_writes_json_lines(tmp_path):

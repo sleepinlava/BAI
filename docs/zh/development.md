@@ -21,7 +21,6 @@ src/abi/
     wgs_bacteria.py        细菌 WGS（5 工具）
     amplicon_16s.py        16S 微生物组（10 工具）
     metatranscriptomics.py 宏转录组（3 工具）
-  autoplasm/          向后兼容的重导出垫片 → plugins/metagenomic_plasmid/_engine/
   sciplot/            基于 Matplotlib 的论文级科研图形编译器 — FigureSpec → Validate →
                       Render → Export → Lint → Provenance。Pydantic schema，
                       15 种图表类型、3 套主题、lint 与 SHA-256 溯源。
@@ -50,12 +49,12 @@ src/abi/
   exporters/          Nextflow DSL2 与 Snakemake 导出器
   mcp/                可选 MCP stdio 服务器（通过 ``abi-mcp`` 暴露）
   skills/             Agent 技能文件 → 通过 ``abi install-skills`` 安装
-  cli.py              Typer CLI（abi、abi-mcp、autoplasm、abi-sciplot 入口点）
+  cli.py              Typer CLI（abi、abi-mcp、abi-sciplot 入口点）
 ```
 
-`abi.autoplasm` 包是一个向后兼容的重导出垫片，代理到
-`abi.plugins.metagenomic_plasmid._engine`。内部代码应从 `abi.plugins.metagenomic_plasmid._engine`
-导入质粒引擎，或从 ABI 核心模块导入共享基础设施。
+质粒引擎位于插件包内（`abi.plugins.metagenomic_plasmid._engine`）；已退役的
+`abi.autoplasm` 兼容垫片命名空间在 WP2 中删除，不得重新引入。内部代码应从
+插件包导入引擎，从 ABI 核心模块导入共享基础设施。
 
 ## 公开 SDK
 
