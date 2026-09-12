@@ -17,7 +17,7 @@ Delegation map / 委托映射
 * ``load_config``         → ``_engine.config.load_config``
 * ``build_plan``          → ``_engine.planner.build_plan``
 * ``registry``            → ``tool_registry.yaml``  (same directory)
-* ``execute_dry_run``     → ``_engine.pipeline.PipelineExecutor``
+* ``write_run_tables``    → ``_engine.standard_tables`` (analysis_status)
 * ``parse_outputs``       → ``_engine.parsers.parse_standard_outputs``
 * ``write_report``        → ``_engine.report.markdown`` / ``_engine.report.html``
 * ``table_schemas``       → declarative ``standard_tables.yaml``
@@ -42,6 +42,7 @@ writers can traverse it with attribute access.
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
@@ -53,19 +54,22 @@ from abi.dag_planner import (
 from abi.dag_planner import (
     build_sample_context as _core_build_sample_context,
 )
-from abi.provenance import RunLogger
 from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
 from abi.tools import ToolRegistry
 
 from ._engine.config import load_config as load_autoplasm_config
 from ._engine.parsers import parse_standard_outputs
-from ._engine.pipeline import PipelineExecutor
 from ._engine.report.html import write_html_report
 from ._engine.report.markdown import write_markdown_report
 from ._engine.resources import check_resources as check_plugin_resources
 from ._engine.resources import setup_resources as setup_plugin_resources
 from ._engine.result_validation import validate_result_dir as validate_plugin_result_dir
-from ._engine.standard_tables import expand_standard_rows, summarize_standard_tables
+from ._engine.standard_tables import (
+    ensure_standard_tables,
+    expand_standard_rows,
+    summarize_standard_tables,
+    write_standard_table,
+)
 from ._engine.tool_defaults import default_tools_for_category
 from .handlers import handlers as _metagenomic_plasmid_handlers
 
@@ -603,20 +607,40 @@ class MetagenomicPlasmidPlugin:
 
     # ── Dry-run execution / 演习执行 ─────────────────────────────────────
 
-    def execute_dry_run(self, plan: Any, config: Mapping[str, Any]) -> Dict[str, Path]:
-        """Simulate pipeline execution using mock tools (no real computation).
+    def write_run_tables(self, tables_dir: Path, plan: Any) -> None:
+        """Record plugin-owned run-level standard tables (WP2).
 
-        Creates a ``PipelineExecutor`` in mock mode so the agent can validate
-        the plan shape and output directory structure before committing to a
-        real run.
-
-        使用模拟工具模拟管道执行（不进行真实计算）。在模拟模式下创建
-        ``PipelineExecutor``，使 agent 能够在提交真实运行之前验证计划结构和
-        输出目录布局。
+        Writes ``analysis_status`` rows for planned-skip steps (``*_not_run``)
+        with replace semantics, exactly as the retired dry-run override did.
+        Called by every execution path after the declared standard-table
+        headers exist.
+        记录插件拥有的运行级标准表（WP2）：为计划跳过的步骤（``*_not_run``）
+        以替换语义写入 ``analysis_status`` 行，与已退役的 dry-run 覆写完全一
+        致。由所有执行路径在声明的标准表头建立后调用。
         """
-        logger = RunLogger(str(config["log_dir"]))
-        executor = PipelineExecutor(self.registry(), logger, mock_tools=True)
-        return executor.dry_run(plan, config)
+        ensure_standard_tables(tables_dir)
+        write_standard_table(
+            tables_dir,
+            "analysis_status",
+            [
+                {
+                    "module": step.step_name,
+                    "status": "not_run",
+                    "reason": step.reason,
+                    "sample_count": step.params.get("sample_count", ""),
+                    "eligible_sample_count": step.params.get("eligible_sample_count", ""),
+                    "group_counts": json.dumps(
+                        step.params.get("group_counts", {}),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    "threshold": step.params.get("threshold", ""),
+                }
+                for step in plan.skipped_steps
+                if step.step_id.endswith("_not_run")
+            ],
+            append=False,
+        )
 
     # ── Report generation / 报告生成 ─────────────────────────────────────
 

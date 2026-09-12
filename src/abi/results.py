@@ -117,6 +117,11 @@ class ABIResultWriter:
         run_identity["previous_run_archive"] = prior_lineage["previous_run_archive"]
         run_identity["resumes_run_id"] = prior_lineage["previous_run_id"] if resume else None
         self.table_manager.ensure_tables(tables_dir)
+        # WP2: plugin-owned run-level tables (e.g. planned-skip status).
+        # WP2：插件拥有的运行级表（如计划跳过状态）。
+        write_run_tables = getattr(self.plugin, "write_run_tables", None)
+        if callable(write_run_tables):
+            write_run_tables(tables_dir, plan)
 
         plan_path = result_dir / "execution_plan.json"
         plan_path.parent.mkdir(parents=True, exist_ok=True)

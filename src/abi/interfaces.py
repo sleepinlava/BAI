@@ -158,6 +158,23 @@ class ABIPublishedOutputsPlugin(Protocol):
 
 
 @runtime_checkable
+class ABIPluginRunTablesPlugin(Protocol):
+    """Optional extension: plugin-owned run-level standard tables (WP2).
+
+    Called by every execution path (local executor and backend result writer)
+    after the declared standard-table headers exist, so plugins can record
+    run-level views — e.g. planned-skip status rows — without the core
+    hardcoding plugin tables. Implementations own their replace/append
+    semantics.
+    可选扩展：插件拥有的运行级标准表（WP2）。所有执行路径在声明的标准表头
+    建立后调用，使插件能记录运行级视图（如计划跳过模块的状态行），核心不
+    硬编码插件表。替换/追加语义由实现自行负责。
+    """
+
+    def write_run_tables(self, tables_dir: Path, plan: Any) -> None: ...
+
+
+@runtime_checkable
 class ABIPlugin(Protocol):
     """Base protocol that every ABI plugin must satisfy.
 

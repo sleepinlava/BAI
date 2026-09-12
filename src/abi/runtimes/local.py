@@ -85,6 +85,7 @@ class LocalRuntime:
             report_title=self.plugin.report_title,
             mock_tools=mock_tools,
             internal_handlers=plugin_internal_handlers(self.plugin),
+            run_tables_hook=getattr(self.plugin, "write_run_tables", None),
         )
         outputs = executor.run(
             plan,

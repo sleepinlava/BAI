@@ -482,3 +482,11 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 3. `write_resolved_config` 与 `_plan_payload` 为旧引擎自有序列化；共享路径已有等价产物，迁移后以共享产物为准。
 4. `tests/integration/test_dry_run.py`（14 项）直接从 `abi.autoplasm.*` 导入并直接构造 `PipelineExecutor`——迁移时同步改为经 `WorkflowCoordinator`/共享入口验收。
 5. 退役顺序：插件钩子落地 → 删除 `execute_dry_run` 覆写（LocalRuntime 回退共享 dry-run）→ test_dry_run 换入口 → `abi.autoplasm` 转发与 `_engine.pipeline/cli` 退役。每步一个提交。
+
+### B3 续：WP2 dry-run 迁移实施（步骤 1-2 完成）
+
+- 新增可选协议 `ABIPluginRunTablesPlugin.write_run_tables(tables_dir, plan)`：共享执行器与 `ABIResultWriter`（四后端）在标准表头建立后调用，插件自有运行级表不再需要私有执行入口。
+- metagenomic_plasmid 实现 `write_run_tables`（`analysis_status` 的 `*_not_run` 行，替换语义，与旧覆写逐列一致）；**删除 `execute_dry_run` 覆写**——插件 dry-run 正式走共享执行器路径（含计划绑定、审计快照、执行事实、归档语义）。
+- 对等验证：含 `diversity_not_run` 跳过步骤的共享 dry-run 产出行与旧引擎逐列一致，重复 dry-run 替换语义一致（`tests/integration/test_dry_run_shared.py` 三项经共享入口验收）。
+- 版本表语义按共享统一：覆盖 `selected_tools`（旧引擎为全 registry），`test_abi_cli` 相应更新；旧引擎直连测试（`test_dry_run.py`）在旧引擎上保持不变，待引擎退役时同步。
+- 剩余（WP2 后续提交）：`abi.autoplasm` 转发模块与 `_engine.pipeline/cli` 退役、`_engine` 内 parsers/report helper 迁出目录。

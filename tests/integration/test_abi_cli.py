@@ -494,11 +494,18 @@ def test_abi_metagenomic_plasmid_no_progress_writes_progress_artifacts(tmp_path)
     assert snapshot["record_progress"] is False
     plan = json.loads((outdir / "execution_plan.json").read_text(encoding="utf-8"))
     assert plan["analysis_type"] == "metagenomic_plasmid"
+    # Shared-executor semantics (WP2): the version table covers the plan's
+    # selected tools (plus configured extras), not the whole registry.
+    # 共享执行器语义（WP2）：版本表覆盖计划选中的工具（及配置的额外项），
+    # 而非整个 registry。
     version_lines = (
         (outdir / "provenance" / "tool_versions.tsv").read_text(encoding="utf-8").splitlines()
     )
-    registry_tool_count = len(get_plugin("metagenomic_plasmid").registry().ids())
-    assert len(version_lines) >= 1 + registry_tool_count
+    selected_tools = [str(tool) for tool in plan["selected_tools"]]
+    assert selected_tools
+    assert len(version_lines) >= 1 + len(selected_tools)
+    listed_tools = {line.split("\t", 1)[0] for line in version_lines[1:]}
+    assert set(selected_tools) <= listed_tools
     assert all(line.endswith("\tnot_captured") for line in version_lines[1:])
     resources = json.loads((outdir / "provenance" / "resources.json").read_text(encoding="utf-8"))[
         "resources"

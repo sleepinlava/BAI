@@ -158,6 +158,7 @@ class GenericABIExecutor:
         mock_tools: bool = False,
         enforce_contracts: bool = True,
         internal_handlers: Mapping[str, ABIInternalHandler] | None = None,
+        run_tables_hook: Callable[[Path, Any], None] | None = None,
     ) -> None:
         # ToolRegistry provides tool discovery and instantiation.
         # ToolRegistry 提供工具发现和实例化。
@@ -182,6 +183,11 @@ class GenericABIExecutor:
         # 为 True 时，执行 pipeline_dag.yaml 中声明的输出契约、断言和校验和链。
         self.enforce_contracts = enforce_contracts
         self.internal_handlers = dict(internal_handlers or {})
+        # WP2: optional plugin hook recording plugin-owned run-level tables
+        # (e.g. planned-skip status); called after table headers exist.
+        # WP2：可选插件钩子，记录插件拥有的运行级表（如计划跳过状态）；在表头
+        # 建立后调用。
+        self.run_tables_hook = run_tables_hook
         self._config: Mapping[str, Any] = {}
         # Accumulated checksum map across all executed steps.
         # 跨所有已执行步骤累积的校验和映射。
@@ -298,6 +304,8 @@ class GenericABIExecutor:
         self._prior_checksums = dict(prior_checksums)
         tables_dir = ensure_directory(outdir / "tables", label="Standard tables directory")
         self.table_manager.ensure_tables(tables_dir)
+        if self.run_tables_hook is not None:
+            self.run_tables_hook(tables_dir, plan)
         # Pre-create per-step output directories so tools don't fail on missing dirs.
         # 预先创建每个步骤的输出目录，避免工具因缺少目录而失败。
         self._ensure_step_output_dirs(
