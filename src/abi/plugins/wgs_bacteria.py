@@ -439,7 +439,6 @@ def _setup_wgs_bacteria(
         ABIR_RESOURCE_SENTINEL,
         DownloadResult,
         configured_or_default_resource_path,
-        resource_timeout,
         write_mock_resource,
     )
 
@@ -448,7 +447,6 @@ def _setup_wgs_bacteria(
     target = configured_or_default_resource_path(config, "amrfinder_db")
     runtime_target = _amrfinderplus_runtime_dir(target)
     command = ["amrfinder_update", "--database", str(target)]
-    timeout = resource_timeout(config)
 
     # Existing AMRFinderPlus databases are only usable when both the ready sentinel
     # and the runtime protein BLAST index are present.  amrfinder_update stores the
