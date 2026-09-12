@@ -39,40 +39,16 @@ nodes:
         format: json
         path: "{outdir}/{category_dir}/input_validation.json"
         contract: {min_size: "10B"}
-  download_ena_reads:
-    tool_id: internal
-    internal_handler: easymetagenome.download_ena_reads
-    category: input_validation
-    scope: per_sample
-    platforms: [illumina]
-    optional: false
-    depends_on: [validate_manifest]
-    enable_condition: {field: reproduction.streaming_inputs, value: true}
-    inputs:
-      r1_url: {type: string, source: sample_sheet}
-      r2_url: {type: string, source: sample_sheet}
-      r1_md5: {type: string, source: sample_sheet}
-      r2_md5: {type: string, source: sample_sheet}
-      r1_bytes: {type: integer, source: sample_sheet}
-      r2_bytes: {type: integer, source: sample_sheet}
-    outputs:
-      read1: {type: file, format: fastq.gz, path: "{outdir}/{sample_id}_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
-      read2: {type: file, format: fastq.gz, path: "{outdir}/{sample_id}_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
-      download_receipt:
-        type: file
-        format: json
-        path: "{outdir}/provenance/ena_downloads/{sample_id}.json"
-        contract: {min_size: "10B", required_keys: [status, sample_id, r1_md5, r2_md5, r1_bytes, r2_bytes]}
   seqkit_stat_raw:
     tool_id: seqkit
     category: input_validation
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [validate_manifest, download_ena_reads]
+    depends_on: [validate_manifest]
     inputs:
-      read1: {type: file, format: fastq.gz, source: download_ena_reads.read1, fallback: sample_sheet}
-      read2: {type: file, format: fastq.gz, source: download_ena_reads.read2, fallback: sample_sheet}
+      read1: {type: file, format: fastq.gz, source: read1}
+      read2: {type: file, format: fastq.gz, source: read2}
     outputs:
       stats: {type: file, format: tsv, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}.seqkit.tsv", contract: {file_exists: true, extensions: [.tsv], min_size: "10B"}}
       output_dir: {type: directory, path: "{outdir}/{category_dir}/{sample_id}"}
@@ -83,10 +59,10 @@ nodes:
     scope: per_sample
     platforms: [illumina]
     optional: false
-    depends_on: [validate_manifest, download_ena_reads, seqkit_stat_raw]
+    depends_on: [validate_manifest, seqkit_stat_raw]
     inputs:
-      read1: {type: file, format: fastq.gz, source: download_ena_reads.read1, fallback: sample_sheet}
-      read2: {type: file, format: fastq.gz, source: download_ena_reads.read2, fallback: sample_sheet}
+      read1: {type: file, format: fastq.gz, source: read1}
+      read2: {type: file, format: fastq.gz, source: read2}
     outputs:
       clean_read1: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_1.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
       clean_read2: {type: file, format: fastq.gz, path: "{outdir}/{category_dir}/{sample_id}/{sample_id}_2.fastq.gz", contract: {file_exists: true, extensions: [.fastq.gz], min_size: "10B"}}
@@ -209,8 +185,6 @@ nodes:
     depends_on: [fastp_qc, compress_dehost_reads, kraken2_classify, bracken_phylum, bracken_genus, bracken_species]
     params: {_batch_cleanup: true}
     inputs:
-      raw_read1: {type: file, source: download_ena_reads.read1, required: false}
-      raw_read2: {type: file, source: download_ena_reads.read2, required: false}
       clean_read1: {type: file, source: fastp_qc.clean_read1}
       clean_read2: {type: file, source: fastp_qc.clean_read2}
       dehost_read1: {type: file, source: compress_dehost_reads.dehost_read1}

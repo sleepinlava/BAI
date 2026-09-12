@@ -5,7 +5,6 @@ from __future__ import annotations
 import csv
 import gzip
 import json
-import shutil
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
 
@@ -103,14 +102,8 @@ class EasyMetagenomePlugin:
         self, config: Mapping[str, Any], *, check_files: bool = True
     ) -> ABISampleContext:
         path = config["input"]["sample_sheet"]
-        reproduction = config.get("reproduction", {})
-        streaming_inputs = bool(
-            isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
-        )
         try:
-            records = ManifestValidator.validate(
-                path, check_files=check_files and not streaming_inputs
-            )
+            records = ManifestValidator.validate(path, check_files=check_files)
         except (FileNotFoundError, ValueError):
             if check_files:
                 raise
@@ -172,18 +165,13 @@ class EasyMetagenomePlugin:
         del engine
         checks: list[dict[str, Any]] = []
         reproduction = config.get("reproduction", {})
-        streaming_inputs = bool(
-            isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
-        )
         try:
-            samples = ManifestValidator.validate(
-                config["input"]["sample_sheet"], check_files=not streaming_inputs
-            )
+            samples = ManifestValidator.validate(config["input"]["sample_sheet"], check_files=True)
             checks.append({"name": "manifest", "status": "pass", "sample_count": len(samples)})
         except (FileNotFoundError, ValueError) as exc:
             checks.append({"name": "manifest", "status": "fail", "message": str(exc)})
         protocol = reproduction.get("protocol") if isinstance(reproduction, Mapping) else None
-        if protocol in {"ibd_core53", "ibd_core53_download"}:
+        if protocol == "ibd_core53":
             try:
                 manifest_errors = validate_core53_manifest(
                     config["input"]["sample_sheet"],
@@ -197,28 +185,6 @@ class EasyMetagenomePlugin:
                     "name": "ibd_core53_manifest",
                     "status": "fail" if manifest_errors else "pass",
                     "errors": manifest_errors,
-                }
-            )
-        download_backend = reproduction.get("download_backend")
-        if protocol == "ibd_core53_download" and download_backend in {"aria2c", "script"}:
-            executable = shutil.which("aria2c") if check_runtime else "aria2c"
-            checks.append(
-                {
-                    "name": "ena_download_backend",
-                    "status": "pass" if executable else "fail",
-                    "backend": "aria2c",
-                    "executable": executable,
-                }
-            )
-        if protocol == "ibd_core53_download" and download_backend == "script":
-            script = Path(str(reproduction.get("download_script", "")))
-            script_ready = script.is_file() and script.stat().st_mode & 0o111 != 0
-            checks.append(
-                {
-                    "name": "ena_download_script",
-                    "status": "pass" if script_ready else "fail",
-                    "path": str(script),
-                    "executable": script_ready,
                 }
             )
         if protocol == "ibd_core53":

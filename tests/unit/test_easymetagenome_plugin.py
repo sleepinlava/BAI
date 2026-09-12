@@ -336,7 +336,6 @@ def test_workflow_catalog_is_available_through_unified_query():
 
     assert payload["status"] == "success"
     assert {item["id"] for item in payload["result"]["workflows"]} == {
-        "ibd_core53_download",
         "ibd_core53_reproduction",
         "p0_taxonomy",
         "p1_humann4",
@@ -419,7 +418,6 @@ def test_formal_reproduction_allows_explicit_cloud_current_kraken_substitution(t
             "resources": {"host_db": str(host_db), "kraken2_db": str(kraken_db)},
             "reproduction": {
                 "protocol": "ibd_core53",
-                "streaming_inputs": True,
                 "kraken2_policy": "cloud_current",
             },
             "outdir": str(tmp_path / "results"),
@@ -456,7 +454,10 @@ def test_ibd_core53_preset_plans_frozen_endpoint_scoring(tmp_path):
     assert score.outputs["endpoint_scores"].endswith("ibd_core53_endpoint_scores.json")
 
 
-def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
+def test_ibd_core53_cohort_builds_without_download_nodes(tmp_path):
+    """WP8: the ENA download node is retired. The frozen cohort's reads are
+    externally prepared inputs (paths recorded in the manifest alongside the
+    ENA URLs/MD5s as source records); cleanups never consume external reads."""
     plugin = get_plugin("easymetagenome")
     config = plugin.load_config(
         "configs/case3_ibd_core53_pluspf_20240605_16cpu_120gb.yaml",
@@ -467,13 +468,13 @@ def test_ibd_core53_streams_verified_ena_reads_and_cleans_each_sample(tmp_path):
         },
     )
 
-    plan = plugin.build_plan(config, check_files=True)
+    plan = plugin.build_plan(config, check_files=False)
     downloads = [step for step in plan.steps if step.dag_node_id == "download_ena_reads"]
     cleanups = [step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"]
 
-    assert len(downloads) == len(cleanups) == 53
-    assert all(step.inputs["r1_url"].startswith("https://") for step in downloads)
-    assert all(step.inputs["raw_read1"] for step in cleanups)
+    assert not downloads
+    assert len(cleanups) == 53
+    assert all(not step.inputs.get("raw_read1") for step in cleanups)
     assert config["threads"] == 16
     assert config["execution"] == {
         "resources": {"cpu": 16, "memory": "120GB"},
@@ -518,50 +519,6 @@ def test_real30_validation_config_uses_current_cohort_and_strict_provenance(tmp_
         "host_db",
         "kraken2_db",
     ]
-
-
-def test_ibd_core53_download_all_is_a_separate_verified_phase(tmp_path):
-    plugin = get_plugin("easymetagenome")
-    config = plugin.load_config(
-        "configs/case3_ibd_core53_download_all.yaml",
-        overrides={
-            "input": {"sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"},
-            "outdir": str(tmp_path / "raw"),
-            "log_dir": str(tmp_path / "logs"),
-        },
-    )
-
-    plan = plugin.build_plan(config, check_files=True)
-    node_ids = [step.dag_node_id for step in plan.steps]
-
-    assert len(plan.samples) == 53
-    assert node_ids.count("download_ena_reads") == 53
-    assert set(node_ids) == {"validate_manifest", "download_ena_reads"}
-    assert all(
-        step.outputs["read1"].startswith(str(tmp_path / "raw"))
-        for step in plan.steps
-        if step.dag_node_id == "download_ena_reads"
-    )
-
-
-def test_ibd_core53_cloud_analysis_reuses_complete_raw_dataset(tmp_path):
-    plugin = get_plugin("easymetagenome")
-    config = plugin.load_config(
-        "configs/case3_ibd_core53_cloud_current_16cpu_120gb.yaml",
-        overrides={
-            "input": {"sample_sheet": "configs/case3_ibd_srp131166_core53.samples.tsv"},
-            "outdir": str(tmp_path / "results"),
-            "log_dir": str(tmp_path / "logs"),
-        },
-    )
-
-    plan = plugin.build_plan(config, check_files=False)
-    node_ids = [step.dag_node_id for step in plan.steps]
-    cleanups = [step for step in plan.steps if step.dag_node_id == "cleanup_taxonomy_intermediates"]
-
-    assert "download_ena_reads" not in node_ids
-    assert len(cleanups) == 53
-    assert all(not step.inputs.get("raw_read1") for step in cleanups)
 
 
 def test_easymetagenome_parsers_cover_every_registered_tool(tmp_path):

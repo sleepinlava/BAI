@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import gzip
-import hashlib
-import io
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,7 +14,6 @@ from abi.plugins import get_plugin
 from abi.plugins.easymetagenome.handlers import (
     bracken_merge_handler,
     cleanup_taxonomy_intermediates_handler,
-    download_ena_reads_handler,
     kneaddata_summary_handler,
     report_handler,
     taxonomy_diversity_handler,
@@ -74,147 +70,6 @@ def _manifest(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return manifest
-
-
-def test_download_ena_reads_is_verified_atomic_and_cleanup_managed(tmp_path, monkeypatch):
-    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
-    monkeypatch.setattr(
-        "abi.plugins.easymetagenome.handlers.urllib.request.urlopen",
-        lambda url, timeout: io.BytesIO(payload),
-    )
-    outdir = tmp_path / "result"
-    read1 = outdir / "00_input_validation/staged_reads/S1_1.fastq.gz"
-    read2 = outdir / "00_input_validation/staged_reads/S1_2.fastq.gz"
-    receipt = outdir / "provenance/ena_downloads/S1.json"
-    digest = hashlib.md5(payload).hexdigest()
-
-    download_ena_reads_handler(
-        SimpleNamespace(
-            sample_id="S1",
-            inputs={
-                "r1_url": "https://example.test/S1_1.fastq.gz",
-                "r2_url": "https://example.test/S1_2.fastq.gz",
-                "r1_md5": digest,
-                "r2_md5": digest,
-                "r1_bytes": len(payload),
-                "r2_bytes": len(payload),
-            },
-            outputs={
-                "read1": str(read1),
-                "read2": str(read2),
-                "download_receipt": str(receipt),
-            },
-        ),
-        {},
-        SimpleNamespace(outdir=outdir),
-    )
-
-    assert read1.read_bytes() == payload
-    assert read2.read_bytes() == payload
-    assert not list(read1.parent.glob("*.part"))
-    assert json.loads(receipt.read_text(encoding="utf-8"))["r1_md5"] == digest
-
-
-def test_download_ena_reads_aria2c_resumes_then_verifies(tmp_path, monkeypatch):
-    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
-    commands = []
-
-    def fake_run(command, *, check):
-        assert check is True
-        commands.append(command)
-        directory = Path(
-            next(item.split("=", 1)[1] for item in command if item.startswith("--dir="))
-        )
-        output = next(item.split("=", 1)[1] for item in command if item.startswith("--out="))
-        (directory / output).write_bytes(payload)
-        return SimpleNamespace(returncode=0)
-
-    monkeypatch.setattr("abi.plugins.easymetagenome.handlers.subprocess.run", fake_run)
-    outdir = tmp_path / "raw"
-    digest = hashlib.md5(payload).hexdigest()
-    read1 = outdir / "S1_1.fastq.gz"
-    read2 = outdir / "S1_2.fastq.gz"
-    receipt = outdir / "provenance/ena_downloads/S1.json"
-
-    download_ena_reads_handler(
-        SimpleNamespace(
-            sample_id="S1",
-            inputs={
-                "r1_url": "https://example.test/S1_1.fastq.gz",
-                "r2_url": "https://example.test/S1_2.fastq.gz",
-                "r1_md5": digest,
-                "r2_md5": digest,
-                "r1_bytes": len(payload),
-                "r2_bytes": len(payload),
-            },
-            outputs={
-                "read1": str(read1),
-                "read2": str(read2),
-                "download_receipt": str(receipt),
-            },
-        ),
-        {"reproduction": {"download_backend": "aria2c", "connections_per_file": 4}},
-        SimpleNamespace(outdir=outdir),
-    )
-
-    assert read1.read_bytes() == payload
-    assert read2.read_bytes() == payload
-    assert len(commands) == 2
-    assert all("--continue=true" in command for command in commands)
-    assert all("--max-connection-per-server=4" in command for command in commands)
-
-
-def test_download_ena_reads_script_is_silent_on_stdout_and_verified(tmp_path, monkeypatch):
-    payload = gzip.compress(b"@r1\nACGT\n+\nIIII\n")
-    script = tmp_path / "download.sh"
-    script.write_text("#!/bin/sh\n", encoding="utf-8")
-    script.chmod(0o755)
-    commands = []
-
-    def fake_run(command, *, check, stdout):
-        assert check is True
-        assert stdout is subprocess.DEVNULL
-        commands.append(command)
-        Path(command[2]).write_bytes(payload)
-        return SimpleNamespace(returncode=0)
-
-    monkeypatch.setattr("abi.plugins.easymetagenome.handlers.subprocess.run", fake_run)
-    outdir = tmp_path / "raw"
-    digest = hashlib.md5(payload).hexdigest()
-    outputs = {
-        "read1": str(outdir / "S1_1.fastq.gz"),
-        "read2": str(outdir / "S1_2.fastq.gz"),
-        "download_receipt": str(outdir / "provenance/ena_downloads/S1.json"),
-    }
-    download_ena_reads_handler(
-        SimpleNamespace(
-            sample_id="S1",
-            inputs={
-                "r1_url": "https://ftp.sra.ebi.ac.uk/S1_1.fastq.gz",
-                "r2_url": "https://ftp.sra.ebi.ac.uk/S1_2.fastq.gz",
-                "r1_md5": digest,
-                "r2_md5": digest,
-                "r1_bytes": len(payload),
-                "r2_bytes": len(payload),
-            },
-            outputs=outputs,
-        ),
-        {
-            "reproduction": {
-                "download_backend": "script",
-                "download_script": str(script),
-                "connections_per_file": 4,
-            }
-        },
-        SimpleNamespace(outdir=outdir),
-    )
-
-    assert Path(outputs["read1"]).read_bytes() == payload
-    assert Path(outputs["read2"]).read_bytes() == payload
-    assert commands == [
-        [str(script), "https://ftp.sra.ebi.ac.uk/S1_1.fastq.gz", outputs["read1"] + ".part", "4"],
-        [str(script), "https://ftp.sra.ebi.ac.uk/S1_2.fastq.gz", outputs["read2"] + ".part", "4"],
-    ]
 
 
 def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_path):

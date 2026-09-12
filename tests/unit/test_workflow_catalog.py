@@ -9,7 +9,6 @@ def test_catalog_lists_presets_in_declared_order():
     catalog = WorkflowCatalog.for_plugin("easymetagenome")
 
     assert catalog.preset_ids == (
-        "ibd_core53_download",
         "ibd_core53_reproduction",
         "p0_taxonomy",
         "p1_humann4",

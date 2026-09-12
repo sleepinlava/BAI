@@ -6,10 +6,7 @@ import csv
 import gzip
 import hashlib
 import json
-import os
 import shutil
-import subprocess
-import urllib.request
 from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
@@ -85,11 +82,7 @@ def validate_manifest_handler(
 ) -> InternalHandlerResult:
     del context
     manifest = config["input"]["sample_sheet"]
-    reproduction = config.get("reproduction", {})
-    streaming_inputs = bool(
-        isinstance(reproduction, Mapping) and reproduction.get("streaming_inputs")
-    )
-    records = ManifestValidator.validate(manifest, check_files=not streaming_inputs)
+    records = ManifestValidator.validate(manifest, check_files=True)
     _write_rows(step.outputs["normalized_manifest"], [record.as_dict() for record in records])
     report = {
         "status": "pass",
@@ -117,159 +110,6 @@ def _verify_transfer(path: Path, *, url: str, expected_md5: str, expected_bytes:
         raise ValueError(
             f"Downloaded MD5 mismatch for {url}: expected {expected_md5}, got {observed_md5}"
         )
-
-
-def _download_verified_urllib(
-    url: str, destination: Path, expected_md5: str, expected_bytes: int
-) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    part = destination.with_name(destination.name + ".part")
-    part.unlink(missing_ok=True)
-    try:
-        with urllib.request.urlopen(url, timeout=120) as response, part.open("wb") as handle:
-            while chunk := response.read(8 * 1024 * 1024):
-                handle.write(chunk)
-            handle.flush()
-            os.fsync(handle.fileno())
-        _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
-        os.replace(part, destination)
-    except BaseException:
-        part.unlink(missing_ok=True)
-        raise
-
-
-def _download_verified_aria2c(
-    url: str,
-    destination: Path,
-    expected_md5: str,
-    expected_bytes: int,
-    *,
-    connections: int,
-) -> None:
-    """Resume an ENA transfer with aria2 and publish only after full verification."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    part = destination.with_name(destination.name + ".part")
-    if destination.is_file():
-        _verify_transfer(
-            destination, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes
-        )
-        return
-    command = [
-        "aria2c",
-        f"--dir={destination.parent}",
-        f"--out={part.name}",
-        "--continue=true",
-        "--auto-file-renaming=false",
-        "--allow-overwrite=true",
-        "--file-allocation=none",
-        f"--max-connection-per-server={connections}",
-        f"--split={connections}",
-        "--min-split-size=16M",
-        "--connect-timeout=30",
-        "--timeout=60",
-        "--max-tries=0",
-        "--retry-wait=5",
-        "--lowest-speed-limit=1K",
-        "--async-dns=false",
-        "--console-log-level=warn",
-        "--summary-interval=0",
-        url,
-    ]
-    subprocess.run(command, check=True)  # noqa: S603 - fixed executable and validated arguments.
-    _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
-    os.replace(part, destination)
-    part.with_name(part.name + ".aria2").unlink(missing_ok=True)
-
-
-def _download_verified_script(
-    url: str,
-    destination: Path,
-    expected_md5: str,
-    expected_bytes: int,
-    *,
-    script: Path,
-    connections: int,
-) -> None:
-    """Run the durable cloud transfer script, then atomically publish verified data."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    part = destination.with_name(destination.name + ".part")
-    if destination.is_file():
-        _verify_transfer(
-            destination, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes
-        )
-        return
-    subprocess.run(
-        [str(script), url, str(part), str(connections)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )  # noqa: S603 - configured script path is checked by preflight.
-    _verify_transfer(part, url=url, expected_md5=expected_md5, expected_bytes=expected_bytes)
-    os.replace(part, destination)
-    part.with_name(part.name + ".aria2").unlink(missing_ok=True)
-
-
-def download_ena_reads_handler(
-    step: Any,
-    config: Mapping[str, Any],
-    context: InternalHandlerContext,
-) -> InternalHandlerResult:
-    """Atomically stage one paired ENA run and verify its frozen transfer metadata."""
-    reproduction = config.get("reproduction", {})
-    backend = str(reproduction.get("download_backend", "urllib"))
-    connections = int(reproduction.get("connections_per_file", 4))
-    if backend not in {"urllib", "aria2c", "script"}:
-        raise ValueError(f"Unsupported ENA download backend: {backend}")
-    if not 1 <= connections <= 16:
-        raise ValueError("reproduction.connections_per_file must be between 1 and 16")
-    outputs = {key: Path(step.outputs[key]) for key in ("read1", "read2")}
-    outdir = context.outdir.resolve()
-    for path in outputs.values():
-        if not path.resolve().is_relative_to(outdir):
-            raise ValueError(f"Refusing to stage ENA input outside result directory: {path}")
-    for mate in ("r1", "r2"):
-        destination = outputs["read1" if mate == "r1" else "read2"]
-        arguments = (
-            str(step.inputs[f"{mate}_url"]),
-            destination,
-            str(step.inputs[f"{mate}_md5"]),
-            int(step.inputs[f"{mate}_bytes"]),
-        )
-        if backend == "script":
-            script = Path(str(reproduction.get("download_script", "")))
-            if not script.is_file() or not os.access(script, os.X_OK):
-                raise ValueError(f"ENA download script is not executable: {script}")
-            _download_verified_script(
-                *arguments,
-                script=script,
-                connections=connections,
-            )
-        elif backend == "aria2c":
-            _download_verified_aria2c(*arguments, connections=connections)
-        else:
-            _download_verified_urllib(*arguments)
-    receipt = Path(step.outputs["download_receipt"])
-    receipt.parent.mkdir(parents=True, exist_ok=True)
-    receipt.write_text(
-        json.dumps(
-            {
-                "status": "success",
-                "sample_id": str(step.sample_id),
-                "read1": str(outputs["read1"]),
-                "read2": str(outputs["read2"]),
-                "r1_md5": str(step.inputs["r1_md5"]),
-                "r2_md5": str(step.inputs["r2_md5"]),
-                "r1_bytes": int(step.inputs["r1_bytes"]),
-                "r2_bytes": int(step.inputs["r2_bytes"]),
-            },
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    return InternalHandlerResult(
-        message=f"Downloaded and verified ENA reads for {step.sample_id}",
-        artifacts={"download_receipt": receipt},
-    )
 
 
 def fastp_summary_handler(
@@ -918,9 +758,6 @@ def handlers() -> dict[str, FunctionInternalHandler]:
         "easymetagenome.cleanup_taxonomy_intermediates": FunctionInternalHandler(
             "easymetagenome.cleanup_taxonomy_intermediates",
             cleanup_taxonomy_intermediates_handler,
-        ),
-        "easymetagenome.download_ena_reads": FunctionInternalHandler(
-            "easymetagenome.download_ena_reads", download_ena_reads_handler
         ),
         "easymetagenome.functional_report": FunctionInternalHandler(
             "easymetagenome.functional_report", functional_report_handler
