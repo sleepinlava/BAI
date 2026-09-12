@@ -146,7 +146,6 @@ def test_setup_resources_mock(runner: CliRunner, tmp_path: Path) -> None:
             "--outdir",
             str(tmp_path / "results"),
             "--mock",
-            "--confirm",
         ],
     )
     assert result.exit_code == 0, result.output

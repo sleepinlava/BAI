@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from abi import resource_downloader as _resource_downloader
 from abi.errors import ABIError
-from abi.interfaces import ABIResourcePlugin
+from abi.interfaces import ABIResourcePlugin, ABIResourceSetupPlugin
 from abi.plugins import get_plugin
 from abi.resource_downloader import DownloadResult, DownloadSpec, ResourceDownloader
 from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS, timeout_from_env_or_value
@@ -63,9 +63,16 @@ def setup_resources(
     dry_run: bool = False,
     mock: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Prepare or plan resources for an ABI analysis type."""
+    """Plan, fabricate fixtures for, or report resource requirements (WP8).
+
+    ABI never downloads or installs: real-run returns explicit
+    ``manual_required`` guidance rows, ``dry_run`` reports the preparation
+    plan, and ``mock`` fabricates fixture directories for tests.
+    ABI 绝不下载或安装：真实运行返回明确的 manual_required 指引行，dry_run
+    输出准备计划，mock 为测试生成夹具目录。
+    """
     plugin = get_plugin(analysis_type)
-    if isinstance(plugin, ABIResourcePlugin):
+    if isinstance(plugin, ABIResourceSetupPlugin):
         rows = plugin.setup_resources(
             config,
             resource_ids=resource_ids,
@@ -73,11 +80,6 @@ def setup_resources(
             mock=mock,
         )
         return mark_mock_mode(rows, mock=mock)
-    if not dry_run and not mock:
-        raise ABIError(
-            f"Resource setup is not implemented for analysis type {analysis_type!r}. "
-            "Use --dry-run to inspect the resource plan or configure paths manually."
-        )
     rows = check_generic_resources(analysis_type, config, resource_ids=resource_ids)
     planned = []
     for row in rows:
@@ -95,6 +97,15 @@ def setup_resources(
             )
             planned_row["status"] = "ok"
             planned_row["message"] = "Mock resource directory prepared."
+        elif planned_row["status"] != "ok":
+            # WP8 real-run: report manual requirements with guidance — ABI
+            # never downloads or installs.
+            # WP8 真实运行：报告 manual_required 指引——ABI 绝不下载或安装。
+            planned_row["status"] = "manual_required"
+            planned_row["message"] = (
+                "Provision the upstream database/environment bundle, then set "
+                f"resources.{row['resource_id']} to its validated path."
+            )
         planned.append(planned_row)
     return planned
 

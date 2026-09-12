@@ -1,12 +1,11 @@
+import json
 from pathlib import Path
 
 from abi.plugins.metagenomic_plasmid.lib.config import load_config as load_autoplasm_config
 from abi.plugins.metagenomic_plasmid.lib.resources import (
     check_resources,
-    fetch_example_dataset,
     required_resource_issues,
     setup_resources,
-    sha256_path,
 )
 from abi.resources import check_resources as check_abi_resources
 from abi.resources import setup_resources as setup_abi_resources
@@ -96,180 +95,6 @@ def test_setup_resources_reports_progress(tmp_path):
     assert events[-1] == ("finish", "genomad", "ok")
 
 
-def test_setup_resources_uses_env_path_for_resource_dependencies(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-annotation" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    bakta_db = env_bin / "bakta_db"
-    bakta_db.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env sh",
-                "set -eu",
-                "command -v amrfinder >/dev/null",
-                "out=''",
-                'while [ "$#" -gt 0 ]; do',
-                '  case "$1" in',
-                '    --output) shift; out="$1" ;;',
-                "  esac",
-                "  shift || true",
-                "done",
-                'mkdir -p "$out"',
-                "printf 'ok\\n' > \"$out/bakta.db\"",
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    bakta_db.chmod(0o755)
-    amrfinder = env_bin / "amrfinder"
-    amrfinder.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
-    amrfinder.chmod(0o755)
-
-    config = {"resources": {"root": str(tmp_path / "resources")}}
-    rows = setup_resources(config, resource_ids=["bakta"])
-
-    assert rows[0]["status"] == "ok"
-    assert (tmp_path / "resources" / "bakta" / "bakta.db").exists()
-
-
-def test_setup_resources_reports_command_timeout(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-plasmid-detect" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    executable = env_bin / "genomad"
-    executable.write_text("#!/usr/bin/env sh\nsleep 2\n", encoding="utf-8")
-    executable.chmod(0o755)
-
-    config = {
-        "resources": {"root": str(tmp_path / "resources")},
-        "execution": {"resource_timeout_seconds": 0.01},
-    }
-    rows = setup_resources(config, resource_ids=["genomad"])
-
-    assert rows[0]["status"] == "failed"
-    assert "timed out" in rows[0]["message"]
-
-
-def test_setup_resources_skips_existing_ready_database(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-plasmid-detect" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    executable = env_bin / "genomad"
-    executable.write_text("#!/usr/bin/env sh\nexit 9\n", encoding="utf-8")
-    executable.chmod(0o755)
-
-    resource_root = tmp_path / "resources"
-    (resource_root / "genomad" / "genomad_db").mkdir(parents=True)
-    config = {"resources": {"root": str(resource_root)}}
-
-    rows = setup_resources(config, resource_ids=["genomad"])
-
-    assert rows[0]["status"] == "ok"
-    assert rows[0]["message"] == "Existing database found; download skipped."
-    assert rows[0]["ready_check"] == "genomad_db directory found"
-
-
-def test_setup_resources_downloads_when_target_is_empty_directory(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-plasmid-detect" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    executable = env_bin / "genomad"
-    executable.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env sh",
-                "set -eu",
-                'mkdir -p "$2/genomad_db"',
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    executable.chmod(0o755)
-
-    resource_root = tmp_path / "resources"
-    (resource_root / "genomad").mkdir(parents=True)
-    config = {"resources": {"root": str(resource_root)}}
-
-    rows = setup_resources(config, resource_ids=["genomad"])
-
-    assert rows[0]["status"] == "ok"
-    assert (resource_root / "genomad" / "genomad_db").exists()
-
-
-def test_setup_resources_does_not_overwrite_incomplete_database(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-plasmid-detect" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    executable = env_bin / "genomad"
-    executable.write_text("#!/usr/bin/env sh\nexit 9\n", encoding="utf-8")
-    executable.chmod(0o755)
-
-    resource_root = tmp_path / "resources"
-    incomplete = resource_root / "genomad"
-    incomplete.mkdir(parents=True)
-    (incomplete / "partial.tmp").write_text("partial\n", encoding="utf-8")
-    config = {"resources": {"root": str(resource_root)}}
-
-    rows = setup_resources(config, resource_ids=["genomad"])
-
-    assert rows[0]["status"] == "incomplete"
-    assert "download skipped" in rows[0]["message"]
-    assert (incomplete / "partial.tmp").exists()
-
-
-def test_plasmidfinder_install_uses_absolute_install_path(tmp_path, monkeypatch):
-    mamba_root = tmp_path / ".mamba"
-    env_bin = mamba_root / "envs" / "autoplasm-annotation" / "bin"
-    env_bin.mkdir(parents=True)
-    monkeypatch.setenv("AUTOPLASM_MAMBA_ROOT", str(mamba_root))
-
-    python = env_bin / "python"
-    marker = tmp_path / "python_args.txt"
-    python.write_text(
-        "\n".join(
-            [
-                "#!/usr/bin/env sh",
-                "set -eu",
-                'printf "%s\\n" "$1" > "' + str(marker) + '"',
-                'test -f "$1"',
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    python.chmod(0o755)
-    kma_index = env_bin / "kma_index"
-    kma_index.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
-    kma_index.chmod(0o755)
-
-    db_path = Path("relative_plasmidfinder_db")
-    absolute_db_path = tmp_path / db_path
-    absolute_db_path.mkdir(parents=True)
-    (absolute_db_path / "INSTALL.py").write_text("print('install')\n", encoding="utf-8")
-
-    monkeypatch.chdir(tmp_path)
-    config = {}
-
-    from abi.plugins.metagenomic_plasmid.lib.resources import _run_plasmidfinder_install
-
-    _run_plasmidfinder_install(config, db_path)
-
-    install_arg = marker.read_text(encoding="utf-8").strip()
-    assert install_arg == str((absolute_db_path / "INSTALL.py").resolve())
-
-
 def test_plasmidfinder_uses_current_database_url(tmp_path):
     config = {"resources": {"root": str(tmp_path / "resources")}}
 
@@ -303,16 +128,6 @@ def test_metaphlan_resource_is_included_in_default_setup(tmp_path):
     rows = setup_resources(config, dry_run=True)
 
     assert "metaphlan" in {row["resource_id"] for row in rows}
-
-
-def test_fetch_example_dataset_mock(tmp_path):
-    outputs = fetch_example_dataset("plasmid_refseq_smoke", tmp_path, mock=True)
-
-    sample_sheet = Path(outputs["sample_sheet"])
-    assert sample_sheet.exists()
-    assert "NC_002127_1" in sample_sheet.read_text(encoding="utf-8")
-    fasta = tmp_path / "NC_002127.1.fasta"
-    assert sha256_path(fasta)
 
 
 def test_wgs_resource_setup_has_real_dry_run_and_mock_paths(tmp_path):
@@ -513,61 +328,6 @@ def test_amrfinderplus_required_resource_issues(tmp_path):
     assert any("amrfinderplus.database" in i for i in issues)
 
 
-def test_gtdbtk_env_var_injection(tmp_path):
-    """GTDB-Tk download sets GTDBTK_DATA_PATH in runtime environment."""
-    from abi.plugins.metagenomic_plasmid.lib.resources import (
-        ResourceSpec,
-        _resource_runtime_env,
-    )
-
-    root = tmp_path / "resources"
-    config = {"resources": {"root": str(root)}}
-    spec = ResourceSpec(
-        resource_id="gtdbtk",
-        tool_id="gtdbtk",
-        field="database",
-        env_name="stats",
-        executable="gtdbtk",
-        default_subdir="gtdbtk",
-        source_url="https://example.com",
-        command_template=["gtdbtk", "db", "download"],
-    )
-
-    env = _resource_runtime_env(config, "stats", spec)
-    assert "GTDBTK_DATA_PATH" in env
-    assert env["GTDBTK_DATA_PATH"] == str(root / "gtdbtk")
-
-
-def test_checkm2_env_var_injection(tmp_path):
-    """CheckM2 download sets CHECKM2DB when path is configured."""
-    from abi.plugins.metagenomic_plasmid.lib.resources import (
-        ResourceSpec,
-        _resource_runtime_env,
-    )
-
-    db_path = tmp_path / "checkm2_custom"
-    config = {
-        "resources": {
-            "root": str(tmp_path / "resources"),
-            "checkm2": {"database": str(db_path)},
-        }
-    }
-    spec = ResourceSpec(
-        resource_id="checkm2",
-        tool_id="checkm2",
-        field="database",
-        env_name="stats",
-        executable="checkm2",
-        default_subdir="checkm2",
-        source_url="https://example.com",
-        command_template=["checkm2", "download"],
-    )
-
-    env = _resource_runtime_env(config, "stats", spec)
-    assert "CHECKM2DB" in env
-    assert env["CHECKM2DB"] == str(db_path)
-
-
 def test_all_resources_in_check_resources(tmp_path):
     """check_resources returns every registered database and tool resource."""
     config = {"resources": {"root": str(tmp_path / "resources")}}
@@ -746,128 +506,6 @@ def test_mob_suite_ready_check_requires_complete_runtime_database(tmp_path):
     assert _resource_path_ready(path, spec)
 
 
-def test_efetch_url_encodes_accession():
-    """m1: _efetch_url must URL-encode the accession to avoid query corruption."""
-    from abi.plugins.metagenomic_plasmid.lib.resources import _efetch_url
-
-    url = _efetch_url("NC_002127.1")
-    # The dot is safe, but an accession with special chars must be encoded.
-    assert "id=NC_002127.1" in url
-    url_special = _efetch_url("weird&accession#1")
-    # The raw & and # from the accession must be percent-encoded.
-    id_value = url_special.split("id=")[1].split("&rettype=")[0]
-    assert "&" not in id_value
-    assert "#" not in id_value
-    assert "%26" in id_value
-    assert "%23" in id_value
-
-
-def test_fetch_example_dataset_atomic_and_resilient(tmp_path, monkeypatch):
-    """M4: a single accession failure must not abort the whole dataset or leave
-    partial files; already-downloaded accessions are retained."""
-    import urllib.error
-
-    from abi.plugins.metagenomic_plasmid.lib.resources import fetch_example_dataset
-
-    calls = {"count": 0}
-
-    class _FakeResponse:
-        def __init__(self, data: bytes) -> None:
-            self._data = data
-            self.status = 200
-
-        def read(self) -> bytes:
-            return self._data
-
-        def __enter__(self) -> "_FakeResponse":
-            return self
-
-        def __exit__(self, *args: object) -> None:
-            pass
-
-    def _fake_urlopen(url, timeout=60):
-        calls["count"] += 1
-        # The second accession always fails (simulates NCBI 429/timeout).
-        if calls["count"] == 2:
-            raise urllib.error.URLError("transient 429")
-        return _FakeResponse(b">NC_002127.1 fake\nACGTACGT\n")
-
-    monkeypatch.setattr("urllib.request.urlopen", _fake_urlopen)
-
-    outputs = fetch_example_dataset("plasmid_refseq_smoke", tmp_path, mock=False)
-    files = outputs["files"]
-    # Only the accessions that succeeded are recorded.
-    assert len(files) >= 1
-    # No .part files left behind.
-    assert not list(tmp_path.glob("*.part"))
-    # The sample sheet is still written (best-effort completion).
-    assert Path(outputs["sample_sheet"]).exists()
-
-
-def test_fetch_example_dataset_all_failures_raises(tmp_path, monkeypatch):
-    """M4: if every accession fails, fetch_example_dataset raises ResourceError."""
-    import urllib.error
-
-    from abi.plugins.metagenomic_plasmid.lib.resources import (
-        ResourceError,
-        fetch_example_dataset,
-    )
-
-    def _always_fail(url, timeout=60):
-        raise urllib.error.URLError("offline")
-
-    monkeypatch.setattr("urllib.request.urlopen", _always_fail)
-    monkeypatch.setattr("time.sleep", lambda _: None)
-
-    try:
-        fetch_example_dataset("plasmid_refseq_smoke", tmp_path, mock=False)
-    except ResourceError:
-        pass
-    else:
-        raise AssertionError("expected ResourceError when all accessions fail")
-
-
-def test_tool_download_flattens_github_archive(tmp_path):
-    """_flatten_single_top_level_dir must lift content out of a lone
-    top-level directory (GitHub archives wrap content in <repo>-<branch>/).
-    Without this, conjscan_tool readiness checks look for
-    target_path/conjscan but it lives at target_path/conjscan-master/conjscan.
-    """
-    from abi.plugins.metagenomic_plasmid.lib.resources import _flatten_single_top_level_dir
-
-    target = tmp_path / "conjscan"
-    nested = target / "conjscan-master"
-    nested.mkdir(parents=True)
-    (nested / "conjscan").write_text("#!/usr/bin/env python\n")
-    (nested / "README.md").write_text("readme\n")
-    # a hidden file at top level must not count as a second child
-    (target / ".abi_marker").write_text("x\n")
-
-    _flatten_single_top_level_dir(target)
-
-    assert (target / "conjscan").exists()
-    assert (target / "README.md").exists()
-    assert not (target / "conjscan-master").exists()
-    # hidden file preserved
-    assert (target / ".abi_marker").exists()
-
-
-def test_tool_download_flatten_noop_when_multiple_children(tmp_path):
-    """_flatten_single_top_level_dir must NOT flatten when there are multiple
-    top-level entries (that would be a real multi-root tarball, not a wrapper)."""
-    from abi.plugins.metagenomic_plasmid.lib.resources import _flatten_single_top_level_dir
-
-    target = tmp_path / "realdb"
-    target.mkdir()
-    (target / "file1").write_text("a\n")
-    (target / "file2").write_text("b\n")
-
-    _flatten_single_top_level_dir(target)
-
-    assert (target / "file1").exists()
-    assert (target / "file2").exists()
-
-
 def test_kraken2_version_constant_referenced():
     """KRAKEN2_DEFAULT_VERSION must be the single source for the default
     Kraken2 snapshot date — referenced by both the ResourceSpec default and
@@ -887,17 +525,19 @@ def test_kraken2_version_constant_referenced():
     assert _kraken2_version({}, spec) == KRAKEN2_DEFAULT_VERSION
 
 
-def test_abi_setup_resources_requires_confirm():
-    """The abi setup-resources CLI must require --confirm for real execution,
-    so a bare real run does not silently start multi-GB downloads. The same
-    gate was previously mirrored by the retired engine CLI (WP2)."""
+def test_abi_setup_resources_reports_manual_requirements_without_downloading(tmp_path):
+    """WP8: `abi setup-resources` reports readiness/manual guidance and never
+    downloads. The old --confirm download gate retired with the downloads."""
     from typer.testing import CliRunner
 
     from abi.cli import app
 
     runner = CliRunner()
-    # No --confirm, no --dry-run, no --mock -> must exit non-zero with the
-    # confirm-required message, not attempt any download.
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        "resources:\n  root: " + str(tmp_path / "resources") + "\n",
+        encoding="utf-8",
+    )
     result = runner.invoke(
         app,
         [
@@ -905,12 +545,15 @@ def test_abi_setup_resources_requires_confirm():
             "--type",
             "metagenomic_plasmid",
             "--config",
-            "examples/config_minimal.yaml",
+            str(config),
         ],
     )
-    assert result.exit_code != 0
-    assert "confirm" in result.output.lower()
-    # --dry-run must still be allowed without --confirm (planning only).
+    assert result.exit_code == 0, result.output
+    rows = json.loads(result.output)
+    assert rows
+    assert all(row["status"] in {"ok", "manual_required", "not_configured"} for row in rows)
+    assert any(row["status"] == "manual_required" for row in rows)
+    # --dry-run still plans without touching anything.
     result_dry = runner.invoke(
         app,
         [
@@ -918,8 +561,48 @@ def test_abi_setup_resources_requires_confirm():
             "--type",
             "metagenomic_plasmid",
             "--config",
-            "examples/config_minimal.yaml",
+            str(config),
             "--dry-run",
         ],
     )
-    assert result_dry.exit_code != 2
+    assert result_dry.exit_code == 0
+    assert all(row["status"] == "planned" for row in json.loads(result_dry.output))
+
+
+def test_check_resources_reports_ready_and_incomplete_databases(tmp_path):
+    """Protected behaviors moved from the retired setup download path: the
+    check path classifies ready vs incomplete databases without downloading."""
+    resource_root = tmp_path / "resources"
+    (resource_root / "genomad" / "genomad_db").mkdir(parents=True)
+    config = {"resources": {"root": str(resource_root)}}
+
+    ready_rows = check_resources(config, resource_ids=["genomad"])
+    assert ready_rows[0]["status"] == "ok"
+    assert ready_rows[0]["ready_check"] == "genomad_db directory found"
+
+    incomplete_root = tmp_path / "incomplete"
+    (incomplete_root / "genomad").mkdir(parents=True)
+    config2 = {"resources": {"root": str(incomplete_root)}}
+    incomplete_rows = check_resources(config2, resource_ids=["genomad"])
+    assert incomplete_rows[0]["status"] == "incomplete"
+
+
+def test_setup_resources_reports_manual_required_without_downloading(tmp_path):
+    """WP8: real-run setup reports external preparation requirements and
+    never downloads; ready resources still report ok."""
+    resource_root = tmp_path / "resources"
+    (resource_root / "genomad" / "genomad_db").mkdir(parents=True)
+    config = {"resources": {"root": str(resource_root)}}
+
+    rows = setup_resources(config, resource_ids=["genomad"])
+
+    assert rows[0]["status"] == "ok"
+    assert (resource_root / "resources.json").is_file()
+
+    empty_root = tmp_path / "empty"
+    config2 = {"resources": {"root": str(empty_root)}}
+    rows2 = setup_resources(config2, resource_ids=["genomad"])
+    assert rows2[0]["status"] == "manual_required"
+    assert "External preparation required" in rows2[0]["message"]
+    # nothing was downloaded/fabricated into the resource path
+    assert not (empty_root / "genomad" / "genomad_db").exists()

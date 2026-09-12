@@ -81,7 +81,13 @@ class ABIExternalWorkflowPlugin(Protocol):
 
 @runtime_checkable
 class ABIResourcePlugin(Protocol):
-    """Optional capability for plugin-owned resource discovery and setup."""
+    """Optional capability for plugin-owned read-only resource checking.
+
+    WP8: discovery, diagnostics, and integrity reporting only — this protocol
+    must never download or install anything.
+    可选能力：插件拥有的只读资源检查。WP8：仅发现、诊断与完整性报告——
+    本协议绝不下载或安装任何内容。
+    """
 
     def check_resources(
         self,
@@ -89,6 +95,18 @@ class ABIResourcePlugin(Protocol):
         *,
         resource_ids: Optional[Sequence[str]] = None,
     ) -> list[dict[str, Any]]: ...
+
+
+@runtime_checkable
+class ABIResourceSetupPlugin(Protocol):
+    """Optional extension: resource setup planning and test fixtures (WP8).
+
+    Real downloading/installing belongs to external provisioning systems.
+    Implementations may plan (``dry_run``) and fabricate mock fixtures
+    (``mock``) but must refuse real runs.
+    可选扩展：资源准备规划与测试夹具（WP8）。真实的下载/安装属于外部准备
+    系统；实现可支持规划（dry_run）与夹具生成（mock），但必须拒绝真实运行。
+    """
 
     def setup_resources(
         self,

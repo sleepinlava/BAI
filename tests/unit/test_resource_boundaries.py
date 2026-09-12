@@ -22,8 +22,12 @@ def test_public_generic_setup_requires_explicit_mode_and_supports_dry_run_and_mo
 
     checked = resources.check_resources(analysis_type="custom", config=config)
     assert checked[0]["status"] == "missing"
-    with pytest.raises(ABIError, match="not implemented"):
-        resources.setup_resources(analysis_type="custom", config=config)
+    # WP8: real-run setup reports manual requirements with guidance — ABI
+    # never downloads or installs.
+    # WP8：真实运行报告 manual_required 指引——ABI 绝不下载或安装。
+    manual = resources.setup_resources(analysis_type="custom", config=config)
+    assert manual[0]["status"] == "manual_required"
+    assert "Provision the upstream" in manual[0]["message"]
 
     planned = resources.setup_resources(analysis_type="custom", config=config, dry_run=True)[0]
     mocked = resources.setup_resources(analysis_type="custom", config=config, mock=True)[0]

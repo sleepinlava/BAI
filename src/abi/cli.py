@@ -1617,11 +1617,6 @@ def setup_resources_command(
     log_dir: Optional[str] = typer.Option(None, "--log-dir", help="Log directory."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show resource setup plan only."),
     mock: bool = typer.Option(False, "--mock", help="Create mock resource directories."),
-    confirm: bool = typer.Option(
-        False,
-        "--confirm",
-        help="Confirm execution. Required for real resource setup (S13 fix).",
-    ),
     db_profile: Optional[str] = typer.Option(
         None,
         "--db-profile",
@@ -1635,34 +1630,21 @@ def setup_resources_command(
         help="Override resource root directory.",
     ),
 ) -> None:
-    """Download, mock, or plan setup for ABI analysis resources.
+    """Report, plan, or mock resource setup for ABI analysis resources (WP8).
 
-    Prepares resources (databases, indexes, models) required by the analysis
-    type. Three modes:
-    - Normal: downloads and installs resources to configured paths.
-    - ``--dry-run``: shows what would be done without making changes.
-    - ``--mock``: creates empty mock directories for smoke testing.
+    ABI never downloads or installs resources: provisioning belongs to an
+    external system. Three modes:
+    - Normal: reports per-resource readiness and ``manual_required`` guidance.
+    - ``--dry-run``: shows the preparation plan without making changes.
+    - ``--mock``: creates mock directories for smoke testing.
 
-    Real execution requires ``--confirm`` for safety, similar to ``abi run``.
+    Verify externally prepared resources with ``abi check-resources``.
 
-    Resources are downloaded once and reused across runs.
-
-    下载、模拟或规划 ABI 分析资源的设置。
-    准备分析类型所需的资源（数据库、索引、模型）。三种模式：
-    - 正常：下载并安装资源到配置的路径。
-    - ``--dry-run``：显示将要执行的操作而不做更改。
-    - ``--mock``：创建空的 mock 目录用于 smoke 测试。
-
-    真实执行需要 ``--confirm`` 以确保安全，类似 ``abi run``。
+    报告、规划或模拟 ABI 分析资源设置（WP8）。ABI 绝不下载或安装资源：准备
+    职责属于外部系统。三种模式：正常=报告各资源就绪状态与 manual_required
+    指引；--dry-run=输出准备计划；--mock=创建 mock 目录。外部准备的资源用
+    ``abi check-resources`` 验证。
     """
-    if not dry_run and not mock and not confirm:
-        typer.echo(
-            "Resource setup requires --confirm for real execution. "
-            "Use --dry-run to preview or --mock for smoke testing, "
-            "then re-run with --confirm to proceed.",
-            err=True,
-        )
-        raise typer.Exit(2)
     try:
         overrides = _common_overrides(
             mode=mode,

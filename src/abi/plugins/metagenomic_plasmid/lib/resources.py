@@ -5,12 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import subprocess
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,11 +20,6 @@ from abi.plugins.metagenomic_plasmid.lib.config import (
 from abi.plugins.metagenomic_plasmid.lib.filesystem import ensure_directory
 from abi.plugins.metagenomic_plasmid.lib.schemas import AutoPlasmError
 from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
-from abi.plugins.metagenomic_plasmid.lib.timeouts import (
-    DEFAULT_RESOURCE_TIMEOUT_SECONDS,
-    mapping_block,
-    timeout_from_env_or_value,
-)
 from abi.resources import _is_placeholder_resource_value
 
 
@@ -89,9 +79,6 @@ class ResourceStatus:
         return data
 
 
-EXAMPLE_ACCESSIONS = {
-    "plasmid_refseq_smoke": ["NC_002127.1", "NC_011977.1", "NC_002483.1"],
-}
 PLASMIDFINDER_DB_URL = "https://bitbucket.org/genomicepidemiology/plasmidfinder_db.git"
 RESOURCE_READY_SENTINEL = ".autoplasm_resource_ready"
 MOB_SUITE_REQUIRED_FILES = (
@@ -555,9 +542,22 @@ def setup_resources(
     mock: bool = False,
     progress_callback: ResourceProgressCallback | None = None,
 ) -> List[Dict[str, Any]]:
-    root = resource_root(config)
-    if not dry_run:
-        ensure_directory(root, label="Resource root directory")
+    """Plan or fabricate plugin resources; never download (WP8).
+
+    ABI does not download or install databases, tools, or environments: that
+    responsibility belongs to an external provisioning system.  Real-run
+    attempts fail before touching anything; ``--dry-run`` reports the
+    preparation plan and ``mock=True`` fabricates fixture directories for
+    tests.  Readiness/integrity reporting lives in :func:`check_resources`.
+    ABI 不负责下载或安装数据库、工具与环境：该职责属于外部准备系统。真实
+    运行在触碰任何内容前即失败；``--dry-run`` 输出准备计划，``mock=True``
+    为测试生成夹具目录。就绪/完整性报告见 :func:`check_resources`。
+    """
+    external_prep_message = (
+        "External preparation required: provision this resource with your "
+        "provisioning system (see source_url and the recorded command hint), then "
+        "verify with `abi check-resources`. ABI does not download or install."
+    )
     ids = set(resource_ids or [])
     statuses: List[ResourceStatus] = []
     for spec in default_resource_specs(config):
@@ -574,103 +574,48 @@ def setup_resources(
                 spec,
                 status_override="planned",
                 command=command,
-                message="Download was planned but not executed.",
+                message="External preparation required; nothing was downloaded.",
                 mock=mock,
             )
             statuses.append(status)
             _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
             continue
-        if mock:
-            ensure_directory(path, label=f"Resource directory for {spec.resource_id}")
-            (path / ".autoplasm_mock_resource").write_text(
-                f"{spec.resource_id}\n", encoding="utf-8"
-            )
-            _write_ready_sentinel(path, spec)
+        if not mock:
+            # WP8: real-run reports external preparation requirements; a ready
+            # resource reports ok, anything else is manual_required guidance.
+            # WP8：真实运行报告外部准备要求；就绪资源报告 ok，其余为
+            # manual_required 指引。
+            ready = _resource_path_ready(path, spec)
             status = _status_for_spec(
                 config,
                 spec,
-                status_override="ok",
-                command=command,
-                message="Mock resource prepared.",
-                mock=mock,
-            )
-            statuses.append(status)
-            _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
-            continue
-        if _resource_path_ready(path, spec):
-            status = _status_for_spec(
-                config,
-                spec,
-                status_override="ok",
-                command=command,
-                message="Existing database found; download skipped.",
-                mock=mock,
-            )
-            statuses.append(status)
-            _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
-            continue
-        if _resource_path_blocks_download(path):
-            status = _status_for_spec(
-                config,
-                spec,
-                status_override="incomplete",
+                status_override=None if ready else "manual_required",
                 command=command,
                 message=(
-                    "Existing resource path is not a complete database; download skipped "
-                    "to avoid overwriting. Remove it or configure another path before rerun."
+                    "Existing resource found; ready for use." if ready else external_prep_message
                 ),
                 mock=mock,
             )
             statuses.append(status)
             _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
             continue
-        try:
-            _notify_progress(progress_callback, "download", spec.resource_id, "downloading")
-            _prepare_resource_download_target(path)
-            _run_resource_command(config, spec, command)
-            if spec.resource_id == "plasmidfinder":
-                _run_plasmidfinder_install(config, path)
-            _write_ready_sentinel(path, spec)
-            status = _status_for_spec(
-                config,
-                spec,
-                status_override="ok" if _resource_path_ready(path, spec) else "partial",
-                command=command,
-                message="Resource command completed.",
-                mock=mock,
-            )
-            statuses.append(status)
-            _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
-        except MemoryError:
-            raise
-        except ResourceError as exc:
-            # A ResourceError indicates a real command/environment failure for
-            # this resource; record it and continue so one bad DB doesn't abort
-            # the whole batch, but surface the structured error distinctly.
-            status = _status_for_spec(
-                config,
-                spec,
-                status_override="failed",
-                command=command,
-                message=f"ResourceError: {exc}",
-                mock=mock,
-            )
-            statuses.append(status)
-            _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
-        except Exception as exc:  # pragma: no cover - external command boundary
-            status = _status_for_spec(
-                config,
-                spec,
-                status_override="failed",
-                command=command,
-                message=str(exc),
-                mock=mock,
-            )
-            statuses.append(status)
-            _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
+        # mock: fabricate fixture directories for tests (no network, no tools).
+        ensure_directory(path, label=f"Resource directory for {spec.resource_id}")
+        (path / ".autoplasm_mock_resource").write_text(f"{spec.resource_id}\n", encoding="utf-8")
+        _write_ready_sentinel(path, spec)
+        status = _status_for_spec(
+            config,
+            spec,
+            status_override="ok",
+            command=command,
+            message="Mock resource prepared.",
+            mock=mock,
+        )
+        statuses.append(status)
+        _notify_progress(progress_callback, "finish", spec.resource_id, status.status)
     if not dry_run:
-        manifest_path = root / "resources.json"
-        write_resource_manifest(statuses, manifest_path)
+        root = resource_root(config)
+        write_resource_manifest(statuses, root / "resources.json")
     return [status.to_dict() for status in statuses]
 
 
@@ -727,123 +672,6 @@ def write_environment_snapshot(
     snapshot_path = Path(path)
     write_yaml(data, snapshot_path)
     return snapshot_path
-
-
-def fetch_example_dataset(
-    dataset: str,
-    outdir: str | Path,
-    *,
-    mock: bool = False,
-) -> Dict[str, Any]:
-    if dataset not in EXAMPLE_ACCESSIONS:
-        raise ResourceError(f"Unsupported example dataset: {dataset}")
-    output_dir = ensure_directory(outdir, label="Example dataset output directory")
-    rows = []
-    files = []
-    failures = []
-    for accession in EXAMPLE_ACCESSIONS[dataset]:
-        url = _efetch_url(accession)
-        fasta_path = output_dir / f"{accession}.fasta"
-        if mock:
-            text = f">{accession} mock plasmid sequence\nATGCATGCATGCATGCATGC\n"
-            fasta_path.write_text(text, encoding="utf-8")
-        else:
-            if not _fetch_fasta_atomically(url, fasta_path, accession):
-                failures.append(accession)
-                continue
-        checksum = sha256_path(fasta_path)
-        rows.append(
-            {
-                "sample_id": accession.replace(".", "_"),
-                "group": "public",
-                "platform": "assembly",
-                "read1": "",
-                "read2": "",
-                "long_reads": "",
-                "assembly": str(fasta_path),
-                "technology": "RefSeq",
-                "host_reference": "",
-                "notes": f"source={url};sha256={checksum}",
-            }
-        )
-        files.append(
-            {
-                "accession": accession,
-                "url": url,
-                "path": str(fasta_path),
-                "sha256": checksum,
-            }
-        )
-    sample_sheet = output_dir / "sample_sheet.tsv"
-    fields = [
-        "sample_id",
-        "group",
-        "platform",
-        "read1",
-        "read2",
-        "long_reads",
-        "assembly",
-        "technology",
-        "host_reference",
-        "notes",
-    ]
-    with sample_sheet.open("w", encoding="utf-8") as handle:
-        handle.write("\t".join(fields) + "\n")
-        for row in rows:
-            handle.write("\t".join(str(row[field]) for field in fields) + "\n")
-    manifest = output_dir / "dataset_manifest.json"
-    manifest.write_text(
-        json.dumps(
-            {
-                "dataset": dataset,
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "mock": mock,
-                "files": files,
-                "sample_sheet": str(sample_sheet),
-                "failures": failures,
-            },
-            indent=2,
-            ensure_ascii=False,
-        ),
-        encoding="utf-8",
-    )
-    if failures and not rows:
-        raise ResourceError(
-            f"Failed to download any accessions for dataset {dataset!r}: {failures}"
-        )
-    return {"dataset": dataset, "sample_sheet": sample_sheet, "manifest": manifest, "files": files}
-
-
-def _fetch_fasta_atomically(url: str, fasta_path: Path, accession: str) -> bool:
-    """Download a single FASTA accession atomically with retry/backoff.
-
-    Writes to a ``.part`` file and atomically renames on success, so a partial
-    download is never reported as a valid file. Retries up to 3 times with
-    exponential backoff to tolerate NCBI eutils 429/timeout transients. Returns
-    True on success, False if all retries are exhausted (caller continues with
-    remaining accessions).
-    """
-    part_path = fasta_path.with_suffix(".fasta.part")
-    part_path.unlink(missing_ok=True)
-    max_attempts = 3
-    for attempt in range(1, max_attempts + 1):
-        try:
-            with urllib.request.urlopen(url, timeout=60) as response:  # noqa: S310
-                data = response.read()
-            if not data:
-                raise ResourceError("empty response")
-            part_path.write_bytes(data)
-            os.replace(part_path, fasta_path)
-            return True
-        except (urllib.error.URLError, TimeoutError, OSError, ResourceError) as exc:
-            part_path.unlink(missing_ok=True)
-            if attempt >= max_attempts:
-                print(f"  {accession}: download failed after {attempt} attempts: {exc}")
-                return False
-            backoff = 2 ** (attempt - 1)
-            print(f"  {accession}: attempt {attempt} failed ({exc}); retrying in {backoff}s")
-            time.sleep(backoff)
-    return False
 
 
 def required_resource_issues(
@@ -1116,414 +944,6 @@ def _resolved_resource_command(
     return list(spec.command_template)
 
 
-def _timeout_output(output: Any) -> str:
-    if output is None:
-        return ""
-    if isinstance(output, bytes):
-        return output.decode("utf-8", errors="replace")
-    return str(output)
-
-
-def _resource_timeout_seconds(config: Mapping[str, Any]) -> float | None:
-    execution = mapping_block(config, "execution")
-    resources = mapping_block(config, "resources")
-    value = resources.get("timeout_seconds")
-    if value is None:
-        value = execution.get("resource_timeout_seconds")
-    if value is None:
-        value = execution.get("tool_timeout_seconds")
-    return timeout_from_env_or_value(
-        "AUTOPLASM_RESOURCE_TIMEOUT_SECONDS",
-        value,
-        default=DEFAULT_RESOURCE_TIMEOUT_SECONDS,
-    )
-
-
-def _raise_on_timeout(
-    spec: ResourceSpec,
-    timeout_seconds: float | None,
-    exc: subprocess.TimeoutExpired,
-) -> None:
-    stderr = _timeout_output(exc.stderr)
-    timeout_text = "configured timeout" if timeout_seconds is None else f"{timeout_seconds:g}s"
-    message = f"{spec.resource_id} setup timed out after {timeout_text}"
-    details = "\n".join(text for text in [message, stderr.strip()] if text)
-    raise ResourceError(details) from exc
-
-
-def _run_resource_command(
-    config: Mapping[str, Any], spec: ResourceSpec, command: List[str]
-) -> None:
-    # Kraken2 uses a multi-step atomic download (mkdir → aria2c → tar → rm)
-    # run as separate safe list-form subprocess calls instead of a shell
-    # string, to avoid command injection and partial-download wedging.
-    if spec.resource_id == "kraken2":
-        _run_kraken2_download(config, spec)
-        return
-    # tool_download resources need parent-dir creation + optional tarball
-    # extraction handled atomically (see _run_tool_download).
-    if spec.resource_type == "tool_download":
-        _run_tool_download(config, spec)
-        return
-    executable = command[0]
-    resolved = _resolve_executable(config, spec.env_name, executable)
-    run_command = [str(resolved), *command[1:]]
-    timeout_seconds = _resource_timeout_seconds(config)
-    try:
-        completed = subprocess.run(
-            run_command,
-            check=False,
-            text=True,
-            capture_output=True,
-            env=_resource_runtime_env(config, spec.env_name, spec),
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as exc:
-        _raise_on_timeout(spec, timeout_seconds, exc)
-    if completed.returncode != 0:
-        details = "\n".join(
-            text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-        )
-        raise ResourceError(
-            f"{spec.resource_id} setup failed with code {completed.returncode}: {details}"
-        )
-    # Post-install command (e.g. "pip install -e ." after git clone)
-    if spec.install_post:
-        target_path = _configured_resource_path(config, spec)
-        if spec.install_post == "__amrfinderplus_post__":
-            _run_amrfinderplus_post(config, spec, target_path, timeout_seconds)
-            return
-        post_cmd = spec.install_post.split()
-        post_resolved = _resolve_executable(config, spec.env_name, post_cmd[0])
-        post_run = [str(post_resolved), *post_cmd[1:]]
-        post_completed = subprocess.run(
-            post_run,
-            check=False,
-            text=True,
-            capture_output=True,
-            cwd=str(target_path),
-            env=_resource_runtime_env(config, spec.env_name, spec),
-            timeout=timeout_seconds,
-        )
-        if post_completed.returncode != 0:
-            raise ResourceError(
-                f"{spec.resource_id} post-install '{spec.install_post}' failed: "
-                f"{post_completed.stderr.strip()}"
-            )
-
-
-def _run_amrfinderplus_post(
-    config: Mapping[str, Any],
-    spec: ResourceSpec,
-    target_path: Path,
-    timeout_seconds: float | None,
-) -> None:
-    """Build a BLAST protein index from AMRProt.fa after amrfinder_update.
-
-    Discovers the AMRProt.fa location dynamically instead of assuming a
-    hardcoded ``latest/`` layout, so this survives upstream layout changes
-    or pinned versioned paths.
-    """
-    candidates = list(target_path.rglob("AMRProt.fa"))
-    if not candidates:
-        raise ResourceError(f"amrfinderplus post-install: AMRProt.fa not found under {target_path}")
-    amr_prot = candidates[0]
-    makeblastdb = _resolve_executable(config, spec.env_name, "makeblastdb")
-    completed = subprocess.run(
-        [
-            str(makeblastdb),
-            "-in",
-            str(amr_prot),
-            "-dbtype",
-            "prot",
-            "-out",
-            str(amr_prot),
-        ],
-        check=False,
-        text=True,
-        capture_output=True,
-        cwd=str(target_path),
-        env=_resource_runtime_env(config, spec.env_name, spec),
-        timeout=timeout_seconds,
-    )
-    if completed.returncode != 0:
-        raise ResourceError(
-            f"amrfinderplus post-install 'makeblastdb' failed: {completed.stderr.strip()}"
-        )
-
-
-def _run_kraken2_download(config: Mapping[str, Any], spec: ResourceSpec) -> None:
-    """Download and extract the Kraken2 standard database atomically.
-
-    Avoids the shell-injection and partial-download-wedge bugs by running
-    aria2c / tar / rm as separate list-form subprocess calls, writing the
-    tarball to a ``.part`` path, extracting into a staging directory, and
-    swapping it into place only on full success.
-    """
-    target_path = _configured_resource_path(config, spec)
-    version = _kraken2_version(config, spec)
-    url = f"https://genome-idx.s3.amazonaws.com/kraken/k2_{version}.tar.gz"
-    timeout_seconds = _resource_timeout_seconds(config)
-    runtime_env = _resource_runtime_env(config, spec.env_name, spec)
-
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    tarball = target_path.parent / "kraken2.tar.gz.part"
-    staging = target_path.parent / "kraken2.staging"
-
-    # Clean up any leftovers from a previous interrupted attempt.
-    tarball.unlink(missing_ok=True)
-    if staging.exists():
-        shutil.rmtree(staging, ignore_errors=True)
-
-    try:
-        aria2c = _resolve_executable(config, spec.env_name, "aria2c")
-        completed = subprocess.run(
-            [
-                str(aria2c),
-                "-x",
-                "8",
-                "-s",
-                "8",
-                "--continue=true",
-                "--max-tries=3",
-                "--retry-wait=5",
-                "-d",
-                str(target_path.parent),
-                "-o",
-                tarball.name,
-                url,
-            ],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=runtime_env,
-            timeout=timeout_seconds,
-        )
-        if completed.returncode != 0:
-            details = "\n".join(
-                text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-            )
-            raise ResourceError(
-                f"kraken2 download failed with code {completed.returncode}: {details}"
-            )
-        if not tarball.exists() or tarball.stat().st_size == 0:
-            raise ResourceError("kraken2 download produced an empty tarball")
-
-        staging.mkdir(parents=True, exist_ok=True)
-        tar = _resolve_executable(config, spec.env_name, "tar")
-        completed = subprocess.run(
-            [str(tar), "xzf", str(tarball), "-C", str(staging)],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=runtime_env,
-            timeout=timeout_seconds,
-        )
-        if completed.returncode != 0:
-            details = "\n".join(
-                text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-            )
-            raise ResourceError(
-                f"kraken2 extraction failed with code {completed.returncode}: {details}"
-            )
-        # Atomic swap: remove any prior partial target, then move staging in.
-        if target_path.exists():
-            shutil.rmtree(target_path, ignore_errors=True)
-        os.replace(staging, target_path)
-    except subprocess.TimeoutExpired as exc:
-        _raise_on_timeout(spec, timeout_seconds, exc)
-    finally:
-        tarball.unlink(missing_ok=True)
-        if staging.exists():
-            shutil.rmtree(staging, ignore_errors=True)
-
-
-def _flatten_single_top_level_dir(target_path: Path) -> None:
-    """Lift contents of a lone top-level directory up to ``target_path``.
-
-    GitHub source archives (``.../archive/refs/heads/<branch>.tar.gz``) and
-    many Zenodo tarballs wrap their content in a single top-level directory
-    named ``<repo>-<branch>/``. After ``tar xf -C target_path`` the real
-    executable ends up at ``target_path/<repo>-<branch>/executable`` while
-    readiness checks look for ``target_path/executable`` and fail. This helper
-    detects that single-wrapper case and moves the inner entries up one level.
-    """
-    children = [c for c in target_path.iterdir() if not c.name.startswith(".")]
-    if len(children) != 1 or not children[0].is_dir():
-        return
-    nested = children[0]
-    for entry in nested.iterdir():
-        os.replace(entry, target_path / entry.name)
-    nested.rmdir()
-
-
-def _run_tool_download(config: Mapping[str, Any], spec: ResourceSpec) -> None:
-    """Download a tool resource atomically with parent-dir creation.
-
-    Fixes the previous ``wget -O target/default_subdir url`` issues:
-    missing ``mkdir``, path doubling (``_configured_resource_path`` already
-    appends ``default_subdir``), and no extraction for tarball URLs. The
-    download goes to a ``.part`` file, then is atomically renamed; tarball
-    sources are extracted into the target directory.
-    """
-    target_path = _configured_resource_path(config, spec)
-    timeout_seconds = _resource_timeout_seconds(config)
-    runtime_env = _resource_runtime_env(config, spec.env_name, spec)
-
-    target_path.mkdir(parents=True, exist_ok=True)
-    is_tarball = spec.source_url.lower().endswith((".tar.gz", ".tgz", ".tar"))
-    part_file = target_path.with_suffix(target_path.suffix + ".part")
-
-    # Clean up leftovers from a previous interrupted attempt.
-    part_file.unlink(missing_ok=True)
-
-    try:
-        wget = _resolve_executable(config, spec.env_name, "wget")
-        completed = subprocess.run(
-            [str(wget), "-O", str(part_file), spec.source_url],
-            check=False,
-            text=True,
-            capture_output=True,
-            env=runtime_env,
-            timeout=timeout_seconds,
-        )
-        if completed.returncode != 0:
-            details = "\n".join(
-                text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-            )
-            raise ResourceError(
-                f"{spec.resource_id} download failed with code {completed.returncode}: {details}"
-            )
-        if not part_file.exists() or part_file.stat().st_size == 0:
-            raise ResourceError(f"{spec.resource_id} download produced an empty file")
-
-        if is_tarball:
-            tar = _resolve_executable(config, spec.env_name, "tar")
-            completed = subprocess.run(
-                [str(tar), "xf", str(part_file), "-C", str(target_path)],
-                check=False,
-                text=True,
-                capture_output=True,
-                env=runtime_env,
-                timeout=timeout_seconds,
-            )
-            if completed.returncode != 0:
-                details = "\n".join(
-                    text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-                )
-                raise ResourceError(
-                    f"{spec.resource_id} extraction failed with code "
-                    f"{completed.returncode}: {details}"
-                )
-            # Flatten a single top-level directory (GitHub archives put content
-            # under <repo>-<branch>/, e.g. conjscan-master/conjscan). Without
-            # this, ready_check looks for the executable at target_path/executable
-            # but it actually lives at target_path/<repo>-<branch>/executable.
-            _flatten_single_top_level_dir(target_path)
-        else:
-            # Plain file: place it as the executable name inside the target.
-            dest = target_path / spec.executable
-            os.replace(part_file, dest)
-    except subprocess.TimeoutExpired as exc:
-        _raise_on_timeout(spec, timeout_seconds, exc)
-    finally:
-        part_file.unlink(missing_ok=True)
-
-
-def _run_plasmidfinder_install(config: Mapping[str, Any], path: Path) -> None:
-    install = path / "INSTALL.py"
-    if not install.exists():
-        return
-    python = _resolve_executable(config, "autoplasm-annotation", "python")
-    kma_index = _resolve_executable(config, "autoplasm-annotation", "kma_index")
-    timeout_seconds = _resource_timeout_seconds(config)
-    try:
-        completed = subprocess.run(
-            [str(python), str(install.resolve()), str(kma_index)],
-            check=False,
-            cwd=str(path),
-            text=True,
-            capture_output=True,
-            env=_resource_runtime_env(config, "autoplasm-annotation"),
-            timeout=timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as exc:
-        _raise_on_timeout(
-            ResourceSpec(
-                resource_id="plasmidfinder",
-                tool_id="plasmidfinder",
-                field="database",
-                env_name="autoplasm-annotation",
-                executable="python",
-                default_subdir="plasmidfinder_db",
-                source_url=PLASMIDFINDER_DB_URL,
-                command_template=[],
-            ),
-            timeout_seconds,
-            exc,
-        )
-    if completed.returncode != 0:
-        details = "\n".join(
-            text for text in [completed.stderr.strip(), completed.stdout.strip()] if text
-        )
-        raise ResourceError(
-            f"plasmidfinder database INSTALL.py failed with code {completed.returncode}: {details}"
-        )
-
-
-def _resolve_executable(config: Mapping[str, Any], env_name: str, executable: str) -> Path:
-    if executable == "git":
-        git = shutil.which("git")
-        if not git:
-            raise ResourceError("git is required to download the PlasmidFinder database")
-        return Path(git)
-    mamba_root = resolved_mamba_root()
-    env_bin = mamba_root / "envs" / env_name / "bin"
-    candidate = env_bin / executable
-    if candidate.exists():
-        return candidate
-    resolved = shutil.which(executable, path=str(env_bin))
-    if resolved:
-        return Path(resolved)
-    # Fall back to system PATH (needed for bash, aria2c, tar, mkdir, etc.)
-    system_resolved = shutil.which(executable)
-    if system_resolved:
-        return Path(system_resolved)
-    if config.get("mock_tools"):
-        return Path(executable)
-    raise ResourceError(f"Executable {executable!r} was not found in {env_bin} or system PATH")
-
-
-def _resource_runtime_env(
-    config: Mapping[str, Any],
-    env_name: str,
-    spec: ResourceSpec | None = None,
-) -> Dict[str, str]:
-    env = os.environ.copy()
-    mamba_root = resolved_mamba_root()
-    env_bin = mamba_root / "envs" / env_name / "bin"
-    if env_bin.exists():
-        env["PATH"] = f"{env_bin}{os.pathsep}{env.get('PATH', '')}"
-        env["CONDA_PREFIX"] = str(mamba_root / "envs" / env_name)
-        env["MAMBA_ROOT_PREFIX"] = str(mamba_root)
-        env.pop("PYTHONPATH", None)
-    # GTDB-Tk needs GTDBTK_DATA_PATH to locate the database during download
-    if spec is not None and spec.resource_id == "gtdbtk":
-        block = _resource_block(config, spec.resource_id)
-        path_value = block.get(spec.field)
-        if path_value:
-            env["GTDBTK_DATA_PATH"] = str(Path(str(path_value)))
-        else:
-            env["GTDBTK_DATA_PATH"] = str(resource_root(config) / spec.default_subdir)
-    # CheckM2 may need CHECKM2DB to place the database
-    if spec is not None and spec.resource_id == "checkm2":
-        block = _resource_block(config, spec.resource_id)
-        path_value = block.get(spec.field)
-        if path_value:
-            env["CHECKM2DB"] = str(Path(str(path_value)))
-    return env
-
-
 def _git_worktree_valid(path: Path) -> bool:
     """Return True if ``path`` is a valid git worktree (not a partial clone).
 
@@ -1759,10 +1179,6 @@ def _directory_summary(path: Path) -> tuple[int, int]:
     return count, size
 
 
-def _resource_path_blocks_download(path: Path) -> bool:
-    return path.exists() and not _path_is_empty_directory(path)
-
-
 def _prepare_resource_download_target(path: Path) -> None:
     if _path_is_empty_directory(path):
         path.rmdir()
@@ -1785,10 +1201,3 @@ def _notify_progress(
 ) -> None:
     if callback:
         callback(event, resource_id, message)
-
-
-def _efetch_url(accession: str) -> str:
-    return (
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-        f"?db=nuccore&id={urllib.parse.quote(accession)}&rettype=fasta&retmode=text"
-    )
