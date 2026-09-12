@@ -512,3 +512,12 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - `abi setup-resources` 移除 `--confirm` 下载门：正常=报告就绪与指引，--dry-run=计划，--mock=夹具；通用分发路径同样输出 manual_required。
 - 受保护行为（ready/incomplete 分类、ready_check 字段）移至检查路径测试；13 项下载专属测试随特性退役。
 - 剩余 WP8：其余三插件的 ResourceDownloader 真实路径、EasyMeta ENA 节点迁移、环境创建（manage_environments）、运行时隐式工作流/镜像获取。
+
+### 阶段 C 续：WP8 步骤 2（ResourceDownloader 退役）
+
+- `src/abi/resource_downloader.py`（552 行：原子下载引擎、URL 抓取、完整性/清理、锁机制）删除。行构建移至 `abi.resources`（DownloadResult + download_result_to_row），mock 夹具生成变为 `write_mock_resource`（目录 + 就绪哨兵）。
+- amplicon_16s：真实运行报告 manual_required 并点名 RDP 下载脚本为外部准备工具；**静默合成 taxonomy 回退退役**——真实分析绝不能对伪造数据运行。
+- rnaseq_expression：真实运行报告就绪状态（DESeq2 标记）或 manual_required 外部指引；不再执行准备脚本。
+- wgs_bacteria：已存在目录的 ready/incomplete 分类保留（诊断）；缺失目标报告 manual_required（amrfinder_update 提示）。
+- Migration Gate 同步（DownloadSpec 检查 → resources.py）；test_resource_paths/resource_boundaries 转换为新语义；ruff 0.16 的死变量门修正。
+- 剩余 WP8：EasyMeta ENA 节点迁移、manage_environments 环境创建、运行时隐式工作流/镜像获取。
