@@ -107,5 +107,3 @@ def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "does not exist" in result.output
-
-
