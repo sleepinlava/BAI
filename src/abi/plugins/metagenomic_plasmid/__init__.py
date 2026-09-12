@@ -4,22 +4,22 @@ Architecture / 架构说明
 ------------------------
 This module is the public entry-point of a **self-contained plugin package**
 located at ``abi/plugins/metagenomic_plasmid/``.  The heavy logic lives in the
-private ``_engine/`` sub-package so that the plugin boundary stays thin: every
+private ``lib/`` sub-package so that the plugin boundary stays thin: every
 interface method on ``MetagenomicPlasmidPlugin`` delegates directly to a
-corresponding ``_engine`` module.
+corresponding ``lib`` module.
 
 本模块是 **独立插件包** ``abi/plugins/metagenomic_plasmid/`` 的公开入口。核心
-逻辑位于私有的 ``_engine/`` 子包中，保证插件边界保持轻量：``MetagenomicPlasmidPlugin``
-上的每个接口方法都直接委托给对应的 ``_engine`` 模块。
+逻辑位于私有的 ``lib/`` 子包中，保证插件边界保持轻量：``MetagenomicPlasmidPlugin``
+上的每个接口方法都直接委托给对应的 ``lib`` 模块。
 
 Delegation map / 委托映射
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-* ``load_config``         → ``_engine.config.load_config``
-* ``build_plan``          → ``_engine.planner.build_plan``
+* ``load_config``         → ``lib.config.load_config``
+* ``build_plan``          → ``lib.planner.build_plan``
 * ``registry``            → ``tool_registry.yaml``  (same directory)
-* ``write_run_tables``    → ``_engine.standard_tables`` (analysis_status)
-* ``parse_outputs``       → ``_engine.parsers.parse_standard_outputs``
-* ``write_report``        → ``_engine.report.markdown`` / ``_engine.report.html``
+* ``write_run_tables``    → ``lib.standard_tables`` (analysis_status)
+* ``parse_outputs``       → ``lib.parsers.parse_standard_outputs``
+* ``write_report``        → ``lib.report.markdown`` / ``lib.report.html``
 * ``table_schemas``       → declarative ``standard_tables.yaml``
 
 Data flow / 数据流
@@ -57,23 +57,23 @@ from abi.dag_planner import (
 from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
 from abi.tools import ToolRegistry
 
-from ._engine.config import load_config as load_autoplasm_config
-from ._engine.parsers import parse_standard_outputs
-from ._engine.report.html import write_html_report
-from ._engine.report.markdown import write_markdown_report
-from ._engine.resources import check_resources as check_plugin_resources
-from ._engine.resources import setup_resources as setup_plugin_resources
-from ._engine.result_validation import validate_result_dir as validate_plugin_result_dir
-from ._engine.standard_tables import (
+from .handlers import handlers as _metagenomic_plasmid_handlers
+from .lib.config import load_config as load_autoplasm_config
+from .lib.parsers import parse_standard_outputs
+from .lib.report.html import write_html_report
+from .lib.report.markdown import write_markdown_report
+from .lib.resources import check_resources as check_plugin_resources
+from .lib.resources import setup_resources as setup_plugin_resources
+from .lib.result_validation import validate_result_dir as validate_plugin_result_dir
+from .lib.standard_tables import (
     ensure_standard_tables,
     expand_standard_rows,
     summarize_standard_tables,
     write_standard_table,
 )
-from ._engine.tool_defaults import default_tools_for_category
-from .handlers import handlers as _metagenomic_plasmid_handlers
+from .lib.tool_defaults import default_tools_for_category
 
-# ── Context resolver & hooks (migrated from _engine/planner.py) ──────────
+# ── Context resolver & hooks (migrated from lib/planner.py) ──────────
 
 
 def _plugin_context_resolver(
@@ -81,7 +81,7 @@ def _plugin_context_resolver(
 ) -> tuple[Dict[str, Any], Dict[str, Any]]:
     """Resolve auto/conditional sample-analysis settings from sample metadata.
 
-    Replaces ``_engine/planner.py:_resolve_context_conditions()``.
+    Replaces ``lib/planner.py:_resolve_context_conditions()``.
     """
     from collections import Counter
 
@@ -292,7 +292,7 @@ def _plugin_skip_step_hook(
 ) -> str | None:
     """Skip assembly-only sample read-QC steps.
 
-    Replaces ``_engine/planner.py:_analysis_skip_steps()`` and the per-sample
+    Replaces ``lib/planner.py:_analysis_skip_steps()`` and the per-sample
     skip logic from ``_dag_step_for_node()``.
     """
     if tool_id == "internal":
@@ -307,7 +307,7 @@ def _plugin_skip_step_hook(
     return None
 
 
-# ── Per-sample config hook (replaces _engine/planner.py:_config_for_sample) ──
+# ── Per-sample config hook (replaces lib/planner.py:_config_for_sample) ──
 
 
 ISOLATE_PROFILES: set = {"isolate_plasmid", "isolate"}
@@ -478,12 +478,12 @@ class MetagenomicPlasmidPlugin:
     ) -> Dict[str, Any]:
         """Load and normalize the pipeline configuration.
 
-        Delegates to ``_engine.config.load_config`` which merges the default
+        Delegates to ``lib.config.load_config`` which merges the default
         config with any user-provided overrides.  The ``profile`` defaults to
         ``"dry_run"`` so that config loading is always safe even without a
         real profile.
 
-        加载并规范化管道配置。委托给 ``_engine.config.load_config``，
+        加载并规范化管道配置。委托给 ``lib.config.load_config``，
         合并默认配置与用户提供的覆盖项。``profile`` 默认为 ``"dry_run"``，
         确保即使没有真实 profile 也能安全加载配置。
         """
@@ -596,11 +596,11 @@ class MetagenomicPlasmidPlugin:
     ) -> Mapping[str, Any]:
         """Parse the standard output files produced by ``tool_id``.
 
-        Delegates to ``_engine.parsers.parse_standard_outputs``, which knows
+        Delegates to ``lib.parsers.parse_standard_outputs``, which knows
         the expected file layout for each tool in the AutoPlasm pipeline.
 
         解析 ``tool_id`` 生成的标准输出文件。委托给
-        ``_engine.parsers.parse_standard_outputs``，后者了解 AutoPlasm 管道中
+        ``lib.parsers.parse_standard_outputs``，后者了解 AutoPlasm 管道中
         每个工具的预期文件布局。
         """
         return expand_standard_rows(parse_standard_outputs(tool_id, output_dir, sample_id))
@@ -676,7 +676,7 @@ class MetagenomicPlasmidPlugin:
         # is populated. The consensus table is only auto-generated by PipelineRunner,
         # which is NOT used by the standard ``abi run`` executor flow.
         try:
-            from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
+            from abi.plugins.metagenomic_plasmid.lib.standard_tables import (
                 write_consensus_table,
             )
 

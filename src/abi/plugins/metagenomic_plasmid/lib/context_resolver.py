@@ -22,7 +22,7 @@ _default_tools_for_category = default_tools_for_category
 class PlasmidContextResolver(PluginContextResolver):
     """Resolve auto/conditional plasmid pipeline settings from sample metadata.
 
-    Replaces ``_engine/planner.py:_resolve_context_conditions()``.  Call
+    Replaces ``lib/planner.py:_resolve_context_conditions()``.  Call
     ``resolve()`` to compute enabled/disabled flags for diversity analysis,
     differential abundance, network inference, and host-plasmid co-abundance
     linking, then call ``eligibility()`` to retrieve the per-feature

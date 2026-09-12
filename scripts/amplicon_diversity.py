@@ -28,9 +28,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
-import os
 import sys
-from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -768,7 +766,7 @@ def main() -> None:
     print(f"  Wrote {beta_path} ({n_pairs} pairs × {n_metrics} metrics)")
 
     # Summary
-    print(f"\nDiversity computation complete.")
+    print("\nDiversity computation complete.")
     print(f"  Samples: {n_samples}")
     print(f"  ASVs:    {n_asvs}")
     for sid in sample_ids:

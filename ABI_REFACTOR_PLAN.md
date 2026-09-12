@@ -498,3 +498,9 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - FASTA 生物 helper 迁至插件包 `metagenomic_plasmid/sequences.py`（记录键 id/header/sequence 与退役实现精确一致）；handlers 与 policy 测试改从插件导入。
 - 引擎直连测试换成共享路径等价（marker 保留、resolved-plan 步骤对齐、outdir 为文件的拒绝）；引用已退役引擎的本地 ignored 修复/整合脚本（repair_plasmid_standard_tables、integrate_plasmid_supplement）一并清理。
 - `_engine` 剩余 6,840 行：生物/数据 helper（parsers、statistics、normalize、report、schemas、resources setup 等）待归位；`_engine/cli.py` 的 setup-resources 职责由 WP8 承接。
+
+### B3 续：`_engine` 目录归位（步骤 4 完成）
+
+- `src/abi/plugins/metagenomic_plasmid/_engine/` 整体更名为 `lib/`：旧执行目录名退役，剩余的生物/数据支持库（parsers、normalize、report、statistics、schemas、resources setup、skills 等）以插件支持库身份归位。55 个文件导入 swept；wheel 打包验证 lib 在、_engine 无；Migration Gate 同步（PLUGIN_DIR → lib）并保持 5/5 通过。
+- 入口无隐藏调用者确认：dry-run 已走共享路径（WP2 步骤 1-3），执行核心已删除，剩余模块为声明与生物处理，符合"生物学处理保留在插件"的边界。
+- WP2 至此完成：插件私有执行入口、兼容命名空间、旧执行核心与旧目录名全部退役；剩余 WP8 承接 setup-resources 的下载职责。

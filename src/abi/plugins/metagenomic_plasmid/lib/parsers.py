@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping
 
-from abi.plugins.metagenomic_plasmid._engine.json_utils import load_json_object
+from abi.plugins.metagenomic_plasmid.lib.json_utils import load_json_object
 
 StandardRows = Dict[str, List[Dict[str, Any]]]
 Parser = Callable[[Path, str], StandardRows]

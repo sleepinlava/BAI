@@ -11,7 +11,7 @@ import pytest
 # Ensure the source tree is importable
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
-from abi.plugins.metagenomic_plasmid._engine.pipeline_dag import (
+from abi.plugins.metagenomic_plasmid.lib.pipeline_dag import (
     PipelineDAG,
     _evaluate_condition,
 )

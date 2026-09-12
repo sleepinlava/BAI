@@ -11,7 +11,7 @@ from abi.runtime_lock import generate_runtime_locks, validate_runtime_locks
 
 def test_resolved_mamba_root_prefers_most_populated_parent(monkeypatch, tmp_path: Path) -> None:
     import abi.config as abi_config
-    from abi.plugins.metagenomic_plasmid._engine import config as engine_config
+    from abi.plugins.metagenomic_plasmid.lib import config as engine_config
 
     project = tmp_path / "abi"
     project.mkdir()

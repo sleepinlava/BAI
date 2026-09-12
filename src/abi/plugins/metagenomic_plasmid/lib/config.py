@@ -9,12 +9,12 @@ from typing import Any, Dict, Mapping, Optional
 import yaml
 
 from abi.config import PROJECT_ROOT
-from abi.plugins.metagenomic_plasmid._engine.schemas import (
+from abi.plugins.metagenomic_plasmid.lib.schemas import (
     VALID_MODES,
     VALID_PLASMID_STRATEGIES,
     ConfigError,
 )
-from abi.plugins.metagenomic_plasmid._engine.timeouts import parse_timeout_seconds
+from abi.plugins.metagenomic_plasmid.lib.timeouts import parse_timeout_seconds
 
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "default.yaml"
 

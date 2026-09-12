@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abi.plugins.metagenomic_plasmid._engine.context_resolver import (
+from abi.plugins.metagenomic_plasmid.lib.context_resolver import (
     DATA_PROFILE_BY_PLATFORM,
     PlasmidContextResolver,
     _annotation_tools,

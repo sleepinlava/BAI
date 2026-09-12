@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
-from abi.plugins.metagenomic_plasmid._engine.normalize.plasmid_prediction import (
+from abi.plugins.metagenomic_plasmid.lib.normalize.plasmid_prediction import (
     integrate_calls,
 )
 

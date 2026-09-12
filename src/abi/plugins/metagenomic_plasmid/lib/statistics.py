@@ -7,8 +7,8 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
-from abi.plugins.metagenomic_plasmid._engine.schemas import ExecutionPlan
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import read_standard_table
+from abi.plugins.metagenomic_plasmid.lib.schemas import ExecutionPlan
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import read_standard_table
 
 Matrix = Dict[str, Dict[str, float]]
 

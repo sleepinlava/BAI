@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from abi.plugins.metagenomic_plasmid._engine.config import load_config as load_autoplasm_config
-from abi.plugins.metagenomic_plasmid._engine.resources import (
+from abi.plugins.metagenomic_plasmid.lib.config import load_config as load_autoplasm_config
+from abi.plugins.metagenomic_plasmid.lib.resources import (
     check_resources,
     fetch_example_dataset,
     required_resource_issues,
@@ -262,7 +262,7 @@ def test_plasmidfinder_install_uses_absolute_install_path(tmp_path, monkeypatch)
     monkeypatch.chdir(tmp_path)
     config = {}
 
-    from abi.plugins.metagenomic_plasmid._engine.resources import _run_plasmidfinder_install
+    from abi.plugins.metagenomic_plasmid.lib.resources import _run_plasmidfinder_install
 
     _run_plasmidfinder_install(config, db_path)
 
@@ -515,7 +515,7 @@ def test_amrfinderplus_required_resource_issues(tmp_path):
 
 def test_gtdbtk_env_var_injection(tmp_path):
     """GTDB-Tk download sets GTDBTK_DATA_PATH in runtime environment."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         ResourceSpec,
         _resource_runtime_env,
     )
@@ -540,7 +540,7 @@ def test_gtdbtk_env_var_injection(tmp_path):
 
 def test_checkm2_env_var_injection(tmp_path):
     """CheckM2 download sets CHECKM2DB when path is configured."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         ResourceSpec,
         _resource_runtime_env,
     )
@@ -617,7 +617,7 @@ def test_all_resources_in_check_resources(tmp_path):
 
 def test_kraken2_command_is_safe_list_form(tmp_path):
     """M1: kraken2 download must not use `bash -c` with raw path interpolation."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _resolved_resource_command,
         default_resource_specs,
     )
@@ -635,7 +635,7 @@ def test_kraken2_command_is_safe_list_form(tmp_path):
 
 def test_kraken2_url_uses_config_version(tmp_path):
     """M5: kraken2 URL version must be configurable, not hardcoded."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _kraken2_version,
         default_resource_specs,
     )
@@ -661,7 +661,7 @@ def test_kraken2_url_uses_config_version(tmp_path):
 
 def test_tool_download_command_does_not_double_path(tmp_path):
     """M3: tool_download command must not append default_subdir twice."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _resolved_resource_command,
         default_resource_specs,
     )
@@ -681,7 +681,7 @@ def test_tool_download_command_does_not_double_path(tmp_path):
 
 def test_git_clone_uses_shallow_depth(tmp_path):
     """m2: git clone commands must use --depth 1 --single-branch."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _resolved_resource_command,
         default_resource_specs,
     )
@@ -698,7 +698,7 @@ def test_git_clone_uses_shallow_depth(tmp_path):
 
 def test_tool_git_ready_check_validates_worktree(tmp_path):
     """M10: a partial git clone (only .git, no valid HEAD) must not be 'ready'."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _resource_path_ready,
         default_resource_specs,
     )
@@ -713,7 +713,7 @@ def test_tool_git_ready_check_validates_worktree(tmp_path):
 
 
 def test_mob_suite_ready_check_rejects_sentinel_only(tmp_path):
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         _resource_path_ready,
         default_resource_specs,
     )
@@ -729,7 +729,7 @@ def test_mob_suite_ready_check_rejects_sentinel_only(tmp_path):
 
 
 def test_mob_suite_ready_check_requires_complete_runtime_database(tmp_path):
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         MOB_SUITE_REQUIRED_FILES,
         _resource_path_ready,
         default_resource_specs,
@@ -748,7 +748,7 @@ def test_mob_suite_ready_check_requires_complete_runtime_database(tmp_path):
 
 def test_efetch_url_encodes_accession():
     """m1: _efetch_url must URL-encode the accession to avoid query corruption."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import _efetch_url
+    from abi.plugins.metagenomic_plasmid.lib.resources import _efetch_url
 
     url = _efetch_url("NC_002127.1")
     # The dot is safe, but an accession with special chars must be encoded.
@@ -767,7 +767,7 @@ def test_fetch_example_dataset_atomic_and_resilient(tmp_path, monkeypatch):
     partial files; already-downloaded accessions are retained."""
     import urllib.error
 
-    from abi.plugins.metagenomic_plasmid._engine.resources import fetch_example_dataset
+    from abi.plugins.metagenomic_plasmid.lib.resources import fetch_example_dataset
 
     calls = {"count": 0}
 
@@ -808,7 +808,7 @@ def test_fetch_example_dataset_all_failures_raises(tmp_path, monkeypatch):
     """M4: if every accession fails, fetch_example_dataset raises ResourceError."""
     import urllib.error
 
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         ResourceError,
         fetch_example_dataset,
     )
@@ -833,7 +833,7 @@ def test_tool_download_flattens_github_archive(tmp_path):
     Without this, conjscan_tool readiness checks look for
     target_path/conjscan but it lives at target_path/conjscan-master/conjscan.
     """
-    from abi.plugins.metagenomic_plasmid._engine.resources import _flatten_single_top_level_dir
+    from abi.plugins.metagenomic_plasmid.lib.resources import _flatten_single_top_level_dir
 
     target = tmp_path / "conjscan"
     nested = target / "conjscan-master"
@@ -855,7 +855,7 @@ def test_tool_download_flattens_github_archive(tmp_path):
 def test_tool_download_flatten_noop_when_multiple_children(tmp_path):
     """_flatten_single_top_level_dir must NOT flatten when there are multiple
     top-level entries (that would be a real multi-root tarball, not a wrapper)."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import _flatten_single_top_level_dir
+    from abi.plugins.metagenomic_plasmid.lib.resources import _flatten_single_top_level_dir
 
     target = tmp_path / "realdb"
     target.mkdir()
@@ -872,7 +872,7 @@ def test_kraken2_version_constant_referenced():
     """KRAKEN2_DEFAULT_VERSION must be the single source for the default
     Kraken2 snapshot date — referenced by both the ResourceSpec default and
     the _kraken2_version fallback, so updating it in one place suffices."""
-    from abi.plugins.metagenomic_plasmid._engine.resources import (
+    from abi.plugins.metagenomic_plasmid.lib.resources import (
         KRAKEN2_DEFAULT_VERSION,
         _kraken2_version,
         default_resource_specs,

@@ -1,11 +1,11 @@
 from pathlib import Path
 
 from abi.plugins import get_plugin
-from abi.plugins.metagenomic_plasmid._engine.parsers import (
+from abi.plugins.metagenomic_plasmid.lib.parsers import (
     parse_standard_outputs,
     supports_standard_parsing,
 )
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import (
     append_standard_rows,
     expand_standard_rows,
     read_standard_table,

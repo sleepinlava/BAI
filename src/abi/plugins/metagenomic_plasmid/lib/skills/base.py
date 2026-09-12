@@ -11,9 +11,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from abi.plugins.metagenomic_plasmid._engine.config import PROJECT_ROOT, resolved_mamba_root
-from abi.plugins.metagenomic_plasmid._engine.schemas import ToolError
-from abi.plugins.metagenomic_plasmid._engine.timeouts import (
+from abi.plugins.metagenomic_plasmid.lib.config import PROJECT_ROOT, resolved_mamba_root
+from abi.plugins.metagenomic_plasmid.lib.schemas import ToolError
+from abi.plugins.metagenomic_plasmid.lib.timeouts import (
     DEFAULT_TOOL_TIMEOUT_SECONDS,
     timeout_from_env_or_value,
 )

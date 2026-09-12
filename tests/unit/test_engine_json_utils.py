@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from abi.plugins.metagenomic_plasmid._engine.json_utils import (
+from abi.plugins.metagenomic_plasmid.lib.json_utils import (
     JSONDataError,
     load_json_file,
     load_json_object,

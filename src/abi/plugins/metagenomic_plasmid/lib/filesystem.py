@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from abi.plugins.metagenomic_plasmid._engine.schemas import AutoPlasmError
+from abi.plugins.metagenomic_plasmid.lib.schemas import AutoPlasmError
 
 
 def ensure_directory(path: str | Path, *, label: str = "Directory") -> Path:

@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 from abi.plugins.metagenomic_plasmid import build_plan_from_dag as build_plan
-from abi.plugins.metagenomic_plasmid._engine.config import load_config
+from abi.plugins.metagenomic_plasmid.lib.config import load_config
 
 
 def test_build_plan_selects_expected_routes():
@@ -94,7 +94,7 @@ def test_illumina_route_uses_cleaned_reads_and_megahit_contigs(tmp_path):
 
 
 def test_ont_route_uses_filtered_long_reads_and_metaflye_contigs(tmp_path):
-    from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
+    from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
 
     config = load_config(
         "examples/config_ont_smoke.yaml",
@@ -127,7 +127,7 @@ def test_ont_route_uses_filtered_long_reads_and_metaflye_contigs(tmp_path):
 
 
 def test_pacbio_hifi_route_uses_filtered_reads_and_hifiasm_contigs(tmp_path):
-    from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
+    from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
 
     config = load_config(
         "examples/config_hifi_smoke.yaml",
@@ -159,7 +159,7 @@ def test_pacbio_hifi_route_uses_filtered_reads_and_hifiasm_contigs(tmp_path):
 
 
 def test_hybrid_route_uses_cleaned_reads_opera_ms_and_split_abundance(tmp_path):
-    from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
+    from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
 
     config = load_config(
         "examples/config_hybrid_smoke.yaml",
@@ -217,7 +217,7 @@ def test_hybrid_route_uses_cleaned_reads_opera_ms_and_split_abundance(tmp_path):
 def test_hybrid_step_ids_are_stable_across_hash_seeds():
     script = """
 import json
-from abi.plugins.metagenomic_plasmid._engine.config import load_config
+from abi.plugins.metagenomic_plasmid.lib.config import load_config
 from abi.plugins.metagenomic_plasmid import build_plan_from_dag as build_plan
 
 config = load_config('examples/config_hybrid_smoke.yaml', profile='dry_run')

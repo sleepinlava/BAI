@@ -1,10 +1,10 @@
-from abi.plugins.metagenomic_plasmid._engine.schemas import (
+from abi.plugins.metagenomic_plasmid.lib.schemas import (
     ExecutionPlan,
     SampleContext,
     SampleInput,
 )
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import append_standard_rows
-from abi.plugins.metagenomic_plasmid._engine.statistics import (
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import append_standard_rows
+from abi.plugins.metagenomic_plasmid.lib.statistics import (
     compute_diversity_and_differential,
     compute_host_plasmid_coabundance,
     compute_network_fallback,

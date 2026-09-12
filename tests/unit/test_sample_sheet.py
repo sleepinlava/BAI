@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from abi.plugins.metagenomic_plasmid._engine.config import PROJECT_ROOT
-from abi.plugins.metagenomic_plasmid._engine.sample_sheet import (
+from abi.plugins.metagenomic_plasmid.lib.config import PROJECT_ROOT
+from abi.plugins.metagenomic_plasmid.lib.sample_sheet import (
     SampleSheetError,
     parse_sample_sheet,
 )

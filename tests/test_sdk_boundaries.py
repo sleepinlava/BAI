@@ -57,7 +57,7 @@ def test_no_autoplasm_imports_from_public_sdk_and_standalone_plugin():
             or "import autoplasm." in text
             or "from abi.autoplasm" in text
             or "import abi.autoplasm" in text
-            or "from plugins.metagenomic_plasmid._engine" in text
+            or "from plugins.metagenomic_plasmid.lib" in text
         ):
             leaks.append(str(path.relative_to(root)))
     assert leaks == []

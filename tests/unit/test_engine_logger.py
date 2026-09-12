@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 
-from abi.plugins.metagenomic_plasmid._engine.logger import (
+from abi.plugins.metagenomic_plasmid.lib.logger import (
     RunLogger,
     write_commands_tsv,
     write_resolved_inputs_tsv,
     write_tool_versions,
 )
-from abi.plugins.metagenomic_plasmid._engine.schemas import PlanStep
+from abi.plugins.metagenomic_plasmid.lib.schemas import PlanStep
 
 
 # ---------------------------------------------------------------------------

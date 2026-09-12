@@ -1,6 +1,6 @@
 """Statistics wrappers use GenericCommandSkill through the registry."""
 
-from abi.plugins.metagenomic_plasmid._engine.skills.base import (
+from abi.plugins.metagenomic_plasmid.lib.skills.base import (
     GenericCommandSkill,
     RunResult,
     ToolSkill,

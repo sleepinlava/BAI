@@ -15,7 +15,7 @@ src/abi/
                       citations, limitations, html — generic report system
   workflow/           ResourceManifest, workflow validation, figure_specs loading
   plugins/            Built-in analysis-type plugins
-    metagenomic_plasmid/   Self-contained plugin package (engine in _engine/, 64 tools, 90-node DAG)
+    metagenomic_plasmid/   Self-contained plugin package (support lib in lib/, 64 tools, 90-node DAG)
     easymetagenome.py     Shotgun metagenomics adapter (10 tools, 25-node DAG)
     viral_viwrap.py       Managed external CLI adapter (1 tool, 7-node DAG)
     rnaseq_expression.py  Bulk RNA-seq (5 tools, 5-node DAG)
@@ -54,7 +54,7 @@ src/abi/
 ```
 
 The plasmid engine lives inside the plugin package
-(`abi.plugins.metagenomic_plasmid._engine`); the retired `abi.autoplasm`
+(`abi.plugins.metagenomic_plasmid.lib`); the retired `abi.autoplasm`
 compatibility shim namespace was removed in WP2 and must not be
 reintroduced. Internal code imports the engine from the plugin package and
 shared infrastructure from the ABI core modules.

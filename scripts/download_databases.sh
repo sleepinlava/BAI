@@ -114,7 +114,7 @@ else
     # so the DB lands in ${MOB_DIR} (the previous Python-inline mob_init() call
     # ignored ${MOB_DIR} and wrote to mob_suite's package default, after which
     # the BLAST-index check below always failed). This mirrors the path used by
-    # abi.plugins.metagenomic_plasmid._engine.resources._resolved_resource_command.
+    # abi.plugins.metagenomic_plasmid.lib.resources._resolved_resource_command.
     "${MOB_INIT_BIN}" --database_directory "${MOB_DIR}"
     # A BLAST index alone is insufficient: mob_typer also requires marker
     # FASTAs, a Mash sketch, cluster metadata, and the ETE3 taxonomy database.

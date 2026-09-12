@@ -15,7 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from abi.internal import _enabled_optional_tool_ids, _run_generic_preflight
-from abi.plugins.metagenomic_plasmid._engine.skills.registry import (
+from abi.plugins.metagenomic_plasmid.lib.skills.registry import (
     ToolRegistry,
     _resource_status,
 )

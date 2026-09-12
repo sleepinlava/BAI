@@ -1,5 +1,5 @@
-from abi.plugins.metagenomic_plasmid._engine.normalize.abundance import tpm
-from abi.plugins.metagenomic_plasmid._engine.normalize.plasmid_prediction import (
+from abi.plugins.metagenomic_plasmid.lib.normalize.abundance import tpm
+from abi.plugins.metagenomic_plasmid.lib.normalize.plasmid_prediction import (
     integrate_calls,
     normalize_prediction_rows,
 )

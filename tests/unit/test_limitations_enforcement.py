@@ -160,8 +160,8 @@ def test_write_methods_contains_declared_limitations(tmp_path: Path) -> None:
 
 def test_plasmid_markdown_report_contains_declared_limitations(tmp_path: Path) -> None:
     pytest.importorskip("abi.plugins.metagenomic_plasmid")
-    from abi.plugins.metagenomic_plasmid._engine.report.markdown import write_markdown_report
-    from abi.plugins.metagenomic_plasmid._engine.standard_tables import ensure_standard_tables
+    from abi.plugins.metagenomic_plasmid.lib.report.markdown import write_markdown_report
+    from abi.plugins.metagenomic_plasmid.lib.standard_tables import ensure_standard_tables
     from abi.schemas import ExecutionPlan, SampleContext, SampleInput
 
     tables_dir = tmp_path / "tables"
@@ -193,10 +193,10 @@ def test_plasmid_markdown_report_contains_declared_limitations(tmp_path: Path) -
 
 def test_plasmid_html_report_contains_declared_limitations(tmp_path: Path) -> None:
     pytest.importorskip("abi.plugins.metagenomic_plasmid")
-    from abi.plugins.metagenomic_plasmid._engine.report.html import (
+    from abi.plugins.metagenomic_plasmid.lib.report.html import (
         write_html_report as write_plasmid_html_report,
     )
-    from abi.plugins.metagenomic_plasmid._engine.standard_tables import ensure_standard_tables
+    from abi.plugins.metagenomic_plasmid.lib.standard_tables import ensure_standard_tables
     from abi.schemas import ExecutionPlan, SampleContext, SampleInput
 
     tables_dir = tmp_path / "tables"

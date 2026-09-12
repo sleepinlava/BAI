@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
-from abi.plugins.metagenomic_plasmid._engine.selectors import record_auto_selection, select_value
+from abi.plugins.metagenomic_plasmid.lib.schemas import ConfigError
+from abi.plugins.metagenomic_plasmid.lib.selectors import record_auto_selection, select_value
 
 
 # ---------------------------------------------------------------------------

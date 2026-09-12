@@ -1,7 +1,7 @@
 import json
 
-from abi.plugins.metagenomic_plasmid._engine.result_validation import validate_result_dir
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
+from abi.plugins.metagenomic_plasmid.lib.result_validation import validate_result_dir
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import (
     append_standard_rows,
     ensure_standard_tables,
 )

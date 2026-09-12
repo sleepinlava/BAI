@@ -17,15 +17,15 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence
 
 from abi.filesystem import checksum_file
-from abi.plugins.metagenomic_plasmid._engine.config import (
+from abi.plugins.metagenomic_plasmid.lib.config import (
     PROJECT_ROOT,
     resolved_mamba_root,
     write_yaml,
 )
-from abi.plugins.metagenomic_plasmid._engine.filesystem import ensure_directory
-from abi.plugins.metagenomic_plasmid._engine.schemas import AutoPlasmError
-from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
-from abi.plugins.metagenomic_plasmid._engine.timeouts import (
+from abi.plugins.metagenomic_plasmid.lib.filesystem import ensure_directory
+from abi.plugins.metagenomic_plasmid.lib.schemas import AutoPlasmError
+from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
+from abi.plugins.metagenomic_plasmid.lib.timeouts import (
     DEFAULT_RESOURCE_TIMEOUT_SECONDS,
     mapping_block,
     timeout_from_env_or_value,

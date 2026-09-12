@@ -4,11 +4,12 @@
 
 ### Removed
 
-- The `abi.autoplasm` backward-compatibility shim namespace and the legacy
-  `autoplasm` console entry point. The plasmid engine remains inside the
-  plugin package (`abi.plugins.metagenomic_plasmid._engine`); imports now
-  resolve there directly. Plugin dry-runs already execute through the shared
-  executor (plan binding, audit snapshots, execution facts, archive
+- The `abi.autoplasm` backward-compatibility shim namespace, the legacy
+  `autoplasm` console entry point, and the old-engine execution core
+  (`_engine.pipeline` / `_engine.cli` / `_engine.dashboard`). The plugin's
+  support library now lives at `abi.plugins.metagenomic_plasmid.lib` (the
+  retired `_engine` name is gone); plugin dry-runs execute through the
+  shared executor (plan binding, audit snapshots, execution facts, archive
   semantics).
 
 ## [1.6.0] - 2026-09-11

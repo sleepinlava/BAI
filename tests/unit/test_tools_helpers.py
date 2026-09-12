@@ -133,7 +133,7 @@ def test_derive_composite_already_set():
 
 
 def test_plasmid_skill_uses_canonical_metaphlan_derivation():
-    from abi.plugins.metagenomic_plasmid._engine.skills.base import (
+    from abi.plugins.metagenomic_plasmid.lib.skills.base import (
         GenericCommandSkill as PlasmidCommandSkill,
     )
 

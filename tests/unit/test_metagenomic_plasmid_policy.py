@@ -13,20 +13,20 @@ from abi.contracts.lint import validate_pipeline_template_params
 from abi.internal import InternalHandlerContext
 from abi.plugins import get_plugin
 from abi.plugins.metagenomic_plasmid import _plan_from_dict, build_plan_from_dag
-from abi.plugins.metagenomic_plasmid._engine.config import load_config
-from abi.plugins.metagenomic_plasmid._engine.report.markdown import write_markdown_report
-from abi.plugins.metagenomic_plasmid._engine.resources import (
-    check_resources,
-    default_resource_specs,
-)
-from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
-    TABLE_SCHEMAS,
-    ensure_standard_tables,
-)
 from abi.plugins.metagenomic_plasmid.handlers import (
     plasmid_consensus_handler,
     plasmid_structure_handler,
+)
+from abi.plugins.metagenomic_plasmid.lib.config import load_config
+from abi.plugins.metagenomic_plasmid.lib.report.markdown import write_markdown_report
+from abi.plugins.metagenomic_plasmid.lib.resources import (
+    check_resources,
+    default_resource_specs,
+)
+from abi.plugins.metagenomic_plasmid.lib.schemas import ConfigError
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import (
+    TABLE_SCHEMAS,
+    ensure_standard_tables,
 )
 from abi.plugins.metagenomic_plasmid.sequences import terminal_overlap_length
 from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput

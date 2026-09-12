@@ -14,7 +14,7 @@ src/abi/
                       citations、limitations、html — 通用报告系统
   workflow/           ResourceManifest、工作流验证、figure_specs 加载
   plugins/            内置分析类型插件
-    metagenomic_plasmid/   自包含插件包（引擎在 _engine/ 中，64 工具，90 节点 DAG）
+    metagenomic_plasmid/   自包含插件包（支持库在 lib/ 中，64 工具，90 节点 DAG）
     easymetagenome.py     猎枪宏基因组适配器（10 工具，25 节点 DAG）
     viral_viwrap.py       托管外部 CLI 适配器（1 工具，7 节点 DAG）
     rnaseq_expression.py  批量 RNA-seq（5 工具，5 节点 DAG）
@@ -52,7 +52,7 @@ src/abi/
   cli.py              Typer CLI（abi、abi-mcp、abi-sciplot 入口点）
 ```
 
-质粒引擎位于插件包内（`abi.plugins.metagenomic_plasmid._engine`）；已退役的
+质粒引擎位于插件包内（`abi.plugins.metagenomic_plasmid.lib`）；已退役的
 `abi.autoplasm` 兼容垫片命名空间在 WP2 中删除，不得重新引入。内部代码应从
 插件包导入引擎，从 ABI 核心模块导入共享基础设施。
 

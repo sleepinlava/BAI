@@ -1,4 +1,4 @@
-from abi.plugins.metagenomic_plasmid._engine.skills.registry import ToolRegistry
+from abi.plugins.metagenomic_plasmid.lib.skills.registry import ToolRegistry
 
 
 def test_registry_builds_fastp_command():

@@ -8,8 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping
 
-from abi.plugins.metagenomic_plasmid._engine.filesystem import ensure_directory
-from abi.plugins.metagenomic_plasmid._engine.schemas import ExecutionPlan, PlanStep
+from abi.plugins.metagenomic_plasmid.lib.filesystem import ensure_directory
+from abi.plugins.metagenomic_plasmid.lib.schemas import ExecutionPlan, PlanStep
 
 
 class PipelineProgressRecorder:

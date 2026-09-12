@@ -5,9 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from abi.plugins.metagenomic_plasmid._engine.report import load_plugin_limitations
-from abi.plugins.metagenomic_plasmid._engine.schemas import ExecutionPlan
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import (
+from abi.plugins.metagenomic_plasmid.lib.report import load_plugin_limitations
+from abi.plugins.metagenomic_plasmid.lib.schemas import ExecutionPlan
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import (
     read_standard_table,
     summarize_standard_tables,
 )

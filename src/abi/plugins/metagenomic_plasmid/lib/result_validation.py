@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from abi._shared import _read_tsv
-from abi.plugins.metagenomic_plasmid._engine.standard_tables import TABLE_SCHEMAS
+from abi.plugins.metagenomic_plasmid.lib.standard_tables import TABLE_SCHEMAS
 
 CORE_TABLES = {
     "sample_qc",

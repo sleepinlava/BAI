@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from abi.plugins.metagenomic_plasmid._engine.schemas import AutoPlasmError
+from abi.plugins.metagenomic_plasmid.lib.schemas import AutoPlasmError
 
 
 class JSONDataError(AutoPlasmError):

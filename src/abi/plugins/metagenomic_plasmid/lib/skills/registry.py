@@ -8,9 +8,9 @@ from typing import Any, Dict, Iterable, List, Mapping
 
 import yaml
 
-from abi.plugins.metagenomic_plasmid._engine.config import PROJECT_ROOT
-from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
-from abi.plugins.metagenomic_plasmid._engine.skills.base import GenericCommandSkill
+from abi.plugins.metagenomic_plasmid.lib.config import PROJECT_ROOT
+from abi.plugins.metagenomic_plasmid.lib.schemas import ConfigError
+from abi.plugins.metagenomic_plasmid.lib.skills.base import GenericCommandSkill
 
 RESOURCE_FIELDS = {
     "database",
@@ -227,7 +227,7 @@ def _engine_resource_specs(
     Imported lazily because ``resources.py`` imports this module at module
     level, so a top-level import would create a cycle.
     """
-    from abi.plugins.metagenomic_plasmid._engine import resources as engine_resources
+    from abi.plugins.metagenomic_plasmid.lib import resources as engine_resources
 
     return {
         spec.field: spec
@@ -245,7 +245,7 @@ def _resource_ready(path: Path, spec: Any) -> bool:
     """
     if spec is None:
         return path.exists()
-    from abi.plugins.metagenomic_plasmid._engine import resources as engine_resources
+    from abi.plugins.metagenomic_plasmid.lib import resources as engine_resources
 
     return engine_resources._resource_path_ready(path, spec)
 

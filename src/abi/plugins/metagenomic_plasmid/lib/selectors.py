@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping
 
-from abi.plugins.metagenomic_plasmid._engine.schemas import ConfigError
+from abi.plugins.metagenomic_plasmid.lib.schemas import ConfigError
 
 
 def select_value(

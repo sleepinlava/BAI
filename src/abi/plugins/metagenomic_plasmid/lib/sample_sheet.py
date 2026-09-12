@@ -6,8 +6,8 @@ import csv
 from pathlib import Path
 from typing import Iterable, List, Mapping, Optional
 
-from abi.plugins.metagenomic_plasmid._engine.config import PROJECT_ROOT
-from abi.plugins.metagenomic_plasmid._engine.schemas import (
+from abi.plugins.metagenomic_plasmid.lib.config import PROJECT_ROOT
+from abi.plugins.metagenomic_plasmid.lib.schemas import (
     VALID_PLATFORMS,
     SampleContext,
     SampleInput,
