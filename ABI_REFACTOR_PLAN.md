@@ -490,3 +490,11 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 对等验证：含 `diversity_not_run` 跳过步骤的共享 dry-run 产出行与旧引擎逐列一致，重复 dry-run 替换语义一致（`tests/integration/test_dry_run_shared.py` 三项经共享入口验收）。
 - 版本表语义按共享统一：覆盖 `selected_tools`（旧引擎为全 registry），`test_abi_cli` 相应更新；旧引擎直连测试（`test_dry_run.py`）在旧引擎上保持不变，待引擎退役时同步。
 - 剩余（WP2 后续提交）：`abi.autoplasm` 转发模块与 `_engine.pipeline/cli` 退役、`_engine` 内 parsers/report helper 迁出目录。
+
+### B3 续：旧引擎执行核心退役（步骤 3 完成）
+
+- `_engine/pipeline.py`（1088 行：PipelineExecutor、私有调度、状态/证据写入、共识刷新）删除；所有执行路径经共享执行器，插件自有表经 write_run_tables 钩子。
+- `_engine/cli.py`（1159 行）与 `_engine/dashboard.py` 随之退役：console 入口此前已移除，应用仅测试可达；其被取代命令由 abi CLI 承载，setup-resources/check-resources 经 abi setup-resources 保留且 --confirm 门测试现保护 abi 面。
+- FASTA 生物 helper 迁至插件包 `metagenomic_plasmid/sequences.py`（记录键 id/header/sequence 与退役实现精确一致）；handlers 与 policy 测试改从插件导入。
+- 引擎直连测试换成共享路径等价（marker 保留、resolved-plan 步骤对齐、outdir 为文件的拒绝）；引用已退役引擎的本地 ignored 修复/整合脚本（repair_plasmid_standard_tables、integrate_plasmid_supplement）一并清理。
+- `_engine` 剩余 6,840 行：生物/数据 helper（parsers、statistics、normalize、report、schemas、resources setup 等）待归位；`_engine/cli.py` 的 setup-resources 职责由 WP8 承接。
