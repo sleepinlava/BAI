@@ -104,7 +104,13 @@ jobs:
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
           abi list-types
-          autoplasm --help
+          # WP2: the legacy 'autoplasm' entry point is retired; the abi CLI is
+          # the only console surface. Verify it is really gone.
+          # WP2：旧 'autoplasm' 入口已退役；abi CLI 是唯一命令面。验证其确实不存在。
+          if command -v autoplasm >/dev/null 2>&1; then
+            echo "legacy autoplasm entry point must not exist" >&2
+            exit 1
+          fi
           for platform in claude-code opencode codex; do
             abi agent install "$platform" \
               --scope project \
