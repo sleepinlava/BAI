@@ -521,3 +521,11 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - wgs_bacteria：已存在目录的 ready/incomplete 分类保留（诊断）；缺失目标报告 manual_required（amrfinder_update 提示）。
 - Migration Gate 同步（DownloadSpec 检查 → resources.py）；test_resource_paths/resource_boundaries 转换为新语义；ruff 0.16 的死变量门修正。
 - 剩余 WP8：EasyMeta ENA 节点迁移、manage_environments 环境创建、运行时隐式工作流/镜像获取。
+
+### 阶段 C 续：WP8 步骤 3（EasyMeta ENA 节点退役）
+
+- `download_ena_reads` 节点、三个验证传输后端（urllib/aria2c/script）、`streaming_inputs` 校验绕行与 download-only 工作流阶段全部退役。外部准备的 reads 经 ABISample read1/read2 字段成为既有输入；manifest 中的 ENA URL/MD5/字节保留为来源记录；manifest 校验始终检查本地文件存在性。
+- `cleanup_taxonomy_intermediates` 不再消费外部原始 reads——清理仅覆盖 ABI 拥有的中间产物（fastp/dehost/kraken2 输出），外部 reads 不进入删除规则。
+- preflight 保留 ibd_core53 manifest 校验、kraken2 策略与资源检查，移除 ENA 后端/脚本检查；download-only 工作流预设与其 cohort 配置退役。
+- 验证：easymetagenome strict contract-lint 通过；冻结队列计划 31 节点无下载步骤；dry-run 端到端工作；全量测试通过（仅 3 个已知本地专属失败）；CI 绿。
+- 剩余 WP8：manage_environments 环境创建职责、nextflow/容器隐式获取核查；剩余阶段 C：Study 退出核心（6）、绘图退出核心（7）。
