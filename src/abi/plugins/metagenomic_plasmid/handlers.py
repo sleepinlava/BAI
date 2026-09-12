@@ -64,7 +64,7 @@ def plasmid_consensus_handler(
     scapp_predictions = step.inputs.get("scapp_predictions", "")
     scapp_path = Path(scapp_predictions) if scapp_predictions else None
     if scapp_path and scapp_path.is_file() and scapp_path.stat().st_size > 0:
-        from ._engine.pipeline import _read_fasta_records
+        from .sequences import read_fasta_records as _read_fasta_records
 
         if not any(_read_fasta_records(scapp_path)):
             return InternalHandlerResult(
@@ -90,7 +90,8 @@ def plasmid_structure_handler(
 ) -> InternalHandlerResult:
     """Detect header-declared circularity and exact terminal sequence overlap."""
     del config, context
-    from ._engine.pipeline import _read_fasta_records, _terminal_overlap_length
+    from .sequences import read_fasta_records as _read_fasta_records
+    from .sequences import terminal_overlap_length as _terminal_overlap_length
 
     source_value = step.inputs.get("plasmid_contigs") or step.params.get("plasmid_contigs")
     source = Path(str(source_value or ""))

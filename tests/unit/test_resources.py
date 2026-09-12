@@ -887,21 +887,39 @@ def test_kraken2_version_constant_referenced():
     assert _kraken2_version({}, spec) == KRAKEN2_DEFAULT_VERSION
 
 
-def test_autoplasm_setup_resources_requires_confirm():
-    """The autoplasm setup-resources CLI must require --confirm for real
-    execution (mirroring abi.cli.setup_resources_command), so a bare real
-    run does not silently start multi-GB downloads."""
+def test_abi_setup_resources_requires_confirm():
+    """The abi setup-resources CLI must require --confirm for real execution,
+    so a bare real run does not silently start multi-GB downloads. The same
+    gate was previously mirrored by the retired engine CLI (WP2)."""
     from typer.testing import CliRunner
 
-    from abi.plugins.metagenomic_plasmid._engine.cli import app
+    from abi.cli import app
 
     runner = CliRunner()
-    # No --confirm, no --dry-run, no --mock → must exit non-zero with the
+    # No --confirm, no --dry-run, no --mock -> must exit non-zero with the
     # confirm-required message, not attempt any download.
-    result = runner.invoke(app, ["setup-resources"])
+    result = runner.invoke(
+        app,
+        [
+            "setup-resources",
+            "--type",
+            "metagenomic_plasmid",
+            "--config",
+            "examples/config_minimal.yaml",
+        ],
+    )
     assert result.exit_code != 0
     assert "confirm" in result.output.lower()
     # --dry-run must still be allowed without --confirm (planning only).
-    result_dry = runner.invoke(app, ["setup-resources", "--dry-run"])
-    # dry-run path proceeds to planning; it does not exit 2 for lack of confirm
+    result_dry = runner.invoke(
+        app,
+        [
+            "setup-resources",
+            "--type",
+            "metagenomic_plasmid",
+            "--config",
+            "examples/config_minimal.yaml",
+            "--dry-run",
+        ],
+    )
     assert result_dry.exit_code != 2

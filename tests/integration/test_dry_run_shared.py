@@ -24,7 +24,7 @@ def _read_table(tables_dir: Path, name: str) -> list[dict[str, str]]:
     return [dict(zip(header, line.split("\t"))) for line in lines[1:]]
 
 
-def _prepare(tmp_path: Path, *, skipped: list[Any]) -> Any:
+def _prepare(tmp_path: Path, *, skipped: list[Any], outdir: Path | None = None) -> Any:
     sheet = tmp_path / "samples.tsv"
     sheet.write_text(
         "sample_id\tplatform\tread1\tread2\n"
@@ -34,7 +34,7 @@ def _prepare(tmp_path: Path, *, skipped: list[Any]) -> Any:
     )
     overrides = {
         "input": {"sample_sheet": str(sheet)},
-        "outdir": str(tmp_path / "results"),
+        "outdir": str(outdir or tmp_path / "results"),
         "log_dir": str(tmp_path / "log"),
         "mock_tools": True,
     }
@@ -109,3 +109,50 @@ def test_shared_dry_run_writes_standard_provenance(tmp_path: Path) -> None:
     assert (outdir / "provenance" / "audit_snapshot.json").is_file()
     summary = yaml.safe_load((outdir / "provenance" / "run_summary.json").read_text())
     assert summary["analysis_type"] == "metagenomic_plasmid"
+
+
+def test_shared_dry_run_preserves_existing_output_files(tmp_path: Path) -> None:
+    """Repeated dry-runs must not wipe pre-existing files in the outdir."""
+    outdir = tmp_path / "results"
+    outdir.mkdir()
+    marker = outdir / "keep.txt"
+    marker.write_text("keep\n", encoding="utf-8")
+
+    coordinator, prepared = _prepare(tmp_path, skipped=[], outdir=outdir)
+
+    result = coordinator.dry_run(prepared)
+
+    assert result.status == "success"
+    assert marker.read_text(encoding="utf-8") == "keep\n"
+    assert (outdir / "execution_plan.json").is_file()
+
+
+def test_shared_dry_run_resolved_plan_matches_planned_steps(tmp_path: Path) -> None:
+    """The resolved-plan snapshot records executed I/O truth with the same
+    step inventory as the pre-run plan."""
+    import json as jsonlib
+
+    coordinator, prepared = _prepare(tmp_path, skipped=[])
+    outdir = Path(str(prepared.config["outdir"]))
+
+    result = coordinator.dry_run(prepared)
+
+    assert result.status == "success"
+    resolved = jsonlib.loads((outdir / "execution_plan.resolved.json").read_text(encoding="utf-8"))
+    planned = jsonlib.loads((outdir / "execution_plan.json").read_text(encoding="utf-8"))
+    assert [s["step_id"] for s in resolved["steps"]] == [s["step_id"] for s in planned["steps"]]
+
+
+def test_shared_dry_run_rejects_outdir_that_is_file(tmp_path: Path) -> None:
+    """An outdir path that exists as a file must fail with a clear error."""
+    import pytest
+
+    from abi.schemas import ABIError
+
+    outdir = tmp_path / "out"
+    outdir.write_text("not a directory\n", encoding="utf-8")
+
+    coordinator, prepared = _prepare(tmp_path, skipped=[], outdir=outdir)
+
+    with pytest.raises(ABIError, match="not a directory"):
+        coordinator.dry_run(prepared)

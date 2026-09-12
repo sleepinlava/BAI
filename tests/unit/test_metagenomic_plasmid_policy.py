@@ -14,10 +14,6 @@ from abi.internal import InternalHandlerContext
 from abi.plugins import get_plugin
 from abi.plugins.metagenomic_plasmid import _plan_from_dict, build_plan_from_dag
 from abi.plugins.metagenomic_plasmid._engine.config import load_config
-from abi.plugins.metagenomic_plasmid._engine.pipeline import (
-    _assembly_paths_by_sample,
-    _terminal_overlap_length,
-)
 from abi.plugins.metagenomic_plasmid._engine.report.markdown import write_markdown_report
 from abi.plugins.metagenomic_plasmid._engine.resources import (
     check_resources,
@@ -32,6 +28,7 @@ from abi.plugins.metagenomic_plasmid.handlers import (
     plasmid_consensus_handler,
     plasmid_structure_handler,
 )
+from abi.plugins.metagenomic_plasmid.sequences import terminal_overlap_length
 from abi.schemas import ExecutionPlan, PlanStep, SampleContext, SampleInput
 
 
@@ -55,6 +52,17 @@ def _context(samples: list[SampleInput]) -> SampleContext:
         enable_sample_analysis=len(samples) > 1,
         enable_differential_abundance=len(groups) >= 2,
     )
+
+
+def _assembly_paths_by_sample(plan):
+    """Plan introspection helper (inlined from the retired engine pipeline)."""
+    paths = {}
+    for step in plan.steps:
+        sample_id = step.sample_id
+        assembly = step.inputs.get("assembly") or step.params.get("assembly")
+        if sample_id and assembly and sample_id not in paths:
+            paths[sample_id] = str(assembly)
+    return paths
 
 
 def test_serialized_plan_fallback_uses_workflow_scoped_log_directory():
@@ -651,8 +659,8 @@ def test_dag_encodes_hard_tool_policy():
 def test_terminal_overlap_detection_is_bounded_and_exact():
     sequence = "A" * 25 + "CGTACGTA" + "A" * 25
 
-    assert _terminal_overlap_length(sequence) == 25
-    assert _terminal_overlap_length("ACGT" * 4) == 0
+    assert terminal_overlap_length(sequence) == 25
+    assert terminal_overlap_length("ACGT" * 4) == 0
 
 
 def test_generic_internal_handler_writes_plasmid_structure_rows(tmp_path):
