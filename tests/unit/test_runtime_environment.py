@@ -11,7 +11,6 @@ from abi.runtime_environment import (
     build_environment_report,
     discover_mamba_root,
     load_environment_assignments,
-    manage_environments,
     resolve_environment_prefix,
     resolve_executable,
     resolve_python,
@@ -505,55 +504,6 @@ def test_environment_and_tool_reports_inherit_architecture_capabilities(
     assert tool["capability"] == capability
 
 
-def test_environment_install_rejects_unsupported_architecture_before_solver_lookup(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    architecture = __import__("platform").machine()
-    normalized = "aarch64" if architecture in {"aarch64", "arm64"} else "x86_64"
-    monkeypatch.setattr(
-        "abi.runtime_environment.load_environment_assignments",
-        lambda: {
-            "platform_support": {
-                "active_os": "linux",
-                "environments": {
-                    "blocked-env": {
-                        normalized: {
-                            "status": "unsupported",
-                            "blockers": ["package unavailable"],
-                            "alternatives": ["use a supported architecture"],
-                        }
-                    }
-                },
-            },
-            "environments": {"blocked-env": {"dependencies": ["python=3.10"]}},
-            "tool_assignments": {},
-        },
-    )
-
-    with pytest.raises(RuntimeEnvironmentError, match="blocked-env.*unsupported"):
-        manage_environments(
-            action="install",
-            environment_names=["blocked-env"],
-            explicit_root=tmp_path / "root",
-            environ={"PATH": ""},
-        )
-
-
-def test_plugin_install_rejects_unsupported_plugin_before_solver_lookup(
-    tmp_path: Path,
-) -> None:
-    with pytest.raises(RuntimeEnvironmentError, match="viral_viwrap.*unsupported"):
-        manage_environments(
-            action="install",
-            environment_names=[],
-            analysis_type="viral_viwrap",
-            explicit_root=tmp_path / "root",
-            dry_run=True,
-            environ={"PATH": ""},
-        )
-
-
 def test_report_rejects_plugin_whose_assigned_environment_is_unsupported(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -639,11 +589,3 @@ def test_unknown_linux_architecture_fails_closed_when_matrix_is_declared(
 
     assert "unsupported_architecture:ppc64le" in report["issues"]
     assert report["healthy"] is False
-    with pytest.raises(RuntimeEnvironmentError, match="Linux architecture ppc64le"):
-        manage_environments(
-            action="install",
-            environment_names=["wgs"],
-            explicit_root=tmp_path / "managed",
-            dry_run=True,
-            environ={"PATH": ""},
-        )

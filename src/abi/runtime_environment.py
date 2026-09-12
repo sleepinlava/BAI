@@ -8,14 +8,12 @@ path was selected.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -25,9 +23,6 @@ from abi.config import PROJECT_ROOT
 
 class RuntimeEnvironmentError(RuntimeError):
     """Raised when explicit runtime configuration cannot be honored."""
-
-
-DEFAULT_ENVIRONMENT_SOLVER_TIMEOUT_SECONDS = 24 * 60 * 60
 
 
 @dataclass(frozen=True)
@@ -134,6 +129,76 @@ def discover_mamba_root(
         return MambaRootResolution(user_root.resolve(), "linux-user-data")
 
     return MambaRootResolution(user_root.resolve(), "linux-user-data-default")
+
+
+def _discover_solver_root(
+    environ: Mapping[str, str],
+    *,
+    probe: bool,
+) -> MambaRootResolution | None:
+    for solver_name in ("micromamba", "mamba", "conda"):
+        executable = shutil.which(solver_name, path=environ.get("PATH", ""))
+        if not executable:
+            continue
+        if not probe:
+            inferred = _infer_solver_root_from_executable(solver_name, executable)
+            if inferred is not None:
+                return inferred
+            continue
+        try:
+            completed = subprocess.run(
+                [executable, "info", "--json"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=5,
+                env=dict(environ),
+            )
+            payload = json.loads(completed.stdout) if completed.returncode == 0 else {}
+        except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+            continue
+        root_value = payload.get("root_prefix")
+        if not root_value:
+            continue
+        root = Path(str(root_value)).expanduser()
+        if not root.is_dir():
+            continue
+        prefixes = tuple(
+            Path(str(value)).expanduser().resolve()
+            for value in payload.get("envs", [])
+            if Path(str(value)).expanduser().is_dir()
+        )
+        return MambaRootResolution(
+            root.resolve(),
+            f"{solver_name}-info",
+            solver=str(Path(executable).resolve()),
+            known_prefixes=prefixes,
+        )
+    return None
+
+
+def _infer_solver_root_from_executable(
+    solver_name: str,
+    executable: str,
+) -> MambaRootResolution | None:
+    resolved_executable = Path(executable).resolve()
+    if resolved_executable.parent.name not in {"bin", "condabin"}:
+        return None
+    root = resolved_executable.parent.parent
+    if not ((root / "conda-meta").is_dir() or (root / "envs").is_dir()):
+        return None
+    envs_dir = root / "envs"
+    known_prefixes = (
+        tuple(path.resolve() for path in envs_dir.iterdir() if _is_environment_prefix(path))
+        if envs_dir.is_dir()
+        else ()
+    )
+    return MambaRootResolution(
+        root.resolve(),
+        f"{solver_name}-executable",
+        solver=str(resolved_executable),
+        known_prefixes=known_prefixes,
+    )
 
 
 def resolved_mamba_root(
@@ -448,151 +513,6 @@ def build_environment_report(
     }
 
 
-def manage_environments(
-    *,
-    action: str,
-    environment_names: Sequence[str],
-    analysis_type: str | None = None,
-    solver: str | Path | None = None,
-    explicit_root: str | Path | None = None,
-    dry_run: bool = False,
-    environ: Mapping[str, str] | None = None,
-    home: Path | None = None,
-) -> dict[str, Any]:
-    """Create or update ABI-managed Linux environments with an auditable solver call."""
-
-    if action not in {"install", "update"}:
-        raise RuntimeEnvironmentError(f"Unsupported environment action: {action}")
-    if platform.system() != "Linux":
-        raise RuntimeEnvironmentError(
-            f"ABI managed environments support Linux only, not {platform.system()}"
-        )
-
-    env = dict(os.environ if environ is None else environ)
-    selected = _select_environment_names(
-        environment_names,
-        analysis_type=analysis_type,
-    )
-    manifest = load_environment_assignments()
-    support = manifest.get("platform_support", {})
-    if isinstance(support, Mapping):
-        architecture = _normalized_architecture(platform.machine())
-        _require_declared_architecture(support, architecture)
-        if analysis_type:
-            plugin_capability = _capability_for(
-                support,
-                scope="plugins",
-                name=analysis_type,
-                architecture=architecture,
-            )
-            if plugin_capability["status"] == "unsupported":
-                blockers = "; ".join(plugin_capability["blockers"]) or "no supported runtime"
-                raise RuntimeEnvironmentError(
-                    f"{analysis_type} is unsupported on Linux {architecture}: {blockers}"
-                )
-        for env_name in selected:
-            capability = _capability_for(
-                support,
-                scope="environments",
-                name=env_name,
-                architecture=architecture,
-            )
-            if capability["status"] == "unsupported":
-                blockers = "; ".join(capability["blockers"]) or "no supported package set"
-                raise RuntimeEnvironmentError(
-                    f"{env_name} is unsupported on Linux {architecture}: {blockers}"
-                )
-    root, root_source = _resolve_write_root(
-        explicit_root,
-        environ=env,
-        home=home,
-    )
-    solver_report = _resolve_environment_solver(solver, environ=env)
-
-    results: list[dict[str, Any]] = []
-    for env_name in selected:
-        spec_bytes = _render_environment_spec(env_name)
-        spec_hash = hashlib.sha256(spec_bytes).hexdigest()
-        prefix = (root / "envs" / env_name).resolve()
-        spec_path = (root / "specs" / f"{env_name}.yml").resolve()
-        existing_spec = spec_path.read_bytes() if spec_path.is_file() else None
-        spec_state = (
-            "missing"
-            if existing_spec is None
-            else ("matches" if existing_spec == spec_bytes else "differs")
-        )
-        already_installed = _is_environment_prefix(prefix)
-        solver_action = "update" if action == "update" and already_installed else "install"
-        command = _environment_solver_command(
-            solver_report["name"],
-            solver_report["executable"],
-            action=solver_action,
-            prefix=prefix,
-            spec_path=spec_path,
-        )
-
-        executed = False
-        if action == "install" and already_installed:
-            status = "unchanged"
-        elif dry_run:
-            status = f"planned_{'create' if solver_action == 'install' else 'update'}"
-        else:
-            spec_path.parent.mkdir(parents=True, exist_ok=True)
-            previous_spec = existing_spec
-            try:
-                _write_bytes_atomic(spec_path, spec_bytes)
-                completed = subprocess.run(
-                    command,
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=DEFAULT_ENVIRONMENT_SOLVER_TIMEOUT_SECONDS,
-                    env=_solver_process_environment(env, root),
-                )
-                if completed.returncode != 0:
-                    detail = completed.stderr.strip() or completed.stdout.strip() or "no output"
-                    raise RuntimeEnvironmentError(
-                        f"{solver_report['name']} {solver_action} failed for {env_name}: {detail}"
-                    )
-                if not _is_environment_prefix(prefix):
-                    raise RuntimeEnvironmentError(
-                        f"{solver_report['name']} reported success "
-                        f"but no environment exists: {prefix}"
-                    )
-            except BaseException:
-                if previous_spec is None:
-                    spec_path.unlink(missing_ok=True)
-                else:
-                    _write_bytes_atomic(spec_path, previous_spec)
-                raise
-            status = "updated" if already_installed else "created"
-            executed = True
-            spec_state = "matches"
-
-        results.append(
-            {
-                "name": env_name,
-                "status": status,
-                "executed": executed,
-                "prefix": str(prefix),
-                "spec_path": str(spec_path),
-                "spec_sha256": spec_hash,
-                "spec_state": spec_state,
-                "command": command,
-            }
-        )
-
-    return {
-        "action": action,
-        "dry_run": dry_run,
-        "mamba_root": {"path": str(root), "source": root_source},
-        "solver": solver_report,
-        "analysis_type": analysis_type,
-        "environments": results,
-        "healthy": True,
-    }
-
-
 def load_environment_assignments() -> Mapping[str, Any]:
     """Load the packaged environment manifest, with a checkout fallback."""
 
@@ -624,260 +544,6 @@ def _authoritative_root(value: str | Path, *, source: str) -> MambaRootResolutio
     if not path.is_dir():
         raise RuntimeEnvironmentError(f"{source} Mamba root is not a directory: {path}")
     return MambaRootResolution(path.resolve(), source)
-
-
-def _resolve_write_root(
-    explicit_root: str | Path | None,
-    *,
-    environ: Mapping[str, str],
-    home: Path | None,
-) -> tuple[Path, str]:
-    if explicit_root is not None:
-        return _validated_write_root(explicit_root, source="explicit")
-    for variable in ("ABI_MAMBA_ROOT", "MAMBA_ROOT_PREFIX", "AUTOPLASM_MAMBA_ROOT"):
-        value = environ.get(variable)
-        if value:
-            return _validated_write_root(value, source=variable)
-    user_home = Path(home or environ.get("HOME") or Path.home()).expanduser()
-    return _validated_write_root(
-        _linux_user_mamba_root(environ, user_home),
-        source="linux-user-data-write",
-    )
-
-
-def _validated_write_root(value: str | Path, *, source: str) -> tuple[Path, str]:
-    path = Path(value).expanduser()
-    if path.exists() and not path.is_dir():
-        raise RuntimeEnvironmentError(f"{source} Mamba root is not a directory: {path}")
-    return path.resolve(), source
-
-
-def _resolve_environment_solver(
-    explicit_solver: str | Path | None,
-    *,
-    environ: Mapping[str, str],
-) -> dict[str, str]:
-    requested = explicit_solver or environ.get("ABI_ENV_SOLVER")
-    source = "explicit" if explicit_solver is not None else "ABI_ENV_SOLVER"
-    candidates = [str(requested)] if requested else ["micromamba", "mamba", "conda"]
-    if requested is None:
-        source = "auto"
-
-    for candidate in candidates:
-        path = Path(candidate).expanduser()
-        if path.is_absolute() or path.parent != Path("."):
-            executable = (
-                str(path.resolve()) if path.is_file() and os.access(path, os.X_OK) else None
-            )
-        else:
-            executable = shutil.which(candidate, path=environ.get("PATH", ""))
-        if executable is None:
-            continue
-        name = Path(executable).name
-        if name not in {"micromamba", "mamba", "conda"}:
-            raise RuntimeEnvironmentError(f"Unsupported environment solver executable name: {name}")
-        completed = subprocess.run(
-            [executable, "--version"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-            env=_solver_process_environment(environ, None),
-        )
-        if completed.returncode != 0:
-            raise RuntimeEnvironmentError(f"Unable to query environment solver: {executable}")
-        version = completed.stdout.strip() or completed.stderr.strip()
-        if not version:
-            raise RuntimeEnvironmentError(f"Environment solver returned no version: {executable}")
-        return {
-            "name": name,
-            "executable": str(Path(executable).resolve()),
-            "version": version,
-            "source": source,
-        }
-
-    label = str(requested) if requested is not None else "micromamba, mamba, or conda"
-    raise RuntimeEnvironmentError(f"No supported environment solver found: {label}")
-
-
-def _select_environment_names(
-    environment_names: Sequence[str],
-    *,
-    analysis_type: str | None,
-) -> list[str]:
-    manifest = load_environment_assignments()
-    definitions = manifest.get("environments", {})
-    assignments = manifest.get("tool_assignments", {})
-    if not isinstance(definitions, Mapping):
-        raise RuntimeEnvironmentError("environments.yaml has no environments mapping")
-
-    requested = [str(name) for name in environment_names]
-    if analysis_type:
-        plugin_assignments = (
-            assignments.get(analysis_type, {}) if isinstance(assignments, Mapping) else {}
-        )
-        if not isinstance(plugin_assignments, Mapping):
-            plugin_assignments = {}
-        if analysis_type not in assignments:
-            raise RuntimeEnvironmentError(f"Unknown ABI analysis type: {analysis_type}")
-        requested.extend(str(name) for name in plugin_assignments.values())
-    selected = list(dict.fromkeys(requested))
-    if not selected:
-        raise RuntimeEnvironmentError("Select at least one --env or --type")
-    unknown = [name for name in selected if name not in definitions]
-    if unknown:
-        raise RuntimeEnvironmentError(f"Unknown ABI environments: {', '.join(unknown)}")
-    return selected
-
-
-def _render_environment_spec(environment_name: str) -> bytes:
-    import yaml
-
-    manifest = load_environment_assignments()
-    definitions = manifest.get("environments", {})
-    definition = definitions.get(environment_name) if isinstance(definitions, Mapping) else None
-    if not isinstance(definition, Mapping):
-        raise RuntimeEnvironmentError(f"Unknown ABI environment: {environment_name}")
-    payload: dict[str, Any] = {"name": environment_name}
-    for key in ("channel_priority", "channels", "dependencies"):
-        if key in definition:
-            payload[key] = definition[key]
-    return yaml.safe_dump(payload, sort_keys=False, allow_unicode=True).encode("utf-8")
-
-
-def _environment_solver_command(
-    solver_name: str,
-    executable: str,
-    *,
-    action: str,
-    prefix: Path,
-    spec_path: Path,
-) -> list[str]:
-    operation = "create" if action == "install" else "update"
-    if solver_name == "micromamba":
-        command = [
-            executable,
-            *(["env", operation] if action == "update" else [operation]),
-            "--yes",
-            "--prefix",
-            str(prefix),
-            "--file",
-            str(spec_path),
-        ]
-        if action == "update":
-            command.append("--prune")
-        return command
-    command = [
-        executable,
-        "env",
-        operation,
-        "--prefix",
-        str(prefix),
-        "--file",
-        str(spec_path),
-    ]
-    if action == "install" or solver_name == "mamba":
-        command.insert(3, "--yes")
-    if action == "update":
-        command.append("--prune")
-    return command
-
-
-def _solver_process_environment(
-    environ: Mapping[str, str],
-    root: Path | None,
-) -> dict[str, str]:
-    process_env = dict(environ)
-    process_env.pop("PYTHONPATH", None)
-    if root is not None:
-        process_env["MAMBA_ROOT_PREFIX"] = str(root)
-    return process_env
-
-
-def _write_bytes_atomic(path: Path, content: bytes) -> None:
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "wb") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    except BaseException:
-        try:
-            os.unlink(temporary)
-        except FileNotFoundError:
-            pass
-        raise
-
-
-def _discover_solver_root(
-    environ: Mapping[str, str],
-    *,
-    probe: bool,
-) -> MambaRootResolution | None:
-    for solver_name in ("micromamba", "mamba", "conda"):
-        executable = shutil.which(solver_name, path=environ.get("PATH", ""))
-        if not executable:
-            continue
-        if not probe:
-            inferred = _infer_solver_root_from_executable(solver_name, executable)
-            if inferred is not None:
-                return inferred
-            continue
-        try:
-            completed = subprocess.run(
-                [executable, "info", "--json"],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=5,
-                env=dict(environ),
-            )
-            payload = json.loads(completed.stdout) if completed.returncode == 0 else {}
-        except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
-            continue
-        root_value = payload.get("root_prefix")
-        if not root_value:
-            continue
-        root = Path(str(root_value)).expanduser()
-        if not root.is_dir():
-            continue
-        prefixes = tuple(
-            Path(str(value)).expanduser().resolve()
-            for value in payload.get("envs", [])
-            if Path(str(value)).expanduser().is_dir()
-        )
-        return MambaRootResolution(
-            root.resolve(),
-            f"{solver_name}-info",
-            solver=str(Path(executable).resolve()),
-            known_prefixes=prefixes,
-        )
-    return None
-
-
-def _infer_solver_root_from_executable(
-    solver_name: str,
-    executable: str,
-) -> MambaRootResolution | None:
-    resolved_executable = Path(executable).resolve()
-    if resolved_executable.parent.name not in {"bin", "condabin"}:
-        return None
-    root = resolved_executable.parent.parent
-    if not ((root / "conda-meta").is_dir() or (root / "envs").is_dir()):
-        return None
-    envs_dir = root / "envs"
-    known_prefixes = (
-        tuple(path.resolve() for path in envs_dir.iterdir() if _is_environment_prefix(path))
-        if envs_dir.is_dir()
-        else ()
-    )
-    return MambaRootResolution(
-        root.resolve(),
-        f"{solver_name}-executable",
-        solver=str(resolved_executable),
-        known_prefixes=known_prefixes,
-    )
 
 
 def _linux_user_mamba_root(environ: Mapping[str, str], home: Path) -> Path:
@@ -1044,14 +710,6 @@ def _ambiguous_tool_capability(candidates: Sequence[str]) -> dict[str, Any]:
     }
 
 
-def _require_declared_architecture(support: Mapping[str, Any], architecture: str) -> None:
-    declared = support.get("architectures")
-    if isinstance(declared, Mapping) and declared and architecture not in declared:
-        raise RuntimeEnvironmentError(
-            f"Linux architecture {architecture} is not declared in the ABI capability matrix"
-        )
-
-
 def _normalized_architecture(machine: str) -> str:
     value = machine.lower()
     if value in {"amd64", "x86_64"}:
@@ -1069,7 +727,6 @@ __all__ = [
     "build_environment_report",
     "discover_mamba_root",
     "load_environment_assignments",
-    "manage_environments",
     "resolve_environment_prefix",
     "resolve_executable",
     "resolve_python",

@@ -93,30 +93,6 @@ def test_env_doctor_rejects_declared_unsupported_plugin_cell(tmp_path: Path) -> 
     assert any(issue.startswith("unsupported_plugin:viral_viwrap:") for issue in payload["issues"])
 
 
-def test_env_install_rejects_declared_unsupported_plugin_cell(tmp_path: Path) -> None:
-    solver = _fake_solver(tmp_path / "bin" / "micromamba")
-
-    result = runner.invoke(
-        app,
-        [
-            "env",
-            "install",
-            "--type",
-            "viral_viwrap",
-            "--solver",
-            str(solver),
-            "--mamba-root",
-            str(tmp_path / "managed-root"),
-            "--dry-run",
-            "--output-json",
-        ],
-    )
-
-    assert result.exit_code == 1
-    assert "viral_viwrap" in result.output
-    assert "unsupported" in result.output
-
-
 def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:
     result = runner.invoke(
         app,
@@ -133,60 +109,3 @@ def test_env_discover_rejects_missing_explicit_root(tmp_path: Path) -> None:
     assert "does not exist" in result.output
 
 
-def test_env_install_dry_run_selects_plugin_environments_without_writing(
-    tmp_path: Path,
-) -> None:
-    solver = _fake_solver(tmp_path / "bin" / "micromamba")
-    root = tmp_path / "managed-root"
-
-    result = runner.invoke(
-        app,
-        [
-            "env",
-            "install",
-            "--type",
-            "rnaseq_expression",
-            "--solver",
-            str(solver),
-            "--mamba-root",
-            str(root),
-            "--dry-run",
-            "--output-json",
-        ],
-    )
-
-    assert result.exit_code == 0, result.output
-    payload = json.loads(result.stdout)
-    assert payload["action"] == "install"
-    assert payload["dry_run"] is True
-    assert payload["solver"]["source"] == "explicit"
-    assert [row["name"] for row in payload["environments"]] == ["rnaseq"]
-    assert payload["environments"][0]["status"] == "planned_create"
-    assert root.exists() is False
-
-
-def test_env_update_dry_run_plans_create_when_environment_is_missing(tmp_path: Path) -> None:
-    solver = _fake_solver(tmp_path / "bin" / "micromamba")
-
-    result = runner.invoke(
-        app,
-        [
-            "env",
-            "update",
-            "--env",
-            "wgs",
-            "--solver",
-            str(solver),
-            "--mamba-root",
-            str(tmp_path / "managed-root"),
-            "--dry-run",
-            "--output-json",
-        ],
-    )
-
-    assert result.exit_code == 0, result.output
-    payload = json.loads(result.stdout)
-    assert payload["action"] == "update"
-    assert payload["environments"][0]["name"] == "wgs"
-    assert payload["environments"][0]["status"] == "planned_create"
-    assert "--prune" not in payload["environments"][0]["command"]

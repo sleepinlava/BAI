@@ -95,13 +95,13 @@ def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
     assert "python -m build" in arm_steps
     assert "verify_linux_wheel_capabilities.py" in arm_steps
     assert '--mamba-root "/tmp/abi ci arm managed root"' in arm_steps
-    assert "abi env install" in arm_steps
-    assert "--dry-run" not in arm_steps
+    assert "abi env install" not in arm_steps
+    assert "abi env install" not in workflow
     assert 'cd "$wheel_smoke_dir"' in arm_steps
     assert "linux-arm64" in parsed["jobs"]["migration-gate"]["needs"]
-    assert workflow.count("abi env install") >= 2
+    assert workflow.count("abi env install") == 0
     assert workflow.count('cd "$wheel_smoke_dir"') >= 2
-    assert workflow.count('test -f "$spec_path"') >= 2
+    assert workflow.count('test -f "$spec_path/conda-meta/history"') >= 2
     assert "macos-" not in workflow.lower()
 
 

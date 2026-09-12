@@ -122,7 +122,6 @@ class SnakemakeRuntime:
             str(cores),
             "--rerun-incomplete",
             "--printshellcmds",
-            "--use-conda",
         ]
 
         with (
