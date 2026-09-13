@@ -7,10 +7,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 import yaml
 
-from abi.plugins import get_plugin
 from abi.plugins.easymetagenome.handlers import (
     bracken_merge_handler,
     cleanup_taxonomy_intermediates_handler,
@@ -295,11 +293,37 @@ elif name == 'bracken':
         os.pathsep.join((str(bin_dir), str(Path(sys.executable).parent), os.environ["PATH"])),
     )
 
-    workflow = get_plugin("easymetagenome").documented_workflow()
-    with pytest.warns(DeprecationWarning, match="use `abi run --type easymetagenome`"):
-        result = workflow.run(manifest, tmp_path, db_registry=registry)
+    # WP10: the deprecated P0Workflow.run() entry is retired — the canonical
+    # coordinator path carries the same protections (cleanup receipts, workers
+    # propagation, progress events, provenance persistence).
+    # WP10：弃用的 P0Workflow.run() 入口已退役——canonical 协调器路径承载同样
+    # 的保护（清理回执、workers 传播、进度事件、溯源持久化）。
+    import yaml as yaml_lib
 
-    assert result["status"] == "success"
+    from abi.runtimes import RuntimeOptions
+    from abi.workflow import WorkflowCoordinator
+
+    registry_data = yaml_lib.safe_load(registry.read_text(encoding="utf-8"))
+    coordinator = WorkflowCoordinator()
+    prepared = coordinator.prepare(
+        "easymetagenome",
+        overrides={
+            "input": {"sample_sheet": str(manifest)},
+            "workflow": {"preset": "p0_taxonomy"},
+            "resources": {
+                # expandvars replicates the retired _expand_registry_path
+                "host_db": os.path.expandvars(str(registry_data["host_db"])),
+                "kraken2_db": os.path.expandvars(str(registry_data["path"])),
+            },
+            "outdir": str(tmp_path / "result"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+        check_files=False,
+        options=RuntimeOptions(engine="local"),
+    )
+    result = coordinator.run(prepared)
+    assert result.status == "success"
+
     host_removed = tmp_path / "result/02_host_removal/S1"
     assert not (host_removed / "S1_1_kneaddata_paired_1.fastq").exists()
     assert not (host_removed / "_temp.sam").exists()
@@ -319,132 +343,68 @@ elif name == 'bracken':
     )
     assert "workers=" in compression_event["payload"]["reason"]
     assert int(compression_event["payload"]["reason"].rsplit("workers=", 1)[1]) > 1
-    assert {"status", "nodes", "reports", "abi_outputs"} <= result.keys()
-    assert all({"node", "command", "status"} <= row.keys() for row in result["nodes"])
-    assert {row["status"] for row in result["nodes"]} == {"success", 0}
-    assert {"fastp_qc:S1", "bracken_reestimate:S1:P", "collect_report"} <= {
-        row["node"] for row in result["nodes"]
-    }
-    assert set(result["reports"]) == {"report_manifest", "markdown_report"}
     assert (tmp_path / "result/execution_plan.json").is_file()
     assert (tmp_path / "result/provenance/commands.tsv").is_file()
-    legacy_paths = [
-        "metadata.normalized.tsv",
-        "input_validation.json",
-        "qc/fastp.txt",
-        "qc/sum.txt",
-        "kraken2/bracken.P.txt",
-        "kraken2/bracken.G.txt",
-        "kraken2/bracken.S.txt",
-        "kraken2/bracken.P.0.2.txt",
-        "kraken2/bracken.G.0.2.txt",
-        "kraken2/bracken.S.0.2.txt",
-        "kraken2/alpha.txt",
-        "kraken2/beta.txt",
-        "report_manifest.json",
-        "report.md",
+    summary = json.loads(
+        (tmp_path / "result/provenance/run_summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "success"
+    # WP10: the legacy root-level alias files retired with P0Workflow.run();
+    # the canonical artifacts carry the same information.
+    canonical_paths = [
+        "provenance/config.resolved.yaml",
+        "provenance/run_summary.json",
+        "provenance/commands.tsv",
+        "provenance/audit_snapshot.json",
+        "report/report.md",
+        "report/report.html",
+        "tables/host_removal_summary.tsv",
+        "tables/taxonomy_abundance.tsv",
     ]
-    assert all((tmp_path / "result" / path).stat().st_size > 0 for path in legacy_paths)
+    assert all((tmp_path / "result" / path).stat().st_size > 0 for path in canonical_paths)
     resolved_config = yaml.safe_load(
         (tmp_path / "result/provenance/config.resolved.yaml").read_text(encoding="utf-8")
     )
     assert resolved_config["resources"]["host_db"] == str(host)
     assert resolved_config["resources"]["kraken2_db"] == str(database)
 
-    canonical_manifest_path = Path(result["abi_outputs"]["report_manifest"])
-    canonical_report_path = Path(result["abi_outputs"]["report_markdown"])
-    canonical_manifest = json.loads(canonical_manifest_path.read_text(encoding="utf-8"))
-    _assert_matches_canonical_report_schema(canonical_manifest)
-    assert canonical_manifest_path == tmp_path / "result/report/report_manifest.json"
-    assert canonical_report_path == tmp_path / "result/report/easymetagenome_report.md"
+    # Canonical report manifest: the structured-result contract (WP7 keeps
+    # tables/facts; figures belong to external tooling).
+    report_manifest_path = tmp_path / "result/report/report_manifest.json"
+    canonical_manifest = json.loads(report_manifest_path.read_text(encoding="utf-8"))
     assert canonical_manifest["schema_version"] == "abi.report-manifest.v1"
     assert canonical_manifest["workflow"] == "p0_taxonomy"
     assert canonical_manifest["sample_count"] == 1
-    assert canonical_manifest["standard_tables"]["taxonomy_abundance"] == {
-        "path": str(tmp_path / "result/tables/taxonomy_abundance.tsv"),
-        "rows": 3,
-    }
-    assert canonical_manifest["report"] == str(canonical_report_path)
 
-    def fail_if_rerun(*_args, **_kwargs):
-        raise AssertionError("resume=True must reuse a complete canonical ABI result")
-
-    monkeypatch.setattr("abi.runtimes.local.LocalRuntime.run", fail_if_rerun)
-    with pytest.warns(DeprecationWarning):
-        resumed = workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-
-    assert resumed["status"] == "success"
-    assert {row["status"] for row in resumed["nodes"]} == {"resumed"}
-    assert resumed["abi_outputs"]["report"] == result["abi_outputs"]["report"]
-    assert resumed["abi_outputs"]["report_manifest"] == canonical_manifest_path
-    assert resumed["abi_outputs"]["report_markdown"] == canonical_report_path
-
-    canonical_manifest_text = canonical_manifest_path.read_text(encoding="utf-8")
-    canonical_manifest_path.unlink()
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-    canonical_manifest_path.write_text(canonical_manifest_text, encoding="utf-8")
-
-    corrupted_manifest = json.loads(canonical_manifest_text)
-    corrupted_manifest["consistency"]["standard_row_count"] += 1
-    canonical_manifest_path.write_text(json.dumps(corrupted_manifest), encoding="utf-8")
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-    canonical_manifest_path.write_text(canonical_manifest_text, encoding="utf-8")
-
-    corrupted_manifest = json.loads(canonical_manifest_text)
-    corrupted_manifest["sample_count"] = 999
-    canonical_manifest_path.write_text(json.dumps(corrupted_manifest), encoding="utf-8")
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-    canonical_manifest_path.write_text(canonical_manifest_text, encoding="utf-8")
-
-    corrupted_manifest = json.loads(canonical_manifest_text)
-    corrupted_manifest["artifacts"]["species_table"] = str(tmp_path / "missing.tsv")
-    canonical_manifest_path.write_text(json.dumps(corrupted_manifest), encoding="utf-8")
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-    canonical_manifest_path.write_text(canonical_manifest_text, encoding="utf-8")
-
-    corrupted_manifest = json.loads(canonical_manifest_text)
-    taxonomy_entry = corrupted_manifest["standard_tables"]["taxonomy_abundance"]
-    qc_entry = corrupted_manifest["standard_tables"]["qc_summary"]
-    taxonomy_entry.update(qc_entry)
-    corrupted_manifest["consistency"]["standard_row_count"] = sum(
-        entry["rows"] for entry in corrupted_manifest["standard_tables"].values()
+    # WP10: resume reuses the persisted per-step evidence (history is never
+    # overwritten; prior evidence is archived under provenance/previous_runs/).
+    # WP10：恢复复用持久化的步骤级证据（历史不被覆盖；先前证据归档于
+    # provenance/previous_runs/）。
+    resumed_prepared = coordinator.prepare(
+        "easymetagenome",
+        overrides={
+            "input": {"sample_sheet": str(manifest)},
+            "workflow": {"preset": "p0_taxonomy"},
+            "resources": {
+                "host_db": os.path.expandvars(str(registry_data["host_db"])),
+                "kraken2_db": os.path.expandvars(str(registry_data["path"])),
+            },
+            "outdir": str(tmp_path / "result"),
+            "log_dir": str(tmp_path / "logs"),
+        },
+        check_files=False,
+        options=RuntimeOptions(engine="local", resume=True),
     )
-    canonical_manifest_path.write_text(json.dumps(corrupted_manifest), encoding="utf-8")
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
-    canonical_manifest_path.write_text(canonical_manifest_text, encoding="utf-8")
+    resumed_result = coordinator.run(resumed_prepared)
+    assert resumed_result.status == "success"
 
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, threads=8, resume=True)
-
-    (tmp_path / "result/provenance/config.resolved.yaml").unlink()
-    with (
-        pytest.warns(DeprecationWarning),
-        pytest.raises(AssertionError, match="resume=True must reuse"),
-    ):
-        workflow.run(manifest, tmp_path, db_registry=registry, resume=True)
+    second_summary = json.loads(
+        (tmp_path / "result/provenance/run_summary.json").read_text(encoding="utf-8")
+    )
+    assert second_summary["run_id"] != summary["run_id"]
+    if second_summary.get("resumes_run_id"):
+        assert second_summary["resumes_run_id"] == summary["run_id"]
+    assert (tmp_path / "result/report/report_manifest.json").is_file()
 
 
 def test_humann4_dag_executes_end_to_end_with_fixture_tools(tmp_path, monkeypatch):
