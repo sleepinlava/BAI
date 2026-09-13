@@ -568,3 +568,9 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - **WP10**：`resolve_resources` 兼容桥（C06，2026-07——一个发布周期已满）自 `abi.tools` 退役；分层优先级行为由 `resolve_resources_v2` 桥接测试保护。`abi.openai_contracts`、`autoplasm_validate_result` 别名按既有决定保留（有真实外部读者）。
 - 验证：Ruff/mypy、全量测试、双语构建 0/0、CI 绿。
 - 剩余阶段 D：P0Workflow.run() 弃用入口与其集成测试的 canonical 路径转换；WP9 分发面收口核查（report extra 空置、examples/examples 数据归属）。
+
+### 阶段 D 续：WP10 P0Workflow.run() 退役（f320ef5）
+
+- 弃用执行入口 `P0Workflow.run()` 及其专属 legacy 层删除（整体结果复用匹配、legacy 命令/版本行重塑、根级别名写出；净删 ~280 行）。P0Workflow 的规划/解析面（documented_workflow）保留。
+- 集成测试转为 canonical 协调器路径，保留受保护行为：清理回执、host-removal 临时删除、workers 传播、进度事件、溯源持久化。resume 断言切换为 canonical 步骤级恢复关联（resumes_run_id + previous_runs 归档）；report-manifest 篡改块随旧整体门退役（新信任模型为校验和 + 计划绑定）。
+- CI 绿；全量测试通过（仅 3 个已知本地专属失败）。
