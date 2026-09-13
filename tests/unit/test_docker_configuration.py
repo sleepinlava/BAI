@@ -91,7 +91,7 @@ def test_python_ci_certifies_native_linux_arm64_without_macos_runners():
 
     assert arm_job["runs-on"] == "ubuntu-24.04-arm"
     assert "platform.machine()" in arm_steps
-    assert "python -m pytest tests/ src/abi/sciplot/tests/" in arm_steps
+    assert "python -m pytest tests/" in arm_steps
     assert "python -m build" in arm_steps
     assert "verify_linux_wheel_capabilities.py" in arm_steps
     assert '--mamba-root "/tmp/abi ci arm managed root"' in arm_steps

@@ -116,7 +116,7 @@ def test_ci_treats_sciplot_docs_and_dry_runs_as_required_gates() -> None:
     root = Path(__file__).resolve().parents[1]
     ci_workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
-    assert "src/abi/sciplot/tests/" in ci_workflow
+    assert "src/abi/sciplot" not in ci_workflow  # WP7: plotting library retired
     assert "--cov-branch" in ci_workflow
     assert "--cov-fail-under=75" in ci_workflow
     assert "--cov-report=json:coverage.json" in ci_workflow

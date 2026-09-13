@@ -54,14 +54,14 @@ jobs:
       - name: Run tests
         if: matrix.python-version != '3.12'
         run: |
-          python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+          python -m pytest tests/ -v --tb=short \
             --strict-markers -m "not requires_tools"
 
       - name: Run tests with coverage
         if: matrix.python-version == '3.12'
         run: |
           pip install pytest-cov
-          python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+          python -m pytest tests/ -v --tb=short \
             --strict-markers -m "not requires_tools" \
             --cov=src/abi --cov-branch --cov-report=term --cov-report=xml \
             --cov-report=json:coverage.json --cov-fail-under=75
@@ -191,7 +191,7 @@ jobs:
 
       - name: Run Linux arm64 tests
         run: |
-          python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+          python -m pytest tests/ -v --tb=short \
             --strict-markers -m "not requires_tools"
 
       - name: Build and smoke-test wheel

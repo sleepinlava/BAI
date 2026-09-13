@@ -251,48 +251,6 @@ def test_check_resource_manifest_valid(tmp_path: Path) -> None:
     assert v.errors == []
 
 
-# ── check_figures ────────────────────────────────────────────────────────
-
-
-def test_check_figures_missing_dir(tmp_path: Path) -> None:
-    """Warning when figures/ directory is missing."""
-    v = WorkflowValidator(tmp_path)
-    v.check_figures(["fig1", "fig2"])
-    assert any("figures/ directory missing" in w for w in v.warnings)
-    assert len(v.errors) == 0
-
-
-def test_check_figures_missing_file(tmp_path: Path) -> None:
-    """Error when an expected figure PNG is missing."""
-    figures = tmp_path / "figures"
-    figures.mkdir()
-    (figures / "fig1.png").write_text("")
-    v = WorkflowValidator(tmp_path)
-    v.check_figures(["fig1", "fig2"])
-    assert any("fig2.png missing" in e for e in v.errors)
-
-
-def test_check_figures_all_present(tmp_path: Path) -> None:
-    """No errors when all expected figures exist."""
-    figures = tmp_path / "figures"
-    figures.mkdir()
-    (figures / "fig1.png").write_text("")
-    (figures / "fig2.png").write_text("")
-    v = WorkflowValidator(tmp_path)
-    v.check_figures(["fig1", "fig2"])
-    assert v.errors == []
-
-
-def test_check_figures_empty_ids(tmp_path: Path) -> None:
-    """No errors when expected_figures is empty."""
-    figures = tmp_path / "figures"
-    figures.mkdir()
-    v = WorkflowValidator(tmp_path)
-    v.check_figures([])
-    assert v.errors == []
-    assert v.warnings == []
-
-
 # ── check_required_artifacts (one-shot helper) ───────────────────────────
 
 
@@ -315,9 +273,8 @@ def test_check_required_artifacts_with_tables(tmp_path: Path) -> None:
     assert not any("table" in e.lower() for e in errors)
 
 
-def test_check_required_artifacts_with_figures(tmp_path: Path) -> None:
-    """Passes expected_figures through to check_figures."""
-    figures = tmp_path / "figures"
-    figures.mkdir()
-    errors, _ = check_required_artifacts(tmp_path, expected_figures=["fig1"])
-    assert any("fig1.png missing" in e for e in errors)
+def test_check_required_artifacts_does_not_require_figures(tmp_path: Path) -> None:
+    """WP7: figure verification is retired — reports are table- and
+    fact-based; no figure artifacts are required or checked."""
+    errors, warnings = check_required_artifacts(tmp_path)
+    assert not any("figures/" in error for error in errors)

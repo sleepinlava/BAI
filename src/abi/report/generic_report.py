@@ -454,14 +454,12 @@ def write_plugin_report(
         1. Summarises standard tables via ``StandardTableManager``.
         2. Loads ``citation_registry.yaml`` and ``limitations.yaml`` from
            the plugin root (if they exist).
-        3. Renders figures via ``abi_sciplot`` (if *use_sciplot*) or legacy
-           ``FigureEngine`` (if *render_figures* and a ``figure_specs.yaml`` exists).
-        4. Calls ``write_full_report()`` with methods, resource manifest,
+        3. Calls ``write_full_report()`` with methods, resource manifest,
            and the stashed config (``plugin._last_config``).
 
-        .. versionchanged:: 1.3.3
-           Added *use_sciplot* flag (default True). When True, renders figures
-           through ``abi.sciplot`` with PDF+SVG+PNG export, provenance, and lint.
+        .. versionchanged:: WP7
+           Figure rendering retired from the core (WP7): reports are
+           table- and fact-based; plotting belongs to external tooling.
     """
     from pathlib import Path
 

@@ -132,28 +132,19 @@ class WorkflowValidator:
         except Exception as exc:
             self._errors.append(f"resource_manifest.json: {exc}")
 
-    def check_figures(self, expected_ids: Sequence[str]) -> None:
-        """Verify expected figure files exist."""
-        figures_dir = self.result_dir / "figures"
-        if not figures_dir.is_dir():
-            self._warnings.append("figures/ directory missing (optional)")
-            return
-        for fig_id in expected_ids:
-            png = figures_dir / f"{fig_id}.png"
-            if not png.exists():
-                self._errors.append(f"figures/{fig_id}.png missing")
-
 
 def check_required_artifacts(
     result_dir: str | Path,
     *,
     table_schemas: Optional[Mapping[str, Sequence[str]]] = None,
-    expected_figures: Optional[Sequence[str]] = None,
 ) -> Tuple[List[str], List[str]]:
     """Quick one-shot check of required pipeline artifacts.
 
     Returns ``(errors, warnings)``.  Errors indicate missing required
     artifacts; warnings indicate missing optional but recommended artifacts.
+
+    WP7: figure verification is retired — reports are table- and fact-based;
+    scientific figures belong to external tooling.
     """
     validator = WorkflowValidator(result_dir)
     validator.check_provenance()
@@ -161,6 +152,4 @@ def check_required_artifacts(
         validator.check_tables(table_schemas)
     validator.check_report()
     validator.check_resource_manifest()
-    if expected_figures:
-        validator.check_figures(expected_figures)
     return validator.errors, validator.warnings
