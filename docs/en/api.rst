@@ -62,7 +62,6 @@ contracts and examples live in:
 - :doc:`plugin_development_guide` — plugin protocols, manifests, and tests.
 - :doc:`workflow_validation` — biological and software validation boundaries.
 - :doc:`runtime_locks` — release-ready tools and resource certification.
-- :doc:`abi_sciplot_design` — validated scientific figure specifications.
 - :doc:`openai_interface_standard` — provider descriptor export formats.
 
 The source repository remains authoritative for concrete Python signatures.

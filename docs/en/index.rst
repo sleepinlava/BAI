@@ -97,7 +97,6 @@ and makes every transport use the same safety and result contracts.
    abi_spec_v0.1
    api
    openai_interface_standard
-   abi_sciplot_design
 
 Use ABI
 -------

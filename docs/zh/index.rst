@@ -95,7 +95,6 @@ ABI 把传输、通用工作流机制、生物学插件、运行时执行和结�
    components_and_architecture
    abi_spec_v0.1
    openai_interface_standard
-   abi_sciplot_design
 
 使用 ABI
 ------------------------------

@@ -76,7 +76,6 @@ __all__ = [
     "RunResult",
     "ToolRegistry",
     "ToolSkill",
-    "resolve_resources",
 ]
 
 # Template fields that are allowed to be empty without causing validation errors.
@@ -334,71 +333,6 @@ def _disk_to_nextflow(disk: str) -> str:
 
 
 # ── Resource resolution engine ─────────────────────────────────────────
-
-
-def resolve_resources(
-    tool_id: str,
-    tool_metadata: Mapping[str, Any],
-    *,
-    config: Mapping[str, Any] | None = None,
-    cli_overrides: ResourceSpec | None = None,
-    resource_profile: str | None = None,
-    resource_profiles_dir: str | Path | None = None,
-) -> ResourceSpec:
-    """Resolve compute resources through the layered override chain.
-
-    .. deprecated:: 2026-07 (C06)
-        Use :func:`abi.execution_policy.resolve_resources_v2` instead, which
-        fixes the sentinel bug (F05) where explicit overrides equal to the
-        default were silently dropped by ``ResourceSpec.merge()``.
-
-        Maintained as a public compatibility interface for one release cycle.
-
-    Resolution order (most specific wins): / 解析顺序（最具体的优先）
-    1. Hardcoded defaults (cpu=1, memory="4GB", walltime="01:00:00")
-    2. Tool contract ``resources:`` block (authoritative per-tool default)
-    3. Resource profile YAML (if ``resource_profile`` is specified)
-    4. User config ``execution.resources.defaults``
-    5. User config ``execution.resources.tool_overrides.<tool_id>``
-    6. CLI overrides (``--cpu``, ``--memory``, ``--walltime``, etc.)
-
-    Returns a resolved ``ResourceSpec`` ready for scheduler rendering.
-    """
-    # Layer 1: hardcoded defaults / 硬编码默认值
-    spec = ResourceSpec()
-
-    # Layer 2: tool contract (authoritative per-tool base) / 工具合同
-    tool_resources = ResourceSpec.from_metadata(tool_metadata)
-    spec = spec.merge(tool_resources)
-
-    # Layer 3: resource profile (named preset) / 资源 profile
-    if resource_profile:
-        profile_data = _load_resource_profile(resource_profile, resource_profiles_dir)
-        if profile_data:
-            spec = spec.merge(ResourceSpec.from_profile(profile_data))
-
-    # Layer 4-5: user config overrides / 用户配置覆盖
-    if config:
-        exec_cfg = config.get("execution", {})
-        if isinstance(exec_cfg, Mapping):
-            resources_cfg = exec_cfg.get("resources", {})
-            if isinstance(resources_cfg, Mapping):
-                # Layer 4: global defaults / 全局默认
-                defaults = resources_cfg.get("defaults")
-                if isinstance(defaults, Mapping):
-                    spec = spec.merge(ResourceSpec.from_profile(defaults))
-                # Layer 5: per-tool override / 单工具覆盖
-                overrides = resources_cfg.get("tool_overrides", {})
-                if isinstance(overrides, Mapping):
-                    tool_override = overrides.get(tool_id)
-                    if isinstance(tool_override, Mapping):
-                        spec = spec.merge(ResourceSpec.from_profile(tool_override))
-
-    # Layer 6: CLI overrides (highest priority) / CLI 覆盖（最高优先级）
-    if cli_overrides:
-        spec = spec.merge(cli_overrides)
-
-    return spec
 
 
 def _load_resource_profile(

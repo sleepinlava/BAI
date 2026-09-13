@@ -26,7 +26,6 @@ ABI (Automatic Bioinformatics Infrastructure) 通过声明式 DAG、可插拔分
 | 插件开发指南 | [zh](zh/plugin_development_guide.md) | [en](en/plugin_development_guide.md) |
 | HPC 开发指南 | [zh](zh/hpc_development.md) | [en](en/hpc_development.md) |
 | Job Service | [zh](zh/job_service.md) | [en](en/job_service.md) |
-| ABI SciPlot 设计 | — | [en](en/abi_sciplot_design.md) |
 | 工作流验证 | [zh](zh/workflow_validation.md) | [en](en/workflow_validation.md) |
 | OpenAI 接口标准 | [zh](zh/openai_interface_standard.md) | [en](en/openai_interface_standard.md) |
 

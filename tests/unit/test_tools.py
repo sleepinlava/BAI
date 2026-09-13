@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 import pytest
 
 from abi.errors import MissingTemplateParamError, ToolError
-from abi.tools import ResourceSpec, SafeFormatDict, _safe_output_path, resolve_resources
+from abi.tools import ResourceSpec, SafeFormatDict, _safe_output_path
 
 
 def test_safe_output_path_rejects_traversal_absolute_and_symlink_escapes(tmp_path):
@@ -248,63 +248,3 @@ class TestResourceSpecDirectives:
         assert f"memory '{nextflow_out}'" in nf
         slurm = "\n".join(spec.to_slurm_directives())
         assert f"--mem={slurm_out}" in slurm
-
-
-class TestResolveResources:
-    """Layered resource resolution."""
-
-    def test_hardcoded_defaults_when_nothing_provided(self):
-        spec = resolve_resources("fastp", {})
-        assert spec.cpu == 1
-        assert spec.memory == "4GB"
-
-    def test_cli_overrides_have_highest_priority(self):
-        cli = ResourceSpec(cpu=64)
-        spec = resolve_resources(
-            "spades",
-            {"resources": {"cpu": 8}},
-            cli_overrides=cli,
-        )
-        assert spec.cpu == 64  # CLI wins
-
-    def test_tool_contract_overrides_defaults(self):
-        spec = resolve_resources(
-            "spades",
-            {"resources": {"cpu": 16, "memory": "64GB"}},
-        )
-        assert spec.cpu == 16
-        assert spec.memory == "64GB"
-
-    def test_config_defaults_override_contract(self):
-        spec = resolve_resources(
-            "spades",
-            {"resources": {"cpu": 8, "memory": "8GB"}},
-            config={"execution": {"resources": {"defaults": {"cpu": 12}}}},
-        )
-        assert spec.cpu == 12  # config overrides contract
-        assert spec.memory == "8GB"  # contract preserved
-
-    def test_config_tool_override_has_higher_priority(self):
-        spec = resolve_resources(
-            "spades",
-            {"resources": {"cpu": 8}},
-            config={
-                "execution": {
-                    "resources": {
-                        "defaults": {"cpu": 12},
-                        "tool_overrides": {"spades": {"cpu": 32}},
-                    }
-                }
-            },
-        )
-        assert spec.cpu == 32  # per-tool override wins
-
-    def test_unknown_tool_id_uses_defaults(self):
-        spec = resolve_resources("nonexistent", {})
-        assert spec.cpu == 1
-
-    def test_resource_profile_loads_from_disk(self):
-        """dev_small profile should be loadable."""
-        spec = resolve_resources("fastp", {}, resource_profile="dev_small")
-        assert spec.cpu == 1  # dev_small profile
-        assert spec.memory == "2GB"
