@@ -538,3 +538,10 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 容器镜像核查：无工具契约声明 container_image，container 指令默认不渲染——隐式镜像获取当前无活跃面（记录为核查结论）。
 - 工具链同步：本地 ruff 升级至 0.16.7 与 CI 一致（消除版本漂移导致的格式门差异）。
 - 剩余 WP8 项：无（获取/安装退役完成，等待阶段 C 其余工作包）。下一批：WP6 Study 退出核心、WP7 绘图退出核心。
+
+### 阶段 C 续：WP6 Study 退出核心（完成）
+
+- `src/abi/study/`（3,050 行）与 `abi-study` 入口从默认安装退役：artifacts/grading/fixtures/harness/workspace/tool_shim/CLI 均为研究项目管理职责，主线无任何导入（导入清扫验证）。不另建无人维护的 Study 项目；旧方案经 Git 历史追溯。
+- 七个研究专属测试文件随模块退役；核心执行与历史审计不导入 Study（WP6 验收 ✓）。
+- 冻结研究证据 `experiments/abi_control_validation_v1/` 原样保留（跟踪数据/文档，不打包）。
+- 剩余阶段 C：WP7 绘图退出核心（SciPlot、abi.figures、报告渲染关联、绘图节点、注册表、默认产物与安装依赖）。
