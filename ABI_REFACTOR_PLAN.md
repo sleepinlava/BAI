@@ -561,3 +561,10 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 **WP7 验收确认**：阻断 matplotlib/plotly 导入后核心模块（report/executor/agent）导入正常；报告为表格+事实；插件结构化结果与局限性完整。
 
 **剩余阶段 C**：WP8 已全部完成；Study（WP6）与绘图（WP7）已退出。阶段 C 的剩余核查项为运行时隐式获取的持续监督（nextflow/容器）。下一阶段 D：第一轮收口（WP9/10/12）。
+
+### 阶段 D：WP12/WP10 收口切片（9581692）
+
+- **WP12**：双语 `abi_sciplot_design.md` 退役（绘图职责已退出），目录行与 Sphinx toctree/api 引用同步清除；构建保持 0/0 诊断。devlog/linux_support_plan/plugin_report_figure_spec 为本地忽略文件（不属发布树），按第 4 节处置原则保留本地、不进入输出。
+- **WP10**：`resolve_resources` 兼容桥（C06，2026-07——一个发布周期已满）自 `abi.tools` 退役；分层优先级行为由 `resolve_resources_v2` 桥接测试保护。`abi.openai_contracts`、`autoplasm_validate_result` 别名按既有决定保留（有真实外部读者）。
+- 验证：Ruff/mypy、全量测试、双语构建 0/0、CI 绿。
+- 剩余阶段 D：P0Workflow.run() 弃用入口与其集成测试的 canonical 路径转换；WP9 分发面收口核查（report extra 空置、examples/examples 数据归属）。
