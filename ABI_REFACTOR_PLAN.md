@@ -545,3 +545,19 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 七个研究专属测试文件随模块退役；核心执行与历史审计不导入 Study（WP6 验收 ✓）。
 - 冻结研究证据 `experiments/abi_control_validation_v1/` 原样保留（跟踪数据/文档，不打包）。
 - 剩余阶段 C：WP7 绘图退出核心（SciPlot、abi.figures、报告渲染关联、绘图节点、注册表、默认产物与安装依赖）。
+
+### 阶段 C 续：WP6/WP7 状态核实与 WP7 残余清扫
+
+**重要状态更正**：WP6（Study 退出，6943eca/00553f1）与 WP7 主体（绘图退出，82ba882——sciplot 8k 行、figures 模块、abi-sciplot 入口、report extra 绘图依赖）已由并行工作会话完成并推送；本节此前"尚未完成"清单在该点过时。并行会话在同一目录工作，其提交与本会话的 WP5/WP2/WP8 提交错行于同一主线（reflog 可溯）。
+
+**WP7 残余清扫（da1a646 + 758e01e）**——82ba882 遗漏的三处：
+
+1. ci.yml 仍收集已删除的 `src/abi/sciplot/tests/`——master 的测试门实际是坏的；已修正并断言不再引用。
+2. `workflow/validation.py` 的 `check_figures`/`expected_figures`（无调用者）与 plasmid html 报告的死参数 `rendered_figures`/`_figures_html` 移除；`write_plugin_report` 文档字符串不再描述已退役渲染。
+3. scipy 归位为主依赖：富集分析脚本（GO/Reactome ORA + GSEA，保留的生物统计）依赖 `scipy.stats.hypergeom`，82ba882 将其误当绘图依赖移除导致 CI 收集失败。
+
+**figure_specs.yaml 保留**（82ba882 的设计决策）：作为外部绘图系统的惰性输入声明。
+
+**WP7 验收确认**：阻断 matplotlib/plotly 导入后核心模块（report/executor/agent）导入正常；报告为表格+事实；插件结构化结果与局限性完整。
+
+**剩余阶段 C**：WP8 已全部完成；Study（WP6）与绘图（WP7）已退出。阶段 C 的剩余核查项为运行时隐式获取的持续监督（nextflow/容器）。下一阶段 D：第一轮收口（WP9/10/12）。
