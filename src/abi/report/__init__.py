@@ -31,7 +31,6 @@ from abi.report.citations import (
 )
 from abi.report.generic_report import (
     build_run_facts,
-    render_figures_via_sciplot,
     write_full_report,
     write_generic_report,
     write_plugin_report,
@@ -52,7 +51,6 @@ __all__ = [
     "format_limitations_markdown",
     "load_citations",
     "load_limitations",
-    "render_figures_via_sciplot",
     "write_full_report",
     "build_run_facts",
     "write_generic_report",

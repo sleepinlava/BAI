@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from urllib.error import URLError
 
 import pytest
@@ -125,33 +124,3 @@ def test_job_client_wraps_connection_errors(monkeypatch):
         jobs_client.list_jobs(base_url="http://127.0.0.1:1")
     assert caught.value.status_code == 0
     assert caught.value.payload["status"] == "connection_error"
-
-
-def test_plugin_report_logs_catastrophic_figure_failure(tmp_path, monkeypatch, caplog):
-    from abi.report import generic_report
-
-    root = tmp_path / "plugin"
-    root.mkdir()
-    (root / "figure_specs.yaml").write_text("figures: []\n", encoding="utf-8")
-    (tmp_path / "result" / "tables").mkdir(parents=True)
-    plugin = SimpleNamespace(
-        plugin_id="test",
-        root=root,
-        report_title="Test",
-        table_schemas=lambda: {"dummy": ["value"]},
-    )
-    monkeypatch.setattr(
-        generic_report,
-        "_render_figures_via_legacy",
-        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("renderer crashed")),
-    )
-    monkeypatch.setattr(generic_report, "write_full_report", lambda *args, **kwargs: {})
-
-    generic_report.write_plugin_report(
-        plugin,
-        _plan(),
-        tmp_path / "result",
-        use_sciplot=False,
-    )
-
-    assert "renderer crashed" in caplog.text

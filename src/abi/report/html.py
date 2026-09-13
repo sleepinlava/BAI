@@ -30,7 +30,6 @@ def write_html_report(
     *,
     plan: Any,
     table_summary: Mapping[str, Mapping[str, Any]],
-    rendered_figures: Optional[Mapping[str, Path]] = None,
     methods_md: Optional[str] = None,
     limitations_yaml: Optional[Sequence[str]] = None,
     citations: Optional[Sequence[Mapping[str, str]]] = None,
@@ -42,7 +41,6 @@ def write_html_report(
     - **result_dir**: Pipeline output directory.
     - **plan**: Execution plan (duck-typed).
     - **table_summary**: Dict from ``StandardTableManager.summarize()``.
-    - **rendered_figures**: ``{spec_id: path}`` mapping from ``FigureEngine.render_all()``.
     - **methods_md**: Optional pre-rendered methods markdown (embedded as ``<pre>``).
     - **limitations_yaml**: Optional list of limitation strings.
     - **citations**: Optional list of citation dicts.
@@ -132,29 +130,6 @@ def write_html_report(
     )
 
     # ── Figures ──
-    if rendered_figures:
-        html_parts.extend(
-            [
-                "<section>",
-                "<h2>Figures</h2>",
-            ]
-        )
-        for spec_id, fig_path in sorted(rendered_figures.items()):
-            # Reference figures relative to the report directory
-            try:
-                rel = Path(fig_path).relative_to(root)
-            except ValueError:
-                rel = Path(fig_path)
-            html_parts.extend(
-                [
-                    f'<figure id="fig-{escape(spec_id)}">',
-                    f'<img src="../{escape(str(rel))}" alt="{escape(spec_id)}" loading="lazy">',
-                    f"<figcaption>{escape(spec_id)}</figcaption>",
-                    "</figure>",
-                ]
-            )
-        html_parts.append("</section>")
-
     # ── Methods ──
     if methods_md:
         html_parts.extend(
@@ -167,6 +142,24 @@ def write_html_report(
         )
 
     # ── Limitations ──
+    # The section is always rendered: an empty declaration produces an
+    # explicit fallback sentence instead of silently omitting the section.
+    html_parts.extend(
+        [
+            "<section>",
+            "<h2>Known Limitations</h2>",
+        ]
+    )
+    if limitations_yaml:
+        html_parts.append("<ol>")
+        for lim in limitations_yaml:
+            html_parts.append(f"<li>{escape(str(lim))}</li>")
+        html_parts.append("</ol>")
+    else:
+        html_parts.append(f"<p>{escape(FALLBACK_LIMITATION)}</p>")
+    html_parts.append("</section>")
+
+    # ── Citations ──
     # The section is always rendered: an empty declaration produces an
     # explicit fallback sentence instead of silently omitting the section.
     html_parts.extend(

@@ -301,7 +301,6 @@ def write_full_report(
     *,
     table_summary: Mapping[str, Mapping[str, Any]],
     title: str = "ABI Report",
-    rendered_figures: Optional[Dict[str, Path]] = None,
     citations: Optional[List[Dict[str, str]]] = None,
     limitations: Optional[List[str]] = None,
     config: Optional[Mapping[str, Any]] = None,
@@ -325,7 +324,6 @@ def write_full_report(
       ``provenance/`` subdirectories).
     - **table_summary**: Dict from ``StandardTableManager.summarize()``.
     - **title**: Report title (defaults to plugin's ``report_title``).
-    - **rendered_figures**: ``{spec_id: path}`` from ``FigureEngine.render_all()``.
     - **citations**: List of citation dicts with ``tool``, ``stage``, ``citation`` keys.
     - **limitations**: List of limitation strings.
     - **config**: Plugin config dict (used for resource manifest generation).
@@ -395,7 +393,6 @@ def write_full_report(
         result_dir,
         plan=plan,
         table_summary=table_summary,
-        rendered_figures=rendered_figures,
         methods_md=methods_md,
         limitations_yaml=limitations,
         citations=citations,
@@ -406,168 +403,65 @@ def write_full_report(
     return paths
 
 
-def render_figures_via_sciplot(
-    plugin: Any,
-    specs_path: Path,
-    tables_dir: Path,
-    figures_dir: Path,
-) -> Dict[str, Path]:
-    """Render figures using abi_sciplot — PDF+SVG+PNG+provenance+lint.
-
-    Loads legacy-format ``figure_specs.yaml``, adapts each spec to the
-    new abi_sciplot FigureSpec, and renders through MatplotlibRenderer.
-    Returns ``{spec_id: png_path}`` for HTML report embedding.
-
-    This is the **canonical** figure rendering entry point for ALL plugins
-    (both inline plugins via ``write_plugin_report()`` and the flagship
-    metagenomic_plasmid plugin via ``_render_plasmid_figures()``).
-    """
-    from abi.config import load_yaml
-
-    # sciplot plot modules import matplotlib.axes at module level —
-    # bail out gracefully when matplotlib is not installed.
-    try:
-        from abi.sciplot.adapters import adapt_spec
-        from abi.sciplot.api import render_figure
-    except ImportError:
-        return {}
-
-    data = load_yaml(specs_path)
-    old_specs: list[dict] = data.get("figures", [])
-    if not old_specs:
-        return {}
-
-    plugin_name = getattr(plugin, "report_title", None) or plugin.__class__.__name__
-    abi_version = getattr(plugin, "abi_version", None)
-
-    rendered: Dict[str, Path] = {}
-    for old in old_specs:
-        spec_id = old.get("id", "")
-        if not spec_id:
-            continue
-
-        # Skip optional figures whose source table doesn't exist or is empty
-        source_table = old.get("source_table", "")
-        table_path = tables_dir / f"{source_table}.tsv" if source_table else None
-        is_required = old.get("required", True)
-
-        if table_path is not None:
-            if not table_path.exists():
-                if is_required:
-                    _LOGGER.warning(
-                        "Figure '%s' (required): source table '%s' not found at %s — skipping",
-                        spec_id,
-                        source_table,
-                        table_path,
-                    )
-                else:
-                    _LOGGER.info(
-                        "Figure '%s' (optional): source table '%s' not found — skipping",
-                        spec_id,
-                        source_table,
-                    )
-                continue
-
-            # Check if the table is empty (header only)
-            try:
-                with table_path.open("r", encoding="utf-8") as fh:
-                    line_count = sum(1 for _ in fh)
-            except OSError:
-                line_count = 0
-            if line_count <= 1:
-                msg = "Figure '%s' (%s): source table '%s' is empty (no data rows) — skipping"
-                if is_required:
-                    _LOGGER.warning(msg, spec_id, "required", source_table)
-                else:
-                    _LOGGER.info(msg, spec_id, "optional", source_table)
-                continue
-
-        try:
-            spec = adapt_spec(
-                old,
-                tables_dir,
-                figures_dir,
-                plugin_name=plugin_name,
-                abi_version=abi_version,
-            )
-            result = render_figure(spec)
-            # Log any validation / rendering errors
-            for err in result.errors:
-                _LOGGER.warning("Figure '%s': %s", spec_id, err)
-            for warn in result.warnings:
-                _LOGGER.info("Figure '%s': %s", spec_id, warn)
-            # Find the PNG output for HTML embedding
-            png_files = [p for p in result.output_files if p.suffix == ".png"]
-            if png_files:
-                rendered[spec_id] = png_files[0]
-            elif not result.errors:
-                _LOGGER.info(
-                    "Figure '%s' rendered but produced no PNG — lint/provenance only",
-                    spec_id,
-                )
-        except Exception as exc:
-            # Best-effort: log warning and skip figures that fail to render
-            _LOGGER.warning(
-                "Figure '%s' failed to render: %s: %s",
-                spec_id,
-                type(exc).__name__,
-                exc,
-            )
-
-    return rendered
-
-
-def _render_figures_via_legacy(
-    plugin: Any,
-    specs_path: Path,
-    tables_dir: Path,
-    figures_dir: Path,
-) -> Dict[str, Path]:
-    """Render figures using the legacy FigureEngine (PNG only).
-
-    Kept for backward compatibility.  Use ``render_figures_via_sciplot``
-    for new code.
-    """
-    from abi.figures import FigureEngine
-
-    engine = FigureEngine(
-        plugin.table_schemas(),
-        tables_dir,
-        figures_dir,
-    )
-    engine.load_specs(specs_path)
-    return engine.render_all()
-
-
 def write_plugin_report(
     plugin: Any,
     plan: Any,
     result_dir: str | Path,
-    *,
-    render_figures: bool = True,
-    use_sciplot: bool = True,
 ) -> Dict[str, Path]:
-    """Convenience wrapper that implements the standard plugin ``write_report()``.
+    """Convenience wrapper implementing the standard plugin ``write_report()``.
 
-    Every inline plugin (rnaseq_expression, wgs_bacteria, amplicon_16s,
-    metatranscriptomics) follows the same pattern.  This function
-    centralises it so plugins only need a one-liner::
+        Every inline plugin (rnaseq_expression, wgs_bacteria, amplicon_16s,
+        metatranscriptomics) follows the same pattern.  This function
+        centralises it so plugins only need a one-liner::
 
-        def write_report(self, plan, result_dir):
-            return write_plugin_report(self, plan, result_dir)
+                from pathlib import Path
 
-    # What it does / 做了什么
-    1. Summarises standard tables via ``StandardTableManager``.
-    2. Loads ``citation_registry.yaml`` and ``limitations.yaml`` from
-       the plugin root (if they exist).
-    3. Renders figures via ``abi_sciplot`` (if *use_sciplot*) or legacy
-       ``FigureEngine`` (if *render_figures* and a ``figure_specs.yaml`` exists).
-    4. Calls ``write_full_report()`` with methods, resource manifest,
-       and the stashed config (``plugin._last_config``).
+        from abi.report.citations import load_citations
+        from abi.report.limitations import load_limitations
+        from abi.tables import StandardTableManager
 
-    .. versionchanged:: 1.3.3
-       Added *use_sciplot* flag (default True). When True, renders figures
-       through ``abi.sciplot`` with PDF+SVG+PNG export, provenance, and lint.
+        # ── Table summary ──
+        tm = StandardTableManager(plugin.table_schemas())
+        summary = tm.summarize(Path(result_dir) / "tables")
+
+        # ── Citations & limitations ──
+        root = plugin.root
+        cit_path = root / "citation_registry.yaml"
+        lim_path = root / "limitations.yaml"
+        citations = load_citations(cit_path) if cit_path.exists() else []
+        limitations = load_limitations(lim_path) if lim_path.exists() else []
+
+        # ── Stashed config (for resource manifest) ──
+        config = getattr(plugin, "_last_config", None)
+
+        return write_full_report(
+            plan,
+            result_dir,
+            table_summary=summary,
+            title=plugin.report_title,
+            citations=citations,
+            limitations=limitations,
+            config=config,
+            methods=True,
+            resource_manifest=True,
+        )
+
+
+    def write_report(self, plan, result_dir):
+                return write_plugin_report(self, plan, result_dir)
+
+        # What it does / 做了什么
+        1. Summarises standard tables via ``StandardTableManager``.
+        2. Loads ``citation_registry.yaml`` and ``limitations.yaml`` from
+           the plugin root (if they exist).
+        3. Renders figures via ``abi_sciplot`` (if *use_sciplot*) or legacy
+           ``FigureEngine`` (if *render_figures* and a ``figure_specs.yaml`` exists).
+        4. Calls ``write_full_report()`` with methods, resource manifest,
+           and the stashed config (``plugin._last_config``).
+
+        .. versionchanged:: 1.3.3
+           Added *use_sciplot* flag (default True). When True, renders figures
+           through ``abi.sciplot`` with PDF+SVG+PNG export, provenance, and lint.
     """
     from pathlib import Path
 
@@ -586,34 +480,6 @@ def write_plugin_report(
     citations = load_citations(cit_path) if cit_path.exists() else []
     limitations = load_limitations(lim_path) if lim_path.exists() else []
 
-    # ── Figures ──
-    rendered_figures: Optional[Dict[str, Path]] = None
-    if render_figures:
-        fig_specs_path = root / "figure_specs.yaml"
-        if fig_specs_path.exists():
-            try:
-                if use_sciplot:
-                    rendered_figures = render_figures_via_sciplot(
-                        plugin,
-                        fig_specs_path,
-                        Path(result_dir) / "tables",
-                        Path(result_dir) / "figures",
-                    )
-                else:
-                    rendered_figures = _render_figures_via_legacy(
-                        plugin,
-                        fig_specs_path,
-                        Path(result_dir) / "tables",
-                        Path(result_dir) / "figures",
-                    )
-            except Exception as exc:
-                _LOGGER.warning(
-                    "Figure rendering failed for plugin '%s': %s: %s",
-                    plugin.plugin_id,
-                    type(exc).__name__,
-                    exc,
-                )
-
     # ── Stashed config (for resource manifest) ──
     config = getattr(plugin, "_last_config", None)
 
@@ -622,7 +488,6 @@ def write_plugin_report(
         result_dir,
         table_summary=summary,
         title=plugin.report_title,
-        rendered_figures=rendered_figures,
         citations=citations,
         limitations=limitations,
         config=config,

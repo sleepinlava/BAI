@@ -1,4 +1,4 @@
-"""ABI workflow support — catalogs, execution, manifests, validation, and figures.
+"""ABI workflow support — catalogs, execution, manifests, and validation.
 
 # Usage / 用法
     from abi.workflow import (
@@ -7,8 +7,6 @@
         write_resource_manifest,
         WorkflowValidator,
         check_required_artifacts,
-        load_figure_specs,
-        validate_figure_specs,
     )
 
 # Modules / 模块
@@ -16,8 +14,6 @@
 - ``execution.py``: Transport-neutral preparation and runtime selection.
 - ``manifest.py``: Resource manifest generation and checksumming.
 - ``validation.py``: Workflow artifact validation for CI/linting.
-- ``figure_specs.py``: Figure spec loading with cross-validation against
-  standard table schemas.
 """
 
 from abi.workflow.catalog import (
@@ -27,7 +23,6 @@ from abi.workflow.catalog import (
     WorkflowPresetError,
 )
 from abi.workflow.execution import PreparedWorkflow, WorkflowCoordinator
-from abi.workflow.figure_specs import load_figure_specs, validate_figure_specs
 from abi.workflow.manifest import (
     ResourceManifest,
     checksum_file,
@@ -48,7 +43,5 @@ __all__ = [
     "check_required_artifacts",
     "checksum_file",
     "generate_resource_manifest",
-    "load_figure_specs",
-    "validate_figure_specs",
     "write_resource_manifest",
 ]

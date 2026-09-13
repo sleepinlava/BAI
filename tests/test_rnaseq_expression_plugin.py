@@ -395,28 +395,3 @@ def test_write_report_with_figures(tmp_path):
 
 
 # ── Figure spec validation ────────────────────────────────────────────────
-
-
-def test_figure_specs_valid():
-    """All figure specs reference declared standard tables and columns."""
-    from abi.workflow.figure_specs import load_figure_specs
-
-    plugin = get_plugin("rnaseq_expression")
-    schemas = plugin.table_schemas()
-    specs = load_figure_specs(plugin.root / "figure_specs.yaml", table_schemas=schemas)
-    assert len(specs) == 10
-    spec_ids = {s.id for s in specs}
-    assert spec_ids == {
-        "qc_read_counts",
-        "mapping_rate",
-        "pca_expression",
-        "volcano_deg",
-        "top_deg_heatmap",
-        "ma_plot",
-        "go_overrepresentation",
-        "reactome_overrepresentation",
-        "go_preranked_gsea",
-        "reactome_preranked_gsea",
-    }
-    required = [s for s in specs if s.required]
-    assert len(required) == 3  # qc_read_counts, mapping_rate, volcano_deg

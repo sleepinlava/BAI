@@ -165,16 +165,6 @@ def test_sdist_contains_files_forced_into_the_wheel():
     assert '"integrations"' in sdist_section
 
 
-def test_sciplot_tests_are_excluded_from_wheel():
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    wheel_section = pyproject.split("[tool.hatch.build.targets.wheel]", maxsplit=1)[1]
-    wheel_section = wheel_section.split(
-        "[tool.hatch.build.targets.wheel.force-include]", maxsplit=1
-    )[0]
-
-    assert 'exclude = ["src/abi/sciplot/tests/"]' in wheel_section
-
-
 def _tool_contract(plugin: str, tool_id: str) -> dict:
     """Load a tool contract — the SSOT for execution metadata (P1-1)."""
     path = ROOT / "plugins" / plugin / "tool_contracts" / f"{tool_id}.yaml"
