@@ -1,6 +1,6 @@
 # ABI 精简重构计划
 
-状态：阶段 A、B1 已落地；B2 已实施工作包 3 的恢复身份绑定与取消终止确认、工作包 4 的四后端证据语义、11A 的资源根参数化；工作包 2（旧 AutoPlasm 收敛）完成依赖梳理，退役留待专门批次。当前版本：v0.10。
+状态：阶段 A、B1、B2、B3、C、D 已完成；v1.6.0 已发布；阶段 E 进行中，WP11B 步骤 1（分发层与实现分离）已落地，步骤 2（插件数据同址打包与三种安装形态验收）已落地，余下收口项见第 13 节。当前计划版本：v0.23。
 
 代码基线：`17bdc5b043cec0ffb8fac182e0982c08e29a1875`，ABI `1.5.12`。
 本文依据对话中已确认的决定恢复，替代此前临时目录内的计划副本。
@@ -581,3 +581,51 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - **导入探针验证**：仅核心路径（dispatch/diagnose/audit）加载零个插件实现模块；缺失插件错误保持可解释（含可用类型清单）。
 - `abi/plugins/__init__.py` 变为实现包根（兼容 re-export）；校验器迁至核心 `abi/plugin_validation.py`（校验插件结构而非实现）；Migration Gate 路径同步，5/5 通过。
 - 剩余 WP11B：插件数据打包进分发（root 经 importlib.resources 解析）、双发行结构（core / plugins）、三种安装形态验收（仅核心/单插件/完整组合）。
+
+## 13. 阶段 E 续：WP11B 步骤 2（插件数据同址打包与三种安装形态验收）
+
+本批由主代理接续完成（继承此前会话在工作树中已开始的同址化改动并修正其中断点）。没有发布。
+
+### 已实施变化
+
+**插件数据同址与双发行结构。**
+
+- 8 个官方插件的声明数据（abi-plugin.yaml、pipeline_dag.yaml、tool_registry.yaml、tool_contracts/、limitations.yaml、schemas/、skills/ 等）从仓库根 `plugins/<id>/` 整体迁移至实现包内 `src/abi/plugins/<id>/`，实现代码与声明数据同址；根级 `plugins/` 目录退役。wgs_bacannot 数据此前已在 `src/abi/plugins/wgs_bacannot/`。
+- 核心 wheel（abi-agent）通过 hatchling `exclude` 不再包含任何插件实现与数据（wheel 内容探针验证为 0 个插件文件，`abi/plugins/__init__.py` 兼容垫片保留）；官方插件以 `abi-agent-plugin-<id>` 独立发行版发布：实现包 + 同址数据 + 各自的 `abi.plugins` 入口点，依赖锁定 `abi-agent==<同版本>`。
+- `pyproject.toml` 新增 `plugins` extra（完整官方组合 = 8 个插件发行版）；`[tool.hatch.build.targets.wheel.force-include]` 中的 `"plugins" = "plugins"` 移除。
+- `scripts/build_plugin_wheels.py`（新增）：按同址布局 staging 每个插件发行版并生成其 pyproject（含 `--build` 直接产出 wheel、`--no-build-isolation` 离线构建、3.10 兼容的版本读取回退）。staging 拒绝代码/数据冲突并剔除 `__pycache__`。
+- `scripts/verify_install_forms.py`（新增）：三种安装形态验收——仅装核心（list-types 为空、未知类型以 unknown_analysis_type + 空可用清单可解释失败）、核心+单插件（仅该插件可发现、无配置 dry-run 成功、其他类型可解释失败）、核心+完整组合（8 种类型全部解析）。CI 使用干净 venv 全依赖解析；`--reuse-system-deps` 为离线环境的降级路径。
+
+**发现与数据根（核心扫描调用者迁移）。**
+
+- `plugin_registry` 新增 `plugin_data_roots(project_root)` / `plugin_data_root(id)`：合并同址捆绑包与 `PLUGIN_ROOT` 散装插件目录，散装目录不得遮蔽捆绑 id（警告并忽略），不加载任何实现；manifest 发现复用同一同址扫描。
+- `ToolCatalog.from_project_root`：按 plugin_id 确定性排序遍历插件数据根（捆绑 + 项目根散装），不再假设全局 `plugins/`；显式 project_root（测试/备用 checkout）语义保留。
+- `runtime_lock`：工具锁遍历插件数据根；`_release_required_tools`/`_resource_consuming_tools` 经 `plugin_data_root` 解析，找不到插件数据时显式报错（不因插件缺失静默缩小认证范围）。
+- `workflow/catalog.py::for_plugin` 兜底经 `plugin_data_root` 解析（`PLUGIN_ROOT` 散装路径仅作最后兜底）。
+- `config._resolve_project_root` 的项目根标记从 `plugins/` 改为 `config/`（源码树根与安装后 site-packages 根均存在）。
+- `contracts/lint_template.py::_plugin_root` 兜底经 `plugin_data_root` 解析。
+- 修正继承工作树中的三处 off-by-one：`lib/pipeline_dag.py`（parents[1]）、`lib/report/__init__.py`（parents[2]）、`lib/skills/registry.py`（parents[2]）；`plugin_registry` 中重复的 `raise` 死代码删除。
+- 插件 `root` 属性全部改为解析自身包目录（`Path(__file__).resolve().parent`）；`interfaces.py` 协议注释同步（满足同址需要，未引入 importlib.resources 包装层——常规 wheel/editable 布局下两者等价，`abi.data` 的 importlib.resources 读取保持不变）。
+
+**Docker 与 CI（发布面）。**
+
+- 5 个 Dockerfile 移除 `COPY plugins/`；安装序列改为：核心 wheel → `build_plugin_wheels.py --build` 构建插件 wheel → `pip install --no-index --find-links` 安装 8 个插件发行版（完整官方组合），清理列表同步。镜像内 `abi list-types` 仍应列出 8 种类型。
+- `tests/unit/test_docker_configuration.py`：工具合约路径改指 `src/abi/plugins/`；`test_every_dockerfile_copy_source_exists` 移除 `plugins` 项；新增 `test_dockerfiles_install_the_official_plugin_combo` 锁定插件发行版安装与 COPY 退役。
+- `ci.yml`：matrix 与 arm64 的构建步骤追加插件 wheel 构建；两个 wheel 冒烟步骤先装完整组合再验证能力矩阵；新增 "Acceptance — WP11B installation forms" 步骤（3.12）运行三形态验收。
+- README（双语）：安装章节改为核心 + `abi-agent[plugins]`/单插件发行版；退役的 `abi env install/update` 与 `setup-resources --confirm` 表述替换为只读诊断与就绪报告；`[report]` extra（绘图退役后为空）不再宣传；插件布局段落改为同址 + 独立发行版。插件开发指南（双语）：目录布局、发行版（WP11B）小节、资源管理章节（移除"自动安装/下载"表述，改为就绪报告 + manual_required）。development 指南（双语）：源码树/运行时资产/SDK 表同步（移除 sciplot/figures 残留，标注双发行结构）。
+
+### 验证结果
+
+- 全量测试（不含 smoke）：2536 passed、13 skipped、3 failed；3 个失败为第 12 节已记录的预存环境问题（未跟踪的论文示例数据测试 ×2、sparse-checkout 隐藏的 Linux 证据文件 ×1），与本批无关。
+- Ruff（lint + format）与 mypy 全部通过；双语 Sphinx 构建 0/0 诊断（且输出无退役页面残留）。
+- `python -m build`：默认 sdist→wheel 路径通过；`twine check` 对核心 wheel/sdist 与 8 个插件 wheel 全部 PASSED（插件 wheel 缺 long_description 的非阻断警告，属生成产物的已知简化）。
+- 三种安装形态验收本机通过（`--reuse-system-deps` 离线降级路径；CI 将以干净 venv 复验）。同址 wheel 内容验证：插件 wheel 含实现 + 全部 YAML 数据 + 入口点；核心 wheel 无插件文件。
+- `abi contract-lint --strict` 七项通过；`abi list-types` 8 种；`docker compose config --quiet` 通过；`test_docker_configuration` 23 项通过。
+
+### 尚未完成与边界
+
+- Docker 镜像的实际构建与 `abi list-types` 冒烟需在发布前手工执行（AGENTS.md 规定非 PR 门槛）；本批仅通过配置回归测试与 Dockerfile 断言锁定。
+- `release.yml` 默认 GITHUB_TOKEN 不触发 `release.published` 的已知缺口（第 12 节）仍未处理。
+- 插件发行版当前不含 `py.typed`/独立版本策略：与核心同版本同流程是 WP11B 的明确取舍；后续若引入独立插件版本需先修订发布身份规则。
+- 11A 时期记录的 "root 经 importlib.resources 解析" 以同址 `__file__` 解析实现满足现有需要（zipapp/zip 安装不受支持）；若未来需要只读 zip 布局再引入 `importlib.resources` 包装。
+- 真实生物信息学工具、HPC 终止确认、正式运行锁认证仍为后续阶段的验收项。
