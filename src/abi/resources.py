@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from abi.errors import ABIError
 from abi.interfaces import ABIResourcePlugin, ABIResourceSetupPlugin
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.timeouts import DEFAULT_RESOURCE_TIMEOUT_SECONDS, timeout_from_env_or_value
 
 __all__ = [

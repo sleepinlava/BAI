@@ -11,7 +11,7 @@ from abi.exporters.snakemake import (
     _walltime_to_minutes,
     marker_dir_for,
 )
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.schemas import PlanStep
 from abi.tools import ToolRegistry
 

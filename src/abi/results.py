@@ -289,7 +289,7 @@ def validate_abi_result_dir(
         errors.append("Cannot determine analysis_type from execution_plan.json or run_summary.json")
     else:
         try:
-            from abi.plugins import get_plugin
+            from abi.plugin_registry import get_plugin
 
             plugin = get_plugin(analysis_type)
             schemas = plugin.table_schemas()

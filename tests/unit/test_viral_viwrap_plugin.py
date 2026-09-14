@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 from abi.executor import GenericABIExecutor
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.plugins.viral_viwrap.artifact_mapper import collect_artifacts
 from abi.plugins.viral_viwrap.checker import (
     REQUIRED_CONDA_ENVS,

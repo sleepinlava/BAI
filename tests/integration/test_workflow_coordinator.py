@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtimes import RuntimeOptions
 from abi.schemas import ABIError
 from abi.workflow import WorkflowCoordinator
@@ -59,7 +59,7 @@ def test_coordinator_local_dry_run_preserves_plugin_hook(monkeypatch, tmp_path):
         return {"hook": sentinel}
 
     monkeypatch.setattr(plugin, "execute_dry_run", execute_dry_run)
-    monkeypatch.setattr("abi.plugins.get_plugin", lambda analysis_type: plugin)
+    monkeypatch.setattr("abi.plugin_registry.get_plugin", lambda analysis_type: plugin)
     coordinator = WorkflowCoordinator()
     prepared = coordinator.prepare(
         "viral_viwrap",

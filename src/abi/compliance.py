@@ -12,7 +12,7 @@ import yaml
 
 from abi.filesystem import checksum_file, checksum_path
 from abi.interfaces import ABIComplianceAuditPlugin
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 
 
 def _json(path: Path) -> dict[str, Any]:

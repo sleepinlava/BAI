@@ -263,7 +263,7 @@ def test_autoplasm_result_alias_uses_plugin_validation_capability(monkeypatch, t
 def test_query_resolves_dag_from_plugin_root_not_global_constant(tmp_path, monkeypatch):
     """11A: query reads the DAG from the selected plugin's own root so an
     externally installed plugin answers without assuming the global root."""
-    from abi.plugins import get_plugin
+    from abi.plugin_registry import get_plugin
 
     plugin = get_plugin("metatranscriptomics")
     monkeypatch.setattr(type(plugin), "root", property(lambda self: tmp_path), raising=False)
@@ -365,7 +365,7 @@ def test_validate_result_falls_back_to_structural_checks_without_plugin(tmp_path
     def _unknown(plugin_id):
         raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
 
-    monkeypatch.setattr("abi.plugins.get_plugin", _unknown)
+    monkeypatch.setattr("abi.plugin_registry.get_plugin", _unknown)
 
     payload = json.loads(
         ABIAgentInterface().abi_validate_result(result_dir=str(outdir), allow_empty_tables=True)
@@ -402,7 +402,7 @@ def test_validate_result_uses_audit_snapshot_schema_without_plugin(tmp_path, mon
     def _unknown(plugin_id):
         raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
 
-    monkeypatch.setattr("abi.plugins.get_plugin", _unknown)
+    monkeypatch.setattr("abi.plugin_registry.get_plugin", _unknown)
 
     payload = json.loads(ABIAgentInterface().abi_validate_result(result_dir=str(outdir)))
 

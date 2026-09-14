@@ -9,7 +9,7 @@ import pytest
 from abi.agent.context import build_agent_context, render_doctor_agent
 from abi.agent.envelopes import error_envelope, json_dumps, success_envelope
 from abi.jobs import client as jobs_client
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.report.citations import (
     CitationRegistry,
     format_citations_html,

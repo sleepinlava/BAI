@@ -15,7 +15,7 @@ from typing import Any, Mapping, Sequence
 import yaml
 
 from abi.config import PROJECT_ROOT, resolved_mamba_root
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.resources import check_resources
 from abi.runtime_environment import resolve_environment_prefix
 from abi.tool_catalog import ToolCatalog

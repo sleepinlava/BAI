@@ -7,7 +7,7 @@ import pytest
 
 from abi.dag_planner import build_plan_from_dag
 from abi.executor import GenericABIExecutor
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.provenance import RunLogger
 from abi.schemas import SampleContext, SampleInput
 from abi.tables import StandardTableManager

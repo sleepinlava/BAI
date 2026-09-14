@@ -12,7 +12,7 @@ from typing import Any
 
 import yaml
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtimes import RuntimeOptions
 from abi.workflow import WorkflowCoordinator
 

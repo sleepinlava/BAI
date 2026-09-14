@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from abi.interfaces import ABIExternalWorkflowPlugin
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.plugins.wgs_bacannot.process_map import load_process_contracts, map_process_class
 
 PINNED_SHA = "a78ddb0bffe75139adf1f443260d6d5b1987fe27"

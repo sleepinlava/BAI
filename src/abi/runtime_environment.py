@@ -583,7 +583,7 @@ def _load_plugin_tool_metadata(analysis_type: str) -> dict[str, Mapping[str, Any
     """Load registry metadata lazily to keep core configuration imports acyclic."""
 
     try:
-        from abi.plugins import get_plugin
+        from abi.plugin_registry import get_plugin
 
         registry = get_plugin(analysis_type).registry()
     except (ImportError, OSError, RuntimeError, ValueError):

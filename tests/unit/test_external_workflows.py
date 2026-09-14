@@ -9,7 +9,7 @@ import pytest
 from abi.external_workflows.evidence import archive_evidence_files, verify_evidence_manifest
 from abi.external_workflows.models import ExternalTaskAttempt
 from abi.external_workflows.nextflow import import_nextflow_trace, write_task_attempts_tsv
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtimes.base import RuntimeOptions
 from abi.runtimes.nextflow import NextflowRuntime
 from abi.schemas import ABIError

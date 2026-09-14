@@ -11,7 +11,7 @@ import yaml
 
 from abi.contracts.lint import validate_pipeline_template_params
 from abi.internal import InternalHandlerContext
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.plugins.metagenomic_plasmid import _plan_from_dict, build_plan_from_dag
 from abi.plugins.metagenomic_plasmid.handlers import (
     plasmid_consensus_handler,

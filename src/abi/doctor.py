@@ -81,7 +81,7 @@ class Doctor:
     @staticmethod
     def _check_plugins() -> HealthCheck:
         try:
-            from abi.plugins import list_plugin_metadata
+            from abi.plugin_registry import list_plugin_metadata
 
             plugins = list_plugin_metadata()
             ids = sorted(p.plugin_id for p in plugins)
@@ -119,7 +119,7 @@ class Doctor:
     @staticmethod
     def _check_resources(analysis_type: str) -> HealthCheck:
         try:
-            from abi.plugins import get_plugin
+            from abi.plugin_registry import get_plugin
 
             plugin = get_plugin(analysis_type)
             if not hasattr(plugin, "check_resources"):
@@ -150,7 +150,7 @@ class Doctor:
     @staticmethod
     def _check_tools(analysis_type: str) -> HealthCheck:
         try:
-            from abi.plugins import get_plugin
+            from abi.plugin_registry import get_plugin
 
             plugin = get_plugin(analysis_type)
             if not hasattr(plugin, "registry"):

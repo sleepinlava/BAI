@@ -2,7 +2,7 @@
 
 import pytest
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.tool_descriptors import (
     ABI_AGENT_TOOLS,
     PROVIDER_PROFILES,

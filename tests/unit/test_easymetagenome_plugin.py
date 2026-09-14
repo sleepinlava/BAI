@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 from abi.agent import ABIAgentInterface
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.plugins.easymetagenome.adapters import (
     DatabaseChecker,
     DatabaseValidationError,

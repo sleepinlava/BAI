@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.results import (
     ABIResultWriter,
     completed_abi_result_outputs,

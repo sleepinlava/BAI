@@ -6,7 +6,7 @@ import pytest
 
 from abi.errors import ToolError
 from abi.exporters import NextflowExporter
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.schemas import PlanStep
 from abi.tools import ToolRegistry
 

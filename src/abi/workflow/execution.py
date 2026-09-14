@@ -44,7 +44,7 @@ class WorkflowCoordinator:
         check_files: bool = True,
         options: RuntimeOptions | None = None,
     ) -> PreparedWorkflow:
-        from abi.plugins import get_plugin
+        from abi.plugin_registry import get_plugin
 
         plugin = get_plugin(analysis_type)
         config = plugin.load_config(

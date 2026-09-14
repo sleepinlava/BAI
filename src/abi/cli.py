@@ -99,7 +99,7 @@ from abi.compliance import audit_result
 from abi.evidence import verify_evidence_manifest
 from abi.exporters import NextflowExporter, SnakemakeExporter
 from abi.json_utils import load_json_object, loads_json
-from abi.plugins import get_plugin, list_plugin_metadata
+from abi.plugin_registry import get_plugin, list_plugin_metadata
 from abi.resources import setup_resources
 from abi.results import validate_abi_result_dir
 from abi.runtime_lock import (
@@ -2480,7 +2480,7 @@ def lint_template_command(
     """
     try:
         from abi.contracts.lint_template import lint_templates
-        from abi.plugins import get_plugin
+        from abi.plugin_registry import get_plugin
 
         plugin = get_plugin(analysis_type)
         config = plugin.load_config(config_path)
@@ -2539,7 +2539,7 @@ def contract_lint_command(
     """
     try:
         from abi.contracts.lint import run_contract_lint
-        from abi.plugins import get_plugin
+        from abi.plugin_registry import get_plugin
 
         plugin = get_plugin(analysis_type)
         if not hasattr(plugin, "root"):

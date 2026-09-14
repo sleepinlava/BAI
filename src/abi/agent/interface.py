@@ -79,7 +79,7 @@ from abi.interfaces import ABIResultValidationPlugin
 from abi.internal import run_plugin_preflight
 from abi.json_utils import load_json_object
 from abi.permissions import requires_confirmation
-from abi.plugins import get_plugin, list_plugins
+from abi.plugin_registry import get_plugin, list_plugins
 from abi.results import validate_abi_result_dir
 from abi.runtimes import RuntimeOptions
 from abi.schemas import ABIError

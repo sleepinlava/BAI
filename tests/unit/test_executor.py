@@ -10,7 +10,7 @@ from abi.executor import (
     _build_assertion_context,
     _resolve_actual_outputs,
 )
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.provenance import capture_tool_version
 
 

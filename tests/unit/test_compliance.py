@@ -95,7 +95,7 @@ def test_audit_result_merges_plugin_declared_checkpoints(tmp_path: Path) -> None
     analysis_type in run_summary, the owning plugin's ``compliance_checks``
     hook supplies the extra checks; any failing check fails the audit.
     """
-    from abi.plugins import get_plugin
+    from abi.plugin_registry import get_plugin
 
     provenance = tmp_path / "provenance"
     provenance.mkdir(parents=True)

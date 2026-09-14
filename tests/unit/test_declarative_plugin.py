@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-import abi.plugins as plugin_registry
+import abi.plugin_registry as plugin_registry
 from abi.plugin import DeclarativeABIPlugin
-from abi.plugins import list_plugins
+from abi.plugin_registry import list_plugins
 
 
 def _write_plugin_files(root: Path, *, entry_point: str, plugin_id: str = "demo") -> None:

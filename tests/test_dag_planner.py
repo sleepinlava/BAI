@@ -1051,7 +1051,7 @@ class TestGoldenTraceParity:
         assert dag_plan.to_dict() == plugin_plan.to_dict()
 
     def test_plugins_do_not_expose_a_legacy_planner_switch(self) -> None:
-        from abi.plugins import list_plugins
+        from abi.plugin_registry import list_plugins
 
         for plugin in list_plugins():
             assert (plugin.root / "pipeline_dag.yaml").is_file()

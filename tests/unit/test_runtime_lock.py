@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtime_lock import generate_runtime_locks, validate_runtime_locks
 
 

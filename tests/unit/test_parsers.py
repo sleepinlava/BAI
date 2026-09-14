@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.plugins.metagenomic_plasmid.lib.parsers import (
     parse_standard_outputs,
     supports_standard_parsing,

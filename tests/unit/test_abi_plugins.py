@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-import abi.plugins as plugin_registry
+import abi.plugin_registry as plugin_registry
 from abi.agent import ABIAgentInterface
 from abi.plugins import (
     PluginLoadError,

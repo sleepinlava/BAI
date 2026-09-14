@@ -2,7 +2,7 @@ import pytest
 
 from abi.contracts import WorkflowSpec, WorkflowStepSpec, load_workflow_spec
 from abi.dag import infer_dag, process_name
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.schemas import ABIError, ABIPlanStep
 
 

@@ -1,6 +1,6 @@
 from abi.dag import infer_dag
 from abi.exporters import NextflowExporter
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtimes.base import RuntimeOptions
 from abi.runtimes.hpc import _safe_name
 from abi.runtimes.nextflow import (

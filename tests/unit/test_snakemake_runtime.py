@@ -13,7 +13,7 @@ from abi.dag import infer_dag
 from abi.errors import ABIError
 from abi.exporters import SnakemakeExporter
 from abi.exporters.snakemake import marker_dir_for
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.runtimes import SnakemakeRuntime
 from abi.runtimes.base import RuntimeOptions
 from abi.runtimes.snakemake import (

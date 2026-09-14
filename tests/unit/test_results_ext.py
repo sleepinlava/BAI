@@ -57,7 +57,7 @@ def test_validate_zero_byte_artifact(tmp_path: Path) -> None:
     zero = result_dir / "report" / "report.html"
     zero.write_text("")  # zero bytes
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin()
         result = validate_abi_result_dir(result_dir)
 
@@ -76,7 +76,7 @@ def test_validate_commands_failed_steps(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin()
         result = validate_abi_result_dir(result_dir)
 
@@ -91,7 +91,7 @@ def test_validate_missing_standard_tables(tmp_path: Path) -> None:
     """L220-222: missing standard table files → error."""
     result_dir = _make_result_dir(tmp_path)
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin({"samples": ["id", "platform"]})
         result = validate_abi_result_dir(result_dir)
 
@@ -111,7 +111,7 @@ def test_validate_table_missing_columns(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin({"samples": ["id", "platform"]})
         result = validate_abi_result_dir(result_dir)
 
@@ -131,7 +131,7 @@ def test_validate_empty_table_not_allowed(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin({"samples": ["id", "platform"]})
         result = validate_abi_result_dir(result_dir, allow_empty_tables=False)
 
@@ -148,7 +148,7 @@ def test_validate_uses_plugin_specific_nonempty_policy(tmp_path: Path) -> None:
         "errors": ["Empty active-module standard table(s): active"]
     }
 
-    with mock.patch("abi.plugins.get_plugin", return_value=plugin):
+    with mock.patch("abi.plugin_registry.get_plugin", return_value=plugin):
         result = validate_abi_result_dir(result_dir, allow_empty_tables=False)
 
     assert "Empty active-module standard table(s): active" in result["errors"]
@@ -177,7 +177,7 @@ def test_validate_missing_analysis_type(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    with mock.patch("abi.plugins.get_plugin") as mock_gp:
+    with mock.patch("abi.plugin_registry.get_plugin") as mock_gp:
         mock_gp.return_value = _mock_plugin()
         result = validate_abi_result_dir(result_dir)
 

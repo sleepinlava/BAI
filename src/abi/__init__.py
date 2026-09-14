@@ -121,7 +121,7 @@ def list_plugins_summary() -> list[dict[str, str]]:
     # 每个字典包含 analysis_type / name / description。
     """
     try:
-        from abi.plugins import list_plugin_metadata
+        from abi.plugin_registry import list_plugin_metadata
 
         metadata_items = list_plugin_metadata()
         summaries = [

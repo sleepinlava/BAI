@@ -7,7 +7,7 @@ import yaml
 
 from abi.contracts import load_workflow_spec
 from abi.dag import infer_dag
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 
 PLUGIN_ROOT = Path("plugins")
 INLINE_PLUGINS = (

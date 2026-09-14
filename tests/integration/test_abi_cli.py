@@ -4,7 +4,7 @@ import pytest
 from typer.testing import CliRunner
 
 from abi.cli import app
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 
 
 def _fake_nextflow(path):

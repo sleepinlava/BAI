@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from abi.plugins import get_plugin, list_plugins
+from abi.plugin_registry import get_plugin, list_plugins
 from abi.testing import assert_plugin_contract
 
 _FIXTURES = Path("tests/fixtures/tool_outputs")

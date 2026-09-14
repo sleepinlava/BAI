@@ -20,7 +20,7 @@ from abi.contracts.step_contract import (
 from abi.executor import _build_assertion_context, _resolve_actual_outputs
 from abi.internal import InternalHandlerContext, internal_handler_spec, plugin_internal_handlers
 from abi.path_policy import resolve_within
-from abi.plugins import get_plugin
+from abi.plugin_registry import get_plugin
 from abi.schemas import PlanStep, plan_step_contract
 
 
