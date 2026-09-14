@@ -17,7 +17,7 @@ nodes.
 
 The `metagenomic_plasmid` plugin is ABI's platform-aware plasmid workflow for
 Illumina, ONT, PacBio HiFi, hybrid, and assembly-only projects. Its canonical
-topology is declared in `plugins/metagenomic_plasmid/pipeline_dag.yaml`; the
+topology is declared in `src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml`; the
 Python engine resolves sample-specific inputs, conditions, paths, provenance,
 and normalized result tables.
 

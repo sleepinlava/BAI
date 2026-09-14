@@ -1,6 +1,7 @@
 # 开发指南
 
-ABI 只发布一个 Python 分发包：`abi-agent`。本文主要说明代码放在哪里、各层如何分工。
+ABI 以核心发行版 `abi-agent` 加每个官方分析插件各一个发行版 `abi-agent-plugin-<id>`
+发布（WP11B：核心 wheel 不含插件）。本文主要说明代码放在哪里、各层如何分工。
 具体的开发和检查顺序见 `development_workflow.md`。
 
 ## 源代码树
@@ -9,21 +10,23 @@ ABI 只发布一个 Python 分发包：`abi-agent`。本文主要说明代码放
 src/abi/
   agent/              ABIAgentInterface、JSON 信封、Agent 上下文导出
   agent_integrations.py  Claude Code、OpenCode 与 Codex 集成安装和诊断
-  figures/            FigureEngine（7 渲染器）、FigureSpec — 通用图表系统
   report/             write_full_report、write_plugin_report、write_methods、
                       citations、limitations、html — 通用报告系统
   workflow/           ResourceManifest、工作流验证、figure_specs 加载
-  plugins/            内置分析类型插件
+  plugin_registry.py  核心所有的插件发现/选择层（WP11B 步骤 1）——
+                      仅元数据发现、选定加载、数据根解析
+  plugin_validation.py  插件结构校验（不依赖插件实现）
+  plugins/            内置分析插件——每个都是自包含包，声明数据同址
+                      （abi-plugin.yaml、DAG、工具注册表、limitations）；
+                      不进入核心 wheel，作为 abi-agent-plugin-<id> 发行版发布
     metagenomic_plasmid/   自包含插件包（支持库在 lib/ 中，64 工具，90 节点 DAG）
-    easymetagenome.py     猎枪宏基因组适配器（10 工具，25 节点 DAG）
-    viral_viwrap.py       托管外部 CLI 适配器（1 工具，7 节点 DAG）
-    rnaseq_expression.py  批量 RNA-seq（5 工具，5 节点 DAG）
-    wgs_bacteria.py        细菌 WGS（5 工具）
-    amplicon_16s.py        16S 微生物组（10 工具）
-    metatranscriptomics.py 宏转录组（3 工具）
-  sciplot/            基于 Matplotlib 的论文级科研图形编译器 — FigureSpec → Validate →
-                      Render → Export → Lint → Provenance。Pydantic schema，
-                      15 种图表类型、3 套主题、lint 与 SHA-256 溯源。
+    easymetagenome/        猎枪宏基因组适配器（10 工具，25 节点 DAG）
+    viral_viwrap/          托管外部 CLI 适配器（1 工具，7 节点 DAG）
+    rnaseq_expression/     批量 RNA-seq（5 工具，5 节点 DAG）
+    wgs_bacteria/          细菌 WGS（5 工具）
+    amplicon_16s/          16S 微生物组（10 工具）
+    metatranscriptomics/   宏转录组（3 工具）
+    wgs_bacannot/          托管外部 Bacannot 工作流（WP8/11A）
   dag_planner.py      UniversalDAG — 从 pipeline_dag.yaml 声明式生成执行计划
   tsv_mapping.py      声明式 TSV 列映射器 — YAML 驱动的输出解析，3 种源类型
   _shared.py          共享工具：_read_tsv、_display_command、_plan_dict、_common_overrides
@@ -40,8 +43,8 @@ src/abi/
   interfaces.py       ABIPlugin、ABIDryRunPlugin、ABIInitializablePlugin 协议
   json_utils.py       带 ABIJSONError 封装的 JSON 文件/负载加载
   timeouts.py         超时解析：parse_timeout_seconds、timeout_from_env_or_value
-  resources.py        资源发现 + 自动安装：check_resources、setup_resources、
-                      ResourceSpec、install_post hooks（例如 makeblastdb）
+  resources.py        只读资源检查与就绪报告：check_resources、setup_resources
+                      （仅报告/计划/mock——下载与安装属于外部系统）
   tables.py           StandardTableManager
   tool_descriptors.py 统一工具描述符单点真相（3 格式家族、7+ LLM 提供商）
   jobs/               HTTP Job Service（服务端、客户端，force-kill 支持）
@@ -49,7 +52,7 @@ src/abi/
   exporters/          Nextflow DSL2 与 Snakemake 导出器
   mcp/                可选 MCP stdio 服务器（通过 ``abi-mcp`` 暴露）
   skills/             Agent 技能文件 → 通过 ``abi install-skills`` 安装
-  cli.py              Typer CLI（abi、abi-mcp、abi-sciplot 入口点）
+  cli.py              Typer CLI（abi、abi-mcp 入口点）
 ```
 
 质粒引擎位于插件包内（`abi.plugins.metagenomic_plasmid.lib`）；已退役的
@@ -69,7 +72,6 @@ src/abi/
 | `abi.dag` | `infer_dag`、`ABIDAG`、`StepBinding` — DAG 推断，支持文献 + 路径 + 验证三层模型 |
 | `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — 声明式计划生成，所有 7 个插件共用 |
 | `abi.tsv_mapping` | `TSVMapper`、`generate_rows` — YAML 驱动 TSV/JSON/日志解析，3 种源类型 |
-| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 基于 Matplotlib、支持 15 种图表类型的论文级图形编译器 |
 | `abi.errors` | `ABIError`、`ConfigError`、`SampleSheetError`、`ToolError` |
 | `abi.diagnostics` | 错误分类 + `DiagnosticHint` + `classify_exception` |
 | `abi.json_utils` | 带 `ABIJSONError` 的 JSON 文件/负载加载 |
@@ -148,7 +150,7 @@ Docker `/app` 上下文。该目录变化时，建议在容器发布前手动运
 - `config/`
 - `envs/` — 由 `environments.yaml` 通过 `scripts/emit_env_yamls.py` 生成
 - `skills/`（位于 ``src/abi/skills/`` — 随包捆绑，通过 ``abi install-skills`` 安装）
-- `plugins/`
+- `src/abi/plugins/<id>/` — 插件同址数据（DAG、工具注册表、limitations）；随 `abi-agent-plugin-<id>` 发行版发布
 - `integrations/` — Claude Code、OpenCode 和 Codex 的平台原生集成包
 - `examples/`
 - `scripts/`

@@ -1,7 +1,9 @@
 # Development Guide
 
-ABI is shipped as one Python distribution, `abi-agent`. This page is a map of the codebase and the
-main extension points. For the order in which changes should be made and checked, see
+ABI ships as a core distribution, `abi-agent`, plus one distribution per
+official analysis plugin, `abi-agent-plugin-<id>` (WP11B: the core wheel is
+plugin-free). This page is a map of the codebase and the main extension
+points. For the order in which changes should be made and checked, see
 `development_workflow.md`.
 
 ## Source Tree
@@ -10,21 +12,24 @@ main extension points. For the order in which changes should be made and checked
 src/abi/
   agent/              ABIAgentInterface, JSON envelopes, agent context export
   agent_integrations.py  Claude Code, OpenCode, and Codex integration installer/doctor
-  figures/            FigureEngine (7 renderers), FigureSpec — generic figure system
   report/             write_full_report, write_plugin_report, write_methods,
                       citations, limitations, html — generic report system
   workflow/           ResourceManifest, workflow validation, figure_specs loading
-  plugins/            Built-in analysis-type plugins
+  plugin_registry.py  Core-owned plugin discovery/selection (WP11B step 1) —
+                      metadata-only discovery, selected loading, data roots
+  plugin_validation.py  Structural plugin validation (plugin-implementation-free)
+  plugins/            Built-in analysis plugins — each a self-contained package
+                      with co-located data (abi-plugin.yaml, DAG, tool registry,
+                      limitations); excluded from the core wheel and shipped as
+                      abi-agent-plugin-<id> distributions
     metagenomic_plasmid/   Self-contained plugin package (support lib in lib/, 64 tools, 90-node DAG)
-    easymetagenome.py     Shotgun metagenomics adapter (10 tools, 25-node DAG)
-    viral_viwrap.py       Managed external CLI adapter (1 tool, 7-node DAG)
-    rnaseq_expression.py  Bulk RNA-seq (5 tools, 5-node DAG)
-    wgs_bacteria.py        Bacterial WGS (5 tools)
-    amplicon_16s.py        16S microbiome (10 tools)
-    metatranscriptomics.py Metatranscriptomics (3 tools)
-  sciplot/            Publication-grade Matplotlib figure compiler — FigureSpec → Validate →
-                      Render → Export → Lint → Provenance. Pydantic schema, 15 plot types,
-                      3 themes, lint rules, SHA-256 provenance.
+    easymetagenome/        Shotgun metagenomics adapter (10 tools, 25-node DAG)
+    viral_viwrap/          Managed external CLI adapter (1 tool, 7-node DAG)
+    rnaseq_expression/     Bulk RNA-seq (5 tools, 5-node DAG)
+    wgs_bacteria/           Bacterial WGS (5 tools)
+    amplicon_16s/          16S microbiome (10 tools)
+    metatranscriptomics/   Metatranscriptomics (3 tools)
+    wgs_bacannot/          Managed external Bacannot workflow (WP8/11A)
   dag_planner.py      UniversalDAG — declarative plan generation from pipeline_dag.yaml
   tsv_mapping.py      Declarative TSV column mapper — YAML-driven output parsing, 3 source types
   _shared.py          Shared utilities: _read_tsv, _display_command, _plan_dict, _common_overrides
@@ -41,8 +46,9 @@ src/abi/
   interfaces.py       ABIPlugin, ABIDryRunPlugin, ABIInitializablePlugin protocols
   json_utils.py       JSON file/payload loading with ABIJSONError wrapping
   timeouts.py         Timeout parsing: parse_timeout_seconds, timeout_from_env_or_value
-  resources.py        Resource discovery + auto-install: check_resources, setup_resources,
-                      ResourceSpec with install_post hooks (e.g. makeblastdb)
+  resources.py        Read-only resource checks and readiness reporting:
+                      check_resources, setup_resources (report/plan/mock only —
+                      downloads and installs belong to an external system)
   tables.py           StandardTableManager
   tool_descriptors.py Unified tool descriptor SSOT (3 format families, 7+ LLM providers)
   jobs/               HTTP Job Service (service, client, force-kill support)
@@ -50,7 +56,7 @@ src/abi/
   exporters/          Nextflow DSL2 and Snakemake exporters
   mcp/                Optional MCP stdio server (exposed via ``abi-mcp``)
   skills/             Agent skill files → installed via ``abi install-skills``
-  cli.py              Typer CLI (abi, abi-mcp, abi-sciplot entry points)
+  cli.py              Typer CLI (abi, abi-mcp entry points)
 ```
 
 The plasmid engine lives inside the plugin package
@@ -72,7 +78,6 @@ shared infrastructure from the ABI core modules.
 | `abi.dag` | `infer_dag`, `ABIDAG`, `StepBinding` — DAG inference with literature + path + validation layers |
 | `abi.dag_planner` | `UniversalDAG`, `build_plan_from_dag`, `PathTemplateContext` — declarative plan generation, shared by all 7 plugins |
 | `abi.tsv_mapping` | `TSVMapper`, `generate_rows` — YAML-driven TSV/JSON/log parsing with 3 source types |
-| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — publication-grade Matplotlib figure compiler with 15 plot types |
 | `abi.errors` | `ABIError`, `ConfigError`, `SampleSheetError`, `ToolError` |
 | `abi.diagnostics` | Error taxonomy + `DiagnosticHint` + `classify_exception` |
 | `abi.json_utils` | JSON file/payload loading with `ABIJSONError` |
@@ -165,7 +170,7 @@ Small source assets are tracked:
 - `config/`
 - `envs/` — generated from `environments.yaml` via `scripts/emit_env_yamls.py`
 - `skills/` (inside ``src/abi/skills/`` — bundled with the package, installed via ``abi install-skills``)
-- `plugins/`
+- `src/abi/plugins/<id>/` — co-located plugin data (DAG, tool registry, limitations); ships in the `abi-agent-plugin-<id>` distributions
 - `integrations/` — platform-native Claude Code, OpenCode, and Codex bundles
 - `examples/`
 - `scripts/`

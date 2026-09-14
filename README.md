@@ -144,27 +144,25 @@ ABI supports Python 3.10-3.13.
 pip install abi-agent
 abi --version
 
+# The core wheel ships no analysis plugins. Install the official plugin
+# distributions (same version, same repository) for the analyses you need:
+pip install "abi-agent[plugins]"   # all eight official plugins
+# or a single plugin, e.g. pip install abi-agent-plugin-metatranscriptomics
+
 # Optional integrations
 pip install "abi-agent[mcp]"       # MCP server
-pip install "abi-agent[report]"    # Scientific figures and richer reports
 
-# Inspect, preview, and install the Linux tool environments needed by a plugin
+# Read-only discovery and diagnostics for externally prepared tool environments
 abi env discover --output-json
 abi env doctor --type rnaseq_expression --output-json
-abi env install --type rnaseq_expression --dry-run --output-json
-abi env install --type rnaseq_expression
 ```
 
-Environment installation is Linux-only and does not require Docker or a source checkout.
-ABI selects `micromamba`, `mamba`, then `conda`, records the solver version and exact
-commands, and defaults managed environments to
-`${XDG_DATA_HOME:-~/.local/share}/abi/mamba`. Use repeated `--env` options for individual
-environments, `--solver` to select an executable explicitly, and `abi env update` to
-reconcile an existing environment with the packaged specification. The diagnostic
-report includes the current Linux architecture capability, blockers, alternatives, and
-evidence; unsupported plugin/environment cells and undeclared CPU architectures fail
-before execution. Use `--type` when a tool is assigned to different environments by
-multiple plugins.
+ABI does not create tool environments. Environment provisioning belongs to an
+external system; `abi env discover` and `abi env doctor` read the machine state
+and report the current Linux architecture capability, blockers, alternatives,
+and evidence. Unsupported plugin/environment cells and undeclared CPU
+architectures fail before execution. Use `--type` when a tool is assigned to
+different environments by multiple plugins.
 
 To run the bundled example and work with the source repository:
 
@@ -225,11 +223,13 @@ abi check-resources \
   --config path/to/config.yaml
 ```
 
-Some plugins can prepare managed resources. Preview the setup first, then confirm it explicitly if the paths and downloads are correct.
+Some plugins declare managed resources. ABI never downloads or installs them;
+setup is an external-system responsibility. Report per-resource readiness and
+manual-preparation guidance instead.
 
 ```bash
-abi setup-resources --type metagenomic_plasmid --dry-run
-abi setup-resources --type metagenomic_plasmid --confirm
+abi setup-resources --type metagenomic_plasmid            # readiness + guidance
+abi setup-resources --type metagenomic_plasmid --dry-run  # preparation plan
 ```
 
 ### 5. Run only after review
@@ -403,7 +403,7 @@ The plasmid workflow has passed assembly-mode RefSeq validation for a three-plas
 
 ## Extend ABI or contribute
 
-Transport-neutral behavior belongs in `src/abi/`; CLI, MCP, HTTP, and provider integrations stay thin. Built-in workflows combine Python adapters in `src/abi/plugins/` with declarative definitions in `plugins/<analysis_type>/`.
+Transport-neutral behavior belongs in `src/abi/`; CLI, MCP, HTTP, and provider integrations stay thin. Built-in analysis plugins are self-contained packages under `src/abi/plugins/<analysis_type>/` — Python adapters and their declarative definitions (DAG, tool registry, limitations) live side by side and ship as per-plugin distributions (`abi-agent-plugin-<id>`); the core `abi-agent` wheel stays plugin-free.
 
 Register a third-party plugin with the `abi.plugins` entry-point group:
 

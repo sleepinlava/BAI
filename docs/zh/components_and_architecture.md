@@ -40,7 +40,7 @@ ABIAgentInterface
 | Agent 接口 | 稳定、与传输无关的 API 和 JSON 信封 | `src/abi/agent/` |
 | 工作流核心 | Schema、规划、权限、诊断、契约、溯源、表格和报告 | `src/abi/` |
 | 分析插件 | 负责生物学选择、工作流配置、解析和结果解释 | `src/abi/plugins/` |
-| 声明式工作流定义 | 定义 DAG 节点、工具、Schema、表格和报告元数据 | `plugins/<analysis_type>/` |
+| 声明式工作流定义 | 定义 DAG 节点、工具、Schema、表格和报告元数据 | `src/abi/plugins/<analysis_type>/`（与插件包同址） |
 | 工具与资源层 | 解析可执行程序、Conda 环境、数据库、索引和模型 | `src/abi/tools.py`、`src/abi/resources.py`、`environments.yaml` |
 | 运行时适配器 | 本地执行，或把任务转换到 Nextflow、Snakemake 和 HPC 后端 | `src/abi/runtimes/`、`src/abi/exporters/` |
 | 结果与图形层 | 验证产物、标准化 TSV、生成报告和科研图形 | `src/abi/results.py`、`src/abi/report/`、`src/abi/sciplot/` |

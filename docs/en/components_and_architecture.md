@@ -40,7 +40,7 @@ Every transport calls the same core interface. A CLI request and an MCP request 
 | Agent interface | Stable, transport-neutral API and JSON envelopes | `src/abi/agent/` |
 | Workflow core | Schemas, planning, permissions, diagnostics, contracts, provenance, tables, and reports | `src/abi/` |
 | Analysis plugins | Own biological choices, workflow configuration, parsing, and interpretation | `src/abi/plugins/` |
-| Declarative workflow definitions | Define DAG nodes, tools, schemas, tables, and report metadata | `plugins/<analysis_type>/` |
+| Declarative workflow definitions | Define DAG nodes, tools, schemas, tables, and report metadata | `src/abi/plugins/<analysis_type>/` (co-located with the plugin package) |
 | Tool and resource layer | Resolve executables, Conda environments, databases, indexes, and models | `src/abi/tools.py`, `src/abi/resources.py`, `environments.yaml` |
 | Runtime adapters | Execute locally or translate work to Nextflow, Snakemake, and HPC backends | `src/abi/runtimes/`, `src/abi/exporters/` |
 | Result and figure layer | Validate artifacts, normalize TSV tables, build reports, and render figures | `src/abi/results.py`, `src/abi/report/`, `src/abi/sciplot/` |

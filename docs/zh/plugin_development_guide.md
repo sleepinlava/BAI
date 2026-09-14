@@ -20,7 +20,8 @@ class MyPlugin(DeclarativeABIPlugin):
 ```
 
 如果 monorepo 将声明文件与 Python 模块分开存放，只需设置一个类属性，
-例如 `plugin_root = Path("plugins/my_analysis")`。
+例如 `plugin_root = Path("plugins/my_analysis")`。捆绑插件则让代码与声明同址，
+由插件自行解析数据根：`plugin_root = Path(__file__).resolve().parent`。
 
 基类会在导入时校验 manifest 及其声明的所有路径。插件发现还会强制
 entry-point 名称、manifest 中的 `plugin_id` 与 `entry_point` 一致。运行时
@@ -53,10 +54,14 @@ entry-point 的键必须与 `abi-plugin.yaml` 中的 `plugin_id` 完全一致。
 
 ## 插件目录
 
-推荐布局：
+内置插件是 `src/abi/plugins/<id>/` 下的自包含包：实现代码与声明数据同址存放，
+每个插件作为独立发行版发布。
+
+推荐布局（捆绑插件）：
 
 ```text
-plugins/my_analysis/
+src/abi/plugins/my_analysis/
+  __init__.py          ← 插件实现
   abi-plugin.yaml
   config_default.yaml
   sample_sheet_template.tsv
@@ -67,14 +72,30 @@ plugins/my_analysis/
     tool_a.yaml
   skills/               ← 随包捆绑的 SKILL.md 文件
     tool_a/SKILL.md
-  _engine/             ← 可选：复杂引擎代码（参见 metagenomic_plasmid）
+  lib/                  ← 可选：复杂内部代码（参见 metagenomic_plasmid）
 ```
+
+外部插件也可以在 `plugins/<id>/` 下保存相同文件的散装数据目录；发现层会确定性地读取
+两种布局，且散装目录不能遮蔽捆绑插件 id。
 
 每个插件必须提供非空的 `limitations.yaml`；否则 contract lint 以
 `missing_limitations`、`invalid_limitations` 或 `empty_limitations` 失败。
 生成的报告始终包含 limitations 章节（列表为空时使用明确的兜底文本）。
 
-对于具有大量内部逻辑的复杂插件，使用带有私有 `_engine/` 子目录的自包含包。参见 `plugins/metagenomic_plasmid/` 获取规范示例。
+对于具有大量内部逻辑的复杂插件，使用带有私有 `lib/` 子目录的自包含包。参见
+`src/abi/plugins/metagenomic_plasmid/` 获取规范示例。
+
+### 发行版（WP11B）
+
+核心 `abi-agent` wheel 不含插件。每个官方插件以 `abi-agent-plugin-<id>` 发布
+（实现包 + 同址数据 + 各自的 `abi.plugins` 入口点），并锁定 `abi-agent==<版本>`。
+用户可用 `pip install "abi-agent[plugins]"` 安装完整官方组合，或单独安装单个插件。
+仅装核心时，`list-types`、历史查看与审计报告仍然可用；请求缺失的分析类型会给出可解释的错误。
+构建插件 wheel：
+
+```bash
+python scripts/build_plugin_wheels.py --outdir dist-plugins --build
+```
 
 ## 技能与 Agent 集成
 
@@ -511,11 +532,12 @@ def test_my_plugin_benchmark(tmp_path):
 
 ## 资源管理
 
-ABI 为生物信息学数据库提供资源发现和自动安装系统。插件作者声明资源需求；ABI 负责检查、下载和安装后钩子。
+ABI 从插件读取资源声明并报告就绪状态——绝不下载或安装资源。数据库与原始数据的准备
+属于外部系统职责；缺失的资源会在分析启动前以 `manual_required` 与准备指引报告。
 
 ### 声明资源
 
-资源在 `plugins/<name>/abi-plugin.yaml` 中声明：
+资源在插件自身的 `abi-plugin.yaml` 中声明：
 
 ```yaml
 resources:
@@ -544,11 +566,13 @@ resources:
 ### CLI 命令
 
 ```bash
-# 检查哪些资源可用/缺失
+# 报告各资源就绪状态与人工准备指引
 abi check-resources --type my_analysis
 
-# 下载并安装缺失的资源（需要确认）
-abi setup-resources --type my_analysis --confirm
+# 就绪报告 / 准备计划 / 冒烟测试用 mock 目录
+abi setup-resources --type my_analysis
+abi setup-resources --type my_analysis --dry-run
+abi setup-resources --type my_analysis --mock
 ```
 
 ### 环境解析

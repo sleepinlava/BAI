@@ -22,7 +22,9 @@ class MyPlugin(DeclarativeABIPlugin):
 ```
 
 Monorepos that keep declarations away from the Python module may set one class
-attribute, for example `plugin_root = Path("plugins/my_analysis")`.
+attribute, for example `plugin_root = Path("plugins/my_analysis")`. Bundled
+plugins instead resolve their own data root so code and declarations stay side
+by side: `plugin_root = Path(__file__).resolve().parent`.
 
 The base class validates the manifest and all declared paths during import.
 Discovery also requires the entry-point name, manifest `plugin_id`, and manifest
@@ -55,10 +57,15 @@ The entry-point key must exactly match `plugin_id` in `abi-plugin.yaml`.
 
 ## Plugin Directory
 
-Recommended layout:
+Built-in plugins are self-contained packages under `src/abi/plugins/<id>/`:
+implementation code and declarative data live side by side, and each plugin
+ships as its own distribution.
+
+Recommended layout (bundled):
 
 ```text
-plugins/my_analysis/
+src/abi/plugins/my_analysis/
+  __init__.py          ← plugin implementation
   abi-plugin.yaml
   config_default.yaml
   sample_sheet_template.tsv
@@ -69,8 +76,12 @@ plugins/my_analysis/
     tool_a.yaml
   skills/               ← SKILL.md files bundled with the package
     tool_a/SKILL.md
-  _engine/             ← optional: complex engine code (see metagenomic_plasmid)
+  lib/                  ← optional: complex internal code (see metagenomic_plasmid)
 ```
+
+External plugins may instead keep a loose data directory under `plugins/<id>/`
+with the same files; discovery reads both layouts deterministically, and a
+loose directory cannot shadow a bundled plugin id.
 
 Every plugin must ship a non-empty `limitations.yaml`; contract lint fails with
 `missing_limitations`, `invalid_limitations`, or `empty_limitations` otherwise,
@@ -78,8 +89,22 @@ and generated reports always render a limitations section (with an explicit
 fallback when the list is empty).
 
 For complex plugins with substantial internal logic, use a self-contained
-package with a private `_engine/` subdirectory. See `plugins/metagenomic_plasmid/`
+package with a private `lib/` subdirectory. See `src/abi/plugins/metagenomic_plasmid/`
 for the canonical example.
+
+### Distributions (WP11B)
+
+The core `abi-agent` wheel ships no plugins. Every official plugin publishes
+as `abi-agent-plugin-<id>` (implementation package + co-located data + its own
+`abi.plugins` entry point), pinning `abi-agent==<version>`. Users install the
+full combo with `pip install "abi-agent[plugins]"` or single plugins
+individually. Core-only installs keep `list-types`, history inspection, and
+audit reports working; requesting a missing analysis type fails with an
+explainable error. Build the plugin wheels with:
+
+```bash
+python scripts/build_plugin_wheels.py --outdir dist-plugins --build
+```
 
 ## Skills and Agent Integration
 
@@ -547,13 +572,14 @@ See `docs/en/testing.md` for the complete testing guide.
 
 ## Resource Management
 
-ABI provides a resource discovery and auto-install system for bioinformatics databases.
-Plugin authors declare resource requirements; ABI handles checking, downloading, and
-post-install hooks.
+ABI reads resource declarations from plugins and reports readiness — it never
+downloads or installs resources. Preparing databases and raw data is the
+responsibility of an external system; missing resources are reported as
+`manual_required` with preparation guidance before any analysis starts.
 
 ### Declaring resources
 
-Resources are declared in `plugins/<name>/abi-plugin.yaml`:
+Resources are declared in the plugin's `abi-plugin.yaml`:
 
 ```yaml
 resources:
@@ -582,11 +608,13 @@ resources:
 ### CLI commands
 
 ```bash
-# Check which resources are available/missing
+# Report per-resource readiness and manual-preparation guidance
 abi check-resources --type my_analysis
 
-# Download and install missing resources (requires confirmation)
-abi setup-resources --type my_analysis --confirm
+# Readiness report / preparation plan / mock fixtures for smoke tests
+abi setup-resources --type my_analysis
+abi setup-resources --type my_analysis --dry-run
+abi setup-resources --type my_analysis --mock
 ```
 
 ### Environment resolution

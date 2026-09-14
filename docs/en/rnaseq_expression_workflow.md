@@ -134,7 +134,7 @@ All resources appear in `provenance/resource_manifest.json` after a real run.
 
 ## Known Limitations
 
-See `plugins/rnaseq_expression/limitations.yaml` for the complete list. Key points:
+See `src/abi/plugins/rnaseq_expression/limitations.yaml` for the complete list. Key points:
 
 1. RNA-seq measures transcript abundance, not protein levels.
 2. Alignment rates depend on reference genome completeness.

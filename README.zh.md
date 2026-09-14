@@ -140,22 +140,20 @@ ABI 支持 Python 3.10-3.13。
 pip install abi-agent
 abi --version
 
-# 可选功能
-pip install "abi-agent[mcp]"       # MCP 服务
-pip install "abi-agent[report]"    # 科研图形和增强报告
+# 核心 wheel 不含分析插件。按需安装官方插件发行版（同仓库、同版本）：
+pip install "abi-agent[plugins]"   # 全部八个官方插件
+# 或单个插件，例如 pip install abi-agent-plugin-metatranscriptomics
 
-# 检查、预演并安装某个插件需要的 Linux 工具环境
+# 可选集成
+pip install "abi-agent[mcp]"       # MCP 服务
+
+# 对外部准备的工具环境进行只读发现与诊断
 abi env discover --output-json
 abi env doctor --type rnaseq_expression --output-json
-abi env install --type rnaseq_expression --dry-run --output-json
-abi env install --type rnaseq_expression
 ```
 
 环境安装仅支持 Linux，不依赖 Docker 或源码 checkout。ABI 依次选择
-`micromamba`、`mamba`、`conda`，记录求解器版本与实际命令，并默认把托管环境放在
-`${XDG_DATA_HOME:-~/.local/share}/abi/mamba`。可以重复使用 `--env` 安装单个环境，
-用 `--solver` 明确指定求解器，并用 `abi env update` 按 wheel 内置规范更新已有环境。
-诊断报告会给出当前 Linux 架构的能力状态、阻塞项、替代方案和证据；不支持的插件或
+环境诊断会给出当前 Linux 架构的能力状态、阻塞项、替代方案和证据；不支持的插件或
 环境单元格及未声明的 CPU 架构会在执行前失败。若一个工具被多个插件分配到不同环境，
 请使用 `--type` 消歧。
 
@@ -218,11 +216,12 @@ abi check-resources \
   --config path/to/config.yaml
 ```
 
-部分插件支持托管资源安装。先预览安装计划，确认路径和下载内容无误后再明确授权。
+部分插件声明托管资源。ABI 绝不下载或安装资源：准备职责属于外部系统。
+`abi setup-resources` 只报告各资源就绪状态与人工准备指引。
 
 ```bash
-abi setup-resources --type metagenomic_plasmid --dry-run
-abi setup-resources --type metagenomic_plasmid --confirm
+abi setup-resources --type metagenomic_plasmid            # 就绪状态与准备指引
+abi setup-resources --type metagenomic_plasmid --dry-run  # 准备计划
 ```
 
 ### 5. 审查后再执行
@@ -391,7 +390,7 @@ ABI 目前仍处于 alpha 阶段。核心契约、内置规划路径、dry-run�
 
 ## 扩展 ABI 或参与开发
 
-与传输无关的行为位于 `src/abi/`；CLI、MCP、HTTP 和模型厂商集成保持为薄适配层。内置流程由 `src/abi/plugins/` 中的 Python 适配器和 `plugins/<analysis_type>/` 中的声明式定义共同组成。
+与传输无关的行为位于 `src/abi/`；CLI、MCP、HTTP 和模型厂商集成保持为薄适配层。内置分析插件是 `src/abi/plugins/<analysis_type>/` 下的自包含包——Python 适配器与声明式定义（DAG、工具注册表、局限性）同址存放，并作为独立插件发行版（`abi-agent-plugin-<id>`）发布；核心 `abi-agent` wheel 不含插件。
 
 第三方插件通过 `abi.plugins` entry-point 组注册：
 

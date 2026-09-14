@@ -15,7 +15,7 @@
 
 `metagenomic_plasmid` 是 ABI 面向 Illumina、ONT、PacBio HiFi、二代+三代
 混合数据和 assembly-only 项目的平台感知质粒工作流。规范拓扑位于
-`plugins/metagenomic_plasmid/pipeline_dag.yaml`；Python 引擎负责解析逐样本输入、
+`src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml`；Python 引擎负责解析逐样本输入、
 条件节点、输出路径、provenance 和标准结果表。
 
 ## 默认路径
