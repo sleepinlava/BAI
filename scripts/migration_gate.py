@@ -97,7 +97,7 @@ def check_phase2_files():
     passed = True
     for p, label in [
         (SRC / "config_models.py", "ABIConfig+RNASeqConfig"),
-        (SRC / "plugins" / "validator.py", "Plugin validator"),
+        (SRC / "plugin_validation.py", "Plugin validator"),
     ]:
         if p.exists():
             ok(label + ": " + str(p))
