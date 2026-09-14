@@ -574,3 +574,10 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 弃用执行入口 `P0Workflow.run()` 及其专属 legacy 层删除（整体结果复用匹配、legacy 命令/版本行重塑、根级别名写出；净删 ~280 行）。P0Workflow 的规划/解析面（documented_workflow）保留。
 - 集成测试转为 canonical 协调器路径，保留受保护行为：清理回执、host-removal 临时删除、workers 传播、进度事件、溯源持久化。resume 断言切换为 canonical 步骤级恢复关联（resumes_run_id + previous_runs 归档）；report-manifest 篡改块随旧整体门退役（新信任模型为校验和 + 计划绑定）。
 - CI 绿；全量测试通过（仅 3 个已知本地专属失败）。
+
+### 阶段 E 开工：WP11B 步骤 1（分发层与实现分离，35b2ffb + c39dc6b）
+
+- `abi/plugin_registry.py` 成为核心所有的发现/选择/加载层（入口点 + manifest、可解释错误、确定性冲突处理）；核心的 agent/resources/executor/results/doctor 模块全部改从其导入。
+- **导入探针验证**：仅核心路径（dispatch/diagnose/audit）加载零个插件实现模块；缺失插件错误保持可解释（含可用类型清单）。
+- `abi/plugins/__init__.py` 变为实现包根（兼容 re-export）；校验器迁至核心 `abi/plugin_validation.py`（校验插件结构而非实现）；Migration Gate 路径同步，5/5 通过。
+- 剩余 WP11B：插件数据打包进分发（root 经 importlib.resources 解析）、双发行结构（core / plugins）、三种安装形态验收（仅核心/单插件/完整组合）。
