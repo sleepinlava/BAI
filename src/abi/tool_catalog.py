@@ -198,8 +198,15 @@ class ToolCatalog:
 
     @classmethod
     def from_project_root(cls, project_root: Path | None = None) -> ToolCatalog:
-        """Compile the catalog from all plugins under *project_root*."""
+        """Compile the catalog from bundled plugin packages and *project_root*.
+
+        WP11B: bundled plugin data ships co-located with each implementation
+        package (``abi/plugins/<id>/``), so the catalog no longer depends on a
+        global ``plugins/`` directory; loose directories under the project
+        root remain supported for external/user-installed plugins.
+        """
         from abi.config import PROJECT_ROOT
+        from abi.plugin_registry import plugin_data_roots
 
         root = Path(project_root or PROJECT_ROOT).resolve()
 
@@ -210,15 +217,12 @@ class ToolCatalog:
         env_assignments = cls._normalise_env_assignments(raw_assignments)
 
         catalog = cls()
-        for plugin_dir in sorted((root / "plugins").glob("*")):
-            if not plugin_dir.is_dir():
-                continue
+        for plugin_id, plugin_dir in sorted(plugin_data_roots(root).items()):
             registry_path = plugin_dir / "tool_registry.yaml"
             contracts_dir = plugin_dir / "tool_contracts"
             if not registry_path.exists() and not contracts_dir.exists():
                 continue
-            plugin = plugin_dir.name
-            descriptors = cls._compile_plugin(plugin_dir, plugin, env_assignments)
+            descriptors = cls._compile_plugin(plugin_dir, plugin_id, env_assignments)
             catalog._add_all(descriptors)
 
         return catalog

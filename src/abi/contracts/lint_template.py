@@ -295,6 +295,13 @@ def _plugin_root(plugin: Any) -> Path:
             return Path(value)
     plugin_id = getattr(plugin, "plugin_id", "")
     if plugin_id:
+        # WP11B: bundled plugin data is co-located with the implementation
+        # package; fall back to the loose plugins/ layout for fakes/externals.
+        from abi.plugin_registry import plugin_data_root
+
+        resolved = plugin_data_root(str(plugin_id))
+        if resolved is not None:
+            return resolved
         return Path("plugins") / str(plugin_id)
     return Path(".")
 

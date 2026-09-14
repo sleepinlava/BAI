@@ -489,10 +489,10 @@ class TestTSVMapperGoldenTraceParity:
 
     def test_wgs_parsers_yaml_matches_expected_output(self, tmp_path: Path) -> None:
         """The TSVMapper produces correct AMRFinderPlus rows from parsers.yaml."""
-        from abi.config import PLUGIN_ROOT
+        from abi.plugin_registry import plugin_data_root
         from abi.tsv_mapping import TSVMapper
 
-        mapper = TSVMapper.from_yaml(PLUGIN_ROOT / "wgs_bacteria" / "parsers.yaml")
+        mapper = TSVMapper.from_yaml(plugin_data_root("wgs_bacteria") / "parsers.yaml")
 
         _write_tsv(
             tmp_path / "test_amr.tsv",

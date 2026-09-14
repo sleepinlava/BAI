@@ -64,7 +64,7 @@ def test_plugin_contract():
 
 
 def test_pipeline_dag_exists():
-    dag_path = Path("plugins/amplicon_16s/pipeline_dag.yaml")
+    dag_path = Path("src/abi/plugins/amplicon_16s/pipeline_dag.yaml")
     assert dag_path.exists(), "pipeline_dag.yaml required for L1/L2/L3 DAG validation"
 
 
@@ -110,7 +110,7 @@ def test_optional_otu_disabled_by_default(tmp_path):
 def test_workflow_spec_loads():
     from abi.contracts import load_workflow_spec
 
-    ws = load_workflow_spec("plugins/amplicon_16s")
+    ws = load_workflow_spec("src/abi/plugins/amplicon_16s")
     assert ws is not None
     assert len(ws.steps) == 10
     for s in ws.steps:
@@ -129,7 +129,7 @@ def test_dag_cross_validation(tmp_path):
         }
     )
     plan = plugin.build_plan(cfg, check_files=False)
-    ws = load_workflow_spec("plugins/amplicon_16s")
+    ws = load_workflow_spec("src/abi/plugins/amplicon_16s")
     dag = infer_dag(plan.steps, workflow_spec=ws, project_root=tmp_path)
     assert len(dag.bindings) == len(plan.steps)
 

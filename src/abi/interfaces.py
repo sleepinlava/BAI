@@ -232,12 +232,12 @@ class ABIPlugin(Protocol):
 
     root: Path
     # Filesystem root for the plugin's own data (DAG, tool registry, schemas,
-    # limitations). Bundled plugins point at their directory under the global
-    # PLUGIN_ROOT; externally installed plugins resolve their own location, so
-    # core callers must never assume the global root (11A).
+    # limitations). Bundled plugins resolve their co-located package directory
+    # (`Path(__file__).parent`, WP11B); loose plugins under PLUGIN_ROOT resolve
+    # their own directory. Core callers must never assume a global root (11A).
     # 插件自身数据（DAG、工具注册表、schema、局限性）的文件系统根目录。捆绑
-    # 插件指向全局 PLUGIN_ROOT 下的目录；外部安装的插件解析自己的位置，核心
-    # 调用者不得假设全局根（11A）。
+    # 插件解析与其实现同址的包目录（`Path(__file__).parent`，WP11B）；PLUGIN_ROOT
+    # 下的散装插件解析自己的目录。核心调用者不得假设全局根（11A）。
 
     # ── Lifecycle methods / 生命周期方法 ──
 

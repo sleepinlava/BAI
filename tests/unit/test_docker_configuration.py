@@ -167,7 +167,7 @@ def test_sdist_contains_files_forced_into_the_wheel():
 
 def _tool_contract(plugin: str, tool_id: str) -> dict:
     """Load a tool contract — the SSOT for execution metadata (P1-1)."""
-    path = ROOT / "plugins" / plugin / "tool_contracts" / f"{tool_id}.yaml"
+    path = ROOT / "src" / "abi" / "plugins" / plugin / "tool_contracts" / f"{tool_id}.yaml"
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
@@ -180,7 +180,7 @@ def test_plasmidfinder_uses_the_installed_python_module():
 
 
 def test_python_script_tools_use_the_canonical_autoplasm_root():
-    plugin_root = ROOT / "plugins" / "metagenomic_plasmid"
+    plugin_root = ROOT / "src" / "abi" / "plugins" / "metagenomic_plasmid"
 
     for tool_id, relative_path in (
         ("plasme", "PLASMe/PLASMe.py"),
@@ -203,7 +203,6 @@ def test_every_dockerfile_copy_source_exists():
         "README.md",
         "environments.yaml",
         "src",
-        "plugins",
         "config",
         "scripts",
         "data",
@@ -215,6 +214,33 @@ def test_every_dockerfile_copy_source_exists():
 
     for source in required_sources:
         assert (ROOT / source).exists(), f"Docker build input is missing: {source}"
+
+
+def test_dockerfiles_install_the_official_plugin_combo():
+    """WP11B: the core wheel is plugin-free, so images must install the
+    official plugin distributions built from the same source tree."""
+    dist_names = (
+        "abi-agent-plugin-amplicon-16s",
+        "abi-agent-plugin-easymetagenome",
+        "abi-agent-plugin-metagenomic-plasmid",
+        "abi-agent-plugin-metatranscriptomics",
+        "abi-agent-plugin-rnaseq-expression",
+        "abi-agent-plugin-viral-viwrap",
+        "abi-agent-plugin-wgs-bacteria",
+        "abi-agent-plugin-wgs-bacannot",
+    )
+    dockerfiles = sorted((ROOT / "docker").glob("Dockerfile.*"))
+
+    assert dockerfiles
+    for dockerfile in dockerfiles:
+        contents = dockerfile.read_text(encoding="utf-8")
+        assert "COPY plugins/" not in contents, dockerfile.name
+        assert "build_plugin_wheels.py --outdir /tmp/plugin-dist --build" in contents, (
+            dockerfile.name
+        )
+        assert "--no-index --find-links /tmp/plugin-dist" in contents, dockerfile.name
+        for dist_name in dist_names:
+            assert dist_name in contents, (dockerfile.name, dist_name)
 
 
 def test_every_dockerfile_copies_the_root_environment_manifest():

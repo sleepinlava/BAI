@@ -48,6 +48,16 @@ mcp = [
     "mcp>=2.0,<3; python_version >= '3.10'",
 ]
 report = []
+plugins = [
+    "abi-agent-plugin-amplicon-16s",
+    "abi-agent-plugin-easymetagenome",
+    "abi-agent-plugin-metagenomic-plasmid",
+    "abi-agent-plugin-metatranscriptomics",
+    "abi-agent-plugin-rnaseq-expression",
+    "abi-agent-plugin-viral-viwrap",
+    "abi-agent-plugin-wgs-bacteria",
+    "abi-agent-plugin-wgs-bacannot",
+]
 docs = [
     "sphinx>=7.0",
     "furo>=2024.0",
@@ -69,18 +79,21 @@ dev = [
 abi = "abi.cli:main"
 abi-mcp = "abi.mcp.server:main"
 
-[project.entry-points."abi.plugins"]
-metagenomic_plasmid = "abi.plugins.metagenomic_plasmid:MetagenomicPlasmidPlugin"
-metatranscriptomics = "abi.plugins.metatranscriptomics:MetatranscriptomicsPlugin"
-rnaseq_expression = "abi.plugins.rnaseq_expression:RNASeqExpressionPlugin"
-amplicon_16s = "abi.plugins.amplicon_16s:Amplicon16SPlugin"
-wgs_bacteria = "abi.plugins.wgs_bacteria:WGSBacteriaPlugin"
-wgs_bacannot = "abi.plugins.wgs_bacannot:WGSBacannotPlugin"
-easymetagenome = "abi.plugins.easymetagenome:EasyMetagenomePlugin"
-viral_viwrap = "abi.plugins.viral_viwrap:ViralViWrapPlugin"
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/abi"]
+# WP11B: plugin implementations and their co-located data ship in the
+# per-plugin distributions (abi-agent-plugin-<id>); the core wheel stays
+# plugin-free while keeping the abi.plugins compatibility shim.
+exclude = [
+    "src/abi/plugins/amplicon_16s",
+    "src/abi/plugins/easymetagenome",
+    "src/abi/plugins/metagenomic_plasmid",
+    "src/abi/plugins/metatranscriptomics",
+    "src/abi/plugins/rnaseq_expression",
+    "src/abi/plugins/viral_viwrap",
+    "src/abi/plugins/wgs_bacteria",
+    "src/abi/plugins/wgs_bacannot",
+]
 
 # Built-in plugin templates live outside src/ so editable installs and source-tree
 # usage can share the same files. Include them in wheels at the same relative
@@ -95,7 +108,6 @@ packages = ["src/abi"]
 "examples/wgs_bacannot/demo_R2.fastq" = "examples/wgs_bacannot/demo_R2.fastq"
 "golden_traces" = "golden_traces"
 "integrations" = "abi/integrations"
-"plugins" = "plugins"
 "scripts/download_databases.sh" = "scripts/download_databases.sh"
 "scripts/hifiasm_gfa_to_fasta.sh" = "scripts/hifiasm_gfa_to_fasta.sh"
 "scripts/normalize_hifiadapterfilt_output.sh" = "scripts/normalize_hifiadapterfilt_output.sh"

@@ -71,11 +71,15 @@ jobs:
         run: |
           pip install build
           python -m build
+          # WP11B: the core wheel is plugin-free; build the official plugin
+          # distributions from the same source tree and version.
+          python scripts/build_plugin_wheels.py --outdir dist-plugins --build
 
       - name: Smoke-test wheel on Python ${{ matrix.python-version }}
         run: |
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          python -m pip install dist-plugins/abi_agent_plugin_*.whl
           abi_executable="$(command -v abi)"
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
@@ -85,6 +89,15 @@ jobs:
             --mamba-root "/tmp/abi-ci-python-${{ matrix.python-version }}-root" \
             --architecture "x86_64" \
             --output "/tmp/abi-ci-python-${{ matrix.python-version }}-capabilities.json"
+
+      - name: Acceptance — WP11B installation forms
+        if: matrix.python-version == '3.12'
+        run: |
+          # Core-only, core + single plugin, and core + full official combo
+          # are each installed into a fresh venv from the built wheels.
+          python scripts/verify_install_forms.py \
+            --dist-dir dist \
+            --plugin-dist-dir dist-plugins
 
       - name: Build docs (Sphinx)
         if: matrix.python-version == '3.12'
@@ -101,6 +114,7 @@ jobs:
         run: |
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          python -m pip install dist-plugins/abi_agent_plugin_*.whl
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
           abi list-types
@@ -197,8 +211,10 @@ jobs:
       - name: Build and smoke-test wheel
         run: |
           python -m build
+          python scripts/build_plugin_wheels.py --outdir dist-plugins --build
           wheels=(dist/*.whl)
           python -m pip install --force-reinstall "${wheels[0]}[mcp]"
+          python -m pip install dist-plugins/abi_agent_plugin_*.whl
           abi_executable="$(command -v abi)"
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"

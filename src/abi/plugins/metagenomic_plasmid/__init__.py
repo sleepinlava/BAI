@@ -47,7 +47,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from abi.config import PLUGIN_ROOT, load_yaml
+from abi.config import load_yaml
 from abi.dag_planner import (
     build_plan_from_dag as _core_build_plan,
 )
@@ -72,6 +72,8 @@ from .lib.standard_tables import (
     write_standard_table,
 )
 from .lib.tool_defaults import default_tools_for_category
+
+PLUGIN_DIR = Path(__file__).resolve().parent
 
 # ── Context resolver & hooks (migrated from lib/planner.py) ──────────
 
@@ -431,7 +433,7 @@ def build_plan_from_dag(
 
     resolved_config, _ = _plugin_context_resolver(config, ctx)
     return _core_build_plan(
-        PLUGIN_ROOT / "metagenomic_plasmid" / "pipeline_dag.yaml",
+        PLUGIN_DIR / "pipeline_dag.yaml",
         resolved_config,
         ctx,
         context_resolver=None,
@@ -464,7 +466,7 @@ class MetagenomicPlasmidPlugin:
 
         插件数据（配置文件、工具注册表等）的文件系统根目录。
         """
-        return PLUGIN_ROOT / self.plugin_id
+        return PLUGIN_DIR
 
     # ── Configuration / 配置 ──────────────────────────────────────────────
 

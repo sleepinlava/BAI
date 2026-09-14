@@ -28,10 +28,8 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 import yaml
 
-from abi.config import PLUGIN_ROOT
-
 # Path to the canonical DAG specification relative to the plugin root.
-_DAG_SPEC_PATH: Path = PLUGIN_ROOT / "metagenomic_plasmid" / "pipeline_dag.yaml"
+_DAG_SPEC_PATH: Path = Path(__file__).resolve().parents[1] / "pipeline_dag.yaml"
 
 
 class PipelineDAG:

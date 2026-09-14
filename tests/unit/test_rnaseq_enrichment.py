@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-_SCRIPT = Path("plugins/rnaseq_expression/scripts/run_enrichment.py")
+_SCRIPT = Path("src/abi/plugins/rnaseq_expression/scripts/run_enrichment.py")
 _SPEC = importlib.util.spec_from_file_location("abi_rnaseq_enrichment_script", _SCRIPT)
 assert _SPEC is not None and _SPEC.loader is not None
 _MODULE = importlib.util.module_from_spec(_SPEC)

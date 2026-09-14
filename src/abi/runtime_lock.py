@@ -15,7 +15,7 @@ from typing import Any, Mapping, Sequence
 import yaml
 
 from abi.config import PROJECT_ROOT, resolved_mamba_root
-from abi.plugin_registry import get_plugin
+from abi.plugin_registry import get_plugin, plugin_data_root, plugin_data_roots
 from abi.resources import check_resources
 from abi.runtime_environment import resolve_environment_prefix
 from abi.tool_catalog import ToolCatalog
@@ -290,8 +290,14 @@ def build_tool_lock(
     resource_paths = _resource_install_paths(resource_lock)
     tools: list[dict[str, Any]] = []
 
-    for registry in sorted((project_root / "plugins").glob("*/tool_registry.yaml")):
-        plugin = registry.parent.name
+    # WP11B: plugin data roots span co-located bundled packages and loose
+    # project-root directories; iterate in deterministic plugin-id order.
+    # WP11B：插件数据根同时覆盖同址捆绑包与项目根散装目录；按 plugin_id 确定性排序。
+    for plugin_id, data_root in sorted(plugin_data_roots(project_root).items()):
+        registry = data_root / "tool_registry.yaml"
+        if not registry.exists():
+            continue
+        plugin = plugin_id
         # Conda package aliases are plugin-declared (P3-3): each manifest maps
         # its own tool ids to conda package names that differ from the tool id.
         # Conda 包别名由插件声明：各 manifest 将自身工具 id 映射到与 id 不同的包名。
@@ -478,7 +484,18 @@ def _release_required_tools(
 ) -> dict[str, set[str]]:
     required: dict[str, set[str]] = {}
     for analysis_type in analysis_types:
-        registry = _load_yaml(project_root / "plugins" / analysis_type / "tool_registry.yaml")
+        # A requested analysis type with no discoverable plugin data cannot
+        # contribute requirements; that would silently shrink the certified
+        # scope, so it fails loudly instead (WP11B install-form contract).
+        # 请求的分析类型若找不到插件数据，将静默缩小认证范围，必须显式报错。
+        data_root = plugin_data_root(analysis_type, project_root=project_root)
+        if data_root is None:
+            raise RuntimeError(
+                f"Runtime lock analysis type {analysis_type!r} has no discoverable "
+                "plugin data (neither bundled package nor plugins/ directory); "
+                "install the plugin distribution or narrow analysis_types."
+            )
+        registry = _load_yaml(data_root / "tool_registry.yaml")
         required[analysis_type] = {
             str(tool.get("id", ""))
             for tool in registry.get("tools", [])
@@ -494,7 +511,14 @@ def _resource_consuming_tools(
     """Map externally supplied workflow inputs to the tools that consume them."""
     consumers: dict[str, dict[str, set[str]]] = {}
     for analysis_type in analysis_types:
-        pipeline = _load_yaml(project_root / "plugins" / analysis_type / "pipeline_dag.yaml")
+        data_root = plugin_data_root(analysis_type, project_root=project_root)
+        if data_root is None:
+            raise RuntimeError(
+                f"Runtime lock analysis type {analysis_type!r} has no discoverable "
+                "plugin data (neither bundled package nor plugins/ directory); "
+                "install the plugin distribution or narrow analysis_types."
+            )
+        pipeline = _load_yaml(data_root / "pipeline_dag.yaml")
         analysis_consumers: dict[str, set[str]] = {}
         nodes = pipeline.get("nodes", {})
         node_rows = nodes.values() if isinstance(nodes, Mapping) else nodes

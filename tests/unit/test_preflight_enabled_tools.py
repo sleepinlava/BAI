@@ -21,7 +21,7 @@ from abi.plugins.metagenomic_plasmid.lib.skills.registry import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PLASMID_PLUGIN_ROOT = REPO_ROOT / "plugins" / "metagenomic_plasmid"
+PLASMID_PLUGIN_ROOT = REPO_ROOT / "src" / "abi" / "plugins" / "metagenomic_plasmid"
 
 GENOMAD_METADATA = {
     "id": "genomad",

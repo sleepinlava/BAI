@@ -198,7 +198,7 @@ def test_default_illumina_route_matches_optimized_main_path(tmp_path):
 
 
 def test_pipeline_template_params_are_contract_linted() -> None:
-    assert validate_pipeline_template_params(Path("plugins/metagenomic_plasmid")) == []
+    assert validate_pipeline_template_params(Path("src/abi/plugins/metagenomic_plasmid")) == []
 
 
 def test_multiqc_steps_include_project_outdir_template_param(tmp_path):
@@ -625,7 +625,9 @@ def test_standard_tables_yaml_is_runtime_schema_source_of_truth():
 def test_dag_encodes_hard_tool_policy():
     repository = Path(__file__).parents[2]
     dag = yaml.safe_load(
-        (repository / "plugins/metagenomic_plasmid/pipeline_dag.yaml").read_text(encoding="utf-8")
+        (repository / "src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml").read_text(
+            encoding="utf-8"
+        )
     )
     nodes = dag["nodes"]
     tool_nodes = {}

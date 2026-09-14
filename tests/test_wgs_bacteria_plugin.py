@@ -69,7 +69,7 @@ def test_plugin_contract():
 
 
 def test_pipeline_dag_exists():
-    dag_path = Path("plugins/wgs_bacteria/pipeline_dag.yaml")
+    dag_path = Path("src/abi/plugins/wgs_bacteria/pipeline_dag.yaml")
     assert dag_path.exists(), "pipeline_dag.yaml required for L1/L2/L3 DAG validation"
 
 
@@ -142,7 +142,7 @@ def test_amr_depends_on_annotation(tmp_path):
 def test_workflow_spec_loads():
     from abi.contracts import load_workflow_spec
 
-    ws = load_workflow_spec("plugins/wgs_bacteria")
+    ws = load_workflow_spec("src/abi/plugins/wgs_bacteria")
     assert ws is not None
     assert len(ws.steps) == 5
     for s in ws.steps:
@@ -161,7 +161,7 @@ def test_dag_cross_validation(tmp_path):
         }
     )
     plan = plugin.build_plan(cfg, check_files=False)
-    ws = load_workflow_spec("plugins/wgs_bacteria")
+    ws = load_workflow_spec("src/abi/plugins/wgs_bacteria")
     dag = infer_dag(plan.steps, workflow_spec=ws, project_root=tmp_path)
     assert len(dag.bindings) == len(plan.steps)
 

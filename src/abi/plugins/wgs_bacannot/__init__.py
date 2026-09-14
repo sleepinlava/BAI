@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
 from abi._shared import _resolve_path
-from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
+from abi.config import PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
 from abi.external_workflows.models import ExternalProcessContract, ExternalWorkflowSpec
 from abi.report import write_plugin_report
 from abi.schemas import ABIExecutionPlan
@@ -33,7 +33,7 @@ class WGSBacannotPlugin:
 
     @property
     def root(self) -> Path:
-        return PLUGIN_ROOT / self.plugin_id
+        return Path(__file__).resolve().parent
 
     def load_config(
         self,

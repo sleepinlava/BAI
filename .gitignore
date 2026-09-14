@@ -16,6 +16,7 @@ htmlcov/
 *.egg-info/
 .eggs/
 dist/
+dist-plugins/
 build/
 wheelhouse/
 *.egg

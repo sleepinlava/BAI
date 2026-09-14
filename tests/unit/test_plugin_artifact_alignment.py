@@ -7,9 +7,8 @@ import yaml
 
 from abi.contracts import load_workflow_spec
 from abi.dag import infer_dag
-from abi.plugin_registry import get_plugin
+from abi.plugin_registry import get_plugin, plugin_data_root, plugin_data_roots
 
-PLUGIN_ROOT = Path("plugins")
 INLINE_PLUGINS = (
     "amplicon_16s",
     "metatranscriptomics",
@@ -26,7 +25,7 @@ def _load(path: Path):
 @pytest.mark.parametrize("plugin_id", ALL_PLUGINS)
 def test_registry_dag_and_contracts_share_one_tool_set(plugin_id):
     """Prevent tools from becoming phantom, stale, or uncontracted again."""
-    root = PLUGIN_ROOT / plugin_id
+    root = plugin_data_root(plugin_id)
     registry = _load(root / "tool_registry.yaml")
     dag = _load(root / "pipeline_dag.yaml")
 
@@ -53,7 +52,7 @@ def test_registry_dag_and_contracts_share_one_tool_set(plugin_id):
 
 @pytest.mark.parametrize("plugin_id", INLINE_PLUGINS)
 def test_inline_plugin_manifest_core_contracts_match_dag(plugin_id):
-    root = PLUGIN_ROOT / plugin_id
+    root = plugin_data_root(plugin_id)
     dag = _load(root / "pipeline_dag.yaml")
     manifest = _load(root / "abi-plugin.yaml")
     dag_tools = {str(node["tool_id"]) for node in dag.get("nodes", {}).values()}
@@ -78,8 +77,10 @@ def test_inline_plugin_manifest_core_contracts_match_dag(plugin_id):
 
 def test_environment_assignments_match_every_plugin_registry():
     assignments = _load(Path("environments.yaml")).get("tool_assignments", {})
-    for registry_path in sorted(PLUGIN_ROOT.glob("*/tool_registry.yaml")):
-        plugin_id = registry_path.parent.name
+    for plugin_id, data_root in sorted(plugin_data_roots().items()):
+        registry_path = data_root / "tool_registry.yaml"
+        if not registry_path.exists():
+            continue
         registry_tools = {str(tool["id"]) for tool in _load(registry_path).get("tools", [])}
         assigned_tools = set(assignments.get(plugin_id, {}))
         assert assigned_tools == registry_tools, (

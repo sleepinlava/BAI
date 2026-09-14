@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from abi.config import PLUGIN_ROOT
 from abi.contracts.lint import lint_limitations, run_contract_lint
+from abi.plugin_registry import plugin_data_root
 from abi.report.generic_report import write_generic_report
 from abi.report.html import write_html_report
 from abi.report.limitations import (
@@ -52,7 +52,7 @@ class FakePlan:
 
 @pytest.mark.parametrize("plugin_id", BUILTIN_PLUGIN_IDS)
 def test_builtin_plugin_ships_non_empty_limitations(plugin_id: str) -> None:
-    plugin_root = PLUGIN_ROOT / plugin_id
+    plugin_root = plugin_data_root(plugin_id)
     path = plugin_root / "limitations.yaml"
     assert path.exists(), f"{plugin_id} is missing limitations.yaml"
     entries = load_limitations(path)
@@ -187,7 +187,7 @@ def test_plasmid_markdown_report_contains_declared_limitations(tmp_path: Path) -
     report_path = write_markdown_report(plan, tmp_path / "report", tables_dir=tables_dir)
     content = report_path.read_text(encoding="utf-8")
     assert "## Known Limitations" in content
-    declared = load_limitations(PLUGIN_ROOT / "metagenomic_plasmid" / "limitations.yaml")
+    declared = load_limitations(plugin_data_root("metagenomic_plasmid") / "limitations.yaml")
     assert declared and declared[0] in content
 
 
@@ -222,7 +222,7 @@ def test_plasmid_html_report_contains_declared_limitations(tmp_path: Path) -> No
     report_path = write_plasmid_html_report(plan, tmp_path / "report", tables_dir=tables_dir)
     content = report_path.read_text(encoding="utf-8")
     assert "<h2>Known Limitations</h2>" in content
-    declared = load_limitations(PLUGIN_ROOT / "metagenomic_plasmid" / "limitations.yaml")
+    declared = load_limitations(plugin_data_root("metagenomic_plasmid") / "limitations.yaml")
     assert declared and declared[0] in content
 
 

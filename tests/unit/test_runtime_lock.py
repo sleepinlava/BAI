@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import yaml
@@ -46,7 +45,10 @@ def test_full_database_profile_uses_canonical_autoplasm_paths(tmp_path: Path) ->
     assert config["resources"]["kraken2"]["database"] == "kraken2"
 
 
-def test_generate_runtime_locks_resolves_extra_path_dirs(tmp_path: Path) -> None:
+def test_generate_runtime_locks_resolves_extra_path_dirs(tmp_path: Path, monkeypatch) -> None:
+    # Simulate a machine whose installed abi has no bundled plugins so the
+    # fake project's loose plugins/ directory is the only data source.
+    monkeypatch.setattr("abi.plugin_registry._colocated_plugin_dirs", lambda: [])
     project = tmp_path / "abi"
     plugin_dir = project / "plugins" / "demo"
     plugin_dir.mkdir(parents=True)
@@ -185,11 +187,8 @@ def test_release_summary_honors_require_all_tools_and_resource_audit_errors(
 def test_generate_runtime_locks_resolves_mixed_resource_layout(tmp_path: Path) -> None:
     project = tmp_path / "abi"
     project.mkdir()
-    source_plugin = Path(__file__).parents[2] / "plugins" / "rnaseq_expression"
-    target_plugin = project / "plugins" / "rnaseq_expression"
-    target_plugin.mkdir(parents=True)
-    shutil.copy2(source_plugin / "pipeline_dag.yaml", target_plugin / "pipeline_dag.yaml")
-    shutil.copy2(source_plugin / "tool_registry.yaml", target_plugin / "tool_registry.yaml")
+    # WP11B: bundled plugin data resolves from the installed abi package; the
+    # lock's resource rows must still resolve against the requested roots.
     (project / "environments.yaml").write_text(
         yaml.safe_dump({"environments": {}, "tool_assignments": {}}, sort_keys=False),
         encoding="utf-8",

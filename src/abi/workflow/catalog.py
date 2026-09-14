@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from abi.config import PLUGIN_ROOT, load_yaml
 from abi.errors import ConfigError
+from abi.plugin_registry import plugin_data_root
 
 
 class WorkflowCatalogError(ConfigError, ValueError):
@@ -55,7 +56,13 @@ class WorkflowCatalog:
         *,
         plugin_root: str | Path | None = None,
     ) -> "WorkflowCatalog":
-        root = Path(plugin_root) if plugin_root is not None else PLUGIN_ROOT / plugin_id
+        root = (
+            Path(plugin_root)
+            if plugin_root is not None
+            # WP11B: bundled plugin data is co-located with the implementation
+            # package; fall back to the loose plugins/ layout for externals.
+            else plugin_data_root(plugin_id) or PLUGIN_ROOT / plugin_id
+        )
         path = root / "workflows/catalog.yaml"
         if not path.is_file():
             return cls(plugin_id, ())

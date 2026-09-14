@@ -62,7 +62,9 @@ def parse_go_ontology(
                 str(current["name"]),
                 str(current.get("namespace", "unknown")),
             )
-            parents[term_id].update(current.get("parents", set()))
+            inherited = current.get("parents", set())
+            if isinstance(inherited, set):
+                parents[term_id].update(str(item) for item in inherited)
 
     with go_obo.open() as handle:
         for raw in handle:
@@ -75,10 +77,14 @@ def parse_go_ontology(
                 current = {}
             elif line.startswith("is_a: GO:"):
                 parent = line.split()[1]
-                current.setdefault("parents", set()).add(parent)
+                term_parents = current.setdefault("parents", set())
+                if isinstance(term_parents, set):
+                    term_parents.add(parent)
             elif line.startswith("relationship: part_of GO:"):
                 parent = line.split()[2]
-                current.setdefault("parents", set()).add(parent)
+                term_parents = current.setdefault("parents", set())
+                if isinstance(term_parents, set):
+                    term_parents.add(parent)
             elif ": " in line:
                 key, value = line.split(": ", 1)
                 if key in {"id", "name", "namespace", "is_obsolete"}:

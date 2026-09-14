@@ -51,7 +51,7 @@ def test_registry():
 def test_star_output_prefix_is_not_a_preexisting_path_input():
     """STAR creates files at its output prefix, so runtime input checks must skip it."""
     for plugin_id in ("rnaseq_expression", "metatranscriptomics"):
-        contract_path = Path("plugins") / plugin_id / "tool_contracts" / "star.yaml"
+        contract_path = Path("src/abi/plugins") / plugin_id / "tool_contracts" / "star.yaml"
         contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
         assert contract["inputs"]["output_prefix"]["type"] == "string"
 
@@ -70,7 +70,7 @@ def test_plugin_contract():
 
 
 def test_pipeline_dag_exists():
-    dag_path = Path("plugins/rnaseq_expression/pipeline_dag.yaml")
+    dag_path = Path("src/abi/plugins/rnaseq_expression/pipeline_dag.yaml")
     assert dag_path.exists(), "pipeline_dag.yaml required for L1/L2/L3 DAG validation"
 
 
@@ -194,7 +194,7 @@ def test_enrichment_rejects_invalid_gsea_plot_fdr(gsea_fdr):
 def test_workflow_spec_loads():
     from abi.contracts import load_workflow_spec
 
-    ws = load_workflow_spec("plugins/rnaseq_expression")
+    ws = load_workflow_spec("src/abi/plugins/rnaseq_expression")
     assert ws is not None
     assert len(ws.steps) == 6
     assert ws.steps[0].tool == "fastp"
@@ -219,7 +219,7 @@ def test_dag_cross_validation(tmp_path):
     )
     plan = plugin.build_plan(cfg, check_files=False)
 
-    ws = load_workflow_spec("plugins/rnaseq_expression")
+    ws = load_workflow_spec("src/abi/plugins/rnaseq_expression")
     dag = infer_dag(plan.steps, workflow_spec=ws, project_root=tmp_path)
 
     # L1: workflow declares fastp→star→featurecounts→deseq2

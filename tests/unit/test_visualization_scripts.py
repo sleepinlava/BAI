@@ -12,7 +12,7 @@ import pytest
 
 from abi.errors import InputPolicyError
 
-SCRIPTS = Path("plugins/metagenomic_plasmid/scripts")
+SCRIPTS = Path("src/abi/plugins/metagenomic_plasmid/scripts")
 
 
 def _load_script(name: str) -> ModuleType:

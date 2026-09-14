@@ -26,9 +26,14 @@ __all__ = [
 
 
 def _resolve_project_root() -> Path:
+    # WP11B: bundled plugin data moved inside the abi package, so the old
+    # "plugins/" directory no longer marks the project root. "config/" exists
+    # at both the repository root and the installed wheel root (site-packages).
+    # WP11B：捆绑插件数据已移入 abi 包内部，旧 "plugins/" 目录不再是项目根标记；
+    # "config/" 同时存在于仓库根与安装后的 wheel 根（site-packages）。
     current = Path(__file__).resolve()
     for candidate in (current.parents[2], current.parents[1], Path.cwd()):
-        if (candidate / "plugins").exists():
+        if (candidate / "config").is_dir():
             return candidate
     return current.parents[2]
 

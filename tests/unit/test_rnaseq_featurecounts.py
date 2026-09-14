@@ -4,7 +4,7 @@ from abi.tools import ToolRegistry
 
 
 def test_rnaseq_featurecounts_command_retries_without_paired_flag() -> None:
-    registry = ToolRegistry.from_path("plugins/rnaseq_expression/tool_registry.yaml")
+    registry = ToolRegistry.from_path("src/abi/plugins/rnaseq_expression/tool_registry.yaml")
     command = registry.create("featurecounts", mock_tools=True).build_command(
         {
             "threads": 8,
@@ -22,7 +22,7 @@ def test_rnaseq_featurecounts_command_retries_without_paired_flag() -> None:
 
 
 def test_metatranscriptomics_featurecounts_command_retries_without_paired_flag() -> None:
-    registry = ToolRegistry.from_path("plugins/metatranscriptomics/tool_registry.yaml")
+    registry = ToolRegistry.from_path("src/abi/plugins/metatranscriptomics/tool_registry.yaml")
     command = registry.create("featurecounts", mock_tools=True).build_command(
         {
             "threads": 8,

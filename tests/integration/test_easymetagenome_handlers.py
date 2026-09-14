@@ -21,7 +21,8 @@ from abi.runtimes import RuntimeOptions
 from abi.workflow import WorkflowCoordinator
 
 _CANONICAL_REPORT_SCHEMA = (
-    Path(__file__).parents[2] / "plugins/easymetagenome/schemas/abi_report_manifest.schema.json"
+    Path(__file__).parents[2]
+    / "src/abi/plugins/easymetagenome/schemas/abi_report_manifest.schema.json"
 )
 
 

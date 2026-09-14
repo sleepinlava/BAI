@@ -40,7 +40,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--expression-dir",
         required=True,
-        help="Root directory containing per-sample featureCounts subdirectories (e.g. 03_expression/)",
+        help="Root directory containing per-sample featureCounts subdirectories",
     )
     p.add_argument(
         "--sample-sheet",

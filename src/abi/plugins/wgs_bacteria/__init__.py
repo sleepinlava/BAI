@@ -21,7 +21,7 @@ from abi._shared import (
     _parse_sample_sheet_tabular,
     _resolve_path,
 )
-from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
+from abi.config import PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
 from abi.report import write_plugin_report
 from abi.resources import DownloadResult
 from abi.schemas import ABIExecutionPlan, ABISample, ABISampleContext
@@ -45,7 +45,7 @@ class WGSBacteriaPlugin:
 
     @property
     def root(self) -> Path:
-        return PLUGIN_ROOT / self.plugin_id
+        return Path(__file__).resolve().parent
 
     @property
     def _tsv_mapper(self):

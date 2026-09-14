@@ -19,7 +19,6 @@ from typing import Any, Dict
 import pytest
 import yaml
 
-from abi.config import PLUGIN_ROOT
 from abi.dag_planner import (
     PathTemplateContext,
     PluginContextResolver,
@@ -28,6 +27,7 @@ from abi.dag_planner import (
     build_sample_context,
     detect_platform,
 )
+from abi.plugin_registry import plugin_data_root
 from abi.schemas import SampleContext, SampleInput
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
@@ -106,13 +106,13 @@ class TestUniversalDAGLoading:
         ],
     )
     def test_load_existing_dag(self, plugin_name: str, expected_nodes: int) -> None:
-        dag_path = PLUGIN_ROOT / plugin_name / "pipeline_dag.yaml"
+        dag_path = plugin_data_root(plugin_name) / "pipeline_dag.yaml"
         dag = UniversalDAG.from_yaml(dag_path)
         assert dag.pipeline_id == plugin_name
         assert len(dag._nodes) == expected_nodes
 
     def test_metagenomic_plasmid_has_distinct_scapp_stages(self) -> None:
-        dag_path = PLUGIN_ROOT / "metagenomic_plasmid" / "pipeline_dag.yaml"
+        dag_path = plugin_data_root("metagenomic_plasmid") / "pipeline_dag.yaml"
         dag = UniversalDAG.from_yaml(dag_path)
 
         assert dag._nodes["plasmid_detect_scapp"]["category"] == "plasmid_detection"
@@ -1042,7 +1042,7 @@ class TestGoldenTraceParity:
         ctx = plugin.build_sample_context(config, check_files=False)
 
         dag_plan = build_plan_from_dag(
-            PLUGIN_ROOT / "rnaseq_expression" / "pipeline_dag.yaml",
+            plugin_data_root("rnaseq_expression") / "pipeline_dag.yaml",
             config,
             ctx,
         )

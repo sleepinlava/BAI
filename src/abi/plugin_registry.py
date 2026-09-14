@@ -124,10 +124,90 @@ def _manifest_metadata(path: Path) -> PluginMetadata:
     )
 
 
+def _colocated_plugin_dirs() -> list[Path]:
+    """Plugin data directories co-located with the ``abi.plugins`` package.
+
+    WP11B: bundled plugin implementations ship their data (DAG, tool registry,
+    limitations, …) inside their own package, so discovery works identically
+    for source trees, editable installs, and per-plugin wheel installs.
+    """
+
+    base = Path(__file__).parent / "plugins"
+    try:
+        return sorted(path.parent for path in base.glob("*/abi-plugin.yaml"))
+    except OSError as exc:
+        warnings.warn(
+            f"Unable to scan co-located ABI plugin packages: {exc}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return []
+
+
+def plugin_data_roots(project_root: Path | None = None) -> dict[str, Path]:
+    """Map ``plugin_id`` to its data root without loading any implementation.
+
+    Two discovery sources are merged deterministically:
+
+    1. Bundled plugin packages co-located under ``abi/plugins/<id>/`` (the
+       WP11B distribution layout; also present in source/editable installs).
+    2. Loose plugin directories under ``<project_root>/plugins/``
+       (``PLUGIN_ROOT``), kept as the external/user-installed layout.
+
+    A loose directory may not shadow a bundled plugin id: the bundled data
+    root wins and the shadowed directory is reported, so data consumers never
+    depend on enumeration order.
+    """
+
+    roots: dict[str, Path] = {path.name: path for path in _colocated_plugin_dirs()}
+    # PLUGIN_ROOT is ``PROJECT_ROOT / "plugins"``; an explicit project root
+    # keeps the same relative layout (used by tests and alternate checkouts).
+    base = (Path(project_root) / "plugins") if project_root is not None else PLUGIN_ROOT
+    try:
+        loose = sorted(
+            path
+            for path in base.glob("*")
+            if path.is_dir()
+            and ((path / "abi-plugin.yaml").is_file() or (path / "tool_registry.yaml").is_file())
+        )
+    except OSError as exc:
+        warnings.warn(
+            f"Unable to scan loose ABI plugin directory {str(base)!r}: {exc}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return roots
+    for path in loose:
+        if path.name in roots:
+            warnings.warn(
+                f"Loose ABI plugin directory shadows bundled plugin {path.name!r}: {path}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            continue
+        roots[path.name] = path
+    return roots
+
+
+def plugin_data_root(plugin_id: str, *, project_root: Path | None = None) -> Path | None:
+    """Return the data root for *plugin_id*, or ``None`` when not discoverable."""
+
+    return plugin_data_roots(project_root).get(str(plugin_id))
+
+
 def _manifest_records() -> list[_PluginRecord]:
     records: list[_PluginRecord] = []
     try:
-        manifest_paths = sorted(PLUGIN_ROOT.glob("*/abi-plugin.yaml"))
+        # WP11B: bundled plugin manifests are co-located with each
+        # implementation package; PLUGIN_ROOT remains a discovery path for
+        # external/user-installed plugins.
+        # WP11B：捆绑插件清单与实现包同址；PLUGIN_ROOT 保留为外部插件发现路径。
+        manifest_paths = sorted(
+            {
+                *(directory / "abi-plugin.yaml" for directory in _colocated_plugin_dirs()),
+                *PLUGIN_ROOT.glob("*/abi-plugin.yaml"),
+            }
+        )
     except MemoryError:
         raise
     except OSError as exc:
@@ -376,4 +456,6 @@ __all__ = [
     "get_plugin",
     "list_plugin_metadata",
     "list_plugins",
+    "plugin_data_root",
+    "plugin_data_roots",
 ]

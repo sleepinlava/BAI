@@ -14,7 +14,8 @@ def load_plugin_limitations() -> List[str]:
     report writers render an explicit fallback sentence in that case so the
     limitations section is never silently omitted.
     """
-    from abi.config import PLUGIN_ROOT
+    from pathlib import Path as _Path
+
     from abi.report.limitations import load_limitations
 
-    return load_limitations(PLUGIN_ROOT / "metagenomic_plasmid" / "limitations.yaml")
+    return load_limitations(_Path(__file__).resolve().parents[2] / "limitations.yaml")

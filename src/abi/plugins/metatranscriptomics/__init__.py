@@ -64,7 +64,7 @@ from abi._shared import (
     _parse_star,
     _resolve_path,
 )
-from abi.config import PLUGIN_ROOT, PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
+from abi.config import PROJECT_ROOT, compact_overrides, deep_merge, load_yaml
 from abi.plugin import DeclarativeABIPlugin
 from abi.report import write_plugin_report
 from abi.schemas import ABIExecutionPlan, ABISample, ABISampleContext
@@ -92,7 +92,7 @@ class MetatranscriptomicsPlugin(DeclarativeABIPlugin):
     * ``parse_outputs`` normalizes all three tools into standard tables.
     """
 
-    plugin_root = PLUGIN_ROOT / "metatranscriptomics"
+    plugin_root = Path(__file__).resolve().parent
 
     @property
     def _tsv_mapper(self):

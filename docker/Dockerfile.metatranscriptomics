@@ -28,7 +28,6 @@ RUN mamba env create -f /tmp/envs/abi-qc.yml && \
 COPY pyproject.toml README.md /app/
 COPY environments.yaml /app/
 COPY src/ /app/src/
-COPY plugins/ /app/plugins/
 COPY config/ /app/config/
 COPY scripts/ /app/scripts/
 COPY data/ /app/data/
@@ -38,8 +37,20 @@ COPY golden_traces/ /app/golden_traces/
 COPY integrations/ /app/integrations/
 
 # Install into abi-stats env (has the most Python deps)
+# WP11B: the core wheel is plugin-free; build the official plugin
+# distributions from the same source tree and install the full combo.
 RUN /opt/conda/envs/abi-stats/bin/pip install --no-cache-dir /app/ && \
-    rm -rf /app/src /app/plugins /app/config /app/pyproject.toml /app/environments.yaml \
+    /opt/conda/envs/abi-stats/bin/python /app/scripts/build_plugin_wheels.py --outdir /tmp/plugin-dist --build && \
+    /opt/conda/envs/abi-stats/bin/pip install --no-cache-dir --no-index --find-links /tmp/plugin-dist \
+        abi-agent-plugin-amplicon-16s \
+        abi-agent-plugin-easymetagenome \
+        abi-agent-plugin-metagenomic-plasmid \
+        abi-agent-plugin-metatranscriptomics \
+        abi-agent-plugin-rnaseq-expression \
+        abi-agent-plugin-viral-viwrap \
+        abi-agent-plugin-wgs-bacteria \
+        abi-agent-plugin-wgs-bacannot && \
+    rm -rf /app/src /app/config /app/pyproject.toml /app/environments.yaml \
     /app/data /app/envs /app/examples /app/golden_traces /app/integrations
 
 # ── Runtime ──────────────────────────────────────────────────────────────
