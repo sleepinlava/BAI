@@ -16,6 +16,7 @@ from abi.runtimes import (
     SnakemakeRuntime,
 )
 from abi.schemas import ABIError
+from abi.workflow.compiled_plan import verify_confirmed_plan
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class PreparedWorkflow:
     plan: Any
     options: RuntimeOptions
     plugin: Any = field(repr=False)
+    confirmed_plan_id: str = ""
 
 
 class WorkflowCoordinator:
@@ -75,6 +77,7 @@ class WorkflowCoordinator:
         return runtime.dry_run(prepared.plan, prepared.config)
 
     def run(self, prepared: PreparedWorkflow) -> RuntimeResult:
+        verify_confirmed_plan(prepared)
         result = self._runtime(prepared).run(prepared.plan, prepared.config)
         self.merge_published_outputs(prepared, result.outputs)
         return result

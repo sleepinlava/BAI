@@ -385,7 +385,6 @@ Plugins should import from the public SDK:
 | `abi._shared` | `_read_tsv`, `_display_command`, `_plan_dict`, `_common_overrides` |
 | `abi.dag_planner` | `UniversalDAG`, `build_plan_from_dag`, `PathTemplateContext` — DAG-driven `build_plan()` (added 2026-06-18) |
 | `abi.tsv_mapping` | `TSVMapper`, `generate_rows` — declarative TSV column mapping (added 2026-06-18) |
-| `abi.sciplot` | `FigureSpec`, `render_figure`, `validate_spec`, `lint_figure` — Matplotlib-based publication figure compiler with 15 plot types, three themes, lint, and SHA-256 provenance |
 | `abi.contracts` | `WorkflowSpec`, `WorkflowStepSpec`, `load_workflow_spec`, `run_contract_lint` — L1/L2/L3 workflow declaration + validation |
 | `abi.report` | `write_plugin_report`, `render_figures_via_sciplot` — report generation + figure rendering |
 

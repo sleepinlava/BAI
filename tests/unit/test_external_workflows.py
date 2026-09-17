@@ -406,7 +406,18 @@ def test_managed_run_failure_writes_structured_diagnostics(tmp_path: Path) -> No
     assert verify_evidence_manifest(manifest_path) is not None
 
 
-def test_resume_run_archives_previous_evidence_and_links_lineage(tmp_path: Path) -> None:
+def test_resume_run_archives_previous_evidence_and_links_lineage(
+    tmp_path: Path, monkeypatch
+) -> None:
+    # Smoke execution intentionally does not probe real binaries.  Supply a
+    # deterministic synthetic capture so this lineage test exercises resume
+    # archival semantics without bypassing the production fail-closed rule
+    # for unknown identities.
+    def captured_version(_skill, *, mock_tools: bool = False):
+        return "smoke-test", "captured"
+
+    monkeypatch.setattr("abi.provenance.capture_tool_version", captured_version)
+    monkeypatch.setattr("abi.results.capture_tool_version", captured_version)
     _, config, plan, runtime = _make_successful_run(tmp_path)
     first = runtime.run(plan, config)
     previous_attempts = first.outputs["task_attempts"].read_text(encoding="utf-8")

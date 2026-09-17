@@ -2,11 +2,12 @@
 
 ## Project Structure & Module Organization
 
-Core Python code lives in `src/abi/`. Keep transport-neutral behavior in the core; CLI, MCP, HTTP, and provider integrations should remain thin adapters. Built-in workflow implementations are split between Python entry points in `src/abi/plugins/` and declarative definitions in `plugins/<analysis_type>/` (`pipeline_dag.yaml`, tool registries, schemas, report metadata, and a mandatory `limitations.yaml`). Tests are organized under `tests/unit/`, `tests/integration/`, and `tests/smoke/`; SciPlot also has focused tests in `src/abi/sciplot/tests/`. Use `examples/` for runnable configuration samples, `docs/en/` and `docs/zh/` for documentation, `envs/` for Conda environments, `environments.yaml` for tool→env assignments (21 envs, 99 tools), and `scripts/` for maintenance utilities.
+Core Python code lives in `src/abi/`. Keep transport-neutral behavior in the core; CLI, MCP, HTTP, and provider integrations should remain thin adapters. Built-in workflow implementations are co-located with their declarative definitions in `src/abi/plugins/<analysis_type>/` (`pipeline_dag.yaml`, tool registries, schemas, report metadata, and a mandatory `limitations.yaml`). Tests are organized under `tests/unit/`, `tests/integration/`, and `tests/smoke/`; local paper reproduction is explicitly selected outside the product suite. Use `examples/` for runnable configuration samples, `docs/en/` and `docs/zh/` for documentation, `envs/` for Conda environments, `environments.yaml` for tool→env assignments (generated environment YAMLs must match the manifest), and `scripts/` for maintenance utilities.
 
 Execution engines are `local`, `nextflow`, `snakemake`, and `hpc`; the Snakemake backend lives in `src/abi/exporters/snakemake.py` and `src/abi/runtimes/snakemake.py`. Every external-tool node in `pipeline_dag.yaml` must declare a `contract:` (or an explicit `contract: {exempt: true, reason: ...}` for output-less aggregation nodes); the coverage gate is enforced by strict `abi contract-lint` and plugin validation, and `scripts/audit_contract_coverage.py` audits it. Every plugin must also ship a non-empty `limitations.yaml` (lint errors `missing_limitations`/`invalid_limitations`/`empty_limitations`); reports always render a limitations section, falling back to a placeholder when the list is empty.
 
-Current codebase (2026-07-25): 228 Python source files (~57.4k lines), plasmid engine (11,968 lines), 49-file sciplot module (8,033 lines), 165 test files (2,536 collected), 80% coverage.
+Use current source and CI results for code size, test counts, and coverage. SciPlot, Study,
+and automatic acquisition are retired; preserve core execution and independent audit.
 
 ## Build, Test, and Development Commands
 
@@ -20,7 +21,6 @@ Current codebase (2026-07-25): 228 Python source files (~57.4k lines), plasmid e
 - `python -m build` creates wheel and source distributions.
 - `abi query --type metagenomic_plasmid --what stages` lightweight metadata query (~50ms).
 - `abi lock-runtime --db-profile full --strict` builds and validates a release-scope runtime lock.
-- `abi-sciplot validate --spec figure.yaml` validates a FigureSpec before rendering.
 
 ## Coding Style & Naming Conventions
 
@@ -28,7 +28,7 @@ Target Python 3.10 and use four-space indentation with a 100-character line limi
 
 ## Testing Guidelines
 
-Name test files `test_<feature>.py` and test functions `test_<behavior>`. Add fast isolated checks to `tests/unit/`, cross-component checks to `tests/integration/`, and tool-dependent workflows to `tests/smoke/`. Mark real-tool tests with `@pytest.mark.smoke` and/or `@pytest.mark.requires_tools`. Include regression tests with every behavior change; keep total coverage at or above 60%.
+Name test files `test_<feature>.py` and test functions `test_<behavior>`. Add fast isolated checks to `tests/unit/`, cross-component checks to `tests/integration/`, and tool-dependent workflows to `tests/smoke/`. Mark real-tool tests with `@pytest.mark.smoke` and/or `@pytest.mark.requires_tools`. Include regression tests with every behavior change; keep branch-aware total coverage at or above 75%.
 
 ## Commit & Pull Request Guidelines
 

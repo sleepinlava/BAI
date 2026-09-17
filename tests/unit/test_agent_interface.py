@@ -357,6 +357,121 @@ def test_report_uses_audit_snapshot_limitations_without_plugin(tmp_path, monkeyp
     assert "Tx Report" in report_md
 
 
+def test_report_marks_invalid_audit_snapshot_without_plugin(tmp_path, monkeypatch):
+    outdir = _make_result_dir(tmp_path)
+    (outdir / "provenance" / "audit_snapshot.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.audit_snapshot.v0",
+                "analysis_type": "metatranscriptomics",
+                "standard_table_schemas": {},
+                "limitations": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "abi.agent.interface.get_plugin",
+        lambda _plugin_id: (_ for _ in ()).throw(ValueError("plugin unavailable")),
+    )
+
+    payload = json.loads(
+        ABIAgentInterface().report(result_dir=str(outdir), analysis_type="metatranscriptomics")
+    )
+
+    assert payload["status"] == "success"
+    assert payload["result"]["audit_snapshot_found"] is False
+    assert payload["result"]["audit_snapshot_status"] == "invalid"
+    report_md = (outdir / "report" / "report.md").read_text(encoding="utf-8")
+    assert "Audit snapshot invalid" in report_md
+
+
+def test_inspect_exposes_actual_calls_and_snapshot_status(tmp_path):
+    outdir = _make_result_dir(tmp_path)
+
+    payload = json.loads(ABIAgentInterface().inspect(result_dir=str(outdir)))
+
+    assert payload["status"] == "success"
+    result = payload["result"]
+    assert result["actual_calls"][0]["step_id"] == "s1"
+    assert result["audit_snapshot_status"] == "missing"
+    assert result["audit_snapshot_found"] is False
+
+
+@pytest.mark.parametrize(
+    ("command_status", "run_status", "snapshot_present"),
+    [
+        ("success", "success", True),
+        ("failed", "failed", True),
+        ("resumed", "success", True),
+        ("success", "success", False),
+    ],
+)
+def test_audit_views_keep_success_failure_resume_and_old_results_honest(
+    tmp_path, monkeypatch, command_status, run_status, snapshot_present
+):
+    outdir = _make_result_dir(tmp_path)
+    (outdir / "provenance" / "commands.tsv").write_text(
+        f"step_id\ttool_id\tcommand\tstatus\treason\ns1\ttool\ttool --flag\t{command_status}\t\n",
+        encoding="utf-8",
+    )
+    (outdir / "provenance" / "run_summary.json").write_text(
+        json.dumps(
+            {
+                "status": run_status,
+                "analysis_type": "metatranscriptomics",
+                "run_id": f"run-{command_status}",
+            }
+        ),
+        encoding="utf-8",
+    )
+    if snapshot_present:
+        (outdir / "provenance" / "audit_snapshot.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": "abi.audit_snapshot.v1",
+                    "analysis_type": "metatranscriptomics",
+                    "standard_table_schemas": {},
+                    "limitations": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def _unknown(plugin_id):
+        raise ValueError(f"Unknown ABI analysis type: {plugin_id}")
+
+    monkeypatch.setattr(interface, "get_plugin", _unknown)
+    monkeypatch.setattr("abi.plugin_registry.get_plugin", _unknown)
+    agent = ABIAgentInterface()
+
+    inspected = json.loads(agent.inspect(result_dir=str(outdir)))
+    assert inspected["status"] == "success"
+    assert inspected["result"]["actual_calls"][0]["status"] == command_status
+    if command_status == "failed":
+        assert inspected["result"]["failed_steps"][0]["step_id"] == "s1"
+    if command_status == "resumed":
+        assert inspected["result"]["reused_steps"] == ["s1"]
+
+    reported = json.loads(agent.report(result_dir=str(outdir), analysis_type="metatranscriptomics"))
+    assert reported["status"] == "success"
+    expected_snapshot_status = "valid" if snapshot_present else "missing"
+    assert reported["result"]["audit_snapshot_status"] == expected_snapshot_status
+    report_md = (outdir / "report" / "report.md").read_text(encoding="utf-8")
+    assert "tool --flag" in report_md
+    if command_status == "resumed":
+        assert "Reused steps (validated resume)" in report_md
+    if not snapshot_present:
+        assert "Audit snapshot missing" in report_md
+
+    validated = json.loads(agent.abi_validate_result(result_dir=str(outdir)))
+    assert validated["status"] == "success"
+    assert validated["result"]["audit_snapshot_status"] == expected_snapshot_status
+    if command_status == "failed":
+        assert any("failed step" in error for error in validated["result"]["errors"])
+
+
 def test_validate_result_falls_back_to_structural_checks_without_plugin(tmp_path, monkeypatch):
     """WP5: structural validation runs without the plugin and never implies
     plugin-specific scientific validation happened."""
@@ -394,6 +509,7 @@ def test_validate_result_uses_audit_snapshot_schema_without_plugin(tmp_path, mon
                 "schema_version": "abi.audit_snapshot.v1",
                 "analysis_type": "metatranscriptomics",
                 "standard_table_schemas": {"qc_summary": ["metric", "value"]},
+                "limitations": [],
             }
         ),
         encoding="utf-8",

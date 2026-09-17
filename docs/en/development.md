@@ -242,7 +242,7 @@ is passed.
 | `abi export-agent-context --type <plugin>` | Machine-readable operating context |
 | `abi doctor-agent --type <plugin>` | Human-readable operating guide |
 | `abi check-resources --type <plugin>` | Check resource/database availability |
-| `abi setup-resources --type <plugin> --confirm` | Auto-install/setup resources |
+| `abi setup-resources --type <plugin> [--dry-run|--mock]` | Report readiness/guidance; no downloads |
 | `abi install-skills` | Install SKILL.md files to `~/.claude/skills/abi/` |
 | `abi agent install <platform>` | Install a Claude Code, OpenCode, or Codex integration |
 | `abi agent doctor <platform>` | Read-only validation of an installed integration |

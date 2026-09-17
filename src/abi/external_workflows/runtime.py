@@ -22,9 +22,11 @@ from abi.external_workflows.evidence import (
 )
 from abi.external_workflows.nextflow import import_nextflow_trace, write_task_attempts_tsv
 from abi.results import ABIResultWriter
+from abi.resume import runtime_resume_identity, validate_stored_resume_identity
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.schemas import ABIError
 from abi.timeouts import DEFAULT_TOOL_TIMEOUT_SECONDS, mapping_block, timeout_from_env_or_value
+from abi.tools import container_image_identities, validate_container_images_ready
 
 
 class ManagedExternalNextflowRuntime:
@@ -76,6 +78,32 @@ class ManagedExternalNextflowRuntime:
             config["input"]["sample_sheet"], layout["samplesheet"], check_files=True
         )
         spec = self.plugin.external_workflow_spec(config, plan)
+        if self.options.resume and not spec.resume:
+            spec = replace(spec, resume=True)
+        registry = self.plugin.registry()
+        external_container_rows = self._validate_container_readiness(plan, config, spec, registry)
+        resume_requested = bool(self.options.resume or spec.resume)
+        if resume_requested:
+            current_identity = runtime_resume_identity(
+                plan,
+                config,
+                registry,
+                smoke=self.options.smoke,
+                plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+                cli_image=self.options.container_image,
+                container_runtime=self.options.container_runtime,
+                extra_containers=external_container_rows,
+            )
+            reasons = validate_stored_resume_identity(
+                layout["root"],
+                current_identity,
+                cache_paths=(layout["nextflow_dir"], layout["work_dir"], layout["nxf_home"]),
+            )
+            if reasons:
+                raise ABIError(
+                    "Refusing managed Nextflow resume because execution identity changed or "
+                    "is incomplete: " + "; ".join(reasons)
+                )
         lineage = self._archive_previous_run(spec, layout)
         nextflow_bin = resolve_nextflow_bin(self.options.nextflow_bin, self.options.mamba_root)
         command = self._command(nextflow_bin, spec, layout)
@@ -98,6 +126,8 @@ class ManagedExternalNextflowRuntime:
         environment.setdefault("NXF_ANSI_LOG", "false")
         return_code = 1
         execution_error: Exception | None = None
+        timeout_error: subprocess.TimeoutExpired | None = None
+        timeout_seconds = self._timeout(config)
         try:
             with (
                 layout["stdout"].open("w", encoding="utf-8") as stdout,
@@ -111,9 +141,13 @@ class ManagedExternalNextflowRuntime:
                     stderr=stderr,
                     text=True,
                     check=False,
-                    timeout=self._timeout(config),
+                    timeout=timeout_seconds,
                 )
                 return_code = completed.returncode
+        except subprocess.TimeoutExpired as exc:
+            timeout_error = exc
+            execution_error = exc
+            return_code = -1
         except Exception as exc:
             execution_error = exc
 
@@ -182,9 +216,25 @@ class ManagedExternalNextflowRuntime:
             json.dumps(validation, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
         )
         status = (
-            "success"
-            if return_code == 0 and execution_error is None and validation.get("valid") is True
-            else "failed"
+            "timeout"
+            if timeout_error is not None
+            else (
+                "success"
+                if return_code == 0 and execution_error is None and validation.get("valid") is True
+                else "failed"
+            )
+        )
+        termination = (
+            {
+                "request": "timeout",
+                "requested": True,
+                "confirmed": True,
+                "scope": "managed_nextflow_engine_process",
+                "downstream_status": "unknown",
+                "timeout_seconds": timeout_seconds,
+            }
+            if timeout_error is not None
+            else None
         )
         writer = ABIResultWriter(self.plugin, self.plugin.registry())
         outputs = writer.write(
@@ -195,8 +245,11 @@ class ManagedExternalNextflowRuntime:
             return_code=return_code,
             engine="nextflow",
             smoke=self.options.smoke,
-            resume=self.options.resume,
+            resume=resume_requested,
             plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+            container_image=self.options.container_image,
+            container_runtime=self.options.container_runtime,
+            extra_container_identities=external_container_rows,
             trace_rows=parse_nextflow_trace(archived_trace),
             extra_summary={
                 "managed_external_workflow": True,
@@ -210,6 +263,7 @@ class ManagedExternalNextflowRuntime:
                 "resume_lineage": lineage["snapshot_fields"],
                 "resume_reconciliation": _resume_reconciliation(attempts),
                 "diagnostics": diagnostics,
+                **({"termination": termination} if termination is not None else {}),
             },
             extra_environment={
                 "external_workflow": spec.to_dict(),
@@ -238,6 +292,93 @@ class ManagedExternalNextflowRuntime:
                 return_code, execution_error, validation, diagnostics, evidence_manifest
             ) from execution_error
         return RuntimeResult(status=status, return_code=return_code, outputs=outputs)
+
+    def _external_container_rows(
+        self,
+        plan: Any,
+        config: Mapping[str, Any],
+        spec: Any,
+    ) -> list[dict[str, str]]:
+        """Return the plugin-declared process images with stable identities."""
+        hook = getattr(self.plugin, "external_container_images", None)
+        if callable(hook):
+            declared = hook(config, plan)
+        else:
+            metadata_hook = getattr(self.plugin, "external_snapshot_metadata", None)
+            metadata = dict(metadata_hook(config)) if callable(metadata_hook) else {}
+            declared = metadata.get("containers", [])
+        rows: list[dict[str, str]] = []
+        for index, entry in enumerate(declared or ()):
+            if isinstance(entry, str):
+                image = entry
+                tool_id = f"external:{index}"
+                digest = ""
+            elif isinstance(entry, Mapping):
+                image = str(entry.get("image") or entry.get("ref") or entry.get("path") or "")
+                tool_id = str(entry.get("tool_id") or entry.get("id") or f"external:{index}")
+                digest = str(entry.get("digest") or entry.get("sha256") or "")
+            else:
+                continue
+            if image:
+                rows.append(
+                    {
+                        "tool_id": tool_id,
+                        "image": image,
+                        "runtime": str(self.options.container_runtime or spec.profile),
+                        "digest": digest,
+                    }
+                )
+        return rows
+
+    def _validate_container_readiness(
+        self,
+        plan: Any,
+        config: Mapping[str, Any],
+        spec: Any,
+        registry: Any,
+    ) -> list[dict[str, str]]:
+        """Validate both ABI-declared and managed-workflow container images."""
+        validate_container_images_ready(
+            plan,
+            registry,
+            config=config,
+            cli_image=self.options.container_image,
+            runtime=self.options.container_runtime,
+        )
+        rows = self._external_container_rows(plan, config, spec)
+        if not rows and not self.options.smoke:
+            raise ABIError(
+                "Managed external Nextflow does not expose a finite local container image "
+                "set; declare external_container_images before starting a real run so "
+                "ABI can refuse implicit image downloads"
+            )
+        if rows:
+            from types import SimpleNamespace
+
+            image_plan = SimpleNamespace(
+                steps=[SimpleNamespace(tool_id=row["tool_id"]) for row in rows]
+            )
+            image_registry = SimpleNamespace(
+                has=lambda _tool_id: True,
+                get=lambda tool_id: {
+                    "container_image": next(
+                        row["image"] for row in rows if row["tool_id"] == tool_id
+                    )
+                },
+            )
+            return container_image_identities(
+                image_plan,
+                image_registry,
+                # The plugin hook is authoritative for the managed workflow.
+                # Do not pass the ABI config's default_image/tool_images here:
+                # those settings describe ABI-owned steps and could make the
+                # readiness check inspect a different image than the pinned
+                # external workflow actually launches.
+                config={},
+                runtime=self.options.container_runtime or spec.profile,
+                require_ready=True,
+            )
+        return rows
 
     def _write_snapshot(
         self,
@@ -386,7 +527,17 @@ class ManagedExternalNextflowRuntime:
             source = layout["provenance"] / name
             if source.is_file():
                 shutil.copyfile(source, archive_root / name)
-        archived_count = sum(1 for entry in previous_runs.iterdir() if entry.is_dir())
+        # ABI may also keep a standalone result archive in this shared
+        # directory.  Only count archives created for this external workflow;
+        # unrelated ``unidentified-*`` or UUID-named ABI archives must not
+        # change the external task-attempt identity.
+        archive_prefix = _safe_archive_name(base)
+        archived_count = sum(
+            1
+            for entry in previous_runs.iterdir()
+            if entry.is_dir()
+            and (entry.name == archive_prefix or entry.name.startswith(f"{archive_prefix}-r"))
+        )
         lineage["run_id"] = f"{base}-r{archived_count}"
         lineage["snapshot_fields"] = {
             "resumes_run_id": previous_id if spec.resume else None,
@@ -499,7 +650,16 @@ class ManagedExternalNextflowRuntime:
             "command": rendered,
             "status": status,
             "return_code": return_code,
-            "reason": "" if status in {"success", "dry_run"} else "External workflow failed",
+            "reason": (
+                ""
+                if status in {"success", "dry_run"}
+                else (
+                    "External workflow timeout; engine termination was confirmed; "
+                    "downstream status is unknown"
+                    if status == "timeout"
+                    else "External workflow failed"
+                )
+            ),
             "parsed_status": "",
             "standard_tables": "",
         }

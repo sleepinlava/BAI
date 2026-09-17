@@ -34,6 +34,7 @@ def test_result_writer_produces_a_self_validating_bundle(tmp_path):
         command_rows=[],
         status="success",
         smoke=True,
+        plan_id="sha256:" + "b" * 64,
         trace_rows=[{"task_id": "1", "status": "COMPLETED"}],
     )
     validation = validate_abi_result_dir(tmp_path)
@@ -47,6 +48,9 @@ def test_result_writer_produces_a_self_validating_bundle(tmp_path):
     assert completed["plan"] == outputs["plan"]
     assert completed["report"] == outputs["report"]
     assert completed["trace"] == outputs["trace"]
+
+    report = outputs["report"].read_text(encoding="utf-8")
+    assert "plan identity `sha256:" + "b" * 64 + "`" in report
 
 
 def test_result_validation_reports_missing_and_malformed_artifacts(tmp_path):

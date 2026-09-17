@@ -43,7 +43,7 @@ Every transport calls the same core interface. A CLI request and an MCP request 
 | Declarative workflow definitions | Define DAG nodes, tools, schemas, tables, and report metadata | `src/abi/plugins/<analysis_type>/` (co-located with the plugin package) |
 | Tool and resource layer | Resolve executables, Conda environments, databases, indexes, and models | `src/abi/tools.py`, `src/abi/resources.py`, `environments.yaml` |
 | Runtime adapters | Execute locally or translate work to Nextflow, Snakemake, and HPC backends | `src/abi/runtimes/`, `src/abi/exporters/` |
-| Result and figure layer | Validate artifacts, normalize TSV tables, build reports, and render figures | `src/abi/results.py`, `src/abi/report/`, `src/abi/sciplot/` |
+| Result and audit layer | Validate artifacts, normalize TSV tables, build audit reports | `src/abi/results.py`, `src/abi/report/` |
 
 ## How a request is processed
 
@@ -54,7 +54,7 @@ Every transport calls the same core interface. A CLI request and an MCP request 
 5. **Dry-run.** ABI writes the plan, provenance skeleton, standard tables, and report preview.
 6. **Authorize.** Execution requires an explicit `--confirm-execution` or equivalent transport field.
 7. **Execute.** The runtime invokes registered tools and enforces step output contracts.
-8. **Publish results.** ABI records checksums, provenance, tables, summaries, reports, and optional SciPlot figures.
+8. **Publish results.** ABI records checksums, provenance, tables, summaries, and audit reports; external tools consume the tables for figures.
 
 ## Core design boundaries
 
@@ -107,6 +107,5 @@ The declarative DAG is the source of truth for dependencies and step output cont
 | Add a CLI, MCP, or HTTP representation | Transport adapter calling `ABIAgentInterface` |
 | Add or move a tool environment | `environments.yaml` and generated `envs/*.yml` |
 | Change standard result layout | Result core, plugin mappings, compatibility tests, and docs |
-| Add a plot type | `abi.sciplot` schema, renderer, lint rules, and figure tests |
 
 Continue with [Using ABI](usage_guide.md) for the operating lifecycle or [Development Standards](development_workflow.md) before changing the codebase.

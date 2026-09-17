@@ -29,7 +29,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_amrfinderplus
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_amrfinderplus
   tables:
   - annotations
 failure_handling:

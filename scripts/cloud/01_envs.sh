@@ -73,10 +73,10 @@ if [[ "${DRY_RUN}" != "true" ]]; then
     || log_warn "emit_env_yamls.py failed; using existing envs/*.yml"
 fi
 
-# ── Install ABI Python package (core + dev + report + mcp) ────────────────
+# ── Install ABI Python package (core + dev + mcp) ────────────────
 log_step "Installing ABI Python package"
 if [[ "${DRY_RUN}" != "true" ]]; then
-  pip install -e "${ABI_PROJECT_ROOT}[dev,report,mcp]" \
+  pip install -e "${ABI_PROJECT_ROOT}[dev,mcp]" \
     || log_warn "pip install -e failed; continuing (envs may still be usable)"
 fi
 

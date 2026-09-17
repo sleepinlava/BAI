@@ -230,6 +230,8 @@ def test_generic_report_records_execution_facts(tmp_path):
             "reason": "resume reuse rejected: output checksum mismatch",
         },
         {"step_id": "s3", "tool_id": "tool", "status": "resumed", "reason": ""},
+        {"step_id": "s4", "tool_id": "tool", "status": "dry_run", "reason": ""},
+        {"step_id": "s5", "tool_id": "tool", "status": "skipped", "reason": "planned"},
     ]
     run_summary = {
         "status": "failed",
@@ -257,9 +259,27 @@ def test_generic_report_records_execution_facts(tmp_path):
 
     summary = json.loads((tmp_path / "report" / "report_summary.json").read_text())
     facts = summary["execution_facts"]
-    assert facts["step_status_counts"] == {"failed": 1, "resumed": 1, "success": 1}
+    assert facts["step_status_counts"] == {
+        "dry_run": 1,
+        "failed": 1,
+        "resumed": 1,
+        "skipped": 1,
+        "success": 1,
+    }
     assert facts["failed_steps"][0]["step_id"] == "s2"
     assert facts["resumed_steps"] == ["s3"]
+    assert len(facts["actual_calls"]) == 3
+    assert [call["step_id"] for call in facts["command_records"]] == [
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+    ]
+    assert [call["step_id"] for call in facts["actual_calls"]] == ["s1", "s2", "s3"]
+    assert facts["actual_calls"][0]["command"] == ""
+    assert "Actual calls (excluding dry-run and skipped steps):" in md
+    assert "s1" in md
 
 
 def test_generic_report_states_when_facts_are_absent(tmp_path):

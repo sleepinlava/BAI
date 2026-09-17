@@ -10,9 +10,9 @@
 - Known limitations: annotation/typing tools were disabled in this run; 6 figures skipped due to missing annotation/typing/host data
 
 This evidence covers the 39-step route selected by that configuration, not
-every branch of the current 90-node DAG. Later real-data and SCAPP evidence is
+every branch of the current 87-node DAG. Later real-data and SCAPP evidence is
 tracked separately; do not merge software-contract success with biological
-acceptance. The current plugin inventory is 64 registered tool IDs and 90 DAG
+acceptance. The current plugin inventory is 61 registered tool IDs and 87 DAG
 nodes.
 
 The `metagenomic_plasmid` plugin is ABI's platform-aware plasmid workflow for
@@ -20,6 +20,13 @@ Illumina, ONT, PacBio HiFi, hybrid, and assembly-only projects. Its canonical
 topology is declared in `src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml`; the
 Python engine resolves sample-specific inputs, conditions, paths, provenance,
 and normalized result tables.
+
+Optional circular maps, linear gene maps, and interactive network rendering are no
+longer scheduled by the workflow, including when legacy `visualization` options
+are supplied. Reports consume structured analysis results without requiring these
+figures. Comparative clinker, sequence comparisons, and network calculations remain
+available; render publication figures externally from the result tables. Historical
+visualization tables remain readable.
 
 ## Default routes
 

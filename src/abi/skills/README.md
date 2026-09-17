@@ -201,8 +201,8 @@ dry-run 只说明 planner、命令模板和 provenance 能正常生成。生物�
 修改文档或 skill 后运行：
 
 ```bash
-PYTHONPATH=src python -m abi.autoplasm.cli --help
-PYTHONPATH=src python -m abi.autoplasm.cli list-tools --config examples/config_minimal.yaml
-PYTHONPATH=src python -m abi.autoplasm.cli dry-run --config examples/config_minimal.yaml
+PYTHONPATH=src python -m abi.cli --help
+PYTHONPATH=src python -m abi.cli query --type metagenomic_plasmid --what tools
+PYTHONPATH=src python -m abi.cli dry-run --type metagenomic_plasmid --config examples/config_minimal.yaml
 git diff --check
 ```

@@ -130,10 +130,8 @@ host_plasmid_linking:
     - co_abundance
 
 # Resource paths — each resource block holds a path that can be overridden.
-# Level 1 resources (auto_setup=true) can be downloaded via:
-#   abi setup-resources --type metagenomic_plasmid --confirm
-# Level 2 resources (auto_setup=false) must be downloaded manually;
-# run `abi check-resources --type metagenomic_plasmid` for guidance.
+# ABI never downloads resources. Use setup-resources --dry-run for the external
+# preparation plan, then check-resources to verify the prepared paths.
 resources:
   root: resources/autoplasm
   auto_download: false

@@ -24,7 +24,6 @@
 | 生物学选择、工作流步骤、解析器、断言 | 分析插件 |
 | 工具到 Conda 环境的映射 | `environments.yaml` 和生成的 `envs/*.yml` |
 | Docker 与 CI 打包 | Dockerfile、workflow、包元数据和构建上下文 |
-| 科研图形行为 | `abi.sciplot` Schema、渲染器、质检和测试 |
 
 实际判断时可以用一条简单原则：核心层承载共性逻辑，传输层保持轻量，插件内部自洽。
 
@@ -44,7 +43,6 @@
 | `tests/unit/` | 快速、隔离的行为测试和回归测试 |
 | `tests/integration/` | 跨组件契约以及适配器与核心层交互 |
 | `tests/smoke/` | 已安装工具、真实运行时或代表性工作流 |
-| `src/abi/sciplot/tests/` | 图形 Schema、渲染、导出和质检行为 |
 
 测试文件命名为 `test_<feature>.py`，测试函数命名为 `test_<behavior>`。真实工具测试使用 `smoke` 和/或 `requires_tools` 标记。
 

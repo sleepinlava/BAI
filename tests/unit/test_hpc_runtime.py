@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import pytest
@@ -232,6 +234,79 @@ def test_cancel_jobs_pbs() -> None:
         rt._cancel_jobs(["12345"])
         mock_run.assert_called_once()
         assert mock_run.call_args[0][0][0] == "qdel"
+
+
+def test_timeout_records_scheduler_confirmed_cancellation() -> None:
+    rt = HpcRuntime(mock.Mock())
+    with mock.patch.object(rt, "_poll_slurm", return_value={"12345": "CANCELLED"}):
+        with mock.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", "")):
+            statuses = rt._poll_until_complete({"step": "12345"}, timeout_seconds=0)
+
+    assert statuses == {"12345": "CANCELLED"}
+    evidence = rt._termination_evidence["12345"]
+    assert evidence["cancel_confirmed"] is True
+    assert evidence["termination_confirmed"] is True
+
+
+def test_timeout_preserves_unconfirmed_scheduler_termination() -> None:
+    rt = HpcRuntime(mock.Mock())
+    with mock.patch.object(rt, "_poll_slurm", return_value={}):
+        with mock.patch("subprocess.run", return_value=subprocess.CompletedProcess([], 0, "", "")):
+            statuses = rt._poll_until_complete({"step": "12345"}, timeout_seconds=0)
+
+    assert statuses == {"12345": "TIMEOUT"}
+    evidence = rt._termination_evidence["12345"]
+    assert evidence["cancel_confirmed"] is False
+    assert evidence["termination_confirmed"] is False
+
+
+def test_partial_submission_persists_cancellation_evidence(tmp_path: Path) -> None:
+    plugin = mock.Mock()
+    plugin.table_schemas.return_value = {"events": ["step_id"]}
+    plugin.registry.return_value = mock.Mock()
+    rt = HpcRuntime(plugin)
+    rt._script_by_step = {"first": tmp_path / "first.sh"}
+    rt._submitted_job_ids = {"first": "12345"}
+    rt._termination_evidence = {
+        "12345": {
+            "request": "cancel",
+            "requested": True,
+            "cancel_confirmed": False,
+            "termination_confirmed": False,
+        }
+    }
+    plan = SimpleNamespace(
+        steps=[
+            SimpleNamespace(
+                step_id="first",
+                sample_id=None,
+                step_name="first",
+                tool_id="tool",
+                category="stage",
+            )
+        ]
+    )
+    config = {"outdir": str(tmp_path / "results")}
+
+    with (
+        mock.patch.object(rt, "_cancel_jobs", return_value={"12345": {}}),
+        mock.patch.object(rt, "_confirm_cancelled_jobs", return_value={"12345": "CANCELLED"}),
+        mock.patch(
+            "abi.runtimes.hpc.ABIResultWriter.write",
+            side_effect=RuntimeError("report writer unavailable"),
+        ),
+    ):
+        rt._persist_submission_failure(plan, config, RuntimeError("second submission failed"))
+
+    summary = json.loads(
+        (tmp_path / "results" / "provenance" / "run_summary.json").read_text(encoding="utf-8")
+    )
+    manifest = json.loads(
+        (tmp_path / "results" / "provenance" / "hpc_jobs.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "partial_failure"
+    assert summary["termination"]["12345"]["cancel_confirmed"] is True
+    assert manifest["termination"]["12345"]["termination_confirmed"] is True
 
 
 # ── HpcRuntime._resolve_step_resources ───────────────────────────────────

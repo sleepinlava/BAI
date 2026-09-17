@@ -30,7 +30,7 @@ jobs:
       - name: Install release dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,docs,report]"
+          pip install -e ".[dev,docs]"
 
       - name: Verify tag and package identity
         run: python scripts/check_release_identity.py --tag "${GITHUB_REF_NAME}"
@@ -38,20 +38,37 @@ jobs:
       - name: Build package
         run: python -m build
 
+      - name: Build official plugin distributions
+        run: python scripts/build_plugin_wheels.py --outdir dist-plugins --build
+
+      - name: Assemble release distributions
+        run: cp dist-plugins/*.whl dist/
+
       - name: Check distribution metadata
         run: python -m twine check dist/*
+
+      - name: Bind exact release distributions to a SHA-256 manifest
+        run: |
+          python scripts/verify_release_artifacts.py \
+            --dist-dir dist --tag "${GITHUB_REF_NAME}" --write-manifest
+
+      - name: Verify supported installation forms
+        run: |
+          python scripts/verify_install_forms.py \
+            --dist-dir dist \
+            --plugin-dist-dir dist-plugins
 
       - name: Verify wheel contents
         run: |
           python -m venv /tmp/abi-wheel-smoke
           wheels=(dist/*.whl)
           /tmp/abi-wheel-smoke/bin/pip install "${wheels[0]}[mcp]"
+          /tmp/abi-wheel-smoke/bin/pip install dist-plugins/*.whl
           export PATH="/tmp/abi-wheel-smoke/bin:$PATH"
           /tmp/abi-wheel-smoke/bin/python -c "import abi; from importlib.metadata import version; assert abi.__version__ == version('abi-agent')"
           wheel_smoke_dir="$(mktemp -d)"
           cd "$wheel_smoke_dir"
           /tmp/abi-wheel-smoke/bin/abi list-types
-          /tmp/abi-wheel-smoke/bin/autoplasm --help
           for platform in claude-code opencode codex; do
             /tmp/abi-wheel-smoke/bin/abi agent install "$platform" \
               --scope project \
@@ -60,22 +77,7 @@ jobs:
               --scope project \
               --project-dir "/tmp/abi-release-agent-$platform"
           done
-          /tmp/abi-wheel-smoke/bin/abi dry-run \
-            --type metagenomic_plasmid \
-            --config "$GITHUB_WORKSPACE/examples/config_minimal.yaml" \
-            --profile dry_run \
-            --outdir /tmp/abi-release-plasmid \
-            --log-dir /tmp/abi-release-plasmid-log \
-            --no-progress \
-            --no-check-files
-          for plugin in rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap; do
-            /tmp/abi-wheel-smoke/bin/abi dry-run \
-              --type "$plugin" \
-              --outdir "/tmp/abi-release-$plugin" \
-              --log-dir "/tmp/abi-release-$plugin-log" \
-              --no-check-files \
-              --no-progress
-          done
+          # All eight plugin dry-runs use the isolated fixtures in verify_install_forms.py.
           capability_report="$GITHUB_WORKSPACE/dist/abi-linux-capability-${GITHUB_REF_NAME}.json"
           /tmp/abi-wheel-smoke/bin/python \
             "$GITHUB_WORKSPACE/scripts/verify_linux_wheel_capabilities.py" \
@@ -84,8 +86,12 @@ jobs:
             --architecture x86_64 \
             --output "$capability_report"
 
-      - name: Create GitHub Release
+      - name: Create verified GitHub Release draft
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           generate_release_notes: true
+          # A release.published event emitted with GITHUB_TOKEN does not start
+          # another workflow. Publish this verified draft with an authenticated
+          # maintainer identity to trigger the existing Trusted Publisher.
+          draft: true

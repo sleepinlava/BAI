@@ -279,7 +279,9 @@ def test_rnaseq_setup_missing_script_and_selected_generic_resource(
     # WP8：缺失的准备脚本不再抛错——环境行报告外部准备指引。
     env_rows = _rnaseq_impl._setup_rnaseq_expression({}, resource_ids=["rnaseq_environment"])
     assert env_rows[0]["status"] == "manual_required"
-    assert "setup_rnaseq_env.sh" in env_rows[0]["message"] or env_rows[0]["command"]
+    assert "setup_rnaseq_env.sh" not in env_rows[0]["message"]
+    assert env_rows[0]["command"] == []
+    assert "DESeq2" in env_rows[0]["message"]
 
     genome = tmp_path / "genome"
     genome.mkdir()
@@ -461,5 +463,8 @@ def test_amplicon_missing_taxonomy_reports_manual_required(tmp_path: Path, monke
 
     assert row["status"] == "manual_required"
     assert "External preparation required" in row["message"]
-    assert "download_rdp_sintax.sh" in row["message"]
+    assert "download_rdp_sintax.sh" not in row["message"]
+    assert row["command"] == []
+    assert "rdp_16s_v16.fa" in row["message"]
+    assert not (tmp_path / "output" / "taxonomy").exists()
     assert not (tmp_path / "output" / "taxonomy" / "synthetic_sintax.fa").exists()

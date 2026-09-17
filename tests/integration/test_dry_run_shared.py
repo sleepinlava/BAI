@@ -111,6 +111,21 @@ def test_shared_dry_run_writes_standard_provenance(tmp_path: Path) -> None:
     assert summary["analysis_type"] == "metagenomic_plasmid"
 
 
+def test_plasmid_report_without_rendering_artifacts(tmp_path: Path) -> None:
+    coordinator, prepared = _prepare(tmp_path, skipped=[])
+    result = coordinator.dry_run(prepared)
+    assert result.status == "success"
+    assert not any(step.category == "visualization" for step in prepared.plan.steps)
+
+    outdir = Path(str(prepared.config["outdir"]))
+    assert not (outdir / "13_visualization").exists()
+    reports = get_plugin("metagenomic_plasmid").write_report(prepared.plan, outdir)
+    markdown = reports["report"].read_text(encoding="utf-8")
+    assert "Core Result Summary" in markdown
+    assert "Known Limitations" in markdown
+    assert "<html" in reports["report_html"].read_text(encoding="utf-8").lower()
+
+
 def test_shared_dry_run_preserves_existing_output_files(tmp_path: Path) -> None:
     """Repeated dry-runs must not wipe pre-existing files in the outdir."""
     outdir = tmp_path / "results"

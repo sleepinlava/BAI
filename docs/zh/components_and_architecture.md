@@ -43,7 +43,7 @@ ABIAgentInterface
 | 声明式工作流定义 | 定义 DAG 节点、工具、Schema、表格和报告元数据 | `src/abi/plugins/<analysis_type>/`（与插件包同址） |
 | 工具与资源层 | 解析可执行程序、Conda 环境、数据库、索引和模型 | `src/abi/tools.py`、`src/abi/resources.py`、`environments.yaml` |
 | 运行时适配器 | 本地执行，或把任务转换到 Nextflow、Snakemake 和 HPC 后端 | `src/abi/runtimes/`、`src/abi/exporters/` |
-| 结果与图形层 | 验证产物、标准化 TSV、生成报告和科研图形 | `src/abi/results.py`、`src/abi/report/`、`src/abi/sciplot/` |
+| 结果与审计层 | 验证产物、标准化 TSV、生成审计报告 | `src/abi/results.py`、`src/abi/report/` |
 
 ## 一次请求如何执行
 
@@ -54,7 +54,7 @@ ABIAgentInterface
 5. **试运行。** dry-run 写入计划、溯源骨架、标准表格和报告预览。
 6. **授权。** 执行需要明确传入 `--confirm-execution` 或对应的传输字段。
 7. **执行。** 运行时调用已注册工具，并强制验证步骤输出契约。
-8. **发布结果。** ABI 记录校验和、溯源、表格、摘要、报告和可选的 SciPlot 图形。
+8. **发布结果。** ABI 记录校验和、溯源、表格、摘要、审计报告；科研图形由外部工具消费结果表生成。
 
 ## 核心设计边界
 
@@ -107,6 +107,5 @@ Agent 发现有类型约束的操作并接收结构化响应，不需要导入 A
 | 新增 CLI、MCP 或 HTTP 表达 | 调用 `ABIAgentInterface` 的传输适配器 |
 | 新增或迁移工具环境 | `environments.yaml` 和生成的 `envs/*.yml` |
 | 修改标准结果布局 | 结果核心、插件映射、兼容性测试和文档 |
-| 新增图形类型 | `abi.sciplot` Schema、渲染器、质检规则和图形测试 |
 
 继续阅读[使用 ABI](usage_guide.md)了解标准操作流程；修改代码前，请先阅读[开发规范](development_workflow.md)。

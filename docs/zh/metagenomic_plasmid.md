@@ -9,14 +9,19 @@
 - 3/9 张 sciplot 图形渲染成功（assembly_metrics、plasmid_length_distribution、plasmid_score_vs_length）
 - 已知限制：annotation/typing 工具在本次运行中被禁用；6 张图形因缺少注释/分型/宿主数据而跳过
 
-该证据只覆盖当时配置选择的 39 步路径，不代表当前 90 节点 DAG 的每个分支都已
+该证据只覆盖当时配置选择的 39 步路径，不代表当前 87 节点 DAG 的每个分支都已
 验证。后续真实数据与 SCAPP 证据单独追踪；不能把软件契约通过与生物学验收混为
-一项结论。当前插件清单为 64 个已注册工具 ID 和 90 个 DAG 节点。
+一项结论。当前插件清单为 61 个已注册工具 ID 和 87 个 DAG 节点。
 
 `metagenomic_plasmid` 是 ABI 面向 Illumina、ONT、PacBio HiFi、二代+三代
 混合数据和 assembly-only 项目的平台感知质粒工作流。规范拓扑位于
 `src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml`；Python 引擎负责解析逐样本输入、
 条件节点、输出路径、provenance 和标准结果表。
+
+工作流不再调度可选环形图、线性基因图和交互网络绘图，旧配置中的
+`visualization` 选项也不会恢复这些节点。报告直接使用结构化分析结果，
+不要求这些图件。比较分析 clinker、序列比较及网络计算继续保留；发表用图
+由外部工具基于结果表生成。历史可视化结果表仍可读取。
 
 ## 默认路径
 

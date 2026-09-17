@@ -17,6 +17,7 @@ class InternalHandlerContext:
     provenance_dir: Path
     tables_dir: Path
     dry_run: bool = False
+    protected_input_paths: frozenset[Path] = frozenset()
 
 
 @dataclass

@@ -26,7 +26,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_plasmidfinder
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_plasmidfinder
   tables:
   - plasmid_predictions
   - annotations

@@ -25,7 +25,6 @@ dependency explicit and verify it separately.
 | Biological choices, workflow steps, parsers, assertions | Analysis plugin |
 | Tool-to-Conda mapping | `environments.yaml` and generated `envs/*.yml` |
 | Docker and CI packaging | Dockerfiles, workflows, package metadata, build context |
-| Scientific plot behavior | `abi.sciplot` schema, renderer, lint, and tests |
 
 As a rule of thumb, keep the core substantial, transports thin, and plugins self-contained.
 
@@ -45,7 +44,6 @@ As a rule of thumb, keep the core substantial, transports thin, and plugins self
 | `tests/unit/` | Fast, isolated behavior and regressions |
 | `tests/integration/` | Cross-component contracts and adapter/core interaction |
 | `tests/smoke/` | Installed tools, real runtimes, or representative workflows |
-| `src/abi/sciplot/tests/` | Figure schema, rendering, export, and lint behavior |
 
 Name files `test_<feature>.py` and tests `test_<behavior>`. Mark real-tool tests with `smoke` and/or `requires_tools`.
 

@@ -12,6 +12,7 @@ import yaml
 from abi.plugins.easymetagenome.handlers import (
     bracken_merge_handler,
     cleanup_taxonomy_intermediates_handler,
+    compress_reads_handler,
     kneaddata_summary_handler,
     report_handler,
     taxonomy_diversity_handler,
@@ -74,6 +75,12 @@ def _manifest(tmp_path: Path) -> Path:
 def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_path):
     outdir = tmp_path / "result"
     inputs = {}
+    raw_read1 = outdir / "01_preprocessing/S1/S1_R1.fastq.gz"
+    raw_read2 = outdir / "01_preprocessing/S1/S1_R2.fastq.gz"
+    raw_read1.parent.mkdir(parents=True, exist_ok=True)
+    raw_read1.write_bytes(b"original read 1")
+    raw_read2.write_bytes(b"original read 2")
+    inputs.update(raw_read1=str(raw_read1), raw_read2=str(raw_read2))
     for key, relative in (
         ("clean_read1", "01_preprocessing/S1/S1_1.fastq.gz"),
         ("clean_read2", "01_preprocessing/S1/S1_2.fastq.gz"),
@@ -118,19 +125,117 @@ def test_taxonomy_cleanup_preserves_kneaddata_summary_from_standard_table(tmp_pa
         context,
     )
 
-    assert all(not Path(path).exists() for path in inputs.values())
+    assert raw_read1.read_bytes() == b"original read 1"
+    assert raw_read2.read_bytes() == b"original read 2"
+    assert all(not Path(path).exists() for key, path in inputs.items() if key.startswith("clean"))
+    assert not Path(inputs["dehost_read1"]).exists()
+    assert not Path(inputs["dehost_read2"]).exists()
+    assert not Path(inputs["classifications"]).exists()
     cleanup = json.loads(receipt.read_text(encoding="utf-8"))
     assert cleanup["dehost_read_pairs"] == 1
     tombstone = Path(cleanup["tombstone_manifest"])
     assert tombstone.is_file()
     deleted = json.loads(tombstone.read_text(encoding="utf-8"))["artifacts"]
-    assert len(deleted) == len(inputs)
+    assert len(deleted) == len(inputs) - 2
     assert all(len(item["sha256"]) == 64 and item["status"] == "deleted" for item in deleted)
     assert result.tables == {}
     assert summary.read_text(encoding="utf-8").splitlines() == [
         "sample_id\tdehost_read_pairs",
         "S1\t1",
     ]
+
+
+def test_taxonomy_cleanup_preserves_raw_read_symlink_and_target(tmp_path):
+    outdir = tmp_path / "result"
+    source = tmp_path / "external" / "S1_R1.fastq.gz"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"external original read")
+    raw_link = outdir / "inputs/S1_R1.fastq.gz"
+    raw_link.parent.mkdir(parents=True)
+    raw_link.symlink_to(source)
+    raw_read2 = outdir / "inputs/S1_R2.fastq.gz"
+    raw_read2.write_bytes(b"original read 2")
+
+    dehost = outdir / "02_host_removal/S1/S1_1_kneaddata_paired_1.fastq.gz"
+    dehost.parent.mkdir(parents=True)
+    with gzip.open(dehost, "wt", encoding="utf-8") as handle:
+        handle.write("@r1\nACGT\n+\nIIII\n")
+    clean = outdir / "01_preprocessing/S1/clean.fastq.gz"
+    clean.parent.mkdir(parents=True, exist_ok=True)
+    clean.write_text("temporary\n", encoding="utf-8")
+    classification = outdir / "03_taxonomy/S1/output.kraken"
+    classification.parent.mkdir(parents=True, exist_ok=True)
+    classification.write_text("temporary\n", encoding="utf-8")
+    receipt = outdir / "provenance/intermediate_cleanup/S1.taxonomy.json"
+
+    cleanup_taxonomy_intermediates_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs={
+                "raw_read1": str(raw_link),
+                "raw_read2": str(raw_read2),
+                "clean_read1": str(clean),
+                "dehost_read1": str(dehost),
+                "classifications": str(classification),
+            },
+            outputs={"cleanup_receipt": str(receipt)},
+        ),
+        {},
+        SimpleNamespace(outdir=outdir, tables_dir=outdir / "tables"),
+    )
+
+    assert raw_link.is_symlink()
+    assert raw_link.read_bytes() == b"external original read"
+    assert raw_read2.read_bytes() == b"original read 2"
+
+
+def test_compress_reads_preserves_original_inputs_inside_kneaddata_dir(tmp_path):
+    outdir = tmp_path / "result"
+    output_dir = outdir / "02_host_removal/S1"
+    output_dir.mkdir(parents=True)
+    raw_target = tmp_path / "source" / "S1_R1.fastq.gz"
+    raw_target.parent.mkdir(parents=True)
+    raw_target.write_bytes(b"original read 1")
+    raw_link = output_dir / "S1_R1.fastq.gz"
+    raw_link.symlink_to(raw_target)
+    raw_read2 = output_dir / "S1_R2.fastq.gz"
+    raw_read2.write_bytes(b"original read 2")
+
+    dehost_read1 = output_dir / "S1_1.fastq"
+    dehost_read2 = output_dir / "S1_2.fastq"
+    dehost_read1.write_text("@r1\nACGT\n+\nIIII\n", encoding="utf-8")
+    dehost_read2.write_text("@r2\nTGCA\n+\nIIII\n", encoding="utf-8")
+    compressed_read1 = output_dir / "S1_1_kneaddata_paired_1.fastq.gz"
+    compressed_read2 = output_dir / "S1_1_kneaddata_paired_2.fastq.gz"
+    receipt = outdir / "provenance/intermediate_cleanup/S1.compress.json"
+
+    result = compress_reads_handler(
+        SimpleNamespace(
+            sample_id="S1",
+            inputs={"dehost_read1": str(dehost_read1), "dehost_read2": str(dehost_read2)},
+            outputs={
+                "dehost_read1": str(compressed_read1),
+                "dehost_read2": str(compressed_read2),
+                "cleanup_receipt": str(receipt),
+            },
+            params={"threads": 1},
+        ),
+        {"threads": 1},
+        SimpleNamespace(
+            outdir=outdir,
+            tables_dir=outdir / "tables",
+            protected_input_paths=frozenset({raw_link, raw_read2}),
+        ),
+    )
+
+    assert result.status == "success"
+    assert raw_link.is_symlink()
+    assert raw_link.read_bytes() == b"original read 1"
+    assert raw_read2.read_bytes() == b"original read 2"
+    assert not dehost_read1.exists()
+    assert not dehost_read2.exists()
+    assert compressed_read1.is_file()
+    assert compressed_read2.is_file()
 
 
 def test_taxonomy_internal_handlers_merge_filter_diversity_and_report(tmp_path):

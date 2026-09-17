@@ -57,7 +57,7 @@ contains RNA references. Do not use the two variables interchangeably.
 
 Installs micromamba (if no mamba/conda found), regenerates `envs/*.yml` from
 `environments.yaml`, creates all 21 environments, installs the ABI package
-(`pip install -e ".[dev,report,mcp]"`), and sets up the `rnaseq` env + DESeq2.
+(`pip install -e ".[dev,mcp]"`), and sets up the `rnaseq` env + DESeq2.
 
 ```bash
 bash scripts/cloud/01_envs.sh --dry-run                      # preview

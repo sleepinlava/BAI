@@ -13,6 +13,7 @@ from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.runtimes.hpc import HpcRuntime
 from abi.schemas import ABIError, PlanStep
 from abi.step_runner import StepExecutionResult
+from abi.tools import ToolRegistry
 
 
 def _step(step_id: str, *, tool_id: str = "tool", params=None, outputs=None) -> PlanStep:
@@ -39,7 +40,9 @@ def _dag(first: PlanStep, second: PlanStep | None = None) -> ABIDAG:
 
 
 def test_run_rejects_failed_preflight(monkeypatch) -> None:
-    plugin = SimpleNamespace(plugin_id="test")
+    plugin = SimpleNamespace(
+        plugin_id="test", registry=lambda: ToolRegistry([]), table_schemas=lambda: {}
+    )
     runtime = HpcRuntime(plugin)
     monkeypatch.setattr(runtime, "check", lambda: None)
     monkeypatch.setattr(
@@ -53,7 +56,9 @@ def test_run_rejects_failed_preflight(monkeypatch) -> None:
 
 
 def test_run_cancels_submitted_jobs_when_submission_fails(tmp_path: Path, monkeypatch) -> None:
-    plugin = SimpleNamespace(plugin_id="test")
+    plugin = SimpleNamespace(
+        plugin_id="test", registry=lambda: ToolRegistry([]), table_schemas=lambda: {}
+    )
     runtime = HpcRuntime(plugin)
     cancelled = []
     monkeypatch.setattr(runtime, "check", lambda: None)
@@ -67,6 +72,7 @@ def test_run_cancels_submitted_jobs_when_submission_fails(tmp_path: Path, monkey
 
     monkeypatch.setattr(runtime, "_submit_jobs", fail_submit)
     monkeypatch.setattr(runtime, "_cancel_jobs", lambda ids: cancelled.extend(ids))
+    monkeypatch.setattr(runtime, "_confirm_cancelled_jobs", lambda ids, **kwargs: {})
 
     with pytest.raises(ABIError, match="scheduler offline"):
         runtime.run(SimpleNamespace(steps=[]), {"outdir": str(tmp_path)})
@@ -75,7 +81,9 @@ def test_run_cancels_submitted_jobs_when_submission_fails(tmp_path: Path, monkey
 
 def test_run_polls_and_collects_successful_submission(tmp_path: Path, monkeypatch) -> None:
     runtime = HpcRuntime(
-        SimpleNamespace(plugin_id="test"),
+        SimpleNamespace(
+            plugin_id="test", registry=lambda: ToolRegistry([]), table_schemas=lambda: {}
+        ),
         options=RuntimeOptions(engine="hpc", timeout_seconds=9),
     )
     expected = RuntimeResult("success", 0, {"summary": tmp_path / "summary.json"})
@@ -187,8 +195,10 @@ def test_polling_handles_terminal_unknown_and_timeout_states(monkeypatch) -> Non
     monkeypatch.setattr(hpc.time, "time", lambda: next(times))
     cancelled = []
     monkeypatch.setattr(runtime, "_cancel_jobs", lambda ids: cancelled.extend(ids))
+    monkeypatch.setattr(runtime, "_confirm_cancelled_jobs", lambda ids, **kwargs: {})
     assert runtime._poll_until_complete({"step": "3"}, 1) == {"3": "TIMEOUT"}
     assert cancelled == ["3"]
+    assert runtime._termination_evidence["3"]["termination_confirmed"] is False
 
 
 def test_scheduler_pollers_parse_outputs_and_tolerate_command_errors(monkeypatch) -> None:

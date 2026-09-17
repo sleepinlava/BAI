@@ -426,8 +426,8 @@ abi check-resources --type <analysis_type>
 # 查看缺失项
 abi check-resources --type <analysis_type>
 
-# 安装缺失的资源
-abi setup-resources --type <analysis_type> --confirm
+# ABI 只报告外部准备计划，不安装资源
+abi setup-resources --type <analysis_type> --dry-run
 ```
 
 ### 合约违规 (`CONTRACT_VIOLATION`)

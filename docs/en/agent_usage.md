@@ -451,8 +451,8 @@ A required database or reference file is missing:
 # See what's missing
 abi check-resources --type <analysis_type>
 
-# Install missing resources
-abi setup-resources --type <analysis_type> --confirm
+# ABI only reports the external preparation plan; it never installs resources
+abi setup-resources --type <analysis_type> --dry-run
 ```
 
 ### Contract violation (`CONTRACT_VIOLATION`)

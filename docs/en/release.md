@@ -1,6 +1,6 @@
 # Release Guide
 
-This repository publishes one PyPI distribution, `abi-agent`. A release is built from a verified
+This repository publishes the `abi-agent` core and eight optional analysis plugin distributions. A release is built from a verified
 `master` commit and keeps the Git tag, package version, GitHub Release, and PyPI artifacts tied to
 the same identity.
 
@@ -39,7 +39,7 @@ The script runs the local Python/package subset below:
 ruff check src/ tests/
 ruff format --check src/ tests/
 mypy src/abi/ --ignore-missing-imports
-python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+python -m pytest tests/ -v --tb=short \
   --strict-markers -m "not requires_tools" --capture=no \
   --cov=src/abi --cov-branch --cov-report=term-missing:skip-covered \
   --cov-report=xml --cov-report=json:coverage.json --cov-fail-under=75
@@ -51,7 +51,7 @@ abi query --type metagenomic_plasmid --what stages
 
 It does not replace every release-surface gate. Run `bash docs/build_docs.sh`,
 `docker compose -f docker/docker-compose.yml config --quiet`, the Docker
-configuration regression test, strict contract lint for all seven plugins, and
+configuration regression test, strict contract lint for all eight plugins, and
 `python -m twine check dist/*` separately. Run applicable real-tool acceptance
 checks, and run container acceptance only when container inputs changed or an
 image will be published. The GitHub release workflow reruns the reusable CI
@@ -64,7 +64,7 @@ installed commands in a clean environment when possible:
 abi list-types
 abi query --type metagenomic_plasmid --what stages
 abi query --type rnaseq_expression --what tools
-autoplasm --help
+abi --help
 abi dry-run --type metagenomic_plasmid --config examples/config_minimal.yaml --profile dry_run
 abi doctor-agent --type metatranscriptomics
 abi export-openai-tools --type metatranscriptomics --format json
@@ -157,7 +157,28 @@ remain explicit. PyPI should contain only the wheel and sdist.
 
 After publication, verify the GitHub Release and PyPI version, confirm Trusted
 Publishing provenance and file hashes, install the wheel in a clean environment,
-and run `abi list-types`, `autoplasm --help`, and representative plugin dry-runs.
+and run `abi list-types`, `abi --help`, and representative plugin dry-runs.
 For container tags, verify the GHCR image can be pulled and runs
 `abi list-types`. Record links to the Release, PyPI project, release workflow,
 publish job, and container workflow in the release handoff.
+
+## Distribution manifest
+
+The core sdist/wheel and eight official plugin wheels form one versioned release set.
+`verify_release_artifacts.py --dist-dir dist --tag v<VERSION> --write-manifest`
+validates the exact set and writes an immutable `release-artifacts.json` SHA-256 manifest.
+After downloading the Release assets, run the same command without `--write-manifest`;
+missing/extra packages, version or dependency mismatch, and changed bytes stop publication.
+The publisher downloads these exact artifacts and does not rebuild them.
+
+The Release workflow creates a verified draft. Once its quality gate and artifact checks
+pass, publish that draft using an authenticated maintainer identity:
+
+```bash
+gh release edit v<VERSION> --draft=false
+```
+
+This emits the top-level `release.published` event for the existing Trusted Publisher.
+A release created directly by the workflow's `GITHUB_TOKEN` would not trigger that second
+workflow ([GitHub event rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)).
+Do not rebuild the downloaded artifacts or replace the publisher with a reusable workflow.

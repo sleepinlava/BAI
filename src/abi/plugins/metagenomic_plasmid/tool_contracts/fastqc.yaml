@@ -25,7 +25,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_fastqc
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_fastqc
   tables:
   - qc_summary
 failure_handling:

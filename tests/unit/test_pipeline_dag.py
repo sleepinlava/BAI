@@ -114,6 +114,44 @@ def dag():
 # ── Tests: Platform filtering ────────────────────────────────────────────
 
 
+@pytest.mark.parametrize("platform", ["illumina", "ont", "pacbio_hifi", "hybrid", "assembly"])
+def test_plasmid_plan_keeps_analysis_without_optional_rendering(platform, tmp_path):
+    """Legacy plotting options cannot add rendering or block the report."""
+    from abi.dag_planner import UniversalDAG
+    from abi.plugins.metagenomic_plasmid.lib.config import load_config
+
+    dag = UniversalDAG.from_yaml(
+        Path(__file__).resolve().parents[2]
+        / "src/abi/plugins/metagenomic_plasmid/pipeline_dag.yaml"
+    )
+    overrides = {
+        "input": {"sample_sheet": None},
+        "outdir": str(tmp_path / "results"),
+        "log_dir": str(tmp_path / "logs"),
+        "visualization": {
+            "tools": ["pycirclize", "dna_features_viewer"],
+            "optional_tools": ["clinker"],
+        },
+        "network": {"run_network": True},
+        "comparative_genomics": {"optional_tools": ["clinker", "blast", "mummer"]},
+    }
+    config = load_config(profile="dry_run", overrides=overrides)
+    config["input"]["long_reads"] = "/data/long.fastq"
+    active = dag.active_node_ids(platform, config)
+    resolved = dag.resolve_dependencies(active, platform)
+    order = dag.topological_order(resolved)
+
+    assert "report_markdown" in order
+    assert not any(dag.node_category(node) == "visualization" for node in order)
+    for node in dag.node_ids:
+        assert set(dag.node_depends_on(node)) <= set(dag.node_ids)
+    for node in ("comparative_clinker", "comparative_blast", "comparative_mummer"):
+        assert node in order
+        assert order.index(node) < order.index("report_markdown")
+    assert "multisample_network_fastspar" in dag.node_ids
+    assert "host_plasmid_link_coabundance" in dag.node_ids
+
+
 class TestPlatformFiltering:
     def test_illumina_nodes(self, dag):
         nodes = dag.nodes_for_platform("illumina")

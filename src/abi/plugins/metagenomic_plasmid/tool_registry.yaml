@@ -274,18 +274,6 @@ tools:
   category: host_plasmid_linking
   default_enabled: false
   required: false
-- id: pycirclize
-  name: pyCirclize
-  category: visualization
-  default_enabled: false
-  required: false
-  limitations: Requires pycirclize Python package; uses adapter script for integration.
-- id: pyvis
-  name: pyvis
-  category: visualization
-  default_enabled: false
-  required: false
-  limitations: Requires pyvis Python package; uses adapter script for integration.
 - id: platon
   name: Platon
   category: plasmid_detection
@@ -359,9 +347,3 @@ tools:
   default_enabled: false
   required: false
   limitations: SPAdes hybrid mode for short + long read co-assembly.
-- id: dna_features_viewer
-  name: dna-features-viewer
-  category: visualization
-  default_enabled: false
-  required: false
-  limitations: Requires dna_features_viewer + biopython Python packages.

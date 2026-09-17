@@ -20,7 +20,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_clinker
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_clinker
   tables:
   - visualization_outputs
 failure_handling:

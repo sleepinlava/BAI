@@ -155,6 +155,60 @@ def test_validate_uses_plugin_specific_nonempty_policy(tmp_path: Path) -> None:
     assert all("optional" not in error for error in result["errors"])
 
 
+def test_validate_without_plugin_handles_strict_empty_table_check(tmp_path, monkeypatch) -> None:
+    result_dir = _make_result_dir(tmp_path, analysis_type="missing_plugin")
+    (result_dir / "tables" / "samples.tsv").write_text("id\n", encoding="utf-8")
+    (result_dir / "provenance" / "audit_snapshot.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.audit_snapshot.v1",
+                "analysis_type": "missing_plugin",
+                "standard_table_schemas": {"samples": ["id"]},
+                "limitations": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "abi.plugin_registry.get_plugin",
+        lambda _plugin_id: (_ for _ in ()).throw(ValueError("plugin unavailable")),
+    )
+
+    result = validate_abi_result_dir(result_dir, allow_empty_tables=False)
+
+    assert result["schema_source"] == "audit_snapshot"
+    assert any("Empty standard table" in error for error in result["errors"])
+
+
+def test_validate_rejects_snapshot_for_another_analysis_type(tmp_path, monkeypatch) -> None:
+    result_dir = _make_result_dir(tmp_path, analysis_type="missing_plugin")
+    (result_dir / "provenance" / "audit_snapshot.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "abi.audit_snapshot.v1",
+                "analysis_type": "other_plugin",
+                "standard_table_schemas": {"samples": ["id"]},
+                "limitations": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "abi.plugin_registry.get_plugin",
+        lambda _plugin_id: (_ for _ in ()).throw(ValueError("plugin unavailable")),
+    )
+
+    result = validate_abi_result_dir(result_dir)
+
+    assert result["audit_snapshot_status"] == "invalid"
+    assert result["schema_source"] == "unavailable"
+    assert any(
+        "does not match result analysis_type" in error for error in result["audit_snapshot_errors"]
+    )
+
+
 # ── Missing (non-existent) result directory ────────────────────────────────
 
 

@@ -98,6 +98,56 @@ def test_reset_run_provenance_without_prior_evidence_writes_no_archive(tmp_path:
     assert not (provenance / "previous_runs").exists()
 
 
+def test_reset_run_provenance_archives_complete_result_bundle(tmp_path: Path) -> None:
+    result_dir = tmp_path / "result"
+    provenance = result_dir / "provenance"
+    provenance.mkdir(parents=True)
+    (provenance / "run_summary.json").write_text(
+        json.dumps({"run_id": "run-complete", "status": "success"}), encoding="utf-8"
+    )
+    artifacts = {
+        "execution_plan.json": b'{"plan":"before"}\n',
+        "execution_plan.resolved.json": b'{"resolved":"before"}\n',
+        "tables/results.tsv": b"sample\tvalue\nS1\t1\n",
+        "report/report.md": b"# Previous report\n",
+        "report/report.html": b"<h1>Previous report</h1>\n",
+        "provenance/audit_snapshot.json": b'{"schema_version":"abi.audit_snapshot.v1"}\n',
+    }
+    for relative, content in artifacts.items():
+        path = result_dir / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
+    lineage = reset_run_provenance(provenance, result_dir=result_dir)
+    archive = provenance / lineage["previous_run_archive"]
+
+    assert lineage["previous_run_id"] == "run-complete"
+    for relative, expected in artifacts.items():
+        assert (archive / relative).read_bytes() == expected
+    # The nested provenance layout makes the archive independently consumable
+    # by result readers; the flat copies retain the existing checksum/history
+    # lookup contract.
+    assert (archive / "provenance" / "run_summary.json").is_file()
+    assert (archive / "provenance" / "audit_snapshot.json").read_bytes() == artifacts[
+        "provenance/audit_snapshot.json"
+    ]
+
+
+def test_reset_run_provenance_archives_snapshot_only_evidence(tmp_path: Path) -> None:
+    result_dir = tmp_path / "result"
+    provenance = result_dir / "provenance"
+    provenance.mkdir(parents=True)
+    snapshot = provenance / "audit_snapshot.json"
+    snapshot.write_bytes(b'{"schema_version":"abi.audit_snapshot.v1"}\n')
+
+    lineage = reset_run_provenance(provenance, result_dir=result_dir)
+
+    assert lineage["previous_run_id"] is None
+    assert lineage["previous_run_archive"]
+    archive = provenance / lineage["previous_run_archive"]
+    assert (archive / "audit_snapshot.json").read_bytes() == snapshot.read_bytes()
+
+
 # ── _tsv_value ───────────────────────────────────────────────────────────
 
 

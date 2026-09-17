@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -23,6 +24,39 @@ def test_pypi_distribution_excludes_runtime_artifacts() -> None:
     included_forbidden_entries = [entry for entry in forbidden_entries if entry in pyproject]
 
     assert included_forbidden_entries == []
+
+
+def test_core_wheel_excludes_resource_downloader_but_sdist_keeps_external_scripts() -> None:
+    root = Path(__file__).resolve().parents[1]
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    wheel_section = pyproject.split("[tool.hatch.build.targets.wheel.force-include]", maxsplit=1)[
+        1
+    ].split("[tool.hatch.build.targets.sdist]", maxsplit=1)[0]
+    sdist_section = pyproject.split("[tool.hatch.build.targets.sdist]", maxsplit=1)[1]
+
+    assert '"scripts/download_databases.sh"' not in wheel_section
+    assert '"scripts"' in sdist_section
+
+
+def test_resource_setup_references_do_not_use_retired_confirmation_flag() -> None:
+    root = Path(__file__).resolve().parents[1]
+    references = [
+        root / "CLAUDE.md",
+        root / "docs/en/agent_usage.md",
+        root / "docs/en/development.md",
+        root / "docs/zh/agent_usage.md",
+        root / "docs/zh/development.md",
+        root / "scripts/cloud/02_databases.sh",
+        root / "scripts/cloud/deploy_rebuild.sh",
+        root / "src/abi/plugins/metagenomic_plasmid/config_default.yaml",
+    ]
+
+    stale_references = [
+        path
+        for path in references
+        if re.search(r"setup-resources[^\n]*--confirm", path.read_text(encoding="utf-8"))
+    ]
+    assert stale_references == []
 
 
 def test_rebuild_documentation_deliverables_exist() -> None:
@@ -79,24 +113,24 @@ def test_release_workflow_uses_full_gate_and_clean_wheel_smoke() -> None:
     assert "python -m venv /tmp/abi-wheel-smoke" in release_workflow
     assert 'export PATH="/tmp/abi-wheel-smoke/bin:$PATH"' in release_workflow
     assert 'cd "$wheel_smoke_dir"' in release_workflow
-    assert "/tmp/abi-wheel-smoke/bin/abi dry-run" in release_workflow
-    assert "--type metagenomic_plasmid" in release_workflow
-    assert '--config "$GITHUB_WORKSPACE/examples/config_minimal.yaml"' in release_workflow
     assert "abi-linux-capability-${GITHUB_REF_NAME}.json" in release_workflow
     assert "verify_linux_wheel_capabilities.py" in release_workflow
     assert "--architecture x86_64" in release_workflow
+    assert "scripts/build_plugin_wheels.py --outdir dist-plugins --build" in release_workflow
+    assert "scripts/verify_install_forms.py" in release_workflow
+    assert "--plugin-dist-dir dist-plugins" in release_workflow
+    assert "cp dist-plugins/*.whl dist/" in release_workflow
     assert "/tmp/abi-wheel-smoke/bin/abi env discover" not in release_workflow
+    assert "/tmp/abi-wheel-smoke/bin/autoplasm" not in release_workflow
     assert "files: dist/*" in release_workflow
     assert "uses: ./.github/workflows/publish-pypi.yml" not in release_workflow
-    for plugin in (
-        "rnaseq_expression",
-        "wgs_bacteria",
-        "amplicon_16s",
-        "metatranscriptomics",
-        "easymetagenome",
-        "viral_viwrap",
-    ):
-        assert plugin in release_workflow
+    # Plugin inventory and synthetic inputs belong to the shared installation probe.
+    probe = (root / "scripts/verify_install_forms.py").read_text(encoding="utf-8")
+    assert "expected = sorted(OFFICIAL_PLUGINS)" in probe
+    assert "_dry_run(combo, plugin_id, combo_probe_dir)" in probe
+    assert "scripts/verify_release_artifacts.py" in release_workflow
+    assert "--write-manifest" in release_workflow
+    assert "draft: true" in release_workflow
 
 
 def test_ci_and_release_smoke_test_agent_integrations_from_wheel() -> None:

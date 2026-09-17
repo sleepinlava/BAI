@@ -597,12 +597,7 @@ def _setup_rnaseq_expression(
     dry_run: bool = False,
     mock: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Set up the rnaseq_expression conda environment and R packages.
-
-    Runs ``scripts/setup_rnaseq_env.sh`` which creates the ``rnaseq`` conda
-    environment with fastp, STAR, featureCounts, and R, then installs DESeq2
-    from Bioconductor.
-    """
+    """Report RNA-seq readiness and external preparation requirements."""
     import os
 
     from abi.config import PROJECT_ROOT, resolved_mamba_root
@@ -664,7 +659,7 @@ def _setup_rnaseq_expression(
         or os.environ.get("MAMBA_ROOT")
         or resolved_mamba_root()
     )
-    cmd = ["bash", str(setup_script), "--mamba-root", mamba_root]
+    cmd = ["bash", str(setup_script), "--mamba-root", mamba_root] if setup_script.is_file() else []
 
     rows: List[Dict[str, Any]] = []
     rnaseq_env = Path(mamba_root) / "envs" / "rnaseq"
@@ -688,7 +683,8 @@ def _setup_rnaseq_expression(
         env_status = "manual_required"
         message = (
             "External preparation required: create the rnaseq environment with your "
-            f"provisioning system (e.g. `{' '.join(cmd)}`), then verify with "
+            "provisioning system, including fastp, STAR, featureCounts and DESeq2; "
+            "then verify with "
             "`abi check-resources`. ABI does not create environments."
         )
 
@@ -712,7 +708,7 @@ def _setup_rnaseq_expression(
             "resource_id": "rnaseq_environment",
             "tool_id": "deseq2",
             "field": "env_setup",
-            "path": str(setup_script),
+            "path": str(rnaseq_env),
             "status": env_status,
             "version": "",
             "source_url": "https://bioconductor.org/packages/DESeq2/",

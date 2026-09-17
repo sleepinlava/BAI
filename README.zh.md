@@ -351,16 +351,9 @@ print(abi.list_plugins_summary())
 
 ## 从结果生成科研图形
 
-`abi-sciplot` 使用声明式图形规范，经过验证后输出可发表的 PDF、SVG、PNG 或 TIFF。它支持 15 种图形、3 套主题、图形质检和 SHA-256 溯源。
-
-```bash
-abi-sciplot validate --spec figure.yaml
-abi-sciplot render --spec figure.yaml
-abi-sciplot lint --spec figure.yaml
-abi-sciplot list-plot-types
-```
-
-详见 [SciPlot 设计与使用指南](docs/zh/abi_sciplot_design.md)。
+ABI 输出结构化结果表和审计报告；发表用图交给外部绘图工具。
+SciPlot 和 Study 已退出 ABI，核心不依赖 NumPy、pandas、SciPy 或绘图库，
+分析插件声明各自需要的科学计算依赖。
 
 ## 复现生产运行环境
 

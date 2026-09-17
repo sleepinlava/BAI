@@ -10,7 +10,6 @@
 | 单元 | `tests/unit/` | 核心逻辑、schema、解析器、契约和运行时 | 否 |
 | 集成 | `tests/integration/` | CLI/核心边界、dry-run、golden trace | 通常不需要 |
 | 冒烟 | `tests/smoke/` | 真实工具与数值级工作流检查 | 通常需要 |
-| SciPlot | `src/abi/sciplot/tests/` | schema、渲染器、lint、CLI/API、Unicode 排版 | report 依赖 |
 
 文件名使用 `test_<feature>.py`，函数名使用 `test_<behavior>`。行为发生变化时应补上
 回归测试。调用外部工具的测试使用 `@pytest.mark.smoke`、
@@ -23,7 +22,7 @@
 pytest tests/ -v --tb=short
 
 # 接近 CI、排除外部工具
-pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+pytest tests/ -v --tb=short \
   --strict-markers -m "not requires_tools"
 
 # 聚焦模块
@@ -33,7 +32,7 @@ pytest tests/unit/test_dag_planner.py -q
 pytest tests/ -v -m requires_tools
 
 # 分支感知的全局门禁
-pytest tests/ src/abi/sciplot/tests/ \
+pytest tests/ \
   --strict-markers -m "not requires_tools" \
   --cov=src/abi --cov-branch --cov-report=term \
   --cov-report=json:coverage.json --cov-fail-under=75
@@ -71,7 +70,7 @@ pytest fixture 恢复。
 ```bash
 for plugin in \
   amplicon_16s easymetagenome metagenomic_plasmid metatranscriptomics \
-  rnaseq_expression viral_viwrap wgs_bacteria
+  rnaseq_expression viral_viwrap wgs_bacteria wgs_bacannot
 do
   abi contract-lint --type "$plugin" --strict
 done
@@ -150,3 +149,9 @@ Python 变更需要 Ruff、格式、mypy、聚焦 pytest 和受影响集成测�
 
 在 PR 中记录所有命令和结果。无法运行真实工具、容器或集群检查时，必须明确说明
 未验证内容和残余风险。
+
+## 外部论文复现
+
+被 Git 忽略的本地 `tests/unit/test_create_real_data_case_study_figures.py` 不属于产品测试。
+准备其研究数据及外部绘图依赖后，可以把该文件路径显式传给 pytest 运行。
+此边界不排除任何冻结平台证据或产品安全测试。SciPlot 和 Study 已退出 ABI。

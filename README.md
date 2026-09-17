@@ -364,16 +364,10 @@ See the [Agent usage guide](docs/en/agent_usage.md) for provider setup and permi
 
 ## Turn results into scientific figures
 
-`abi-sciplot` validates a declarative figure specification and renders publication-ready PDF, SVG, PNG, or TIFF output. It supports 15 plot types, three themes, linting, and SHA-256 provenance.
-
-```bash
-abi-sciplot validate --spec figure.yaml
-abi-sciplot render --spec figure.yaml
-abi-sciplot lint --spec figure.yaml
-abi-sciplot list-plot-types
-```
-
-See the [SciPlot design and usage guide](docs/en/abi_sciplot_design.md).
+ABI emits structured result tables and audit reports. Use external plotting tools
+for publication figures; SciPlot and Study are no longer bundled with ABI.
+The core package does not require NumPy, pandas, SciPy, or plotting libraries.
+Analysis plugins declare their own scientific dependencies.
 
 ## Reproduce a production runtime
 

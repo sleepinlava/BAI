@@ -24,6 +24,15 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Download distributions attached to this GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -31,7 +40,15 @@ jobs:
         run: |
           gh release download "${REQUESTED_TAG}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --pattern "*.whl" --pattern "*.tar.gz" --dir dist
+            --pattern "*.whl" --pattern "*.tar.gz" \
+            --pattern "release-artifacts.json" --dir dist
+
+      - name: Verify downloaded release identity and hashes
+        env:
+          REQUESTED_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          python scripts/verify_release_artifacts.py --dist-dir dist --tag "${REQUESTED_TAG}"
+          mv dist/release-artifacts.json release-artifacts.json
 
       - name: Check distribution metadata
         run: |

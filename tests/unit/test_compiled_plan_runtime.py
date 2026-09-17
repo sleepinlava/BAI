@@ -6,7 +6,12 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from abi.agent import ABIAgentInterface
+from abi.errors import PlanDriftError
+from abi.runtimes.base import RuntimeOptions
+from abi.workflow.compiled_plan import bind_confirmed_plan, verify_confirmed_plan
 
 
 def _stub_plan(steps: list, outdir: Path) -> SimpleNamespace:
@@ -175,6 +180,8 @@ def test_run_records_confirmed_plan_identity_in_run_summary(tmp_path):
     assert run_payload["status"] == "success"
     summary = json.loads((outdir / "provenance" / "run_summary.json").read_text(encoding="utf-8"))
     assert summary["plan_id"] == plan_payload["result"]["plan_id"]
+    report = (outdir / "report" / "report.md").read_text(encoding="utf-8")
+    assert f"plan identity `{plan_payload['result']['plan_id']}`" in report
     # The confirmed plan artifact is evidence: the run verifies against it and
     # must not rewrite it.
     # 已确认计划产物是证据：运行对它验证，且不得改写。
@@ -233,6 +240,57 @@ def test_run_refuses_drift_after_confirmation(tmp_path):
     # 未批准的工作没有启动：无执行产物，已确认计划未被改写。
     assert not (outdir / "provenance" / "run_summary.json").exists()
     assert (outdir / "compiled_plan.json").read_bytes() == confirmed_before
+
+
+def test_confirmed_binding_uses_a_defensive_execution_snapshot(tmp_path):
+    outdir = tmp_path / "results"
+    outdir.mkdir()
+    step = _stub_step("s1", outdir)
+    plan = _stub_plan([step], outdir)
+    prepared = type(
+        "Prepared",
+        (),
+        {"plan": plan, "config": {"outdir": str(outdir)}},
+    )()
+
+    plan_id = bind_confirmed_plan(prepared)
+    step.params["changed_after_confirmation"] = True
+    assert plan_id == prepared.confirmed_plan_id
+    assert "changed_after_confirmation" not in prepared.plan.steps[0].params
+    with pytest.raises(PlanDriftError, match="waiting in the queue"):
+        verify_confirmed_plan(prepared)
+
+    # A fresh verification still succeeds when the planner-owned source is
+    # unchanged, and mutations of the bound snapshot are independently caught.
+    step.params.pop("changed_after_confirmation")
+    verify_confirmed_plan(prepared)
+    prepared.plan.steps[0].params["mutated_snapshot"] = True
+    with pytest.raises(PlanDriftError, match="changed after binding"):
+        verify_confirmed_plan(prepared)
+
+
+def test_confirmed_binding_rejects_config_and_runtime_option_drift(tmp_path):
+    outdir = tmp_path / "results"
+    outdir.mkdir()
+    prepared = type(
+        "Prepared",
+        (),
+        {
+            "plan": _stub_plan([_stub_step("s1", outdir)], outdir),
+            "config": {"outdir": str(outdir), "execution": {"timeout": 30}},
+            "options": RuntimeOptions(engine="local", timeout_seconds=30),
+        },
+    )()
+
+    bind_confirmed_plan(prepared)
+    prepared.config["execution"]["timeout"] = 60
+    with pytest.raises(PlanDriftError, match="configuration or runtime options"):
+        verify_confirmed_plan(prepared)
+
+    prepared.config["execution"]["timeout"] = 30
+    prepared.options.timeout_seconds = 60
+    with pytest.raises(PlanDriftError, match="configuration or runtime options"):
+        verify_confirmed_plan(prepared)
 
 
 def test_resume_links_previous_run_and_archives_history(tmp_path):

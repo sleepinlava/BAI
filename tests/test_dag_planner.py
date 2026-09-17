@@ -98,7 +98,7 @@ class TestUniversalDAGLoading:
         [
             ("amplicon_16s", 10),
             ("easymetagenome", 31),
-            ("metagenomic_plasmid", 91),
+            ("metagenomic_plasmid", 87),
             ("metatranscriptomics", 3),
             ("rnaseq_expression", 6),
             ("viral_viwrap", 7),

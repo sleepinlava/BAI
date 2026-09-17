@@ -129,8 +129,14 @@ history-linkage fields.
 On resume, reused steps are additionally bound to the prior run's recorded
 checksums: a step whose declared outputs or inputs no longer match the
 prior run's `checksums.json` is not reused — it re-executes, and the
-command record states why (`resume reuse rejected: …`). Artifacts from old
-runs without recorded checksums fall back to existence and contract checks.
+command record states why (`resume reuse rejected: …`). Old results remain
+readable, but a run without a valid resume identity cannot establish safe
+reuse and must execute again; file existence alone is insufficient.
+The resume identity records content digests for external raw inputs while
+excluding paths that are declared as outputs of an upstream DAG step; an
+`output_dir` alone does not claim ownership of files below it, so user
+provided files and symlinks remain protected. Changes to those external
+inputs therefore still reject reuse.
 
 Cancellation distinguishes the request from confirmed termination. A cancel
 request is recorded with unconfirmed evidence; only exit evidence of actual

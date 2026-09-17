@@ -272,7 +272,7 @@ class NextflowExporter:
             binding, registry, config=config, execution_policy=execution_policy
         )
         container_dir = self._container_directive_line(
-            binding, registry, execution_policy=execution_policy
+            binding, registry, config=config, execution_policy=execution_policy
         )
         if container_dir:
             resource_dirs.append(container_dir)
@@ -416,6 +416,7 @@ class NextflowExporter:
         binding: StepBinding,
         registry: ToolRegistry,
         *,
+        config: Mapping[str, Any] | None = None,
         execution_policy: ExecutionPolicy | None = None,
     ) -> str | None:
         """Render Nextflow ``container`` directive if a container image is set.
@@ -429,7 +430,7 @@ class NextflowExporter:
         tool_id = getattr(step, "tool_id", "")
         meta = registry.get(tool_id) if tool_id else {}
         policy = execution_policy or ExecutionPolicy()
-        image = policy.container_image or resolve_container_image(tool_id, meta)
+        image = policy.container_image or resolve_container_image(tool_id, meta, config=config)
         if image:
             return f"    container '{image}'"
         return None

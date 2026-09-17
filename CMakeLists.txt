@@ -33,9 +33,7 @@ set(AUTOPLASM_ENV
 )
 
 add_custom_target(configure_autoplasm
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli list-tools
-          --config ${AUTOPLASM_CONFIG}
-          --profile ${AUTOPLASM_PROFILE}
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli query --type metagenomic_plasmid --what tools
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Checking AutoPlasm configuration and registry"
 )
@@ -76,32 +74,23 @@ add_custom_target(lock_envs
 )
 
 add_custom_target(check_tools
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli check-tools
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli check-resources --type metagenomic_plasmid
           --config ${AUTOPLASM_CONFIG}
           --profile ${AUTOPLASM_PROFILE}
-          --dry-run
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "Checking registered bioinformatics tools"
 )
 
-add_custom_target(fetch_examples
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli fetch-examples
-          --dataset plasmid_refseq_smoke
-          --outdir ${CMAKE_SOURCE_DIR}/data/examples/plasmid_refseq_smoke
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Fetching AutoPlasm public assembly smoke dataset"
-)
-
-add_custom_target(setup_resources
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli setup-resources
-          --config ${AUTOPLASM_ASSEMBLY_CONFIG} --confirm
+add_custom_target(check_resources
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli check-resources --type metagenomic_plasmid
+          --config ${AUTOPLASM_ASSEMBLY_CONFIG}
           --profile local
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "Preparing lightweight AutoPlasm core databases"
+  COMMENT "Checking externally prepared databases"
 )
 
 add_custom_target(run_assembly_smoke
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli run --type metagenomic_plasmid
           --config ${AUTOPLASM_ASSEMBLY_CONFIG}
           --profile local
           --outdir ${CMAKE_SOURCE_DIR}/results/assembly_full_run
@@ -110,7 +99,7 @@ add_custom_target(run_assembly_smoke
 )
 
 add_custom_target(run_illumina_smoke_dry
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_ILLUMINA_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_SOURCE_DIR}/results/illumina_smoke_dry
@@ -119,7 +108,7 @@ add_custom_target(run_illumina_smoke_dry
 )
 
 add_custom_target(run_ont_smoke_dry
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_ONT_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_SOURCE_DIR}/results/ont_smoke_dry
@@ -128,7 +117,7 @@ add_custom_target(run_ont_smoke_dry
 )
 
 add_custom_target(run_hifi_smoke_dry
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_HIFI_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_SOURCE_DIR}/results/hifi_smoke_dry
@@ -137,7 +126,7 @@ add_custom_target(run_hifi_smoke_dry
 )
 
 add_custom_target(run_hybrid_smoke_dry
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_HYBRID_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_SOURCE_DIR}/results/hybrid_smoke_dry
@@ -152,7 +141,7 @@ add_test(
 )
 add_test(
   NAME autoplasm_help
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli --help
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli --help
 )
 add_test(
   NAME ruff
@@ -160,13 +149,13 @@ add_test(
           ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests
 )
 add_test(
-  NAME black_src
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m black --check
+  NAME ruff_format_src
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m ruff format --check
           ${CMAKE_SOURCE_DIR}/src
 )
 add_test(
-  NAME black_tests
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m black --check
+  NAME ruff_format_tests
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m ruff format --check
           ${CMAKE_SOURCE_DIR}/tests
 )
 add_test(
@@ -176,35 +165,35 @@ add_test(
 )
 add_test(
   NAME autoplasm_dry_run
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${CMAKE_SOURCE_DIR}/examples/config_minimal.yaml
           --profile dry_run
           --outdir ${CMAKE_BINARY_DIR}/autoplasm_dry_run
 )
 add_test(
   NAME autoplasm_illumina_dry_run
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_ILLUMINA_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_BINARY_DIR}/autoplasm_illumina_dry_run
 )
 add_test(
   NAME autoplasm_ont_dry_run
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_ONT_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_BINARY_DIR}/autoplasm_ont_dry_run
 )
 add_test(
   NAME autoplasm_hifi_dry_run
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_HIFI_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_BINARY_DIR}/autoplasm_hifi_dry_run
 )
 add_test(
   NAME autoplasm_hybrid_dry_run
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_HYBRID_CONFIG}
           --profile dry_run
           --outdir ${CMAKE_BINARY_DIR}/autoplasm_hybrid_dry_run
@@ -213,8 +202,8 @@ set_tests_properties(
   pytest
   autoplasm_help
   ruff
-  black_src
-  black_tests
+  ruff_format_src
+  ruff_format_tests
   mypy
   autoplasm_dry_run
   autoplasm_illumina_dry_run
@@ -233,7 +222,7 @@ add_custom_target(run_tests
 )
 
 add_custom_target(run_pipeline
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.autoplasm.cli dry-run
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli dry-run --type metagenomic_plasmid --no-check-files --no-progress
           --config ${AUTOPLASM_CONFIG}
           --profile ${AUTOPLASM_PROFILE}
           --outdir ${CMAKE_SOURCE_DIR}/results/autoplasm_project

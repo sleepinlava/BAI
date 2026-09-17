@@ -22,7 +22,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_metaflye
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_metaflye
   tables:
   - assembly_summary
 failure_handling:

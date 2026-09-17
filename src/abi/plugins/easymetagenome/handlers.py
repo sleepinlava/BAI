@@ -10,7 +10,7 @@ import shutil
 from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from abi.filesystem import checksum_file
 from abi.internal import FunctionInternalHandler, InternalHandlerContext, InternalHandlerResult
@@ -62,6 +62,34 @@ def _paths(value: Any) -> list[Path]:
     if isinstance(value, (list, tuple)):
         return [Path(str(item)) for item in value if item]
     return [Path(str(value))] if value else []
+
+
+def _path_matches_protected(path: Path, protected_paths: Iterable[str | Path]) -> bool:
+    """Return whether *path* is one of the original input paths."""
+    absolute = path.absolute()
+    resolved = path.resolve(strict=False)
+    return any(
+        absolute == protected.absolute() or resolved == protected.resolve(strict=False)
+        for protected in (Path(raw) for raw in protected_paths)
+    )
+
+
+def _contains_protected_path(path: Path, protected_paths: Iterable[str | Path]) -> bool:
+    """Return whether *path* contains an original input path."""
+    absolute = path.absolute()
+    resolved = path.resolve(strict=False)
+    for raw in protected_paths:
+        protected = Path(raw)
+        protected_absolute = protected.absolute()
+        protected_resolved = protected.resolve(strict=False)
+        if (
+            protected_absolute == absolute
+            or protected_resolved == resolved
+            or protected_absolute.is_relative_to(absolute)
+            or protected_resolved.is_relative_to(resolved)
+        ):
+            return True
+    return False
 
 
 def _write_rows(path: str | Path, rows: Sequence[Mapping[str, Any]]) -> Path:
@@ -376,11 +404,11 @@ def compress_reads_handler(
     context: InternalHandlerContext,
 ) -> InternalHandlerResult:
     """Compress KneadData's plain FASTQ outputs and remove them after success."""
-    del context
     requested_threads = max(1, int(step.params.get("threads", config.get("threads", 1))))
     execution = config.get("execution", {})
     concurrent_steps = max(1, int(execution.get("workers", 1))) if execution.get("parallel") else 1
     compression_workers = max(1, requested_threads // concurrent_steps)
+    protected_paths = tuple(getattr(context, "protected_input_paths", ()))
     pairs = [
         (Path(step.inputs[key]), Path(step.outputs[key]))
         for key in ("dehost_read1", "dehost_read2")
@@ -399,16 +427,22 @@ def compress_reads_handler(
             staged.unlink(missing_ok=True)
         raise
 
-    tombstones = [_tombstone_file(source) for source, _ in pairs]
+    deletable_pairs = [
+        (source, destination)
+        for source, destination in pairs
+        if not _path_matches_protected(source, protected_paths)
+    ]
+    tombstones = [_tombstone_file(source) for source, _ in deletable_pairs]
     source_bytes = sum(item["size_bytes"] for item in tombstones)
-    for source, _ in pairs:
+    for source, _ in deletable_pairs:
         source.unlink()
     deleted_bytes, deleted_paths, extra_tombstones = _cleanup_kneaddata_intermediates(
         pairs[0][0].parent,
         keep={destination.resolve() for _, destination in pairs},
+        protected_paths=protected_paths,
     )
     tombstones.extend(extra_tombstones)
-    deleted_paths = [str(source) for source, _ in pairs] + deleted_paths
+    deleted_paths = [str(source) for source, _ in deletable_pairs] + deleted_paths
     receipt = Path(step.outputs["cleanup_receipt"])
     receipt.parent.mkdir(parents=True, exist_ok=True)
     tombstone_manifest = _write_tombstone_manifest(
@@ -446,6 +480,7 @@ def _cleanup_kneaddata_intermediates(
     output_dir: Path,
     *,
     keep: set[Path],
+    protected_paths: Iterable[str | Path] = (),
 ) -> tuple[int, list[str], list[dict[str, Any]]]:
     """Remove non-final files left by KneadData after paired reads are compressed."""
     deleted_bytes = 0
@@ -453,10 +488,15 @@ def _cleanup_kneaddata_intermediates(
     tombstones: list[dict[str, Any]] = []
     if not output_dir.is_dir():
         return deleted_bytes, deleted_paths, tombstones
+    protected_paths = tuple(protected_paths)
     keep_resolved = {path.resolve() for path in keep}
     for path in output_dir.iterdir():
         resolved = path.resolve()
-        if resolved in keep_resolved or path.name.endswith(".log"):
+        if (
+            resolved in keep_resolved
+            or path.name.endswith(".log")
+            or _contains_protected_path(path, protected_paths)
+        ):
             continue
         if path.is_symlink() or path.is_file():
             if path.is_file():
@@ -502,6 +542,7 @@ def cleanup_functional_intermediates_handler(
     """Remove large per-sample FASTQ intermediates after HUMAnN4 succeeds."""
     del config
     sample_id = str(step.sample_id)
+    protected_paths = tuple(getattr(context, "protected_input_paths", ()))
     dehost_read_pairs = _fastq_records(Path(step.inputs["dehost_read1"]))
     intermediates = [
         Path(step.inputs[key])
@@ -512,6 +553,8 @@ def cleanup_functional_intermediates_handler(
     deleted_paths: list[str] = []
     tombstones: list[dict[str, Any]] = []
     for path in intermediates:
+        if _path_matches_protected(path, protected_paths):
+            continue
         resolved = path.resolve()
         if not resolved.is_relative_to(outdir):
             raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
@@ -527,7 +570,7 @@ def cleanup_functional_intermediates_handler(
             f"Refusing to clean HUMAnN intermediates outside result directory: {humann_output_dir}"
         )
     humann_temp_dir = humann_output_dir / f"{sample_id}_humann_temp"
-    if humann_temp_dir.is_dir():
+    if humann_temp_dir.is_dir() and not _contains_protected_path(humann_temp_dir, protected_paths):
         tombstones.extend(
             _tombstone_file(item) for item in humann_temp_dir.rglob("*") if item.is_file()
         )
@@ -571,12 +614,11 @@ def cleanup_taxonomy_intermediates_handler(
     """Remove large per-sample read/classification intermediates after Bracken succeeds."""
     del config
     sample_id = str(step.sample_id)
+    protected_paths = tuple(getattr(context, "protected_input_paths", ()))
     dehost_read_pairs = _fastq_records(Path(step.inputs["dehost_read1"]))
     intermediates = [
         Path(step.inputs[key])
         for key in (
-            "raw_read1",
-            "raw_read2",
             "clean_read1",
             "clean_read2",
             "dehost_read1",
@@ -590,6 +632,8 @@ def cleanup_taxonomy_intermediates_handler(
     deleted_paths: list[str] = []
     tombstones: list[dict[str, Any]] = []
     for path in intermediates:
+        if _path_matches_protected(path, protected_paths):
+            continue
         resolved = path.resolve()
         if not resolved.is_relative_to(outdir):
             raise ValueError(f"Refusing to clean intermediate outside result directory: {path}")
