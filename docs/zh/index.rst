@@ -57,7 +57,6 @@ ABI 支持 Python 3.10–3.13。
 .. code-block:: bash
 
    pip install "abi-agent[mcp]"       # MCP 服务
-   pip install "abi-agent[report]"    # 科研图形和增强报告
 
 五分钟示例
 ------------------------------

@@ -11,7 +11,8 @@ def test_release_check_script_is_documented() -> None:
 def test_release_check_uses_stable_coverage_gate() -> None:
     script = Path("scripts/release_check.sh").read_text()
 
-    assert "python -m pytest tests/ src/abi/sciplot/tests/" in script
+    assert "python -m pytest tests/" in script
+    assert "src/abi/sciplot/tests/" not in script
     assert "--strict-markers" in script
     assert '-m "not requires_tools"' in script
     assert "--capture=no" in script

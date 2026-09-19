@@ -63,6 +63,29 @@ def build_run_facts(
         if row.get("status") == "failed"
     ]
     resumed_steps = [str(row.get("step_id", "")) for row in rows if row.get("status") == "resumed"]
+    command_records = [
+        {
+            field: row.get(field, "")
+            for field in (
+                "step_id",
+                "sample_id",
+                "step_name",
+                "tool_id",
+                "category",
+                "command",
+                "status",
+                "return_code",
+                "remote_scheduler_job_id",
+                "reason",
+                "parsed_status",
+                "standard_tables",
+            )
+        }
+        for row in rows
+    ]
+    actual_calls = [
+        record for record in command_records if record.get("status") not in {"dry_run", "skipped"}
+    ]
     summary = dict(run_summary or {})
     facts: Dict[str, Any] = {
         "status": str(summary.get("status", "")),
@@ -73,6 +96,8 @@ def build_run_facts(
         "step_status_counts": counts,
         "failed_steps": failed_steps,
         "resumed_steps": resumed_steps,
+        "command_records": command_records,
+        "actual_calls": actual_calls,
     }
     return facts
 
@@ -137,6 +162,7 @@ def write_generic_report(
     facts = dict(run_facts) if run_facts else None
     facts_md_lines: List[str] = []
     facts_html_rows: List[str] = []
+    facts_html_call_rows: List[str] = []
     if facts is None:
         facts_md_lines = ["_Execution facts were not provided for this report._"]
     else:
@@ -170,6 +196,32 @@ def write_generic_report(
             )
         else:
             facts_md_lines.append("Reused steps: none recorded.")
+        actual_calls = facts.get("actual_calls") or []
+        facts_md_lines.append("")
+        if actual_calls:
+            facts_md_lines.append("**Actual calls (excluding dry-run and skipped steps):**")
+            facts_md_lines.extend(
+                [
+                    "| Step ID | Tool | Status | Command |",
+                    "| --- | --- | --- | --- |",
+                ]
+            )
+            for call in actual_calls:
+                command = str(call.get("command", "")).replace("|", "\\|")
+                facts_md_lines.append(
+                    f"| `{call.get('step_id', '')}` | `{call.get('tool_id', '')}` | "
+                    f"`{call.get('status', '')}` | `{command}` |"
+                )
+                facts_html_call_rows.append(
+                    "<tr>"
+                    f"<td><code>{escape(str(call.get('step_id', '')))}</code></td>"
+                    f"<td><code>{escape(str(call.get('tool_id', '')))}</code></td>"
+                    f"<td>{escape(str(call.get('status', '')))}</td>"
+                    f"<td><code>{escape(str(call.get('command', '')))}</code></td>"
+                    "</tr>"
+                )
+        else:
+            facts_md_lines.append("Actual calls: none recorded.")
         linkage = []
         if facts.get("resumes_run_id"):
             linkage.append(f"resumes run `{facts['resumes_run_id']}`")
@@ -260,6 +312,17 @@ def write_generic_report(
                     ]
                     if facts_html_rows
                     else ["<p><em>No step-level command records available.</em></p>"]
+                ),
+                *(
+                    [
+                        "<h3>Actual calls (excluding dry-run and skipped steps)</h3>",
+                        "<table><thead><tr><th>Step ID</th><th>Tool</th>"
+                        "<th>Status</th><th>Command</th></tr></thead><tbody>",
+                        *facts_html_call_rows,
+                        "</tbody></table>",
+                    ]
+                    if facts_html_call_rows
+                    else ["<p>Actual calls: none recorded.</p>"]
                 ),
                 "<h2>Known Limitations</h2>",
                 limitations_html,

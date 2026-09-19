@@ -33,7 +33,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_abricate
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_abricate
   tables:
   - annotations
 failure_handling:

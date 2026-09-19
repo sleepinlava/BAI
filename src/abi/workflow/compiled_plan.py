@@ -14,6 +14,7 @@ error envelope.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from dataclasses import asdict, dataclass, field
@@ -41,6 +42,8 @@ __all__ = [
     "compile_plan",
     "CompilationWarning",
     "bind_confirmed_plan",
+    "verify_confirmed_plan",
+    "execution_confirmation_digest",
     "load_compiled_plan",
     "write_compiled_plan",
 ]
@@ -240,6 +243,10 @@ class CompiledPlan:
     enabled_steps: Sequence[str] = field(default_factory=list)
     selected_tools: Sequence[str] = field(default_factory=list)
     analysis_type: str = ""
+    # Canonical sample descriptors are part of the confirmed plan identity.
+    # Older v1 artifacts may omit this optional field; new artifacts include
+    # it whenever the source plan exposes ``samples``.
+    samples: Any = None
 
     # ── Non-fatal compilation notes ──
     warnings: Sequence[CompilationWarning] = field(default_factory=list)
@@ -283,7 +290,7 @@ class CompiledPlan:
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the compiled plan for persistence as ``compiled_plan.json``."""
-        return {
+        payload = {
             "schema_version": self.SCHEMA_VERSION,
             "plan_id": self.plan_id,
             "project_name": self.project_name,
@@ -296,6 +303,9 @@ class CompiledPlan:
             "selected_tools": list(self.selected_tools),
             "warnings": [warning.to_dict() for warning in self.warnings],
         }
+        if self.samples is not None:
+            payload["samples"] = _canonical_value(self.samples)
+        return payload
 
     _KNOWN_FIELDS = frozenset(
         {
@@ -310,6 +320,7 @@ class CompiledPlan:
             "enabled_steps",
             "selected_tools",
             "warnings",
+            "samples",
         }
     )
 
@@ -370,6 +381,7 @@ class CompiledPlan:
             enabled_steps=[str(sid) for sid in enabled_raw],
             selected_tools=[str(tool) for tool in selected_raw],
             analysis_type=str(data.get("analysis_type") or ""),
+            samples=_canonical_value(data["samples"]) if "samples" in data else None,
             warnings=warnings,
             plan_id=str(data.get("plan_id") or ""),
         )
@@ -485,6 +497,7 @@ def compile_plan(
         enabled_steps=sorted(enabled_step_ids),
         selected_tools=list(plan.selected_tools or []),
         analysis_type=plan.analysis_type or "",
+        samples=_canonical_value(getattr(plan, "samples", None)),
         warnings=warnings,
     )
 
@@ -733,6 +746,56 @@ def _string_keyed_mapping(value: Any, label: str) -> Dict[str, Any]:
     return dict(value)
 
 
+def _canonical_value(value: Any) -> Any:
+    """Convert planner/configuration values into deterministic JSON data."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, Mapping):
+        return {
+            str(key): _canonical_value(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (set, frozenset)):
+        items = [_canonical_value(item) for item in value]
+        return sorted(items, key=lambda item: json.dumps(item, sort_keys=True, default=str))
+    if isinstance(value, (list, tuple)):
+        return [_canonical_value(item) for item in value]
+    to_dict = getattr(value, "to_dict", None)
+    if callable(to_dict):
+        try:
+            return _canonical_value(to_dict())
+        except Exception:  # pragma: no cover - third-party planner object
+            pass
+    if hasattr(value, "__dict__"):
+        return _canonical_value(vars(value))
+    return str(value)
+
+
+def execution_confirmation_digest(plan: Any, config: Any, options: Any) -> str:
+    """Digest every mutable execution input outside the compiled step view.
+
+    ``CompiledPlan`` deliberately contains backend-neutral step information,
+    while queueing layers also carry samples, resolved configuration, and
+    runtime options.  Those values are mutable Python objects, so they need a
+    separate confirmation fingerprint to prevent a queued run from starting
+    with a different container, resource, timeout, or sample selection.
+    ``confirmed_plan_id`` is derived after binding and is intentionally not
+    included in its own fingerprint.
+    """
+    option_value = _canonical_value(options)
+    if isinstance(option_value, dict):
+        option_value.pop("confirmed_plan_id", None)
+    payload = {
+        "plan": _canonical_value(plan),
+        "config": _canonical_value(config),
+        "options": option_value,
+    }
+    encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str)
+    return "sha256:" + hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
 def plan_content_digest(compiled: CompiledPlan) -> str:
     """Return the canonical SHA-256 content digest of a compiled plan.
 
@@ -798,6 +861,14 @@ def bind_confirmed_plan(prepared: Any) -> str:
     """
     plan = getattr(prepared, "plan", None)
     config = getattr(prepared, "config", None)
+    options = getattr(prepared, "options", None)
+    # Preserve the planner-owned references across repeated binding calls so
+    # mutations made by a queueing layer remain observable.  The backend gets
+    # a defensive plan snapshot below; config/options are guarded by the
+    # confirmation fingerprint immediately before backend selection.
+    source_plan = getattr(prepared, "_confirmed_source_plan", plan)
+    source_config = getattr(prepared, "_confirmed_source_config", config)
+    source_options = getattr(prepared, "_confirmed_source_options", options)
     outdir_value = (config or {}).get("outdir") or getattr(plan, "outdir", None)
     if outdir_value is None:
         raise PlanIntegrityError(
@@ -821,4 +892,91 @@ def bind_confirmed_plan(prepared: Any) -> str:
         # resume) verify against the same confirmed artifact.
         # 首次绑定：持久化已验证的身份，让后续运行（重试、恢复）对同一产物验证。
         write_compiled_plan(compiled, confirmed_path)
+    confirmation_digest = getattr(prepared, "_confirmed_execution_digest", "")
+    if not confirmation_digest:
+        confirmation_digest = execution_confirmation_digest(
+            source_plan, source_config, source_options
+        )
+    # Keep the exact object that was compiled as the execution snapshot.  The
+    # planner object can still be held by a transport or plugin and may be
+    # mutated while a queued job waits; handing that mutable object to a
+    # backend would make the confirmation evidence weaker than the work that
+    # actually starts.
+    try:
+        bound_plan = copy.deepcopy(plan)
+    except Exception as exc:  # pragma: no cover - defensive for plugin objects
+        raise PlanIntegrityError(
+            f"Cannot freeze the confirmed execution plan before backend startup: {exc}"
+        ) from exc
+    try:
+        object.__setattr__(prepared, "plan", bound_plan)
+        object.__setattr__(prepared, "confirmed_plan_id", compiled.plan_id)
+        # Keep the planner-owned object separately so a queueing layer that
+        # mutates it after approval is detected rather than silently ignored.
+        # The backend still receives the defensive snapshot above.
+        object.__setattr__(prepared, "_confirmed_source_plan", source_plan)
+        object.__setattr__(prepared, "_confirmed_source_config", source_config)
+        object.__setattr__(prepared, "_confirmed_source_options", source_options)
+        object.__setattr__(prepared, "_confirmed_execution_digest", confirmation_digest)
+        # The agent boundary historically sets this field on its local
+        # RuntimeOptions variable immediately after binding.  Set it here as
+        # well so a defensive or frozen prepared object still carries the
+        # identity that the selected backend must record.
+        bound_options = getattr(prepared, "options", None)
+        if bound_options is not None and hasattr(bound_options, "confirmed_plan_id"):
+            setattr(bound_options, "confirmed_plan_id", compiled.plan_id)
+    except (AttributeError, TypeError) as exc:
+        raise PlanIntegrityError(
+            "Cannot attach the confirmed execution snapshot to the prepared workflow"
+        ) from exc
     return compiled.plan_id
+
+
+def verify_confirmed_plan(prepared: Any) -> None:
+    """Revalidate a bound snapshot immediately before selecting a backend."""
+    expected = str(getattr(prepared, "confirmed_plan_id", "") or "")
+    if not expected:
+        return
+    plan = getattr(prepared, "plan", None)
+    config = getattr(prepared, "config", None)
+    outdir_value = (config or {}).get("outdir") or getattr(plan, "outdir", None)
+    if outdir_value is None:
+        raise PlanIntegrityError(
+            "Cannot verify the confirmed execution plan: no resolved output directory"
+        )
+    actual = compile_plan(plan, outdir=Path(outdir_value)).plan_id
+    if actual != expected:
+        raise PlanDriftError(
+            "The confirmed execution snapshot changed after binding; "
+            "re-plan and obtain fresh execution confirmation"
+        )
+    source_plan = getattr(prepared, "_confirmed_source_plan", None)
+    if source_plan is not None:
+        source_actual = compile_plan(source_plan, outdir=Path(outdir_value)).plan_id
+        if source_actual != expected:
+            raise PlanDriftError(
+                "The planner-owned execution plan changed while waiting in the queue; "
+                "re-plan and obtain fresh execution confirmation"
+            )
+    expected_context = str(getattr(prepared, "_confirmed_execution_digest", "") or "")
+    if expected_context:
+        bound_context = execution_confirmation_digest(
+            plan,
+            getattr(prepared, "config", None),
+            getattr(prepared, "options", None),
+        )
+        if bound_context != expected_context:
+            raise PlanDriftError(
+                "The confirmed execution configuration or runtime options changed after "
+                "binding; re-plan and obtain fresh execution confirmation"
+            )
+        source_context = execution_confirmation_digest(
+            source_plan,
+            getattr(prepared, "_confirmed_source_config", None),
+            getattr(prepared, "_confirmed_source_options", None),
+        )
+        if source_context != expected_context:
+            raise PlanDriftError(
+                "The planner-owned execution configuration or runtime options changed while "
+                "waiting in the queue; re-plan and obtain fresh execution confirmation"
+            )

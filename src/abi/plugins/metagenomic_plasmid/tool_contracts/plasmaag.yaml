@@ -22,7 +22,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_plasmaag
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_plasmaag
   tables:
   - plasmid_bins
   - bin_to_contig

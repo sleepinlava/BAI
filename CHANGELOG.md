@@ -2,7 +2,44 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-17
+
+### Added
+
+- Independent core-only historical audit acceptance for successful, failed,
+  resumed, missing-snapshot and invalid-snapshot results.
+- Exact release artifact sets and SHA-256 manifests, verified again after
+  downloading GitHub Release assets before Trusted Publishing.
+- Clean installation checks for core-only, standalone RNA-seq and EasyMeta
+  scientific calculations, and the complete eight-plugin combination.
+
+### Changed
+
+- Scientific Python dependencies now belong to the consuming analysis plugins.
+  The core wheel excludes example datasets, golden traces and external Conda
+  specifications. Plasmid normalization scripts ship with its plugin wheel.
+- The Release workflow produces a verified draft; publishing that draft with
+  a maintainer identity triggers the top-level PyPI publisher event.
+- Product tests, maintenance commands, packaged skill instructions and bilingual
+  documentation follow the current shared core and optional plugin architecture.
+
+### Fixed
+
+- Resume identity distinguishes upstream-generated intermediates from original
+  inputs, retains user-file protection, and indexes output directory ancestry
+  once to avoid quadratic work on large multi-sample plans.
+- Execution validates confirmed plan identity and runtime readiness, archives
+  prior results before rewrites, and persists timeout/cancellation evidence.
+- Resource readiness guidance does not suggest nonexistent preparation scripts
+  or create taxonomy directories during non-mock readiness checks.
+
 ### Removed
+
+- Four optional plasmid rendering nodes and their dedicated Python rendering
+  adapters/dependencies; comparative analysis, network computation and historical
+  visualization tables remain supported.
+- The empty `report` extra and Black formatter entry points. Use Ruff; scientific
+  plotting and Study workflows are external to ABI.
 
 - The `abi.autoplasm` backward-compatibility shim namespace, the legacy
   `autoplasm` console entry point, and the old-engine execution core

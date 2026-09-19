@@ -141,6 +141,34 @@ def test_cleanup_failed_step_output_dir_is_opt_in_and_scoped(tmp_path: Path) -> 
     assert not partial.exists()
 
 
+def test_failed_step_cleanup_preserves_original_input_inside_output_dir(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "out" / "sample"
+    output_dir.mkdir(parents=True)
+    raw_target = tmp_path / "source" / "S1_R1.fastq.gz"
+    raw_target.parent.mkdir()
+    raw_target.write_bytes(b"raw reads")
+    raw_link = output_dir / "S1_R1.fastq.gz"
+    raw_link.symlink_to(raw_target)
+    partial = output_dir / "partial.tmp"
+    partial.write_bytes(b"partial")
+    step = _step(
+        params={"_cleanup_failed_output_dir": "true"},
+        outputs={"output_dir": str(output_dir)},
+    )
+
+    _cleanup_failed_step_output_dir(
+        step,
+        tmp_path / "out",
+        protected_paths={raw_link},
+    )
+
+    assert raw_link.is_symlink()
+    assert raw_link.read_bytes() == b"raw reads"
+    assert not partial.exists()
+
+
 def test_prepare_output_directories_rejects_all_outputs_outside_root(tmp_path: Path) -> None:
     outdir = tmp_path / "pipeline"
     outside_file = tmp_path / "escaped" / "result.tsv"
@@ -540,6 +568,46 @@ def test_external_step_records_tool_exception_and_successful_parsing(tmp_path: P
     assert result["standard_tables"] == "summary"
 
 
+def test_local_timeout_writes_persistent_termination_evidence(tmp_path: Path) -> None:
+    timeout_result = SimpleNamespace(return_code=-1, status="timeout", outputs={})
+    executor = _executor(tmp_path, skill=_Skill(timeout_result), enforce_contracts=False)
+    step = _step(outputs={"output_dir": str(tmp_path / "output")})
+
+    class _Plan:
+        outdir = str(tmp_path)
+        provenance_dir = None
+        steps = [step]
+        samples = []
+        selected_tools = ["tool"]
+        project_name = "timeout-test"
+        analysis_type = "test"
+        mode = "auto"
+        threads = 1
+        log_dir = str(tmp_path / "logs")
+        managed_output_roots = []
+
+        def to_dict(self):
+            return {
+                "project_name": self.project_name,
+                "analysis_type": self.analysis_type,
+                "mode": self.mode,
+                "threads": self.threads,
+                "outdir": self.outdir,
+                "log_dir": self.log_dir,
+                "samples": [],
+                "selected_tools": self.selected_tools,
+                "steps": [step.to_dict()],
+            }
+
+    with pytest.raises(ToolError, match=r"step\(s\) failed"):
+        executor.run(_Plan(), {"outdir": str(tmp_path), "execution": {}})
+
+    summary = json.loads((tmp_path / "provenance" / "run_summary.json").read_text(encoding="utf-8"))
+    assert summary["status"] == "timeout"
+    assert summary["termination"]["confirmed"] is True
+    assert summary["termination"]["child_processes_status"] == "unknown"
+
+
 def test_internal_handler_success_failure_missing_and_contract_violation(tmp_path: Path) -> None:
     success_handler = FunctionInternalHandler(
         "normalize",
@@ -934,6 +1002,12 @@ def test_resume_run_carries_prior_checksum_chain_and_reruns_tampered_output(tmp_
             self.content = "value\n1\n"
             self.calls = 0
 
+        def check_installation(self) -> bool:
+            return True
+
+        def capture_version(self) -> str:
+            return "test-tool-1"
+
         def build_command(self, params):
             return ["tool"]
 
@@ -975,3 +1049,226 @@ def test_resume_run_carries_prior_checksum_chain_and_reruns_tampered_output(tmp_
     # The refreshed checksum chain records the new content for downstream runs.
     refreshed = json.loads((outdir / "provenance" / "checksums.json").read_text(encoding="utf-8"))
     assert refreshed[str(output)] != recorded[str(output)]
+
+
+def test_resume_refuses_reuse_when_external_input_content_changes(tmp_path: Path) -> None:
+    outdir = tmp_path / "out"
+    output = outdir / "steps" / "s1" / "result.tsv"
+    input_path = tmp_path / "reads.fastq"
+    output.parent.mkdir(parents=True)
+    input_path.write_text("read-v1\n", encoding="utf-8")
+
+    def plan() -> ExecutionPlan:
+        return ExecutionPlan(
+            project_name="resume-input-binding",
+            mode="auto",
+            threads=1,
+            outdir=str(outdir),
+            log_dir=str(tmp_path / "log"),
+            samples=[SampleInput(sample_id="S1")],
+            sample_context=SampleContext([SampleInput(sample_id="S1")], True, False),
+            steps=[
+                PlanStep(
+                    step_id="s1",
+                    step_name="S1",
+                    tool_id="tool",
+                    category="test",
+                    sample_id="S1",
+                    inputs={"read1": str(input_path)},
+                    outputs={"result": str(output), "output_dir": str(output.parent)},
+                    params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+                )
+            ],
+            selected_tools=["tool"],
+            analysis_type="test",
+        )
+
+    class WritingSkill:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def capture_version(self) -> str:
+            return "tool-1"
+
+        def check_installation(self) -> bool:
+            return True
+
+        def build_command(self, params):
+            return ["tool"]
+
+        def run(self, params, *, dry_run: bool):
+            self.calls += 1
+            Path(str(params["result"])).write_text("output\n", encoding="utf-8")
+            return SimpleNamespace(return_code=0, status="success", outputs={})
+
+    first_skill = WritingSkill()
+    _executor(tmp_path, skill=first_skill).run(
+        plan(), {"outdir": str(outdir), "log_dir": str(tmp_path / "log")}
+    )
+    input_path.write_text("read-v2\n", encoding="utf-8")
+    second_skill = WritingSkill()
+    _executor(tmp_path, skill=second_skill).run(
+        plan(),
+        {"outdir": str(outdir), "log_dir": str(tmp_path / "log")},
+        resume=True,
+    )
+
+    assert second_skill.calls == 1
+    commands = (outdir / "provenance" / "commands.tsv").read_text(encoding="utf-8")
+    assert "external input content changed" in commands
+
+
+def test_resume_reuses_two_step_dag_when_generated_input_appears(tmp_path: Path) -> None:
+    """A downstream input produced by an earlier step is not external drift."""
+    outdir = tmp_path / "out"
+    raw = tmp_path / "reads.fastq"
+    raw.write_text("read-v1\n", encoding="utf-8")
+    clean = outdir / "qc" / "clean.fastq"
+    result = outdir / "assembly" / "result.tsv"
+
+    def plan() -> ExecutionPlan:
+        return ExecutionPlan(
+            project_name="resume-generated-input",
+            mode="auto",
+            threads=1,
+            outdir=str(outdir),
+            log_dir=str(tmp_path / "log"),
+            samples=[SampleInput(sample_id="S1")],
+            sample_context=SampleContext([SampleInput(sample_id="S1")], True, False),
+            steps=[
+                PlanStep(
+                    step_id="qc",
+                    step_name="QC",
+                    tool_id="tool",
+                    category="qc",
+                    sample_id="S1",
+                    inputs={"read1": str(raw)},
+                    outputs={"clean_read1": str(clean), "output_dir": str(clean.parent)},
+                    params={"_contract": {"outputs": {"clean_read1": {"type": "file"}}}},
+                ),
+                PlanStep(
+                    step_id="assembly",
+                    step_name="Assembly",
+                    tool_id="tool",
+                    category="assembly",
+                    sample_id="S1",
+                    inputs={"read1": str(clean)},
+                    outputs={"result": str(result), "output_dir": str(result.parent)},
+                    params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+                ),
+            ],
+            selected_tools=["tool"],
+            analysis_type="test",
+        )
+
+    class WritingSkill:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def capture_version(self) -> str:
+            return "tool-1"
+
+        def check_installation(self) -> bool:
+            return True
+
+        def build_command(self, params):
+            return ["tool"]
+
+        def run(self, params, *, dry_run: bool):
+            self.calls += 1
+            if "clean_read1" in params:
+                Path(str(params["clean_read1"])).write_text("clean\n", encoding="utf-8")
+            if "result" in params:
+                Path(str(params["result"])).write_text("result\n", encoding="utf-8")
+            return SimpleNamespace(return_code=0, status="success", outputs={})
+
+    first_skill = WritingSkill()
+    _executor(tmp_path, skill=first_skill).run(
+        plan(), {"outdir": str(outdir), "log_dir": str(tmp_path / "log")}
+    )
+    assert first_skill.calls == 2
+
+    second_skill = WritingSkill()
+    _executor(tmp_path, skill=second_skill).run(
+        plan(),
+        {"outdir": str(outdir), "log_dir": str(tmp_path / "log")},
+        resume=True,
+    )
+
+    assert second_skill.calls == 0
+    commands = (outdir / "provenance" / "commands.tsv").read_text(encoding="utf-8")
+    assert commands.count("\tresumed\t") == 2
+
+
+def test_resume_two_step_dag_reruns_after_external_input_drift(tmp_path: Path) -> None:
+    """A raw input change still invalidates reuse when generated inputs are present."""
+    outdir = tmp_path / "out"
+    raw = tmp_path / "reads.fastq"
+    raw.write_text("read-v1\n", encoding="utf-8")
+    clean = outdir / "qc" / "clean.fastq"
+    result = outdir / "assembly" / "result.tsv"
+
+    def plan() -> ExecutionPlan:
+        return ExecutionPlan(
+            project_name="resume-generated-input-drift",
+            mode="auto",
+            threads=1,
+            outdir=str(outdir),
+            log_dir=str(tmp_path / "log"),
+            samples=[SampleInput(sample_id="S1")],
+            sample_context=SampleContext([SampleInput(sample_id="S1")], True, False),
+            steps=[
+                PlanStep(
+                    step_id="qc",
+                    step_name="QC",
+                    tool_id="tool",
+                    category="qc",
+                    sample_id="S1",
+                    inputs={"read1": str(raw)},
+                    outputs={"clean_read1": str(clean), "output_dir": str(clean.parent)},
+                    params={"_contract": {"outputs": {"clean_read1": {"type": "file"}}}},
+                ),
+                PlanStep(
+                    step_id="assembly",
+                    step_name="Assembly",
+                    tool_id="tool",
+                    category="assembly",
+                    sample_id="S1",
+                    inputs={"read1": str(clean)},
+                    outputs={"result": str(result), "output_dir": str(result.parent)},
+                    params={"_contract": {"outputs": {"result": {"type": "file"}}}},
+                ),
+            ],
+            selected_tools=["tool"],
+            analysis_type="test",
+        )
+
+    class WritingSkill:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def build_command(self, params):
+            return ["tool"]
+
+        def run(self, params, *, dry_run: bool):
+            self.calls += 1
+            if "clean_read1" in params:
+                Path(str(params["clean_read1"])).write_text("clean\n", encoding="utf-8")
+            if "result" in params:
+                Path(str(params["result"])).write_text("result\n", encoding="utf-8")
+            return SimpleNamespace(return_code=0, status="success", outputs={})
+
+    _executor(tmp_path, skill=WritingSkill()).run(
+        plan(), {"outdir": str(outdir), "log_dir": str(tmp_path / "log")}
+    )
+    raw.write_text("read-v2\n", encoding="utf-8")
+    second_skill = WritingSkill()
+    _executor(tmp_path, skill=second_skill).run(
+        plan(),
+        {"outdir": str(outdir), "log_dir": str(tmp_path / "log")},
+        resume=True,
+    )
+
+    assert second_skill.calls == 2
+    commands = (outdir / "provenance" / "commands.tsv").read_text(encoding="utf-8")
+    assert "external input content changed" in commands

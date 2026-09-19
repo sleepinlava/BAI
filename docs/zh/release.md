@@ -1,6 +1,6 @@
 # 发布指南
 
-本仓库只发布一个 PyPI 分发包：`abi-agent`。发布从已验证的 `master` 提交产生，Git tag、
+本仓库发布 `abi-agent` 核心和八个可选分析插件分发包。发布从已验证的 `master` 提交产生，Git tag、
 包版本、GitHub Release 和 PyPI 制品必须指向同一个发布身份。
 
 ## 发布前检查
@@ -35,7 +35,7 @@ Claude Code、Codex plugin manifest 与包版本。
 ruff check src/ tests/
 ruff format --check src/ tests/
 mypy src/abi/ --ignore-missing-imports
-python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+python -m pytest tests/ -v --tb=short \
   --strict-markers -m "not requires_tools" --capture=no \
   --cov=src/abi --cov-branch --cov-report=term-missing:skip-covered \
   --cov-report=xml --cov-report=json:coverage.json --cov-fail-under=75
@@ -47,7 +47,7 @@ abi query --type metagenomic_plasmid --what stages
 
 它不能替代全部发布表面门禁。还需分别运行 `bash docs/build_docs.sh`、
 `docker compose -f docker/docker-compose.yml config --quiet`、Docker 配置回归测试、
-全部 7 个插件的严格 contract lint 和 `python -m twine check dist/*`。适用时运行
+全部 8 个插件的严格 contract lint 和 `python -m twine check dist/*`。适用时运行
 真实工具验收；只有容器输入变化或准备发布镜像时才运行容器验收。GitHub release
 workflow 会在创建 Release 前重新运行可复用 CI 门禁。
 
@@ -58,7 +58,7 @@ workflow 会在创建 Release 前重新运行可复用 CI 门禁。
 abi list-types
 abi query --type metagenomic_plasmid --what stages
 abi query --type rnaseq_expression --what tools
-autoplasm --help
+abi --help
 abi dry-run --type metagenomic_plasmid --config examples/config_minimal.yaml --profile dry_run
 abi doctor-agent --type metatranscriptomics
 abi export-tools --type metatranscriptomics --format json
@@ -86,18 +86,19 @@ Docker workflow。
 - `docker.yml` 仅允许手动触发。它构建并冒烟测试所选插件（或全部插件），只有操作员显式启用 `push` 才发布。registry push 包含 provenance 与 SBOM；非 push 验证以稳定本地 tag load，并关闭 attestation。发布镜像默认多架构，但 RNA-seq 在其 R/DESeq2 环境通过原生 arm64 构建与冒烟测试前仅发布 `linux/amd64`。
 - `release.yml` 构建分发包，在源码 checkout 外执行 wheel smoke，附加由该已安装
   wheel 生成的 `abi-linux-capability-v<version>.json`，为 `v*` tag 创建 GitHub
-  Release，并发出 published event。
+  Release 草稿，由已认证维护者发布草稿，发出 published event。
 - `publish-pypi.yml` 只下载并发布 Release 中的 `*.whl` 和 `*.tar.gz`。能力 JSON
   保留为 GitHub Release 证据，不上传 PyPI。PyPI OIDC 身份绑定该文件名，因此它是
   必需 workflow。
 
 `.github/workflows/` 不保留可选 bot 或重复发布 workflow；必需集合严格为 `ci.yml`、`docker.yml`、`release.yml` 和 `publish-pypi.yml`。
 
-唯一正常的自动发布链为：
+正常发布链为：
 
 ```text
 已验证 master 提交 → v<version> tag → 可复用 CI 质量门
-→ 构建并冒烟测试 wheel/sdist → 携带原始分发包与 Linux 能力证据的 GitHub Release
+→ 构建并冒烟测试 wheel/sdist → 携带原始分发包与 Linux 能力证据的 GitHub Release 草稿
+→ 已认证维护者发布草稿
 → 顶层 release.published event 启动 publish-pypi.yml
 → 下载 Release 产物 → PyPI Trusted Publishing
 ```
@@ -130,6 +131,34 @@ ref 设为准确且已验证的 `v<version>` tag，先记录一次成功的 `pus
 文件哈希；确认 GitHub Release 含 `abi-linux-capability-v<version>.json`，其中恰有
 21 个环境及声明的 x86_64/aarch64 单元格，且 unsupported 单元格保持明确。PyPI
 应仅包含 wheel 与 sdist。在干净环境安装 wheel，并运行 `abi list-types`、
-`autoplasm --help` 和代表性插件 dry-run。容器 tag 需要从 GHCR 拉取并执行
+`abi --help` 和代表性插件 dry-run。容器 tag 需要从 GHCR 拉取并执行
 `abi list-types`。发布交接中记录 Release、PyPI、release workflow、publish job 和
 container workflow 链接。
+
+## 发行物清单
+
+核心 sdist/wheel 与八个官方插件 wheel 构成同版本发行集合。
+`verify_release_artifacts.py --dist-dir dist --tag v<VERSION> --write-manifest`
+验证精确集合并生成不可覆盖的 `release-artifacts.json` SHA-256 清单。
+下载 GitHub Release 资产后去掉 `--write-manifest` 重跑验证；缺包、多包、版本或依赖不匹配、
+字节变化都会阻止发布。发布器只上传这些已验证资产，不重新构建。
+
+Release 工作流先创建已验证草稿。质量门槛和发行物校验通过后，使用已认证维护者身份发布草稿：
+
+```bash
+gh release edit v<VERSION> --draft=false
+```
+
+这会产生顶层 `release.published` 事件，触发现有 Trusted Publisher。
+工作流自身的 `GITHUB_TOKEN` 直接发布 Release 不会启动另一个工作流
+（[GitHub 事件规则](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)）。
+不要重建下载的发行物，也不要把发布器改成可复用工作流。
+
+## 插件项目首次发布
+
+八个插件分发包在首次上传 PyPI 前，各自需要 Pending Trusted Publisher。
+在 <https://pypi.org/manage/account/publishing/> 配置 owner=`sleepinlava`、
+repository=`BAI`、workflow=`publish-pypi.yml`、environment=`pypi`。
+项目名必须与 `scripts/verify_install_forms.py` 的 `OFFICIAL_PLUGINS` 完全一致。
+现有 `abi-agent` 的发布授权不会自动授权创建插件项目；发布 Release 草稿前核对全部八项。
+GitHub 登录不能代替 PyPI 账户配置。参见 [PyPI 首次发布指南](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/)。

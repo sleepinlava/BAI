@@ -6,14 +6,8 @@ channels:
 - defaults
 dependencies:
 - python=3.10
-- matplotlib
-- plotly
 - networkx
-- pyvis
 - jinja2
 - pip
 - pip:
   - clinker
-  - dna-features-viewer
-  - pycirclize
-  - pygenomeviz

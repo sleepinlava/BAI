@@ -22,12 +22,13 @@ from abi.dag import ABIDAG, infer_dag
 from abi.execution_policy import ResourceOverride, resolve_resources_v2
 from abi.internal import internal_handler_spec, run_plugin_preflight
 from abi.results import ABIResultWriter
+from abi.resume import runtime_resume_identity, validate_stored_resume_identity
 from abi.runtime_environment import resolve_environment_prefix
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.schemas import ABIError
 from abi.step_runner import StepExecutionResult, execute_step, write_step_payload
 from abi.tables import StandardTableManager
-from abi.tools import ResourceSpec, resolve_container_image
+from abi.tools import ResourceSpec, resolve_container_image, validate_container_images_ready
 
 SLURM_SUCCESS_STATES = frozenset({"COMPLETED"})
 SLURM_FAILURE_STATES = frozenset(
@@ -58,6 +59,7 @@ class HpcRuntime:
         self._driver_results: dict[str, StepExecutionResult] = {}
         self._resumed_steps: set[str] = set()
         self._dag: ABIDAG | None = None
+        self._termination_evidence: dict[str, dict[str, Any]] = {}
 
     def check(self) -> None:
         scheduler = self.options.scheduler or "slurm"
@@ -85,6 +87,32 @@ class HpcRuntime:
 
     def run(self, plan: object, config: Mapping[str, Any]) -> RuntimeResult:
         self.check()
+        registry = self.plugin.registry()
+        validate_container_images_ready(
+            plan,
+            registry,
+            config=config,
+            cli_image=self.options.container_image,
+            runtime=self.options.container_runtime,
+        )
+        if self.options.resume:
+            reasons = validate_stored_resume_identity(
+                config["outdir"],
+                runtime_resume_identity(
+                    plan,
+                    config,
+                    registry,
+                    smoke=self.options.smoke,
+                    plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+                    cli_image=self.options.container_image,
+                    container_runtime=self.options.container_runtime,
+                ),
+            )
+            if reasons:
+                raise ABIError(
+                    "Refusing HPC resume because execution identity changed or is incomplete: "
+                    + "; ".join(reasons)
+                )
         report = run_plugin_preflight(
             self.plugin,
             config,
@@ -97,17 +125,157 @@ class HpcRuntime:
                 + "; ".join(str(item) for item in report.get("recommendations", []))
             )
         self._prepare_dirs(config)
+        self._termination_evidence = {}
         self._dag = infer_dag(getattr(plan, "steps", []), sequential_fallback=False)
         self._run_driver_steps(plan, config)
         scripts = self._generate_all_scripts(plan, config)
         try:
             job_ids = self._submit_jobs(scripts)
-        except Exception:
-            self._cancel_jobs(list(getattr(self, "_submitted_job_ids", {}).values()))
+        except Exception as exc:
+            # Submission can fail after one or more scheduler jobs already
+            # exist.  Persist both the cancellation request and the scheduler
+            # observation before re-raising, otherwise a retry has no durable
+            # evidence that partial work was terminated.
+            self._persist_submission_failure(plan, config, exc)
             raise
         timeout = self.options.timeout_seconds or 3600 * 24 * 7
         statuses = self._poll_until_complete(job_ids, timeout)
         return self._collect_results(plan, config, job_ids, statuses)
+
+    def _persist_submission_failure(
+        self,
+        plan: object,
+        config: Mapping[str, Any],
+        error: Exception,
+    ) -> None:
+        """Cancel partial submissions and persist their termination evidence."""
+        submitted = {
+            str(step_id): str(job_id)
+            for step_id, job_id in getattr(self, "_submitted_job_ids", {}).items()
+            if str(job_id)
+        }
+        job_ids = list(submitted.values())
+        self._cancel_jobs(job_ids)
+        observed = self._confirm_cancelled_jobs(
+            job_ids,
+            timeout_seconds=min(
+                15.0,
+                max(0.0, float(self.options.timeout_seconds or 15.0)),
+            ),
+        )
+        statuses: dict[str, str] = {}
+        for job_id in job_ids:
+            state = _normalize_slurm_state(observed.get(job_id, ""))
+            evidence = self._termination_evidence.setdefault(job_id, {})
+            if state in {"CANCELLED", "C"}:
+                statuses[job_id] = "CANCELLED"
+                evidence.update(
+                    {
+                        "termination_confirmed": True,
+                        "cancel_confirmed": True,
+                        "observed_state": state,
+                        "scope": "hpc_partial_submission",
+                    }
+                )
+            elif state in SLURM_TERMINAL_STATES or state in {"F", "X", "E"}:
+                statuses[job_id] = state
+                evidence.update(
+                    {
+                        "termination_confirmed": True,
+                        "cancel_confirmed": False,
+                        "observed_state": state,
+                        "scope": "hpc_partial_submission",
+                    }
+                )
+            else:
+                statuses[job_id] = "CANCEL_REQUESTED"
+                evidence.update(
+                    {
+                        "termination_confirmed": False,
+                        "cancel_confirmed": False,
+                        "observed_state": state or "unknown",
+                        "scope": "hpc_partial_submission",
+                        "detail": "scheduler did not confirm termination before evidence capture",
+                    }
+                )
+
+        command_rows = []
+        for step in getattr(plan, "steps", []):
+            result = self._driver_results.get(step.step_id)
+            if result is not None:
+                command_rows.append(
+                    _command_row(
+                        step,
+                        result.status,
+                        result.return_code,
+                        result.reason,
+                        command=result.command,
+                    )
+                )
+                continue
+            job_id = submitted.get(str(step.step_id), "")
+            evidence = self._termination_evidence.get(job_id, {})
+            if job_id and evidence.get("cancel_confirmed"):
+                status = "cancelled"
+                reason = "scheduler cancellation confirmed after partial submission failure"
+            elif job_id:
+                status = "failed"
+                reason = "partial submission cancellation was not confirmed by the scheduler"
+            else:
+                status = "failed"
+                reason = "step was not submitted after an earlier scheduler submission failed"
+            command_rows.append(_command_row(step, status, 1, reason))
+
+        try:
+            writer = ABIResultWriter(
+                self.plugin,
+                self.plugin.registry(),
+                table_manager=StandardTableManager(self.plugin.table_schemas()),
+            )
+            outputs = writer.write(
+                plan=plan,
+                config=config,
+                command_rows=command_rows,
+                status="partial_failure",
+                return_code=1,
+                engine="hpc",
+                smoke=self.options.smoke,
+                resume=self.options.resume,
+                plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+                container_image=self.options.container_image,
+                container_runtime=self.options.container_runtime,
+                extra_summary={
+                    "job_ids": submitted,
+                    "statuses": statuses,
+                    "scheduler": self.options.scheduler or "slurm",
+                    "submission_error": str(error),
+                    "termination": self._termination_evidence,
+                },
+            )
+            outputs["hpc_manifest"] = self._write_hpc_manifest(submitted, statuses, config)
+        except Exception as persistence_error:  # pragma: no cover - last-resort evidence path
+            # A plugin/reporting failure must not hide the scheduler failure,
+            # but the cancellation facts still need a durable home.
+            provenance = self._provenance_dir(config)
+            provenance.mkdir(parents=True, exist_ok=True)
+            (provenance / "run_summary.json").write_text(
+                json.dumps(
+                    {
+                        "status": "partial_failure",
+                        "return_code": 1,
+                        "engine": "hpc",
+                        "job_ids": submitted,
+                        "statuses": statuses,
+                        "submission_error": str(error),
+                        "evidence_persistence_error": str(persistence_error),
+                        "termination": self._termination_evidence,
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            self._write_hpc_manifest(submitted, statuses, config)
 
     def _prepare_dirs(self, config: Mapping[str, Any]) -> None:
         for path in (
@@ -417,9 +585,51 @@ class HpcRuntime:
             if pending:
                 time.sleep(poll_interval)
         if pending:
-            self._cancel_jobs(sorted(pending))
-            for job_id in pending:
-                statuses[job_id] = "TIMEOUT"
+            pending_ids = sorted(pending)
+            self._cancel_jobs(pending_ids)
+            observed = self._confirm_cancelled_jobs(
+                pending_ids,
+                timeout_seconds=min(15.0, max(0.0, float(timeout_seconds))),
+            )
+            for job_id in pending_ids:
+                state = _normalize_slurm_state(observed.get(job_id, ""))
+                evidence = self._termination_evidence.setdefault(job_id, {})
+                if state in {"CANCELLED", "C"}:
+                    statuses[job_id] = "CANCELLED"
+                    evidence.update(
+                        {
+                            "termination_confirmed": True,
+                            "cancel_confirmed": True,
+                            "observed_state": state,
+                        }
+                    )
+                elif state in SLURM_TERMINAL_STATES or state in {"F", "X", "E"}:
+                    statuses[job_id] = state
+                    evidence.update(
+                        {
+                            "termination_confirmed": True,
+                            "cancel_confirmed": False,
+                            "observed_state": state,
+                            "detail": (
+                                "scheduler reported a terminal state after the cancel request"
+                            ),
+                        }
+                    )
+                else:
+                    # Keep the historical TIMEOUT status for compatibility,
+                    # while the evidence explicitly says the request was not
+                    # confirmed by the scheduler.
+                    statuses[job_id] = "TIMEOUT"
+                    evidence.update(
+                        {
+                            "termination_confirmed": False,
+                            "cancel_confirmed": False,
+                            "observed_state": state or "unknown",
+                            "detail": (
+                                "cancel request recorded; scheduler termination is unconfirmed"
+                            ),
+                        }
+                    )
         return statuses
 
     def _poll_slurm(self, job_ids: list[str]) -> dict[str, str]:
@@ -485,10 +695,69 @@ class HpcRuntime:
                 pass
         return result
 
-    def _cancel_jobs(self, job_ids: list[str]) -> None:
+    def _cancel_jobs(self, job_ids: list[str]) -> dict[str, dict[str, Any]]:
         command = "scancel" if (self.options.scheduler or "slurm") == "slurm" else "qdel"
+        evidence: dict[str, dict[str, Any]] = {}
         for job_id in job_ids:
-            subprocess.run([command, job_id], capture_output=True, check=False)
+            try:
+                result = subprocess.run(
+                    [command, job_id],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=15,
+                )
+                item = {
+                    "request": "cancel",
+                    "requested": True,
+                    "command": [command, job_id],
+                    "request_return_code": int(result.returncode),
+                    "request_error": str(result.stderr or "").strip(),
+                    "termination_confirmed": False,
+                    "cancel_confirmed": False,
+                }
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                item = {
+                    "request": "cancel",
+                    "requested": True,
+                    "command": [command, job_id],
+                    "request_return_code": None,
+                    "request_error": str(exc),
+                    "termination_confirmed": False,
+                    "cancel_confirmed": False,
+                }
+            evidence[job_id] = item
+            self._termination_evidence[job_id] = item
+        return evidence
+
+    def _confirm_cancelled_jobs(
+        self,
+        job_ids: list[str],
+        *,
+        timeout_seconds: float,
+    ) -> dict[str, str]:
+        """Poll for scheduler evidence after a cancellation request."""
+        scheduler = self.options.scheduler or "slurm"
+        pending = set(job_ids)
+        observed: dict[str, str] = {}
+        deadline = time.time() + timeout_seconds
+        poll_interval = max(0.1, float(getattr(self.options, "poll_interval_seconds", 30.0)))
+        while pending:
+            current = (
+                self._poll_slurm(sorted(pending))
+                if scheduler == "slurm"
+                else self._poll_pbs(sorted(pending))
+            )
+            for job_id in list(pending):
+                state = _normalize_slurm_state(current.get(job_id, ""))
+                if state:
+                    observed[job_id] = state
+                if state in SLURM_TERMINAL_STATES or state in {"C", "F", "X", "E"}:
+                    pending.remove(job_id)
+            if not pending or time.time() >= deadline:
+                break
+            time.sleep(min(poll_interval, max(0.1, deadline - time.time())))
+        return observed
 
     def _collect_results(
         self,
@@ -515,10 +784,20 @@ class HpcRuntime:
             job_id = job_ids.get(step.step_id, "")
             scheduler_state = _normalize_slurm_state(statuses.get(job_id, "")) if job_id else ""
             if result is None:
-                status = "failed" if scheduler_state in SLURM_FAILURE_STATES else "unknown"
-                command_rows.append(
-                    _command_row(step, status, 1, f"missing step result; Slurm={scheduler_state}")
-                )
+                termination = self._termination_evidence.get(job_id, {})
+                if scheduler_state == "CANCELLED":
+                    status = "cancelled"
+                    reason = "scheduler cancellation confirmed after timeout request"
+                elif scheduler_state == "TIMEOUT":
+                    status = "timeout"
+                    reason = str(
+                        termination.get("detail")
+                        or "timeout cancellation request was not confirmed by the scheduler"
+                    )
+                else:
+                    status = "failed" if scheduler_state in SLURM_FAILURE_STATES else "unknown"
+                    reason = f"missing step result; Slurm={scheduler_state}"
+                command_rows.append(_command_row(step, status, 1, reason))
                 continue
             command_rows.append(
                 _command_row(
@@ -545,7 +824,6 @@ class HpcRuntime:
                 json.dumps(merged_checksums, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
         failed = [row for row in command_rows if row["status"] not in {"success", "resumed"}]
-        manifest = self._write_hpc_manifest(job_ids, statuses, config)
         writer = ABIResultWriter(
             self.plugin,
             self.plugin.registry(),
@@ -561,13 +839,21 @@ class HpcRuntime:
             smoke=self.options.smoke,
             resume=self.options.resume,
             plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+            container_image=self.options.container_image,
+            container_runtime=self.options.container_runtime,
             extra_summary={
                 "job_ids": job_ids,
                 "statuses": statuses,
                 "scheduler": self.options.scheduler or "slurm",
                 "resumed_steps": sorted(self._resumed_steps),
+                "termination": self._termination_evidence,
             },
         )
+        # The shared result writer resets mutable provenance before writing its
+        # current view.  Write the scheduler manifest afterwards so this run's
+        # cancellation evidence remains visible, while the previous manifest
+        # was archived by that reset.
+        manifest = self._write_hpc_manifest(job_ids, statuses, config)
         outputs["hpc_manifest"] = manifest
         return RuntimeResult(
             status="success" if not failed else "partial_failure",
@@ -606,6 +892,7 @@ class HpcRuntime:
                     "scheduler": self.options.scheduler or "slurm",
                     "dry_run": dry_run,
                     "resumed_steps": sorted(self._resumed_steps),
+                    "termination": self._termination_evidence,
                     "jobs": jobs,
                 },
                 indent=2,

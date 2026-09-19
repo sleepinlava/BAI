@@ -30,7 +30,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fonts-wqy-zenhei
           python -m pip install --upgrade pip
-          pip install -e ".[dev,report]"
+          pip install -e ".[dev]"
 
       - name: Verify release identity
         run: python scripts/check_release_identity.py
@@ -47,7 +47,7 @@ jobs:
       - name: Lint built-in plugin contracts
         if: matrix.python-version == '3.12'
         run: |
-          for plugin in metagenomic_plasmid rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap; do
+          for plugin in metagenomic_plasmid rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap wgs_bacannot; do
             abi contract-lint --type "$plugin" --strict
           done
 
@@ -102,7 +102,7 @@ jobs:
       - name: Build docs (Sphinx)
         if: matrix.python-version == '3.12'
         run: |
-          pip install -e ".[docs,report]"
+          pip install -e ".[docs]"
           bash docs/build_docs.sh
 
       - name: Validate Docker Compose configuration
@@ -133,24 +133,7 @@ jobs:
               --scope project \
               --project-dir "/tmp/abi-ci-agent-$platform"
           done
-          abi dry-run \
-            --type metagenomic_plasmid \
-            --config "$GITHUB_WORKSPACE/examples/config_minimal.yaml" \
-            --profile dry_run \
-            --outdir /tmp/abi-ci-metagenomic_plasmid \
-            --log-dir /tmp/abi-ci-metagenomic_plasmid-log \
-            --no-check-files \
-            --no-progress
-          # Smoke-test each plugin with dry-run
-          for plugin in rnaseq_expression wgs_bacteria amplicon_16s metatranscriptomics easymetagenome viral_viwrap; do
-            echo "=== Smoke-test: $plugin ==="
-            abi dry-run \
-              --type "$plugin" \
-              --outdir "/tmp/abi-ci-$plugin" \
-              --log-dir "/tmp/abi-ci-$plugin-log" \
-              --no-check-files \
-              --no-progress
-          done
+          # verify_install_forms.py already exercises all eight plugin dry-runs.
           mkdir -p /tmp/abi-ci-bin
           printf '%s\n' \
             '#!/bin/sh' \
@@ -197,7 +180,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fonts-wqy-zenhei
           python -m pip install --upgrade pip
-          pip install -e ".[dev,report]"
+          pip install -e ".[dev]"
 
       - name: Verify native architecture
         run: |
@@ -300,7 +283,7 @@ jobs:
       - name: Install docs dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[docs,report]"
+          pip install -e ".[docs]"
 
       - name: Build Sphinx docs
         run: bash docs/build_docs.sh

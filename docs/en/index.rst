@@ -53,7 +53,6 @@ Install optional capabilities only when needed:
 .. code-block:: bash
 
    pip install "abi-agent[mcp]"       # MCP server
-   pip install "abi-agent[report]"    # Scientific figures and richer reports
 
 Five-minute example
 -------------------

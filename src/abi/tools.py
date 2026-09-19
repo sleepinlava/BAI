@@ -44,6 +44,7 @@ This module defines the canonical tool abstraction for the ABI pipeline:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -59,7 +60,8 @@ from typing import Any, ClassVar, Dict, Iterable, List, Mapping, Optional
 import yaml
 
 from abi.config import PROJECT_ROOT, resolved_mamba_root
-from abi.errors import ConfigError, MissingTemplateParamError, ToolError
+from abi.errors import ABIError, ConfigError, MissingTemplateParamError, ToolError
+from abi.filesystem import checksum_path
 from abi.runtime_environment import (
     resolve_environment_prefix,
 )
@@ -76,6 +78,8 @@ __all__ = [
     "RunResult",
     "ToolRegistry",
     "ToolSkill",
+    "container_image_identities",
+    "validate_container_images_ready",
 ]
 
 # Template fields that are allowed to be empty without causing validation errors.
@@ -466,16 +470,198 @@ def _wrap_container_command(
         cmd.append(image)
         cmd.extend(command)
         return cmd
-    else:
-        # Docker / Podman
-        cmd = [runtime, "run", "--rm"]
-        if cpu:
-            cmd.extend(["--cpus", str(cpu)])
-        if memory:
-            cmd.extend(["--memory", memory])
-        cmd.extend(["-v", f"{cwd}:{cwd}", "-w", cwd, image])
-        cmd.extend(command)
-        return cmd
+
+    # Docker / Podman
+    cmd = [runtime, "run", "--rm"]
+    if cpu:
+        cmd.extend(["--cpus", str(cpu)])
+    if memory:
+        cmd.extend(["--memory", memory])
+    cmd.extend(["-v", f"{cwd}:{cwd}", "-w", cwd, image])
+    cmd.extend(command)
+    return cmd
+
+
+def _declared_container_images(
+    plan: Any,
+    registry: Any,
+    *,
+    config: Mapping[str, Any] | None = None,
+    cli_image: str | None = None,
+) -> dict[str, str]:
+    """Resolve one image reference for each external step in *plan*."""
+    images: dict[str, str] = {}
+    for step in getattr(plan, "steps", ()):
+        if str(getattr(step, "tool_id", "")) == "internal":
+            continue
+        tool_id = str(getattr(step, "tool_id", ""))
+        try:
+            metadata = registry.get(tool_id) if registry.has(tool_id) else {}
+        except Exception:  # pragma: no cover - defensive for adapter registries
+            metadata = {}
+        if not isinstance(metadata, Mapping):
+            metadata = {}
+        image = resolve_container_image(
+            tool_id,
+            metadata,
+            config=config,
+            cli_image=cli_image,
+        )
+        if image:
+            images[tool_id] = str(image)
+    return images
+
+
+def _container_digest_from_inspect(stdout: str) -> str:
+    """Extract an immutable local image identity from Docker/Podman output."""
+    try:
+        payload = json.loads(stdout)
+    except (TypeError, json.JSONDecodeError):
+        return ""
+    if isinstance(payload, list):
+        payload = payload[0] if payload else {}
+    if not isinstance(payload, Mapping):
+        return ""
+    image_id = str(payload.get("Id", "") or "")
+    if image_id:
+        return image_id
+    repo_digests = payload.get("RepoDigests", ())
+    if isinstance(repo_digests, (list, tuple)) and repo_digests:
+        return str(repo_digests[0])
+    return ""
+
+
+def container_image_identities(
+    plan: Any,
+    registry: Any,
+    *,
+    config: Mapping[str, Any] | None = None,
+    cli_image: str | None = None,
+    runtime: str | None = None,
+    runner: Any | None = None,
+    require_ready: bool = False,
+) -> list[dict[str, str]]:
+    """Resolve image identities and optionally require local readiness.
+
+    The non-failing mode is used while writing provenance: it records the
+    resolved reference even when the host has no container runtime, and adds a
+    local image ID/digest when a read-only inspection is available.  The
+    readiness mode is used immediately before a backend starts and raises on
+    every missing image; it never invokes ``pull`` or any download command.
+    """
+    images = _declared_container_images(
+        plan,
+        registry,
+        config=config,
+        cli_image=cli_image,
+    )
+    if not images:
+        return []
+    runner = runner or subprocess.run
+    engine = (runtime or _resolve_container_runtime(config)).strip().lower()
+    if engine not in {"docker", "podman", "singularity", "apptainer"}:
+        if require_ready:
+            raise ABIError(f"Unsupported container runtime {engine!r}; no backend was started")
+        return [
+            {"tool_id": tool_id, "image": image, "runtime": engine, "digest": ""}
+            for tool_id, image in sorted(images.items())
+        ]
+
+    executable = shutil.which(engine)
+    if not executable:
+        if require_ready:
+            raise ABIError(
+                f"Container image(s) are declared but runtime {engine!r} is not installed; "
+                "prepare it externally before starting ABI"
+            )
+        return [
+            {"tool_id": tool_id, "image": image, "runtime": engine, "digest": ""}
+            for tool_id, image in sorted(images.items())
+        ]
+
+    rows: list[dict[str, str]] = []
+    for tool_id, image in sorted(images.items()):
+        digest = ""
+        if engine in {"singularity", "apptainer"}:
+            image_path = Path(image.removeprefix("file://")).expanduser()
+            inspect_command = [engine, "inspect", str(image_path)]
+            if image_path.is_file():
+                digest = checksum_path(image_path)
+            elif require_ready:
+                raise ABIError(
+                    f"Container image for tool {tool_id!r} is not a local file: {image}; "
+                    "ABI will not download it implicitly"
+                )
+        else:
+            inspect_image = image.removeprefix("docker://")
+            inspect_command = [engine, "image", "inspect", inspect_image]
+        try:
+            result = runner(
+                inspect_command,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=15,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            if require_ready:
+                raise ABIError(
+                    f"Container image readiness check failed for tool {tool_id!r} ({image}): {exc}"
+                ) from exc
+            result = None
+        if result is not None and int(getattr(result, "returncode", 1)) == 0:
+            if engine in {"docker", "podman"}:
+                digest = _container_digest_from_inspect(str(getattr(result, "stdout", "")))
+                if require_ready and not digest:
+                    raise ABIError(
+                        f"Container image inspection returned no immutable digest for tool "
+                        f"{tool_id!r} ({image}); ABI will not resume or start it without "
+                        "a verifiable local image identity"
+                    )
+        elif require_ready:
+            detail = str(getattr(result, "stderr", "") or getattr(result, "stdout", "")).strip()
+            suffix = f" ({detail})" if detail else ""
+            raise ABIError(
+                f"Container image for tool {tool_id!r} is not ready: {image}{suffix}; "
+                "ABI will not pull or download it implicitly"
+            )
+        rows.append(
+            {
+                "tool_id": tool_id,
+                "image": image,
+                "runtime": engine,
+                "digest": digest,
+            }
+        )
+    return rows
+
+
+def validate_container_images_ready(
+    plan: Any,
+    registry: Any,
+    *,
+    config: Mapping[str, Any] | None = None,
+    cli_image: str | None = None,
+    runtime: str | None = None,
+    runner: Any | None = None,
+) -> None:
+    """Fail before backend startup unless every declared image is local-ready.
+
+    This is intentionally a read-only check.  Docker/Podman use ``image
+    inspect`` (which never pulls); Singularity/Apptainer require a local image
+    file and then run ``inspect``.  The helper is shared by all runtime
+    adapters so an exporter cannot accidentally turn a missing image into an
+    implicit download at backend startup.
+    """
+    container_image_identities(
+        plan,
+        registry,
+        config=config,
+        cli_image=cli_image,
+        runtime=runtime,
+        runner=runner,
+        require_ready=True,
+    )
 
 
 # ── RunResult ──────────────────────────────────────────────────────────

@@ -10,7 +10,6 @@ explains where tests belong, which commands are useful locally, and what CI requ
 | Unit | `tests/unit/` | Core logic, schemas, parsers, contracts, runtimes | No |
 | Integration | `tests/integration/` | CLI/core boundaries, dry-runs, golden traces | Normally no |
 | Smoke | `tests/smoke/` | Real tools and value-level workflow checks | Usually yes |
-| SciPlot | `src/abi/sciplot/tests/` | Schema, renderer, lint, CLI/API, Unicode layout | Report dependencies |
 
 Name files `test_<feature>.py` and functions `test_<behavior>`. Every behavior change should come
 with a regression test. Tests that run external tools use `@pytest.mark.smoke`,
@@ -23,7 +22,7 @@ with a regression test. Tests that run external tools use `@pytest.mark.smoke`,
 pytest tests/ -v --tb=short
 
 # CI-like suite without external tools
-pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+pytest tests/ -v --tb=short \
   --strict-markers -m "not requires_tools"
 
 # Focused module
@@ -33,7 +32,7 @@ pytest tests/unit/test_dag_planner.py -q
 pytest tests/ -v -m requires_tools
 
 # Branch-aware global gate
-pytest tests/ src/abi/sciplot/tests/ \
+pytest tests/ \
   --strict-markers -m "not requires_tools" \
   --cov=src/abi --cov-branch --cov-report=term \
   --cov-report=json:coverage.json --cov-fail-under=75
@@ -72,7 +71,7 @@ Run strict lint for all built-ins:
 ```bash
 for plugin in \
   amplicon_16s easymetagenome metagenomic_plasmid metatranscriptomics \
-  rnaseq_expression viral_viwrap wgs_bacteria
+  rnaseq_expression viral_viwrap wgs_bacteria wgs_bacannot
 do
   abi contract-lint --type "$plugin" --strict
 done
@@ -96,7 +95,7 @@ golden_traces/
 └── wgs_bacteria.jsonl
 ```
 
-They currently cover five workflow families, not all seven built-ins. Replay
+They currently cover five workflow families, not all eight built-ins. Replay
 them with:
 
 ```bash
@@ -161,3 +160,10 @@ build described in the
 Record commands and results in the pull request. If a real-tool, container, or
 cluster check cannot run, state that explicitly and describe the remaining
 risk.
+
+## External paper reproduction
+
+The git-ignored local `tests/unit/test_create_real_data_case_study_figures.py` is not part of
+the product suite. With its research data and external plotting dependencies installed, run
+that file explicitly with pytest. This exclusion does not cover any frozen platform
+evidence or product safety tests. SciPlot and Study are no longer bundled with ABI.

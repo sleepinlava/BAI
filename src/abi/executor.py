@@ -129,9 +129,15 @@ from abi.provenance import (
     write_resolved_inputs_tsv,
 )
 from abi.report import build_run_facts, write_generic_report
+from abi.resume import (
+    build_resume_identity,
+    compare_resume_identity,
+    load_resume_identity,
+    write_resume_identity,
+)
 from abi.schemas import plan_step_contract, plan_step_internal_handler
 from abi.tables import StandardTableManager
-from abi.tools import ToolRegistry
+from abi.tools import ToolRegistry, container_image_identities
 
 _logger = logging.getLogger(__name__)
 
@@ -203,6 +209,8 @@ class GenericABIExecutor:
         self._tool_timeout_seconds: Any = None
         self._last_tool_version_rows: List[Dict[str, Any]] = []
         self._last_resource_rows: List[Dict[str, Any]] = []
+        self._protected_input_paths: set[Path] = set()
+        self._resume_identity_rejection = ""
 
     def dry_run(self, plan: Any, config: Mapping[str, Any]) -> Dict[str, Path]:
         """Execute a dry run — plan and validate without invoking real tools.
@@ -224,6 +232,8 @@ class GenericABIExecutor:
         dry_run: bool = False,
         resume: bool = False,
         confirmed_plan_id: str = "",
+        container_image: str | None = None,
+        container_runtime: str | None = None,
     ) -> Dict[str, Path]:
         """Execute a plan and write all provenance artifacts.
 
@@ -268,6 +278,8 @@ class GenericABIExecutor:
         """
         self._config = config
         self._resolved_output_replacements = {}
+        self._resume_identity_rejection = ""
+        self._protected_input_paths = _plan_input_paths(plan)
         # Create the three-tier output directory structure.
         # 创建三层输出目录结构。
         outdir = ensure_directory(plan.outdir, label="Output directory")
@@ -281,7 +293,7 @@ class GenericABIExecutor:
         # resume records ``resumes_run_id``, retry records the archive path.
         # 归档先前运行的证据，再重置可变产物。先前运行身份将本轮与被替代的
         # 历史关联：恢复记录 resumes_run_id，重试记录归档路径。
-        prior_lineage = reset_run_provenance(provenance)
+        prior_lineage = reset_run_provenance(provenance, result_dir=outdir)
         # Executor instances may be reused for multiple runs.  Checksums from a
         # prior plan must never participate in the next plan's integrity chain
         # — except on resume, where the archived prior chain is exactly what
@@ -327,8 +339,9 @@ class GenericABIExecutor:
         config_path = write_yaml(config, provenance / "config.resolved.yaml")
         # Resolve input file paths, checking whether each file actually exists.
         # 解析输入文件路径，检查每个文件是否实际存在。
+        resolved_input_rows = self._resolved_input_rows(plan, dry_run=dry_run)
         resolved_inputs_path = write_resolved_inputs_tsv(
-            self._resolved_input_rows(plan, dry_run=dry_run),
+            resolved_input_rows,
             provenance / "resolved_inputs.tsv",
         )
         provenance_options = config.get("provenance", {})
@@ -342,13 +355,13 @@ class GenericABIExecutor:
             if isinstance(provenance_options, Mapping)
             else []
         )
-        if required_resource_ids:
-            from abi.workflow.manifest import generate_resource_manifest
+        from abi.workflow.manifest import generate_resource_manifest
 
-            identity_manifest = generate_resource_manifest(
-                analysis_type=str(getattr(plan, "analysis_type", "")),
-                config=config,
-            )
+        identity_manifest = generate_resource_manifest(
+            analysis_type=str(getattr(plan, "analysis_type", "")),
+            config=config,
+        )
+        if required_resource_ids:
             identity_errors = identity_manifest.identity_errors(
                 required_resource_ids,
                 checksum_directory_ids=checksum_directory_ids,
@@ -379,6 +392,29 @@ class GenericABIExecutor:
                 else False
             ),
         )
+        resume_identity = build_resume_identity(
+            plan,
+            plan_id=confirmed_plan_id,
+            tool_rows=self._last_tool_version_rows,
+            resources=identity_manifest.resources,
+            containers=container_image_identities(
+                plan,
+                self.registry,
+                config=config,
+                cli_image=container_image,
+                runtime=container_runtime,
+            ),
+        )
+        if resume:
+            if not prior_archive:
+                self._resume_identity_rejection = "the prior run has no archived identity"
+            else:
+                previous_identity = load_resume_identity(
+                    provenance / prior_archive / "resume_identity.json"
+                )
+                reasons = compare_resume_identity(resume_identity, previous_identity)
+                self._resume_identity_rejection = "; ".join(reasons)
+        resume_identity_path = write_resume_identity(resume_identity, provenance)
         run_identity = capture_run_identity(config)
         run_identity["previous_run_archive"] = prior_lineage["previous_run_archive"]
         run_identity["resumes_run_id"] = prior_lineage["previous_run_id"] if resume else None
@@ -696,6 +732,7 @@ class GenericABIExecutor:
             batch_size=batch_size,
             table_summary=table_summary,
             confirmed_plan_id=confirmed_plan_id,
+            resume_identity_path=resume_identity_path,
         )
         # Raise after writing all artifacts so callers can inspect provenance
         # even for failed runs.
@@ -730,6 +767,7 @@ class GenericABIExecutor:
         confirmed_plan_id: str = "",
         batch_size: Any,
         table_summary: Mapping[str, Any],
+        resume_identity_path: Path,
     ) -> Dict[str, Path]:
         """Write every post-run provenance artifact and build the outputs dict.
 
@@ -763,7 +801,16 @@ class GenericABIExecutor:
             resource_manifest.get("resources", []),
             path=methods_path,
         )
-        run_status = "failed" if failed_errors else "success"
+        termination = _local_termination_evidence(command_rows)
+        if termination is not None:
+            run_status = "timeout"
+        else:
+            run_status = "failed" if failed_errors else "success"
+        report_identity = {
+            **dict(run_identity),
+            "plan_id": str(confirmed_plan_id or ""),
+            "status": run_status,
+        }
         report_paths = write_generic_report(
             plan,
             outdir,
@@ -771,10 +818,7 @@ class GenericABIExecutor:
             title=self.report_title,
             run_facts=build_run_facts(
                 command_rows,
-                {
-                    **run_identity,
-                    "status": run_status,
-                },
+                report_identity,
             ),
         )
 
@@ -822,36 +866,34 @@ class GenericABIExecutor:
         # downstream consumers (agents, dashboards, job service) read.
         # 写出机器可读的运行摘要——下游消费者（agent、dashboard、job service）读取的主要产物。
         summary_path = provenance / "run_summary.json"
+        summary_payload = {
+            **run_identity,
+            "plan_id": str(confirmed_plan_id or ""),
+            "project_name": plan.project_name,
+            "analysis_type": getattr(plan, "analysis_type", ""),
+            "dry_run": dry_run,
+            "sample_count": len(plan.samples),
+            "step_count": len(plan.steps),
+            "completed_step_count": len(command_rows),
+            "status": run_status,
+            "parallel": parallel,
+            "workers": workers,
+            # Local executes in plan sequence (the DAG-independent
+            # declaration: dependencies were resolved at planning).
+            # 本地按计划顺序执行：依赖已在规划期解析。
+            "execution_order": "plan_sequence",
+            "batch_size": batch_size,
+            "selected_tools": plan.selected_tools,
+            "standard_tables": table_summary,
+            "warnings": run_warnings,
+            "progress_file": str(progress_paths["snapshot"]),
+            "progress_events": str(progress_paths["events"]),
+            "log_file": str(self.logger.log_file),
+        }
+        if termination is not None:
+            summary_payload["termination"] = termination
         summary_path.write_text(
-            json.dumps(
-                {
-                    **run_identity,
-                    "plan_id": str(confirmed_plan_id or ""),
-                    "project_name": plan.project_name,
-                    "analysis_type": getattr(plan, "analysis_type", ""),
-                    "dry_run": dry_run,
-                    "sample_count": len(plan.samples),
-                    "step_count": len(plan.steps),
-                    "completed_step_count": len(command_rows),
-                    "status": run_status,
-                    "parallel": parallel,
-                    "workers": workers,
-                    # Local executes in plan sequence (the DAG-independent
-                    # declaration: dependencies were resolved at planning).
-                    # 本地按计划顺序执行：依赖已在规划期解析。
-                    "execution_order": "plan_sequence",
-                    "batch_size": batch_size,
-                    "selected_tools": plan.selected_tools,
-                    "standard_tables": table_summary,
-                    "warnings": run_warnings,
-                    "progress_file": str(progress_paths["snapshot"]),
-                    "progress_events": str(progress_paths["events"]),
-                    "log_file": str(self.logger.log_file),
-                },
-                indent=2,
-                ensure_ascii=False,
-            )
-            + "\n",
+            json.dumps(summary_payload, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
 
@@ -891,6 +933,7 @@ class GenericABIExecutor:
             "log": self.logger.log_file,
             "progress": progress_paths["snapshot"],
             "progress_events": progress_paths["events"],
+            "resume_identity": resume_identity_path,
         }
         return outputs
 
@@ -1112,6 +1155,8 @@ class GenericABIExecutor:
         """
         if step.tool_id == "internal" or step.skipped:
             return False, ""
+        if self._resume_identity_rejection:
+            return False, self._resume_identity_rejection
         contract = plan_step_contract(step)
         output_spec = contract.get("outputs", {}) if isinstance(contract, Mapping) else {}
         if not isinstance(output_spec, Mapping) or not output_spec:
@@ -1207,6 +1252,7 @@ class GenericABIExecutor:
                 outdir=Path(str(self._config.get("outdir", "."))),
                 provenance_dir=provenance,
                 tables_dir=tables_dir,
+                protected_input_paths=frozenset(self._protected_input_paths),
             ),
         )
         if result.status != "success":
@@ -1330,7 +1376,11 @@ class GenericABIExecutor:
             )
             with Path(params["stderr_path"]).open("a", encoding="utf-8") as handle:
                 handle.write(str(exc) + "\n")
-            _cleanup_failed_step_output_dir(step, provenance.parent)
+            _cleanup_failed_step_output_dir(
+                step,
+                provenance.parent,
+                protected_paths=self._protected_input_paths,
+            )
             return {"status": "failed", "return_code": "", "reason": reason}
         if result.return_code != 0:
             # The tool ran but exited with a non-zero code.
@@ -1341,9 +1391,21 @@ class GenericABIExecutor:
                 stderr_path=str(result.outputs.get("stderr_path", params["stderr_path"])),
                 stdout_path=str(result.outputs.get("stdout_path", params["stdout_path"])),
             )
-            _cleanup_failed_step_output_dir(step, provenance.parent)
+            result_status = (
+                "timeout" if str(getattr(result, "status", "failed")) == "timeout" else "failed"
+            )
+            if result_status == "timeout":
+                reason = (
+                    "Tool timeout; direct process termination was confirmed; "
+                    "child-process status is unknown; " + reason
+                )
+            _cleanup_failed_step_output_dir(
+                step,
+                provenance.parent,
+                protected_paths=self._protected_input_paths,
+            )
             return {
-                "status": "failed",
+                "status": result_status,
                 "return_code": result.return_code,
                 "reason": reason,
             }
@@ -2259,8 +2321,48 @@ def _filename_has_read_pair(name: str, pair: str) -> bool:
     return bool(re.search(rf"(^|[^a-z0-9])(?:r|read)?{pair}([^a-z0-9]|$)", name))
 
 
-def _cleanup_failed_step_output_dir(step: Any, run_outdir: Path) -> None:
-    """Remove opted-in partial outputs after a failed external tool step."""
+def _plan_input_paths(plan: Any) -> set[Path]:
+    """Collect existing sample inputs that cleanup must never remove.
+
+    Sample inputs are the source-of-truth boundary for original data.  The
+    paths are kept without resolving first so a symlink located inside the
+    result directory is protected as an input object; resolved targets are
+    added as well so a result-local symlink to an external input is protected.
+    """
+    protected: set[Path] = set()
+    for sample in getattr(plan, "samples", ()) or ():
+        if hasattr(sample, "to_dict") and callable(sample.to_dict):
+            values = sample.to_dict()
+        else:
+            values = getattr(sample, "__dict__", {})
+        _collect_existing_paths(values, protected)
+    return protected
+
+
+def _collect_existing_paths(value: Any, protected: set[Path]) -> None:
+    """Recursively collect existing path-like values from sample metadata."""
+    if isinstance(value, Mapping):
+        for nested in value.values():
+            _collect_existing_paths(nested, protected)
+        return
+    if isinstance(value, (list, tuple, set, frozenset)):
+        for nested in value:
+            _collect_existing_paths(nested, protected)
+        return
+    if not isinstance(value, (str, Path)) or not str(value):
+        return
+    candidate = Path(value)
+    if candidate.exists() or candidate.is_symlink():
+        protected.add(candidate)
+
+
+def _cleanup_failed_step_output_dir(
+    step: Any,
+    run_outdir: Path,
+    *,
+    protected_paths: Iterable[str | Path] = (),
+) -> None:
+    """Remove opted-in partial outputs without deleting original inputs."""
     enabled = str(step.params.get("_cleanup_failed_output_dir", "false")).lower()
     if enabled not in {"1", "true", "yes", "on"}:
         return
@@ -2275,11 +2377,55 @@ def _cleanup_failed_step_output_dir(step: Any, run_outdir: Path) -> None:
         return
     if not output_dir.is_dir():
         return
+    protected_absolute: set[Path] = set()
+    protected_resolved: set[Path] = set()
+    for raw_path in protected_paths:
+        path = Path(raw_path)
+        protected_absolute.add(path.absolute())
+        protected_resolved.add(path.resolve(strict=False))
     for child in output_dir.iterdir():
+        if _contains_protected_path(child, protected_absolute, protected_resolved):
+            _logger.info("Preserving original input during failed-step cleanup: %s", child)
+            continue
         if child.is_symlink() or child.is_file():
             child.unlink(missing_ok=True)
         elif child.is_dir():
             shutil.rmtree(child)
+
+
+def _local_termination_evidence(
+    command_rows: Iterable[Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    """Describe local tool timeout handling without overclaiming descendants."""
+    timed_out = [row for row in command_rows if str(row.get("status", "")).lower() == "timeout"]
+    if not timed_out:
+        return None
+    return {
+        "request": "timeout",
+        "requested": True,
+        "confirmed": True,
+        "scope": "local_tool_process",
+        "steps": [str(row.get("step_id", "")) for row in timed_out],
+        "downstream_status": "not_started",
+        "child_processes_status": "unknown",
+    }
+
+
+def _contains_protected_path(
+    path: Path,
+    protected_absolute: set[Path],
+    protected_resolved: set[Path],
+) -> bool:
+    """Return whether a path is or contains an original input."""
+    absolute = path.absolute()
+    resolved = path.resolve(strict=False)
+    return any(
+        candidate == absolute
+        or candidate == resolved
+        or candidate.is_relative_to(absolute)
+        or candidate.is_relative_to(resolved)
+        for candidate in (*protected_absolute, *protected_resolved)
+    )
 
 
 def _tool_failure_reason(

@@ -752,7 +752,7 @@ def _setup_amplicon_16s(
     outdir = Path(str(config.get("outdir", str(PROJECT_ROOT / "data" / "taxonomy"))))
     if "taxonomy" not in outdir.parts:
         outdir = outdir / "taxonomy"
-    if not dry_run:
+    if mock and not dry_run:
         outdir.mkdir(parents=True, exist_ok=True)
 
     download_script = PROJECT_ROOT / "scripts" / "download_rdp_sintax.sh"
@@ -799,7 +799,7 @@ def _setup_amplicon_16s(
                 command=mock_command,
                 message=(
                     "Synthetic taxonomy DB generated for TESTING only. "
-                    "For real analysis, run without --mock to download the RDP training set."
+                    "For real analysis, provision the RDP training set externally."
                 ),
             )
         return [
@@ -821,7 +821,9 @@ def _setup_amplicon_16s(
     # WP8：ABI 绝不下载。已存在的 SINTAX FASTA 报告 ok；其余报告外部准备要求
     # （RDP 下载脚本仍可作为外部准备工具）。已退役的静默合成回退一并移除：
     # 真实分析绝不能对伪造数据运行。
-    command = ["bash", str(download_script), "--output", str(outdir)]
+    command = (
+        ["bash", str(download_script), "--output", str(outdir)] if download_script.is_file() else []
+    )
     if tax_fasta.exists():
         effective_path = tax_fasta
         status_msg = "ok"
@@ -835,7 +837,7 @@ def _setup_amplicon_16s(
         status_msg = "manual_required"
         message = (
             "External preparation required: provision the RDP 16S SINTAX training "
-            f"set (e.g. `{' '.join(command)}`), then verify with "
+            f"set at {tax_fasta}, then verify with "
             "`abi check-resources`. ABI does not download or install; the retired "
             "synthetic fallback no longer masks a missing database."
         )

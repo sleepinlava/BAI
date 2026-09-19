@@ -436,6 +436,7 @@ def build_plan_from_dag(
         PLUGIN_DIR / "pipeline_dag.yaml",
         resolved_config,
         ctx,
+        plugin_root=PLUGIN_DIR,
         context_resolver=None,
         sample_config_hook=_plugin_sample_config_hook,
         skip_step_hook=_plugin_skip_step_hook,

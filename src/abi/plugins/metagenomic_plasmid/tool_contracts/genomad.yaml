@@ -31,7 +31,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_genomad
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_genomad
   tables:
   - plasmid_predictions
 failure_handling:

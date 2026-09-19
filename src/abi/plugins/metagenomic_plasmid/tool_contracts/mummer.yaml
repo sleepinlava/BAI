@@ -25,7 +25,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_mummer
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_mummer
   tables:
   - comparative_hits
 failure_handling:

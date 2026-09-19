@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # ── ABI Cloud Bootstrap — Stage 2: Full databases ─────────────────────────
-# Downloads all auto-fetchable databases for the 7 ABI plugins into
-# ${ABI_RESOURCE_ROOT} (default: <repo>/resources/autoplasm).
+# Audits readiness and prints external preparation guidance for the 7 ABI
+# plugins; ABI itself never downloads databases into ${ABI_RESOURCE_ROOT}.
 #
-# Tier-1 databases are fetched via `abi setup-resources` (idempotent, atomic).
-# Tier-2 manual databases (CARD, COPLA, abricate, blast, plasme, plasx,
-# plasmidhostfinder) cannot be auto-fetched reliably, so this script prints
-# step-by-step instructions and records them as `manual_required`.
+# `abi setup-resources` is read-only and reports readiness/manual guidance.
+# External provisioning systems or an operator must prepare the paths.
 #
 # Usage:
-#   bash scripts/cloud/02_databases.sh                      # all plugins, tier 1+2
+#   bash scripts/cloud/02_databases.sh                      # all plugins, readiness + guidance
 #   bash scripts/cloud/02_databases.sh --plugin metagenomic_plasmid
-#   bash scripts/cloud/02_databases.sh --tier 1             # auto only
+#   bash scripts/cloud/02_databases.sh --tier 1             # declared resources only
 #   bash scripts/cloud/02_databases.sh --dry-run
 #   bash scripts/cloud/02_databases.sh --resource-root /data/abi_dbs
 #
@@ -54,12 +52,12 @@ else
   PLUGINS=("${ABI_PLUGINS[@]}")
 fi
 
-log_step "Stage 2: Download databases for ${#PLUGINS[@]} plugin(s)"
+log_step "Stage 2: Audit resource readiness for ${#PLUGINS[@]} plugin(s)"
 log_info "Resource root : ${ABI_RESOURCE_ROOT}"
 log_info "Mamba root    : ${ABI_MAMBA_ROOT}"
 log_info "Plugins       : ${PLUGINS[*]}"
 log_info "Tier          : ${TIER}"
-[[ "${DRY_RUN}" == "true" ]] && log_warn "DRY RUN — no downloads will occur."
+[[ "${DRY_RUN}" == "true" ]] && log_warn "DRY RUN — no resource changes will occur."
 
 mkdir -p "${ABI_RESOURCE_ROOT}"
 
@@ -75,26 +73,26 @@ EOF
 log_info "Cloud config  : ${CLOUD_CONFIG}"
 
 # ── abi CLI helper ────────────────────────────────────────────────────────
-# run_setup_resources <plugin>  — runs abi setup-resources for the plugin.
+# run_setup_resources <plugin>  — reports external resource setup guidance.
 run_setup_resources() {
   local plugin="$1"
   local abi_bin; abi_bin="$(env_bin autoplasm-base abi 2>/dev/null || echo abi)"
   if [[ "${DRY_RUN}" == "true" ]]; then
-    log_info "  [DRY-RUN] ${abi_bin} setup-resources --type ${plugin} --confirm --config ${CLOUD_CONFIG}"
+    log_info "  [DRY-RUN] ${abi_bin} setup-resources --type ${plugin} --dry-run --config ${CLOUD_CONFIG}"
     return 0
   fi
   if ! command -v "${abi_bin}" >/dev/null 2>&1 && [[ ! -x "${abi_bin}" ]]; then
     log_warn "  abi binary not found (${abi_bin}); is 01_envs.sh complete? Skipping."
     return 1
   fi
-  log_info "  Running: ${abi_bin} setup-resources --type ${plugin} --confirm --config ${CLOUD_CONFIG}"
-  "${abi_bin}" setup-resources --type "${plugin}" --confirm --config "${CLOUD_CONFIG}" 2>&1 \
+  log_info "  Running read-only resource report: ${abi_bin} setup-resources --type ${plugin} --config ${CLOUD_CONFIG}"
+  "${abi_bin}" setup-resources --type "${plugin}" --config "${CLOUD_CONFIG}" 2>&1 \
     || log_warn "  ${plugin}: setup-resources reported failures (see log)."
 }
 
-# ── Tier-1: auto-fetchable databases via abi setup-resources ──────────────
+# ── Tier-1: declared resources reported by abi setup-resources ────────────
 tier1() {
-  log_step "Tier 1: Auto-fetchable databases"
+  log_step "Tier 1: Declared resources and external readiness"
   for plugin in "${PLUGINS[@]}"; do
     log_info "→ ${plugin}"
     case "${plugin}" in

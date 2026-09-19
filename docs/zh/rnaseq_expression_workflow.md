@@ -48,7 +48,7 @@ FASTQ
 | 火山图 | `figures/volcano_deg.png` | 是 |
 | MA 图 | `figures/ma_plot.png` | 否 |
 | Top DEG 热图 | `figures/top_deg_heatmap.png` | 否 |
-| GO/Reactome ORA + GSEA | 四组 SciPlot PDF/SVG/PNG 图 | 否 |
+| GO/Reactome ORA + GSEA | 四张用于外部绘图的 top-N 表 | 否 |
 
 ## 快速开始
 
@@ -105,7 +105,7 @@ differential_expression:
   alpha: 0.05
 ```
 
-`enrichment.gsea_fdr` 必须位于 `(0, 1]`。它只筛选 SciPlot 的 GSEA 预览图；
+`enrichment.gsea_fdr` 必须位于 `(0, 1]`。它只筛选 外部绘图的 GSEA 预览图；
 完整 GO 与 Reactome GSEA 表不会截断。
 
 ### 样本表格式
@@ -162,4 +162,4 @@ load_config()  →  build_plan()  →  run (ExternalExecutor)
 - `star` → `_parse_star()` → `alignment_summary`
 - `featurecounts` → `_parse_featurecounts()` → `gene_expression`
 - `deseq2` → `_parse_deseq2()` + `_parse_deseq2_normalized()` → `differential_expression` + `normalized_expression`
-- `rnaseq_enrichment` → 基因符号注释 + 四张完整富集表 + 四张 top-N SciPlot 输入表
+- `rnaseq_enrichment` → 基因符号注释 + 四张完整富集表 + 四张 top-N 绘图输入表

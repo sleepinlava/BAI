@@ -48,7 +48,7 @@ FASTQ
 | Volcano plot | `figures/volcano_deg.png` | Yes |
 | MA plot | `figures/ma_plot.png` | No |
 | Top DEG heatmap | `figures/top_deg_heatmap.png` | No |
-| GO/Reactome ORA + GSEA | Four SciPlot PDF/SVG/PNG figure bundles | No |
+| GO/Reactome ORA + GSEA | Four top-N tables for external plotting | No |
 
 ## Quick Start
 
@@ -105,7 +105,7 @@ differential_expression:
   alpha: 0.05
 ```
 
-`enrichment.gsea_fdr` must be in `(0, 1]`. It only filters the SciPlot GSEA
+`enrichment.gsea_fdr` must be in `(0, 1]`. It only filters the external GSEA
 preview; the complete GO and Reactome GSEA tables remain untruncated.
 
 ### Sample sheet format
@@ -162,4 +162,4 @@ load_config()  →  build_plan()  →  run (ExternalExecutor)
 - `star` → `_parse_star()` → `alignment_summary`
 - `featurecounts` → `_parse_featurecounts()` → `gene_expression`
 - `deseq2` → `_parse_deseq2()` + `_parse_deseq2_normalized()` → `differential_expression` + `normalized_expression`
-- `rnaseq_enrichment` → gene-symbol annotation + four complete enrichment tables + four top-N SciPlot tables
+- `rnaseq_enrichment` → gene-symbol annotation + four complete enrichment tables + four top-N plotting tables

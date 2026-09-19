@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 from abi._shared import _read_tsv
-from abi.audit import write_audit_snapshot
+from abi.audit import audit_snapshot_status, write_audit_snapshot
 from abi.config import resolved_mamba_root, write_yaml
 from abi.provenance import (
     capture_run_identity,
+    capture_tool_version,
     reset_run_provenance,
     write_commands_tsv,
     write_minimal_progress_artifacts,
@@ -19,7 +20,12 @@ from abi.provenance import (
     write_tool_versions,
 )
 from abi.report import build_run_facts, write_generic_report
+from abi.resume import (
+    build_resume_identity,
+    write_resume_identity,
+)
 from abi.tables import StandardTableManager
+from abi.tools import container_image_identities
 
 __all__ = ["ABIResultWriter", "completed_abi_result_outputs", "validate_abi_result_dir"]
 
@@ -96,6 +102,9 @@ class ABIResultWriter:
         smoke: bool = False,
         resume: bool = False,
         plan_id: str = "",
+        container_image: str | None = None,
+        container_runtime: str | None = None,
+        extra_container_identities: Iterable[Mapping[str, Any]] = (),
         extra_summary: Optional[Mapping[str, Any]] = None,
         extra_environment: Optional[Mapping[str, Any]] = None,
         trace_rows: Optional[Iterable[Mapping[str, Any]]] = None,
@@ -112,10 +121,11 @@ class ABIResultWriter:
         # backends produce comparable evidence.
         # 与本地执行器共享的历史语义（WP3）：本轮改写溯源视图前先归档先前运
         # 行的证据，并把相同的运行身份字段写入摘要，使四个后端产出可比证据。
-        prior_lineage = reset_run_provenance(provenance)
+        prior_lineage = reset_run_provenance(provenance, result_dir=result_dir)
         run_identity = capture_run_identity(config)
         run_identity["previous_run_archive"] = prior_lineage["previous_run_archive"]
         run_identity["resumes_run_id"] = prior_lineage["previous_run_id"] if resume else None
+        run_identity["plan_id"] = str(plan_id or "")
         self.table_manager.ensure_tables(tables_dir)
         # WP2: plugin-owned run-level tables (e.g. planned-skip status).
         # WP2：插件拥有的运行级表（如计划跳过状态）。
@@ -134,15 +144,50 @@ class ABIResultWriter:
         # plugin identity) so basic audit works without the plugin installed.
         # WP5：持久化审计快照（schema、局限性、引用、插件身份），使基础审计
         # 不依赖已安装的插件。
-        write_audit_snapshot(self.plugin, provenance)
+        write_audit_snapshot(self.plugin, provenance, strict=True)
         write_commands_tsv(command_rows, provenance / "commands.tsv")
         write_resolved_inputs_tsv(
             _resolved_input_rows(plan, smoke=smoke),
             provenance / "resolved_inputs.tsv",
         )
-        write_tool_versions(
-            _tool_version_rows(self.registry, smoke=smoke),
-            provenance / "tool_versions.tsv",
+        selected_tool_ids = {str(tool_id) for tool_id in getattr(plan, "selected_tools", ())}
+        selected_tool_ids.update(
+            str(getattr(step, "tool_id", ""))
+            for step in getattr(plan, "steps", ())
+            if str(getattr(step, "tool_id", "")) not in {"", "internal"}
+        )
+        tool_rows = _tool_version_rows(self.registry, smoke=smoke)
+        write_tool_versions(tool_rows, provenance / "tool_versions.tsv")
+        identity_tool_rows = [
+            row
+            for row in tool_rows
+            if not selected_tool_ids or str(row.get("tool_id", "")) in selected_tool_ids
+        ]
+        container_rows = list(
+            container_image_identities(
+                plan,
+                self.registry,
+                config=config,
+                cli_image=container_image,
+                runtime=container_runtime,
+            )
+        )
+        container_rows.extend(dict(row) for row in extra_container_identities)
+        from abi.workflow.manifest import generate_resource_manifest
+
+        resource_manifest = generate_resource_manifest(
+            analysis_type=str(getattr(plan, "analysis_type", "")),
+            config=config,
+        )
+        resume_identity_path = write_resume_identity(
+            build_resume_identity(
+                plan,
+                plan_id=str(plan_id or ""),
+                tool_rows=identity_tool_rows,
+                resources=resource_manifest.resources,
+                containers=container_rows,
+            ),
+            provenance,
         )
         resources_path = provenance / "resources.json"
         resources_path.write_text(
@@ -196,7 +241,6 @@ class ABIResultWriter:
                 },
             ),
         )
-        run_identity["plan_id"] = str(plan_id or "")
         summary = {
             **run_identity,
             "project_name": plan.project_name,
@@ -214,6 +258,7 @@ class ABIResultWriter:
         }
         if extra_summary:
             summary.update(dict(extra_summary))
+        summary["resume_identity"] = str(resume_identity_path)
         summary_path = provenance / "run_summary.json"
         summary_path.write_text(
             json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
@@ -222,6 +267,7 @@ class ABIResultWriter:
         outputs = {key: result_dir / RESULT_OUTPUT_PATHS[key] for key in WRITER_OUTPUT_KEYS}
         if trace_path:
             outputs["trace"] = trace_path
+        outputs["resume_identity"] = resume_identity_path
         return outputs
 
 
@@ -283,8 +329,15 @@ def validate_abi_result_dir(
         errors.append(f"commands.tsv contains {len(failed_steps)} failed step(s)")
 
     analysis_type = _analysis_type(plan, summary)
+    snapshot_status = audit_snapshot_status(root, expected_analysis_type=analysis_type or None)
+    if snapshot_status["status"] == "missing":
+        warnings.append("Audit snapshot is missing; plugin-independent audit is incomplete")
+    elif snapshot_status["status"] == "invalid":
+        warnings.extend(f"Audit snapshot: {error}" for error in snapshot_status.get("errors", []))
+    warnings.extend(f"Audit snapshot: {warning}" for warning in snapshot_status.get("warnings", []))
     schemas: Mapping[str, Iterable[str]] = {}
     schema_source = "unavailable"
+    plugin: Any | None = None
     if not analysis_type:
         errors.append("Cannot determine analysis_type from execution_plan.json or run_summary.json")
     else:
@@ -300,13 +353,13 @@ def validate_abi_result_dir(
             # report the gap instead of faking schema-based checks.
             # WP5：与插件无关的审计——回退到执行时捕获的审计快照。无快照的
             # 旧目录如实报告缺失，而不伪造基于 schema 的检查。
-            from abi.audit import load_audit_snapshot
-
-            snapshot = load_audit_snapshot(root)
+            snapshot = snapshot_status.get("snapshot")
+            if snapshot_status["status"] != "valid":
+                snapshot = None
             snapshot_schemas = (
                 snapshot.get("standard_table_schemas") if isinstance(snapshot, Mapping) else None
             )
-            if isinstance(snapshot_schemas, Mapping) and snapshot_schemas:
+            if isinstance(snapshot_schemas, Mapping):
                 schemas = snapshot_schemas
                 schema_source = "audit_snapshot"
             else:
@@ -330,7 +383,7 @@ def validate_abi_result_dir(
             errors.append(f"{table_name}.tsv missing field(s): {', '.join(fields)}")
 
     if not allow_empty_tables:
-        specialized_validator = getattr(plugin, "validate_result_dir", None)
+        specialized_validator = getattr(plugin, "validate_result_dir", None) if plugin else None
         specialized: Mapping[str, Any] | None = None
         if callable(specialized_validator):
             candidate = specialized_validator(root, allow_empty_tables=False)
@@ -359,6 +412,9 @@ def validate_abi_result_dir(
         "failed_steps": failed_steps,
         "tables": tables,
         "schema_source": schema_source,
+        "audit_snapshot_status": snapshot_status["status"],
+        "audit_snapshot_errors": list(snapshot_status.get("errors", [])),
+        "audit_snapshot_warnings": list(snapshot_status.get("warnings", [])),
         "artifacts": artifacts,
     }
 
@@ -414,17 +470,25 @@ def _completed_step_count(command_rows: Iterable[Mapping[str, Any]]) -> int:
     return sum(1 for row in command_rows if str(row.get("status", "")) in completed_statuses)
 
 
-def _tool_version_rows(registry: Any, *, smoke: bool) -> list[dict[str, Any]]:
+def _tool_version_rows(
+    registry: Any,
+    *,
+    smoke: bool,
+    tool_ids: set[str] | None = None,
+) -> list[dict[str, Any]]:
     rows = []
     for tool in registry.list_tools():
+        if tool_ids and str(tool.get("id", "")) not in tool_ids:
+            continue
         skill = registry.create(str(tool.get("id")), mock_tools=smoke)
+        version, status = capture_tool_version(skill, mock_tools=smoke)
         rows.append(
             {
                 "tool_id": tool.get("id"),
                 "executable": tool.get("executable", ""),
                 "env_name": tool.get("env_name", ""),
-                "version": "",
-                "status": "ok" if skill.check_installation() else "missing",
+                "version": version,
+                "status": status,
             }
         )
     return rows

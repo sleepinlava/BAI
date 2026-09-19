@@ -1,8 +1,9 @@
 # ABI 精简重构计划
 
-状态：阶段 A、B1、B2、B3、C、D 已完成；v1.6.0 已发布；阶段 E 进行中，WP11B 步骤 1（分发层与实现分离）已落地，步骤 2（插件数据同址打包与三种安装形态验收）已落地，余下收口项见第 13 节。当前计划版本：v0.23。
+状态：N1–N5 的代码与文档收口已实施；当前验证目标为 ABI 1.7.0，已通过本地全量产品测试与最终干净安装验收（第 15.8 节）。远端 CI、推送及正式发布尚未完成；真实生物工具与远端 HPC 认证单独记录。当前进度统一维护在第 15 节；第 7–14 节为历史记录。本地构建不代表远端已发布。当前计划版本：v0.29。
 
-代码基线：`17bdc5b043cec0ffb8fac182e0982c08e29a1875`，ABI `1.5.12`。
+历史代码基线：`17bdc5b043cec0ffb8fac182e0982c08e29a1875`，ABI `1.5.12`。
+本轮复核基线：`127a377`，ABI `1.6.0`；开始复核时工作树干净。
 本文依据对话中已确认的决定恢复，替代此前临时目录内的计划副本。
 临时副本在当前环境中不可用；其中的测试数字不作为本轮验证结果。
 
@@ -629,3 +630,313 @@ Entry point 本身不提供完整显示信息。优先复用已有 `abi-plugin.y
 - 插件发行版当前不含 `py.typed`/独立版本策略：与核心同版本同流程是 WP11B 的明确取舍；后续若引入独立插件版本需先修订发布身份规则。
 - 11A 时期记录的 "root 经 importlib.resources 解析" 以同址 `__file__` 解析实现满足现有需要（zipapp/zip 安装不受支持）；若未来需要只读 zip 布局再引入 `importlib.resources` 包装。
 - 真实生物信息学工具、HPC 终止确认、正式运行锁认证仍为后续阶段的验收项。
+
+## 14. 当前目标复核与下一步计划（2026-09-14，v0.24）
+
+复核代码：`3615dcf94a64b1343ff96a1001880f7ccea9637c`；开始时工作树干净。本轮由三个 GPT-5.6-Luna 子代理分别复核核心、分发和职责退役，主代理交叉检查关键源码与测试；只更新计划，不实施产品修复或发布。
+
+### 14.1 完成程度更正
+
+**结论：方向和主要拆除工作成立，但两个产品目标均为部分达成。** 当前不适合继续以删行数作为主要进度，也不能将已存在的审计字段等同于完整、独立、可靠的历史审计。
+
+| 目标/范围 | 已有实质成果 | 尚未通过的验收 |
+| --- | --- | --- |
+| 安全可靠地执行分析 | 严格布尔授权、编译计划校验及运行前身份比较、共享协调器、契约检查 | 原始输入保护仍有旧删除分支；恢复未完整绑定外部输入/工具/资源身份；后端执行对象仍是可变插件计划；超时与远端取消证据不完整 |
+| 人工事后复查 | 命令 TSV、运行身份及历史关联、审计快照、缺插件时基础报告与表结构校验 | 旧运行归档不完整；成功调用详情未进入基础报告；缺插件严格校验可崩溃；快照错误和缺失状态不足 |
+| 旧主干、Study 与绘图退役 | AutoPlasm 旧执行核心、Study、SciPlot、abi.figures 和对应入口已移除 | 七个插件仍有专用 dry-run 路径；plasmid DAG 仍有可选绘图节点及工具实现，WP7 不能整体结项 |
+| 所有获取交给外部系统 | ENA 节点、ResourceDownloader、环境安装命令已移除 | 核心 wheel 仍强制包含下载脚本；Nextflow 容器声明及 HPC 容器启动路径尚无充分的预备镜像校验，隐式获取边界未验收 |
+| 分析插件可选 | 按需发现/加载、八个同址插件 wheel、核心 wheel 不含插件实现 | 独装核心尚无历史读取的安装产物验收；发布流程没有接入插件构建和发布；科学计算依赖仍在核心 |
+| 文档及质量门槛 | 双语部分旧文档退役、构建清除旧页面、有效核心测试保留 | AGENTS.md 仍含旧目录和命令；全套测试历史记录仍有三个失败，不能称为全绿 |
+
+同一 Git 统计口径下，非测试 Python 源文件从基线的 236 个降至 158 个；受跟踪的双语 Markdown/RST 从 42 个降至 40 个。这只证明规模变化，不证明安全性或科学有效性。
+
+### 14.2 必须优先处理的具体缺口
+
+1. **原始数据保护（工作包 8/3）。** `easymetagenome/handlers.py::cleanup_taxonomy_intermediates_handler` 仍把 `raw_read1/raw_read2` 纳入删除列表，只检查路径位于输出目录内。当前生成计划已不传这两个字段，但处理器与旧集成测试仍允许删除它们。应在清理边界明确输入保护与 ABI 中间产物归属，不能只依赖调用方省略字段。
+2. **完整历史（工作包 3/5）。** `provenance.py::reset_run_provenance` 只归档部分 provenance 文件及日志，遗漏执行计划、结果表、报告和 `audit_snapshot.json`；重跑会改写这些文件。先保存旧运行可独立解释的证据，再允许重写当前视图。无需复制全部巨大生物数据，但被覆盖的审计证据必须保存；产物后续消失应标为不可用，不能篡改历史成功事实。
+3. **独立审计（工作包 5/11B）。** `results.py::validate_abi_result_dir(..., allow_empty_tables=False)` 在插件加载失败后使用未绑定的 `plugin`；`audit.py` 忽略写入错误且读取不校验快照版本；基础报告只有状态计数、失败调用和复用信息，成功命令与参数仍需人工查 TSV。修复异常和缺失状态，展示或明确链接全部实际调用，确保报告使用最终运行身份。
+4. **执行与恢复身份（工作包 3/4）。** `bind_confirmed_plan` 已提供运行前比较，不能称为没有计划保护；但四后端仍消费 `prepared.plan`。恢复只核对已记录的文件校验和，外部原始输入通常不在该映射中，旧记录无校验和时仍回退到存在性检查。应使执行内容与确认内容保持一致，并对输入、工具和资源变更拒绝未经验证的复用。历史可读与历史产物可安全复用是两项不同保证。
+5. **终止与超时事实（工作包 3）。** jobs 已明确确认范围只是 dispatch worker；HPC 发出取消命令后缺少终态确认，Nextflow/Snakemake 超时可能在写结果前抛异常。必须保留请求、已确认终止、下游状态未知的区别，失败和超时也写入持久记录。
+6. **正式分发（工作包 9/11B）。** `release.yml` 只构建核心、仍执行已退役的 `autoplasm`、未安装插件就运行插件 dry-run，也未构建/附加八个插件 wheel。CI 中构建插件不等于 Release 包含插件。先修复这一明确阻断，再核验完整发行物集合、同版本关系及从 Release 原样下载至 PyPI 的流程。保持现有四工作流及可信发布身份，不复用已发布版本。
+7. **隐式获取（工作包 8）。** `exporters/nextflow.py` 仍输出容器声明，`tools.py` 仍生成 Docker/Singularity 启动命令；这些路径没有证明缺镜像时一定先失败。补齐只读就绪检查及拒绝隐式获取的后端约束，以“缺镜像不启动、不下载”行为验收。当前正常 setup-resources 只读/模拟行为应保留，不能把外部准备命令的说明误判为已经执行下载。
+
+Release 事件链还须按官方行为核验：默认 `GITHUB_TOKEN` 创建的事件通常不会触发后续工作流（例外包括 workflow_dispatch/repository_dispatch）。现有手工发布入口可用于明确的人工步骤，但不能将未验证的自动链称为闭环；本计划不授权新增自动发布入口、改可信发布身份或配置密钥。依据：[GitHub 官方工作流触发说明](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)。
+
+### 14.3 下一步分批执行及出口
+
+| 批次 | 具体改动范围 | 必须得到的验收证据 |
+| --- | --- | --- |
+| 1：保护输入与历史 | 清理处理器退役原始 reads 删除分支；以现有运行目录机制补完整归档；每项独立提交 | 原始输入位于 outdir、符号链接、失败清理均不误删；连续两次运行后，旧计划、表、报告和快照字节不变且可独立读取 |
+| 2：完成基础审计 | 修复缺插件严格校验；快照版本/结构与写入失败显式处理；成功/失败/复用调用可查；报告身份写入顺序收口 | 干净环境只安装核心 wheel，读取成功、失败、恢复、缺快照旧结果；inspect/report/validate-result 均给出准确结果；不用安装原插件或执行工具 |
+| 3：收口执行保证 | 保持确认内容到后端执行的一致性；恢复身份覆盖外部输入/工具/资源；持久化超时及取消证据；补预备镜像与禁止隐式获取约束 | 更换输入内容、工具或资源后不能错误复用；队列等待期间漂移不能启动；缺镜像在后端启动前失败；四后端控制测试区分请求与终止确认，保留真实集群验证的限制 |
+| 4：完成安装与发行 | 核心和八插件同版本构建/安装/Release 资产检查；删除失效发布命令；核验事件链；复用批次 2 的独装审计验收 | 默认 sdist→wheel、三种干净安装、完整组合集成、发行物集合与哈希检查通过；实际发布另按已有身份规则执行，不在本轮审查中发布 |
+| 5：继续职责精简 | 清除残留活动绘图节点/脚本及失效依赖；退出产品包中的获取脚本；将科学计算依赖归到使用它的插件；逐个迁移仍必要的专用 dry-run 行为 | 八种分析的必要计算和结构化输出保持；DAG/契约与所需工具清单一致；核心独装不要求绘图或无关科学依赖；不新增安装平台或第二套执行主干 |
+| 6：文档与开发入口收口 | 同步 AGENTS.md、开发/安装指南与权威规范；处理空 report extra、重复格式化入口和无主资产候选；精简过程记录 | 每项删除有调用者/读者核查；双语构建 0/0；没有仍可执行的旧命令或已删除目录指引；当前状态只由本节维护 |
+
+批次 1、2 优先于继续大规模删除；批次 4 的独立发布修复可并行准备，但整体验收须等待批次 1–3。批次 5 按职责分别落地，不把依赖搬迁、行为改动和文档删除混成一次大提交。保留工具→环境映射与必要的 Docker/外部部署构建输入，先移出核心 wheel 再判断仓库文件去留。批次 6 同时修复失效的 `setup-resources --confirm` 调用及指向不存在脚本的准备提示。每批完成相应质量门槛后再进入下一批。
+
+### 14.4 测试取舍与本轮证据
+
+- 保留并补强原始输入保护、授权/漂移、恢复身份、历史不可改写、失败/取消持久化、缺插件审计、契约和安装产物测试；这些直接对应两条主线。
+- 将只搜索发布 YAML 中插件名字的断言改为检查实际构建、安装和发行资产链；现有字符串检查未捕获过期 `autoplasm` 与插件缺包问题。优先复用安装验收脚本，避免复制多套发布冒烟逻辑。
+- 仅随退役职责删除专属测试，或在证明 fixture、参数与行为覆盖完全重复后合并；不新增仅断言文件不存在、代码行数或文档标题的测试。
+- 历史非 smoke 全量记录为 2536 passed、13 skipped、3 failed；本轮 Luna 重新执行 `pytest -q --disable-warnings --tb=short` 得到 **2531 passed、18 skipped、3 failed**，两者选择口径不同，不报告为全绿。两个失败来自被忽略的本地论文测试及其缺失数据；另一个来自本地隐藏的受跟踪 Linux 冻结证据文件。论文专属测试应明确移出产品默认收集，或将仍有产品价值的行为改用自包含 fixture；冻结证据应恢复真实受跟踪文件并保留验证。本轮不采纳“缺证据就自动跳过”的建议，不能伪造证据、弱化原有门槛或删测试换绿色。
+- 本轮主代理：编译计划、运行适配与通用报告测试 **52 passed**；缺插件基础审计测试 **4 passed**。Luna：计划/溯源/取消/接口等定向测试 **98 passed**；协调器/共享 dry-run/结果等 **32 passed**。这些集合有重叠，不能相加为独立测试总数，也不能替代全套 CI 或真实工具验收。
+- 本轮源码探针复现了缺插件严格校验异常、错误快照版本被接受及历史归档遗漏。已有本地 wheel 内容支持“核心与八插件分包成立”；不证明它们对应远端已发布发行物，也不把复用系统依赖的安装测试算作完全隔离验收。
+- `bash docs/build_docs.sh` 初次因受限环境无法解析 Python 官方文档索引地址，出现 1 个网络警告而按零警告门槛失败；联网重跑后双语均 **0/0 诊断，通过**，未放宽门槛。未运行真实分析、远端集群取消、Docker 实际镜像构建或发布。
+
+## 15. 当前目标验收与下一步精简计划（2026-09-17，v0.28）
+
+本节是当前唯一的进度与执行顺序入口，后续复核直接更新本节，不逐轮追加重复计划。v0.24 之后的修复提交应计入进展，不再照抄第 14 节的旧问题。v0.26 由两个 GPT-5.6-Luna 子代理与主代理完成只读复核；用户随后授权继续实施 N1，实施与验收记录见 15.6。
+
+### 15.1 已落地实现与对应提交
+
+| 批次 | 当前本地实现 | 主要提交与出口 |
+| --- | --- | --- |
+| 1：保护输入与历史 | EasyMetagenome 清理处理器保护原始文件、原始符号链接和符号链接目标；运行重写前归档计划、表、报告与快照 | `7cb19b5`；输入位于 outdir、符号链接、失败清理和两次运行历史测试已覆盖 |
+| 2：完成基础审计 | 快照写入失败显式报错，快照版本/结构/身份校验，插件缺失时使用保存的 schema，基础报告写入执行事实与历史关联 | `c5d9aaf`；缺插件、缺快照、坏快照、严格空表、inspect/report/validate-result 定向测试已覆盖 |
+| 3：收口执行保证 | 恢复身份覆盖计划、输入、工具、资源、容器与缓存；四后端补充超时、取消请求、终止确认和下游未知证据 | `d1abbfe`、`14222ce`；运行前漂移拒绝、超时/取消持久化和容器只读就绪检查已覆盖。v0.26 发现的中间输入误拒绝由 N1 修复，见 15.6；真实 HPC 调度器终止仍未认证 |
+| 4：完成安装与发行（本地验收） | Release 工作流构建核心 sdist/wheel 和八个插件 wheel，校验同版本与精确核心依赖，发布资产合并到 `dist/`，执行核心独装、单插件和全插件验收；移除退役 `autoplasm` 冒烟 | `9da3314`；核心与八插件 `1.6.0` 本地构建、Twine 检查和三种安装形态验收通过。未创建 GitHub Release，未发布 PyPI |
+| 5：职责精简（首个切片） | 下载数据库脚本仍保留在源码/sdist 供外部部署，但不再被核心 wheel 强制打包；核心 wheel 内容与 sdist 内容均有实际检查 | `2b8d7fa`；下载脚本不在核心 wheel、仍在 sdist 的打包验收通过 |
+| 6：文档与开发入口（首个切片） | 移除云端脚本、双语开发/使用文档、CLAUDE 指引和默认配置中失效的 `setup-resources --confirm`；统一为只读报告/外部准备说明，并修正云端脚本残留的“自动获取”阶段标签 | `7a552dd`、`8d6a0db`；回归测试禁止这些受跟踪入口重新出现，双语文档构建为 0/0，云端脚本通过语法检查 |
+
+### 15.2 v0.25 实施时的验证记录（历史证据）
+
+- 本轮相关定向集合为 **38 passed**：发行/文档、安装形态和 Docker 配置回归，以及失效资源确认参数回归；新增切片没有引入测试失败。
+- `ruff check src/ tests/ scripts/verify_install_forms.py`、`ruff format --check src/ tests/ scripts/verify_install_forms.py`、`mypy src/abi/ --ignore-missing-imports`、`bash -n scripts/cloud/02_databases.sh scripts/cloud/deploy_rebuild.sh` 和 `git diff --check` 通过。
+- 核心 `1.6.0` 的默认构建在依赖镜像可用时已通过；本轮配置切片在受限网络下使用已安装构建后端分别重建 sdist/wheel，实际确认下载脚本仅存在于 sdist、不存在于 wheel。八个插件 wheel 和三种安装形态的完整证据来自 `9da3314`。
+- 完整 `pytest tests/ -q --tb=short` 曾启动但本地长时间没有最终汇总，随后中止；不能据此报告全套测试全绿。第 14.4 记录的三个历史失败和真实工具、远端集群、实际发布限制继续有效。
+
+### 15.3 当前验收结论
+
+两条主线的基础实现已明显完善，但“本地实现存在”“安装产物可用”“真实环境认证”必须分别记录。不能继续把已经修复的原始 reads 删除、缺插件严格校验异常、旧发布命令当成当前阻断，也不能由相关单元测试通过推出整体完成。
+
+| 目标 | 当前证据与判断 | 尚需补齐 |
+| --- | --- | --- |
+| 安全、可靠地执行分析 | 输入保护、完整结果证据归档、防御性计划副本及再次校验、恢复身份和终止记录已有实现；N1 补齐中间产物分类及两步恢复回归 | 形成四后端明确支持矩阵；真实工具和 HPC 终止按实际可用环境验证 |
+| 人工事后复查 | 基础报告已展示实际命令，快照版本/身份校验及缺插件回退已加强；N1 新增核心 wheel 独装的三条审计命令与五类历史结果验收 | 正式发行与真实环境证据仍需分别核验；不能把合成结果的基础审计验收当作真实科学分析认证 |
+| 可选分析插件 | 核心与八插件分包、同版本及精确核心依赖验证、Release 构建/安装/附加插件已接通 | 安装用户路径验收、科学计算依赖归属、下载后发行物集合/哈希检查；远端发布状态未核验 |
+| 获取、绘图和 Study 外部负责 | Study 与 SciPlot 主体退役；下载脚本已移出核心 wheel；运行时镜像就绪与拒绝获取约束已有修复 | plasmid 四个独立绘图节点已退役，专属脚本/注册项/环境仍待清理；核心仍含部署和插件专属资产；准备提示及维护文档仍有旧语义 |
+
+v0.26 确认并由 N1 修复的行为问题：恢复身份曾将上游生成、下游消费的中间文件误归为外部输入，文件从不存在变为存在就拒绝合法恢复。现依据有效步骤声明的具体产物区分中间输入，原始输入仍绑定内容；两步执行器回归验证合法恢复不再调用工具、真实输入变化仍重新执行。详细边界与证据见 15.6。
+
+同时纠正旧清理判断：六个插件的 `execute_dry_run` 只是 `_execute_generic_dry_run` 薄封装，`wgs_bacannot` 是有特定职责的外部 Nextflow 适配，plasmid 走通用回退。不存在已证明需要重写的“七套执行主干”；不安排逐插件大迁移，不为统一方法名新增框架。保留一组共享行为及外部适配回归即可。
+
+### 15.4 下一步工作包、依赖与验收
+
+以下是 v0.24 批次 1–6 的收口切片，按行为和职责拆小提交，不另建一套重构主线。
+
+| 顺序 | 改动范围及边界 | 验收出口 |
+| --- | --- | --- |
+| N1：补主线行为与安装验收（本地验收完成） | 修复恢复误判；扩展三形态脚本，核心独装读取最小历史结果；单插件与完整组合执行实际入口探针 | 恢复、核心独装五类历史审计、单插件和完整八插件组合均通过；不借用系统依赖，不执行真实生物工具 |
+| N2：退役活动绘图（执行入口切片已实施） | 移除 plasmid 的可选 visualization 节点、报告依赖、专属渲染脚本/注册项/环境依赖；保留分析计算及结构化结果 | DAG 依赖和严格契约有效；插件报告不要求生成科学图；比较分析等有科学用途的结果不随图件删除；外部需要的声明无核心加载义务 |
+| N3：缩小核心分发 | 将 numpy/pandas/scipy 按实际调用方归入插件依赖；审查 envs、examples、golden_traces 与辅助脚本归属；保持核心必需的环境映射和宿主适配资源 | 核心独装及 N1 历史审计不需无关科学依赖；受影响插件单独安装仍可执行必要统计；sdist→wheel、Docker 构建上下文与安装形态检查通过 |
+| N4：完成发行物验证 | 复用现有构建和三形态验收；验证核心 sdist/wheel + 八插件 wheel 的预期集合、版本、依赖及哈希，下载后同样核验 | 缺包、额外包、错版本、字节变化均在发布前被拒绝；避免再复制一套冒烟脚本；不改变四工作流或可信发布身份，不重用已发布版本 |
+| N5：清理开发与文档入口 | 同步 AGENTS.md、README/CLAUDE 与双语指南、release_check.sh、过时准备提示；清理空 report extra 及调用方；确认 CMake 等调用方后统一格式化入口；整理产品测试与本地论文测试边界 | 文档不再指导访问已删除目录/入口；本地论文绘图依赖不回流核心；恢复真实冻结证据并保留检验；双语构建 0/0 |
+
+N1 本地验收已完成；当前继续收口 N2 的资产与依赖清理（执行入口切片见 15.7）；N5 的独立文档清理可以并行准备。N3 应在绘图归属明确后进行，先在本规划中补充核心 wheel / 插件 wheel / sdist / Docker 的资产归属表再删资产；N4 复用 N1 的验收。每批运行与改动相称的质量门槛，整体结束前必须得到完整产品测试汇总；真实环境不可用时按能力明确标注未认证。四后端和八种分析继续保留，核心安全与审计不能成为可关闭组件。
+
+### 15.5 v0.26 复核证据与测试取舍（历史记录）
+
+- 主代理运行 `.venv/bin/pytest tests/unit/test_verify_install_forms.py tests/test_documentation_artifacts.py tests/unit/test_docker_configuration.py -q --tb=short`：**38 passed**。这证明元数据和配置回归通过，不等于重新构建、干净安装或实际发布。
+- Luna 核心定向集合：**267 passed、1 skipped**，覆盖输入保护、历史、审计、恢复、计划漂移、运行时终止及容器就绪。范围复核另运行文档资产 **13 passed**、插件契约 **21 passed**；集合有重叠，不合计为独立测试总数。共享 dry-run 集成测试在另一子代理中约 60 秒无汇总后中止，不将该次运行记作通过或失败。最小中间输入探针由子代理与主代理分别复现，未使用真实生物工具。
+- 重查历史失败时，被忽略的 `test_create_real_data_case_study_figures.py` 因本轮环境没有 matplotlib 在**收集阶段报 1 个错误**；单独运行 Linux 能力证据测试得到 **1 failed**，原因仍为本地缺少受跟踪的冻结 JSON（skip-worktree 标记）。历史“3 failed”不能当成本轮全量结果。本轮不安装绘图库来满足已退出产品职责的本地论文测试，也不通过缺证据自动跳过来放宽门槛。
+- 文档构建初次因沙箱 DNS 无法读取 Python 官方索引失败；联网重跑 `bash docs/build_docs.sh` 后双语均 **0/0 诊断，通过**。未修改零警告门槛。
+- 保留授权、输入保护、历史、恢复、取消、契约、独立审计和发行身份测试；优先补真实用户路径和正常成功路径。重复 fixture/行为才可合并；不新增固定代码行数、方法数量或单纯文件存在性的测试。
+- 下一轮产品测试应在明确的收集边界下得到完整汇总；本地论文复现保留为明确选择的外部研究任务，冻结平台证据维持既有强度。未运行真实生物工具、远端 HPC、Docker 实际构建或发布。
+
+核心定向集合的复现命令（267 passed、1 skipped）：
+
+```bash
+./.venv/bin/pytest -q --disable-warnings --tb=short \
+  tests/integration/test_input_protection.py tests/integration/test_result_history.py \
+  tests/integration/test_easymetagenome_handlers.py tests/unit/test_executor_boundaries.py \
+  tests/unit/test_provenance.py tests/unit/test_audit.py tests/unit/test_results.py \
+  tests/unit/test_results_ext.py tests/unit/test_report_generic.py tests/unit/test_agent_interface.py \
+  tests/unit/test_compiled_plan_runtime.py tests/unit/test_resume_identity.py \
+  tests/unit/test_container_runtime.py tests/unit/test_hpc_runtime.py \
+  tests/unit/test_nextflow_runtime.py tests/unit/test_snakemake_runtime.py \
+  tests/integration/test_runtime_timeout_evidence.py tests/unit/test_external_workflows.py
+```
+
+### 15.6 N1 实施与验收（2026-09-15，未提交/未发布）
+
+本批主体由两个 GPT-5.6-Luna 子代理分别实现恢复修复与安装审计。Luna 后续额度耗尽，用户明确允许主代理完成收尾；主代理修正安装脚本的相对路径解析、补齐质粒/Bacannot 的试运行样本要求，并校正双语旧记录说明。未启动 N2–N5。
+
+- **恢复身份。** 有效步骤声明的具体上游产物不再作为外部输入重复绑定；跳过的步骤不参与产物索引，`output_dir` 不作为目录内所有文件的所有权凭据。样本原始输入优先保留，聚合目录中的非 ABI 产物仍检查内容。未增加新执行器或全局身份服务。
+- **行为验收。** 两步执行器首次生成中间文件，第二次恢复时工具调用次数为零、两步均为 `resumed`；外部原始文件变化仍触发两步重新执行。输出目录内原始输入、符号链接和聚合目录里的用户文件继续参与漂移判断；既有产物校验和与失败清理检查保留。
+- **独装审计。** 扩展现有 `verify_install_forms.py`，在无插件的核心 wheel 环境实际调用 inspect、report 和严格非空表 validate-result，覆盖成功、失败、恢复、缺快照与坏快照。夹具包含非空表、真实格式的命令记录和恢复关联，仅用于软件验收，不是科研证据；检查保存的命令、状态与 schema 回退，不只检查文件存在。
+- **安装隔离。** 子进程使用临时工作目录并清除继承的 PYTHONPATH/PYTHONHOME；输入 wheel 目录先转为绝对路径，使 CI 的相对路径参数也能工作。单插件与完整组合的输出目录互相隔离，完整组合逐个执行八插件 dry-run。质粒使用显式规划样本表，Bacannot 使用临时合成双端 reads，均不执行真实工具。
+- **兼容边界。** 旧结果保持可读；缺少有效恢复身份证据时不能仅凭文件存在承诺复用。原始输入采集、部署、绘图职责不回流核心。`--reuse-system-deps` 仅是开发者降级选项，本次正式安装验收未使用它。
+
+验证记录：
+
+| 检查 | 结果与范围 |
+| --- | --- |
+| 恢复、输入保护、历史、审计及受影响后端定向集合 | **185 passed、1 skipped**；含新两步恢复回归及安装脚本单测，不代表全套 CI |
+| Ruff lint / format、mypy | 全源与测试 lint/format 通过；mypy **159 个源文件无错误**；脚本收尾后再跑相关检查 |
+| 默认核心构建与插件构建 | 默认隔离 sdist→wheel 已通过，八插件 wheel 已构建；配置镜像一度不能提供受约束的构建后端，临时使用官方 PyPI 源成功，未修改仓库依赖或源配置 |
+| 最终产物一致性 | 最终重建的核心 wheel 与通过干净安装的 wheel **逐字节相同**；sdist 内安装脚本及双语规范与最终源码一致，核心 wheel 的恢复实现亦一致 |
+| 三种干净安装 | **全部通过**：核心独装五类历史审计、单插件 dry-run、完整八插件 dry-run；按 CI 的相对路径参数运行，未使用 `--reuse-system-deps` |
+| Twine | 核心与八插件产物通过；插件仍有已有的长描述缺失警告，未隐藏 |
+| 双语文档 | 修正后的双语构建 **0/0 诊断，通过** |
+
+相对路径验收从临时构建目录运行：`PIP_NO_INDEX=1 PIP_FIND_LINKS=<临时依赖wheel目录> python /home/bker/abi/scripts/verify_install_forms.py --dist-dir core --plugin-dist-dir plugins`。依赖先按声明下载；三个 venv 都全新创建并解析依赖，这与复用系统 site-packages 不同。
+
+未运行真实生物工具、真实集群取消、实际 Docker 镜像构建或远端发布。全套测试仍需按 15.5 中记录的论文材料与冻结证据边界完成；本批不降低覆盖门槛、不删除冻结证据检查。
+
+
+### 15.7 N2 执行入口切片（2026-09-17，未提交/未发布）
+
+以当前源码核对 v0.27 后实施：移除 `visualization_clinker_gene_maps`、
+`visualization_pycirclize`、`visualization_network`、`visualization_dna_features`
+四个节点及报告对应依赖，移除专属输出阶段目录声明。保留 `comparative_clinker`、
+BLAST/MUMmer、FastSpar 与宿主关联计算，也保留历史 `visualization_outputs` 表与解析器。
+旧 visualization 配置不再生成独立绘图步骤；基础报告无需这些图件。
+双语质粒指南同步说明边界；实际 DAG 为 87 节点（修改前 91 节点，旧文档的 90 已过时）。
+
+新增五平台的旧绘图配置回归：验证拓扑可排序、依赖不悬空、报告保留且比较分析仍在报告之前。
+新增共享 dry-run 后直接生成质粒 Markdown/HTML 报告的集成回归，验证缺少绘图目录时报告仍包含
+结果摘要和局限说明。验证结果见下表。
+
+本地环境不同于 15.6：当前目录不具备可用 Git 元数据，无法核对提交身份或工作树差异；
+未修改 Git 元数据。默认 Python 3.14 缺少 pydantic，首次 pytest 在收集阶段失败；
+使用 `/tmp/abi-refactor-venv` 隔离安装测试依赖，历史验收数字不作为本次结果。
+
+后续顺序与验收：
+
+1. **N2 资产收口**：移除仅服务于三个专属渲染器的注册项、契约、脚本和工具→环境映射；
+   保留比较分析 clinker 所需环境，不能直接删除整个 `autoplasm-visualization`。
+   同步生成 Conda YAML，检查外部 figure_specs 声明的归属；历史结果读取兼容保持。
+   该切片触及发行面，须补 Docker 配置测试、Compose 配置验证、默认 sdist→wheel 构建及插件验收。
+2. **N3 分发归属**：先列核心 wheel / 插件 wheel / sdist / Docker 资产归属表；
+   逐调用方迁移科学计算依赖，复用 N1 干净安装审计，避免仅凭 import 搜索删除依赖。
+3. **N4 发行物完整性**：在现有构建与安装脚本上验证集合、版本、依赖和哈希；不执行发布。
+4. **N5 入口清理与整体验收**：更新开发指南，明确论文测试与产品测试边界，完成产品测试汇总；
+   保留冻结证据检查。真实生物工具、HPC 终止和容器构建按实际证据单独认证。
+
+本次不将 N2 整包或全部重构标记为完成。
+
+
+本批验证（均使用上述隔离环境，Python 3.14；不替代 CI 的 Python 版本矩阵）：
+
+| 命令 | 结果 |
+| --- | --- |
+| 下列定向 pytest 集合（含共享 dry-run 与规划 smoke） | **158 passed，57.00s**；新回归初版夹具/API 错误已修正为生产 `UniversalDAG` 与完整配置，最终集合全通过 |
+| `ruff check src/ tests/` | 通过 |
+| `ruff format --check src/ tests/` | 379 文件通过 |
+| `mypy src/abi/ --ignore-missing-imports` | 159 源文件通过 |
+| `PYTHONPATH=src python -m abi.cli contract-lint --type metagenomic_plasmid --strict` | 通过，0 error / 0 warning |
+| `bash docs/build_docs.sh` | 首次因沙箱 DNS 获取 intersphinx 索引失败；授权联网重跑双语 0/0 通过 |
+
+定向测试复现命令：
+
+```bash
+/tmp/abi-refactor-venv/bin/pytest \
+  tests/unit/test_pipeline_dag.py tests/unit/test_contract_lint.py \
+  tests/unit/test_contract_lint_source_checks.py tests/unit/test_metagenomic_plasmid_policy.py \
+  tests/unit/test_parsers.py tests/integration/test_dry_run_shared.py \
+  tests/smoke/test_dry_run_smoke.py -q --tb=short
+```
+
+未运行全套产品测试、真实生物工具、远端 HPC、Docker 实际构建和发布。
+本批未更改发行面文件；构建与三形态安装须在后续 N2 资产/依赖切片重新验收。
+
+
+### 15.8 N2–N5 收口与发行目标（进行中）
+
+用户已授权完成剩余重构、全量产品测试、推送、CI/CD 与正式发布；后续发布依旧遵循不可变版本、
+已验证 master 和 Trusted Publishing 规则。通过独立克隆远端恢复比对基准，保留当前工作区；
+远端当前 HEAD 为 `3615dcf94a64b1343ff96a1001880f7ccea9637c`。缺失的 Linux 冻结证据从该提交
+原样恢复，不生成替代证据。GitHub 登录尚待可用，代码开发与本地验证继续。
+
+N3 资产归属（先明确归属再调整打包）：
+
+| 资产 | 核心 wheel | 插件 wheel | sdist / Docker 构建上下文 |
+| --- | --- | --- | --- |
+| 安全、执行、审计、运行时与资源配置 | 保留 | 调用核心 | 保留 |
+| `environments.yaml` 工具环境映射 | 保留 `abi/data/` | 由核心解析 | 保留 |
+| Conda `envs/` 与部署脚本 | 不打包 | 不打包 | 保留供外部准备 |
+| `examples/`、`data/examples/`、`golden_traces/` | 不打包 | 不打包 | 保留开发与验收用途 |
+| 三个质粒输出标准化 shell 脚本 | 不打包 | 质粒插件打包，维持现有安装相对路径 | 保留源文件 |
+| 插件实现、DAG、契约、结果 schema、外部 figure_specs | 不打包 | 各自同址打包；图形声明没有核心加载义务 | 保留 |
+| 宿主平台 integrations | 保留 | 不重复打包 | 保留 |
+| numpy / pandas / scipy | 移除必需依赖 | EasyMeta 声明 numpy；RNA-seq 声明三者，供其统计脚本 | 测试环境通过 dev 依赖具备必要计算库 |
+
+产品测试保留所有安全、契约、审计与冻结证据检查；被 git 忽略的本地论文绘图测试属于显式选择的
+外部研究任务，不应让 matplotlib 回流核心。后续结果据实填写，不复用旧验收数字。
+
+
+本轮实现（2026-09-17）：
+
+- **N1**：四后端恢复身份、输入保护、失败/超时与重试证据沿用统一核心实现；恢复身份的生成目录索引改为单次构建，避免多样本规划反复扫描全部输出。保留原始输入与符号链接内容校验。
+- **N2**：四个活动绘图节点及三个专属渲染器的脚本、注册项、契约、依赖已退役；比较分析 clinker 与历史图表解析兼容保留。Conda 清单和生成 YAML 已同步。
+- **N3**：核心 wheel 不再包含运行环境、示例和质粒专属标准化脚本；三个脚本迁入质粒插件。科学计算依赖由实际使用的 RNA-seq / EasyMeta 插件声明；核心独装校验禁止科学计算和绘图库回流。
+- **N4**：发行验证器绑定一个核心 sdist、九个 wheel 的精确集合、版本、核心依赖及 SHA-256。构建端写入不可覆盖清单，发布端验证 GitHub Release 下载的原字节。共享安装探针覆盖核心独装、RNA-seq/EasyMeta 单插件及全部八插件。
+- **N5**：清理 CMake、开发指南、内置技能中的过期命令；论文绘图任务保持显式选择；产品测试保留冻结证据与全部安全检查。工作流复用安装探针，避免重复维护插件样本夹具。
+
+发布流程先生成经过质量门禁的 GitHub Release 草稿，再由已认证维护者发布草稿，触发独立的 `release.published` Trusted Publishing 工作流。原因是使用 `GITHUB_TOKEN` 产生的事件不能触发后续工作流；不添加长期 PyPI token 或新的自动发布入口。
+
+当前本地发行检查：
+
+| 检查 | 本轮结果 |
+| --- | --- |
+| Ruff / 格式 | 通过，376 个 Python 文件格式合规 |
+| mypy | 155 个源文件通过 |
+| 工作流、发行清单与 Docker 配置定向回归 | 42 passed |
+| 八插件 strict contract-lint | 全部通过，均 0 error / 0 warning |
+| Compose 配置验证 | 通过 |
+| 双语文档 `bash docs/build_docs.sh` | 通过 |
+| 1.7.0 核心默认 sdist→wheel + 八插件 wheel | 全部构建成功 |
+| `twine check` | 全部通过；插件保留缺少长描述的非阻断警告 |
+| 发行物 SHA-256 清单生成与再校验 | 通过 |
+| `check_release_identity.py` | 1.7.0 通过 |
+| 干净核心 wheel 安装 MCP extra 与 `abi-mcp --help` | 通过 |
+| 最终三形态干净安装 | 全部通过，含 RNA-seq / EasyMeta 独立统计与八插件 dry-run |
+| Linux x86_64 wheel 能力检查 | 通过，21 环境映射、8 插件 |
+| Codex / Claude Code / OpenCode wheel 安装与诊断 | 全部通过 |
+| 恢复身份与百样本性能回归 | 11 passed，10.86s |
+| 全量测试与覆盖率 | 2597 passed / 3 skipped / 11 deselected，420.25s；分支感知总覆盖率 82.79% |
+| 关键模块覆盖率门禁 | 全部通过 |
+| Migration Gate | 5/5 通过，使用本轮 coverage.json |
+| 远端 CI / 正式发布 | 待 GitHub 认证及 Git 提交身份配置后执行 |
+
+完整构建产物暂存 `/tmp/abi-release-1.7.0/`，供本地验收；正式发布必须使用远端 Release 工作流生成并通过清单验证的产物，不上传本地重构产物。真实工具、远端 HPC 终止认证和实际 Docker 镜像构建尚未执行，不以 dry-run 代替这些证据。
+
+
+本轮可复现验收命令（Python 3.12，干净依赖环境；执行日志保存在本机 `/tmp/abi-*-170.log`）：
+
+```bash
+ruff check src/ tests/ scripts/verify_install_forms.py scripts/verify_release_artifacts.py scripts/build_plugin_wheels.py
+ruff format --check src/ tests/
+mypy src/abi/ --ignore-missing-imports
+pytest tests/ --strict-markers -m "not requires_tools" --cov=src/abi --cov-branch --cov-report=term-missing --cov-report=json:coverage.json --cov-fail-under=75 -q --tb=short
+python scripts/check_module_coverage.py --coverage coverage.json
+python scripts/migration_gate.py
+pytest tests/test_documentation_artifacts.py tests/unit/test_release_artifacts.py tests/unit/test_docker_configuration.py -q --tb=short
+pytest tests/unit/test_resume_identity.py tests/performance/test_core_performance.py -q --tb=short
+for plugin in metagenomic_plasmid metatranscriptomics rnaseq_expression amplicon_16s wgs_bacteria wgs_bacannot easymetagenome viral_viwrap; do abi contract-lint --type "$plugin" --strict || exit; done
+docker compose -f docker/docker-compose.yml config --quiet
+bash docs/build_docs.sh
+python scripts/check_release_identity.py
+python -m build --outdir /tmp/abi-release-1.7.0/core
+python scripts/build_plugin_wheels.py --outdir /tmp/abi-release-1.7.0/plugins --build
+python -m twine check /tmp/abi-release-1.7.0/core/* /tmp/abi-release-1.7.0/plugins/*.whl
+python scripts/verify_install_forms.py --dist-dir /tmp/abi-release-1.7.0/core --plugin-dist-dir /tmp/abi-release-1.7.0/plugins
+# 将上述十个分发文件汇集至独立 release 目录后，只写一次清单，再验证原文件。
+python scripts/verify_release_artifacts.py --dist-dir /tmp/abi-release-1.7.0/release --tag v1.7.0 --write-manifest
+python scripts/verify_release_artifacts.py --dist-dir /tmp/abi-release-1.7.0/release --tag v1.7.0
+```
+
+
+本地验收已完成；`11 deselected` 为 CI 规则排除的 `requires_tools` 测试，不代表真实工具认证通过。全量命令退出码为 0。尚未创建提交、推送或打标签：本机 `gh auth status` 未登录，Git `user.name` / `user.email` 未配置。认证完成后的顺序为：复核差异并提交 → 推送并验证完整 CI 矩阵与 Migration Gate → 从已验证 master 再核验版本未被占用 → 创建不可变 v1.7.0 标签 → 校验 Release 草稿产物 → 发布草稿并验证 Trusted Publishing、PyPI 哈希及干净安装。不得将当前本地通过状态记为远端通过或已发布。
+
+
+发行推进更新：GitHub 身份与 Git 提交身份现已配置，开始在 `refactor/abi-1.7.0-release` 分支提交本轮已验证修改；远端 CI 结果与发布状态以随后实际运行记录为准。前述认证阻塞记录保留为历史，不再是当前阻塞。
+
+
+### 15.9 PR 审查与远端验收（2026-09-19）
+
+PR #16 的首轮 CI（run `35197237306`，提交 `eeeb168`）已通过 Python 3.10–3.13、原生 Linux arm64 与 Migration Gate；PR 的 Pages 跳过符合预期。审查发现干净插件安装后的脚本路径问题：RNA-seq 三个脚本依赖源码相对路径，质粒 DESeq2 契约依赖已不存在的顶层插件目录。本轮改为使用各插件根目录解析脚本输入；新增非源码目录规划回归，并将脚本存在性检查加入全插件干净安装验收。CMake 实际执行目标补齐 `--confirm-execution`。
+
+发布说明同步明确草稿发布环节与八个新 PyPI 插件项目的 Pending Trusted Publisher 配置要求。当前尚未合并、打标签或正式发布；审查修复须通过新一轮 CI 后方可继续。

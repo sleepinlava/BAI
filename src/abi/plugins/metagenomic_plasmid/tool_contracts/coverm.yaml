@@ -26,7 +26,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_coverm
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_coverm
   tables:
   - abundance
 failure_handling:

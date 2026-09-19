@@ -208,17 +208,12 @@ environments:
     - networkx
     - seqkit
     - pigz
-    - matplotlib
-    - plotly
     - pytest
     - pytest-cov
     - black
     - ruff
     - mypy
     - conda-lock
-    - pip:
-      - dna-features-viewer
-      - pycirclize
   autoplasm-qc:
     channels:
     - conda-forge
@@ -400,17 +395,11 @@ environments:
     channel_priority: strict
     dependencies:
     - python=3.10
-    - matplotlib
-    - plotly
     - networkx
-    - pyvis
     - jinja2
     - pip
     - pip:
       - clinker
-      - dna-features-viewer
-      - pycirclize
-      - pygenomeviz
   autoplasm-nextflow:
     channels:
     - conda-forge
@@ -589,9 +578,6 @@ tool_assignments:
     gtdbtk: stats
     das_tool: stats
     clinker: autoplasm-visualization
-    pycirclize: autoplasm-visualization
-    pyvis: autoplasm-visualization
-    dna_features_viewer: autoplasm-visualization
     integronfinder: autoplasm-integronfinder
     report_markdown: autoplasm-base
   wgs_bacteria:

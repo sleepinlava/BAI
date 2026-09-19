@@ -14,6 +14,11 @@ import pytest  # noqa: E402
 
 from abi.schemas import ABISample, ABISampleContext  # noqa: E402
 
+# This git-ignored, local paper reproduction task is outside the product suite.
+# It remains runnable by explicitly passing its path to pytest with the external
+# plotting dependencies installed. Do not exclude frozen platform evidence.
+collect_ignore = ["unit/test_create_real_data_case_study_figures.py"]
+
 
 @pytest.fixture
 def mock_sample() -> ABISample:

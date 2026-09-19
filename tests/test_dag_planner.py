@@ -98,7 +98,7 @@ class TestUniversalDAGLoading:
         [
             ("amplicon_16s", 10),
             ("easymetagenome", 31),
-            ("metagenomic_plasmid", 91),
+            ("metagenomic_plasmid", 87),
             ("metatranscriptomics", 3),
             ("rnaseq_expression", 6),
             ("viral_viwrap", 7),
@@ -1045,6 +1045,7 @@ class TestGoldenTraceParity:
             plugin_data_root("rnaseq_expression") / "pipeline_dag.yaml",
             config,
             ctx,
+            plugin_root=plugin.root,
         )
         plugin_plan = plugin.build_plan(config, check_files=False)
 

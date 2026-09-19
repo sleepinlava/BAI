@@ -107,14 +107,22 @@ def _validate_plugin_result_dir(
     行专有校验并报告 plugin_validation_executed: true；否则运行与插件无关
     的结构校验并如实报告插件专有校验未执行。
     """
-    from abi.audit import load_audit_snapshot
+    from abi.audit import audit_snapshot_status
     from abi.results import validate_abi_result_dir
 
-    def _basic() -> Dict[str, Any]:
-        result = dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
-        snapshot = load_audit_snapshot(result_dir)
+    def _attach_audit_status(result: Dict[str, Any]) -> Dict[str, Any]:
+        snapshot = audit_snapshot_status(result_dir, expected_analysis_type=plugin_id)
+        result["audit_snapshot_found"] = snapshot["status"] == "valid"
+        result["audit_snapshot_status"] = snapshot["status"]
+        result["audit_snapshot_errors"] = list(snapshot.get("errors", []))
+        result["audit_snapshot_warnings"] = list(snapshot.get("warnings", []))
+        return result
+
+    def _validate_without_plugin() -> Dict[str, Any]:
+        result = _attach_audit_status(
+            dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
+        )
         result["plugin_validation_executed"] = False
-        result["audit_snapshot_found"] = snapshot is not None
         result["notes"] = [
             (
                 "Plugin-specific scientific validation was not executed: "
@@ -126,20 +134,23 @@ def _validate_plugin_result_dir(
     try:
         plugin = get_plugin(plugin_id)
     except Exception:
-        return _basic()
+        return _validate_without_plugin()
     if not isinstance(plugin, ABIResultValidationPlugin):
-        result = dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
+        result = _attach_audit_status(
+            dict(validate_abi_result_dir(result_dir, allow_empty_tables=allow_empty_tables))
+        )
         result["plugin_validation_executed"] = False
-        result["audit_snapshot_found"] = load_audit_snapshot(result_dir) is not None
         result["notes"] = [
             f"Plugin {plugin_id!r} does not provide specialized result validation; "
             "only structural checks ran."
         ]
         return result
-    result = dict(
-        plugin.validate_result_dir(
-            result_dir,
-            allow_empty_tables=allow_empty_tables,
+    result = _attach_audit_status(
+        dict(
+            plugin.validate_result_dir(
+                result_dir,
+                allow_empty_tables=allow_empty_tables,
+            )
         )
     )
     result.setdefault("plugin_validation_executed", True)
@@ -1115,11 +1126,14 @@ class ABIAgentInterface:
         # 解析 resolved_inputs.tsv 查找缺失或占位符文件。
         """
         root = Path(result_dir)
+        from abi.audit import audit_snapshot_status
+
         provenance = root / "provenance"
         commands = _read_tsv(provenance / "commands.tsv")
         resolved_inputs = _read_tsv(provenance / "resolved_inputs.tsv")
         failed = [row for row in commands if row.get("status") == "failed"]
         skipped = [row for row in commands if row.get("status") == "skipped"]
+        actual_calls = [row for row in commands if row.get("status") not in {"dry_run", "skipped"}]
         missing_inputs = [
             row
             for row in resolved_inputs
@@ -1128,6 +1142,19 @@ class ABIAgentInterface:
         ]
         summary_path = provenance / "run_summary.json"
         summary = load_json_object(summary_path) if summary_path.exists() else {}
+        expected_analysis_type = str(summary.get("analysis_type") or "")
+        plan_path = root / "execution_plan.json"
+        if plan_path.exists():
+            try:
+                expected_analysis_type = str(
+                    load_json_object(plan_path).get("analysis_type") or expected_analysis_type
+                )
+            except Exception:
+                pass
+        snapshot_status = audit_snapshot_status(
+            root,
+            expected_analysis_type=expected_analysis_type or None,
+        )
         dry_run = bool(summary.get("dry_run", False))
         smoke = bool(summary.get("smoke", False))
         status = str(summary.get("status", "unknown"))
@@ -1148,6 +1175,7 @@ class ABIAgentInterface:
             "step_status_counts": status_counts,
             "failed_steps": failed,
             "skipped_steps": skipped,
+            "command_records": commands,
             "reused_steps": resumed,
             "missing_or_placeholder_inputs": missing_inputs,
             # History linkage from the run summary (WP3/WP5): what this run
@@ -1159,7 +1187,11 @@ class ABIAgentInterface:
             "plan_id": summary.get("plan_id"),
             "resumes_run_id": summary.get("resumes_run_id"),
             "previous_run_archive": summary.get("previous_run_archive"),
-            "audit_snapshot_found": (provenance / "audit_snapshot.json").is_file(),
+            "actual_calls": actual_calls,
+            "audit_snapshot_found": snapshot_status["status"] == "valid",
+            "audit_snapshot_status": snapshot_status["status"],
+            "audit_snapshot_errors": list(snapshot_status.get("errors", [])),
+            "audit_snapshot_warnings": list(snapshot_status.get("warnings", [])),
         }
 
     def _report(
@@ -1186,11 +1218,18 @@ class ABIAgentInterface:
         # 快照的旧目录如实报告缺失，不伪造完整性。
         """
         root = Path(result_dir)
+        from abi.audit import audit_snapshot_status
+
         plan_path = root / "execution_plan.json"
         if not plan_path.exists():
             raise ABIError(f"Missing execution plan: {plan_path}")
         plan_data = load_json_object(plan_path)
-        plugin_id = analysis_type or str(plan_data.get("analysis_type") or "metagenomic_plasmid")
+        plan_analysis_type = str(plan_data.get("analysis_type") or "")
+        plugin_id = analysis_type or plan_analysis_type or "metagenomic_plasmid"
+        snapshot_status = audit_snapshot_status(
+            root,
+            expected_analysis_type=plan_analysis_type or plugin_id,
+        )
         try:
             plugin = get_plugin(plugin_id)
         except Exception:
@@ -1201,21 +1240,30 @@ class ABIAgentInterface:
             return {
                 "analysis_type": plugin_id,
                 "plugin_report_generated": True,
+                "audit_snapshot_found": snapshot_status["status"] == "valid",
+                "audit_snapshot_status": snapshot_status["status"],
+                "audit_snapshot_errors": list(snapshot_status.get("errors", [])),
+                "audit_snapshot_warnings": list(snapshot_status.get("warnings", [])),
                 "outputs": output_files,
                 "written_files": _path_values(output_files),
             }
         # Basic, plugin-independent report from saved facts + audit snapshot.
         # 基于保存事实与审计快照的、与插件无关的基础报告。
-        from abi.audit import load_audit_snapshot
         from abi.report.generic_report import build_run_facts, write_generic_report
 
-        snapshot = load_audit_snapshot(root)
+        snapshot = snapshot_status.get("snapshot") if snapshot_status["status"] == "valid" else None
         limitations = [str(item) for item in snapshot.get("limitations", [])] if snapshot else []
         if not limitations and not snapshot:
-            limitations = [
-                "Audit snapshot missing: this result predates snapshot capture; "
-                "plugin-declared limitations are unknown here."
-            ]
+            if snapshot_status["status"] == "missing":
+                limitations = [
+                    "Audit snapshot missing: this result predates snapshot capture; "
+                    "plugin-declared limitations are unknown here."
+                ]
+            else:
+                limitations = [
+                    "Audit snapshot invalid: plugin-declared limitations are unavailable; "
+                    + "; ".join(snapshot_status.get("errors", []))
+                ]
         tables_dir = root / "tables"
         table_summary: Dict[str, Any] = {}
         if tables_dir.is_dir():
@@ -1247,7 +1295,10 @@ class ABIAgentInterface:
             "analysis_type": plugin_id,
             "plugin_report_generated": False,
             "plugin_available": False,
-            "audit_snapshot_found": snapshot is not None,
+            "audit_snapshot_found": snapshot_status["status"] == "valid",
+            "audit_snapshot_status": snapshot_status["status"],
+            "audit_snapshot_errors": list(snapshot_status.get("errors", [])),
+            "audit_snapshot_warnings": list(snapshot_status.get("warnings", [])),
             "outputs": output_files,
             "written_files": _path_values(output_files),
         }

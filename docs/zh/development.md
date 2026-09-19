@@ -70,7 +70,7 @@ src/abi/
 | `abi.contracts.step_contract` | `ContractViolationError`、`validate_output_contract`、`evaluate_assertions`、校验和链式追踪 |
 | `abi.contracts` | `WorkflowSpec`、`WorkflowStepSpec`、`load_workflow_spec` — L1/L2/L3 工作流验证 |
 | `abi.dag` | `infer_dag`、`ABIDAG`、`StepBinding` — DAG 推断，支持文献 + 路径 + 验证三层模型 |
-| `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — 声明式计划生成，所有 7 个插件共用 |
+| `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — 声明式计划生成，内置 DAG 工作流共用，外部工作流保留专用适配 |
 | `abi.tsv_mapping` | `TSVMapper`、`generate_rows` — YAML 驱动 TSV/JSON/日志解析，3 种源类型 |
 | `abi.errors` | `ABIError`、`ConfigError`、`SampleSheetError`、`ToolError` |
 | `abi.diagnostics` | 错误分类 + `DiagnosticHint` + `classify_exception` |
@@ -212,7 +212,7 @@ execution:
 | `abi export-agent-context --type <plugin>` | 机器可读的操作上下文 |
 | `abi doctor-agent --type <plugin>` | 人类可读的操作指南 |
 | `abi check-resources --type <plugin>` | 检查资源/数据库可用性 |
-| `abi setup-resources --type <plugin> --confirm` | 资源设置（需要确认） |
+| `abi setup-resources --type <plugin> [--dry-run|--mock]` | 报告资源就绪与外部准备指引；不下载 |
 | `abi install-skills` | 将 SKILL.md 文件安装到 `~/.claude/skills/abi/` |
 | `abi agent install <platform>` | 安装 Claude Code、OpenCode 或 Codex 集成 |
 | `abi agent doctor <platform>` | 只读校验已安装的 Agent 集成 |

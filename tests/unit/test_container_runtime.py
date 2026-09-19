@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
@@ -11,7 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 from abi.tools import (
     _resolve_container_runtime,
     _wrap_container_command,
+    container_image_identities,
     resolve_container_image,
+    validate_container_images_ready,
 )
 
 
@@ -153,3 +156,98 @@ class TestResolveContainerRuntime:
         monkeypatch.delenv("ABI_CONTAINER_RUNTIME", raising=False)
         runtime = _resolve_container_runtime({})
         assert runtime in ("docker", "podman", "singularity", "apptainer")
+
+
+class TestContainerReadiness:
+    def _plan(self):
+        return SimpleNamespace(
+            steps=[SimpleNamespace(step_id="s1", tool_id="fastp")],
+            selected_tools=["fastp"],
+        )
+
+    class _Registry:
+        def has(self, tool_id):
+            return tool_id == "fastp"
+
+        def get(self, tool_id):
+            return {"container_image": "docker://example/fastp:1"}
+
+    def test_missing_local_docker_image_fails_without_pull(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("abi.tools.shutil.which", lambda name: "/usr/bin/docker")
+
+        def runner(command, **kwargs):
+            calls.append(command)
+            return SimpleNamespace(returncode=1, stderr="No such image", stdout="")
+
+        import pytest
+
+        with pytest.raises(RuntimeError, match="will not pull"):
+            validate_container_images_ready(
+                self._plan(),
+                self._Registry(),
+                runtime="docker",
+                runner=runner,
+            )
+        assert calls == [["docker", "image", "inspect", "example/fastp:1"]]
+        assert all("pull" not in command for command in calls[0])
+
+    def test_ready_image_is_inspected_before_backend(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr("abi.tools.shutil.which", lambda name: "/usr/bin/docker")
+
+        def runner(command, **kwargs):
+            calls.append((command, kwargs))
+            return SimpleNamespace(
+                returncode=0,
+                stderr="",
+                stdout='[{"Id": "sha256:local-image"}]',
+            )
+
+        validate_container_images_ready(
+            self._plan(),
+            self._Registry(),
+            runtime="docker",
+            runner=runner,
+        )
+        assert calls[0][0] == ["docker", "image", "inspect", "example/fastp:1"]
+        assert calls[0][1]["check"] is False
+
+    def test_image_identity_records_local_digest_without_pull(self, monkeypatch):
+        monkeypatch.setattr("abi.tools.shutil.which", lambda name: "/usr/bin/docker")
+
+        def runner(command, **kwargs):
+            assert command == ["docker", "image", "inspect", "example/fastp:1"]
+            return SimpleNamespace(
+                returncode=0,
+                stderr="",
+                stdout='[{"Id": "sha256:local-image"}]',
+            )
+
+        rows = container_image_identities(
+            self._plan(),
+            self._Registry(),
+            runtime="docker",
+            runner=runner,
+        )
+
+        assert rows == [
+            {
+                "tool_id": "fastp",
+                "image": "docker://example/fastp:1",
+                "runtime": "docker",
+                "digest": "sha256:local-image",
+            }
+        ]
+
+    def test_singularity_requires_prepared_local_file(self, monkeypatch):
+        monkeypatch.setattr("abi.tools.shutil.which", lambda name: "/usr/bin/apptainer")
+        import pytest
+
+        with pytest.raises(RuntimeError, match="local file"):
+            validate_container_images_ready(
+                self._plan(),
+                self._Registry(),
+                runtime="apptainer",
+                runner=lambda *args, **kwargs: SimpleNamespace(returncode=0),
+            )

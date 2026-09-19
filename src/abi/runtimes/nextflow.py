@@ -15,6 +15,7 @@ from abi.dag import ABIDAG, infer_dag, process_name
 from abi.execution_policy import ExecutionPolicy, ResourceOverride
 from abi.exporters import NextflowExporter
 from abi.results import ABIResultWriter
+from abi.resume import runtime_resume_identity, validate_stored_resume_identity
 from abi.runtime_environment import resolve_environment_prefix
 from abi.runtimes.base import RuntimeOptions, RuntimeResult
 from abi.schemas import ABIError
@@ -23,6 +24,7 @@ from abi.timeouts import (
     mapping_block,
     timeout_from_env_or_value,
 )
+from abi.tools import validate_container_images_ready
 
 
 class NextflowRuntime:
@@ -88,6 +90,8 @@ class NextflowRuntime:
             return_code=0,
             engine="nextflow",
             smoke=self.options.smoke,
+            container_image=self.options.container_image,
+            container_runtime=self.options.container_runtime,
             extra_summary={"workflow": str(workflow_path), "dag": _dag_summary(dag)},
             extra_environment=_nextflow_environment(
                 workflow_path=workflow_path,
@@ -108,6 +112,30 @@ class NextflowRuntime:
             return ManagedExternalNextflowRuntime(self.plugin, self.options).run(plan, config)
         registry = self.plugin.registry()
         result_dir = Path(str(config["outdir"]))
+        validate_container_images_ready(
+            plan,
+            registry,
+            config=config,
+            cli_image=self.options.container_image,
+            runtime=self.options.container_runtime,
+        )
+        if self.options.resume:
+            nextflow_dir = result_dir / "nextflow"
+            resume_work_dir = self.options.work_dir or nextflow_dir / "work"
+            resume_nxf_home = self.options.nxf_home or nextflow_dir / "nxf_home"
+            _reject_unsafe_resume(
+                result_dir,
+                runtime_resume_identity(
+                    plan,
+                    config,
+                    registry,
+                    smoke=self.options.smoke,
+                    plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+                    cli_image=self.options.container_image,
+                    container_runtime=self.options.container_runtime,
+                ),
+                cache_paths=(nextflow_dir, resume_work_dir, resume_nxf_home),
+            )
         nextflow_dir = result_dir / "nextflow"
         workflow_path = self.options.workflow or nextflow_dir / "workflow.nf"
         work_dir = self.options.work_dir or nextflow_dir / "work"
@@ -159,6 +187,7 @@ class NextflowRuntime:
             stderr_path.open("w", encoding="utf-8") as stderr_handle,
         ):
             timeout_seconds = _nextflow_timeout_seconds(config, self.options)
+            timeout_error: subprocess.TimeoutExpired | None = None
             try:
                 result = subprocess.run(
                     command,
@@ -171,10 +200,31 @@ class NextflowRuntime:
                     timeout=timeout_seconds,
                 )
             except subprocess.TimeoutExpired as exc:
-                raise ABIError(
-                    "Nextflow run timed out after "
-                    f"{timeout_seconds:g}s; stdout: {stdout_path}; stderr: {stderr_path}"
-                ) from exc
+                timeout_error = exc
+
+        if timeout_error is not None:
+            trace_rows: list[dict[str, str]] = parse_nextflow_trace(trace_path)
+            _write_timeout_result(
+                self,
+                plan,
+                config,
+                registry,
+                workflow_path=workflow_path,
+                work_dir=work_dir,
+                nxf_home=nxf_home,
+                trace_path=trace_path,
+                timeline_path=timeline_path,
+                stdout_path=stdout_path,
+                stderr_path=stderr_path,
+                command=command,
+                dag=dag,
+                trace_rows=trace_rows,
+                timeout_seconds=timeout_seconds,
+            )
+            raise ABIError(
+                "Nextflow run timed out after "
+                f"{timeout_seconds:g}s; stdout: {stdout_path}; stderr: {stderr_path}"
+            ) from timeout_error
 
         trace_rows = parse_nextflow_trace(trace_path)
         remote_scheduler_jobs = _remote_scheduler_jobs(trace_rows)
@@ -199,6 +249,8 @@ class NextflowRuntime:
             smoke=self.options.smoke,
             resume=self.options.resume,
             plan_id=str(getattr(self.options, "confirmed_plan_id", "") or ""),
+            container_image=self.options.container_image,
+            container_runtime=self.options.container_runtime,
             trace_rows=trace_rows,
             extra_summary={
                 "workflow": str(workflow_path),
@@ -258,6 +310,96 @@ def _nextflow_timeout_seconds(
     )
 
 
+def _reject_unsafe_resume(
+    result_dir: Path,
+    current: Mapping[str, Any],
+    *,
+    cache_paths: tuple[Path, ...] = (),
+) -> None:
+    reasons = validate_stored_resume_identity(result_dir, current, cache_paths=cache_paths)
+    if reasons:
+        raise ABIError(
+            "Refusing Nextflow resume because execution identity changed or is incomplete: "
+            + "; ".join(reasons)
+        )
+
+
+def _write_timeout_result(
+    runtime: NextflowRuntime,
+    plan: object,
+    config: Mapping[str, Any],
+    registry: Any,
+    *,
+    workflow_path: Path,
+    work_dir: Path,
+    nxf_home: Path,
+    trace_path: Path,
+    timeline_path: Path,
+    stdout_path: Path,
+    stderr_path: Path,
+    command: list[str],
+    dag: ABIDAG,
+    trace_rows: list[dict[str, str]],
+    timeout_seconds: float | None,
+) -> Dict[str, Path]:
+    writer = ABIResultWriter(runtime.plugin, registry)
+    return writer.write(
+        plan=plan,
+        config=config,
+        command_rows=_command_rows(
+            plan,
+            registry,
+            runtime.exporter,
+            dag=dag,
+            return_code=-1,
+            smoke=runtime.options.smoke,
+            trace_rows=trace_rows,
+            dry_run=False,
+            status_override="timeout",
+            reason_override=(
+                "Nextflow engine timeout; engine termination was confirmed by "
+                "subprocess timeout handling; downstream scheduler state is unknown"
+            ),
+        ),
+        status="timeout",
+        return_code=-1,
+        engine="nextflow",
+        smoke=runtime.options.smoke,
+        resume=runtime.options.resume,
+        plan_id=str(getattr(runtime.options, "confirmed_plan_id", "") or ""),
+        container_image=runtime.options.container_image,
+        container_runtime=runtime.options.container_runtime,
+        trace_rows=trace_rows,
+        extra_summary={
+            "workflow": str(workflow_path),
+            "work_dir": str(work_dir),
+            "nxf_home": str(nxf_home),
+            "trace": str(trace_path),
+            "timeline": str(timeline_path),
+            "stdout": str(stdout_path),
+            "stderr": str(stderr_path),
+            "command": " ".join(command),
+            "remote_scheduler_jobs": _remote_scheduler_jobs(trace_rows),
+            "termination": {
+                "request": "timeout",
+                "requested": True,
+                "confirmed": True,
+                "scope": "nextflow_engine_process",
+                "downstream_status": "unknown",
+                "timeout_seconds": timeout_seconds,
+            },
+        },
+        extra_environment=_nextflow_environment(
+            workflow_path=workflow_path,
+            work_dir=work_dir,
+            nxf_home=nxf_home,
+            trace_path=trace_path,
+            timeline_path=timeline_path,
+            options=runtime.options,
+        ),
+    )
+
+
 def resolve_nextflow_bin(
     nextflow_bin: Path | None,
     mamba_root: Path | None,
@@ -303,6 +445,8 @@ def _command_rows(
     smoke: bool,
     trace_rows: Iterable[Mapping[str, str]],
     dry_run: bool,
+    status_override: str | None = None,
+    reason_override: str = "",
 ) -> list[dict[str, Any]]:
     trace_by_name = _trace_by_process_name(trace_rows)
     rows = []
@@ -310,7 +454,7 @@ def _command_rows(
     for binding in dag.bindings:
         step = binding.step
         trace = trace_by_name.get(binding.process_name, {})
-        status = _status_from_trace(trace, fallback=fallback_status)
+        status = status_override or _status_from_trace(trace, fallback=fallback_status)
         step_return_code = trace.get("exit") or ("" if dry_run else return_code)
         rows.append(
             {
@@ -323,7 +467,11 @@ def _command_rows(
                 "status": status,
                 "return_code": step_return_code,
                 "remote_scheduler_job_id": _remote_scheduler_job_id(trace),
-                "reason": "" if status in {"success", "dry_run"} else "Nextflow process failed",
+                "reason": (
+                    reason_override
+                    if reason_override
+                    else ("" if status in {"success", "dry_run"} else "Nextflow process failed")
+                ),
                 "parsed_status": "smoke" if smoke and status == "success" else "",
                 "standard_tables": "",
             }

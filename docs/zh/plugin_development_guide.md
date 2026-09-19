@@ -350,7 +350,6 @@ assertions:
 | `abi._shared` | `_read_tsv`、`_display_command`、`_plan_dict`、`_common_overrides` |
 | `abi.dag_planner` | `UniversalDAG`、`build_plan_from_dag`、`PathTemplateContext` — DAG 驱动的 `build_plan()`（2026-06-18 新增） |
 | `abi.tsv_mapping` | `TSVMapper`、`generate_rows` — 声明式 TSV 列映射（2026-06-18 新增） |
-| `abi.sciplot` | `FigureSpec`、`render_figure`、`validate_spec`、`lint_figure` — 基于 Matplotlib 的论文级图形编译器，支持 15 种图形、3 套主题、lint 和 SHA-256 溯源 |
 | `abi.contracts` | `WorkflowSpec`、`WorkflowStepSpec`、`load_workflow_spec`、`run_contract_lint` — L1/L2/L3 工作流声明与验证 |
 | `abi.report` | `write_plugin_report`、`render_figures_via_sciplot` — 报告生成与图表渲染 |
 

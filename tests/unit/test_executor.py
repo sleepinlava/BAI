@@ -8,6 +8,7 @@ import pytest
 from abi.executor import (
     GenericABIExecutor,
     _build_assertion_context,
+    _local_termination_evidence,
     _resolve_actual_outputs,
 )
 from abi.plugin_registry import get_plugin
@@ -237,3 +238,22 @@ def test_step_timeout_overrides_executor_default():
     params = executor._params_for_step(step, dry_run=False)
 
     assert params["timeout_seconds"] == 5
+
+
+def test_local_timeout_evidence_distinguishes_confirmed_process_and_unknown_children():
+    evidence = _local_termination_evidence(
+        [
+            {"step_id": "qc", "status": "timeout"},
+            {"step_id": "downstream", "status": "not_started"},
+        ]
+    )
+
+    assert evidence == {
+        "request": "timeout",
+        "requested": True,
+        "confirmed": True,
+        "scope": "local_tool_process",
+        "steps": ["qc"],
+        "downstream_status": "not_started",
+        "child_processes_status": "unknown",
+    }

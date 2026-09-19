@@ -18,7 +18,7 @@ export TEMP="$ABI_RELEASE_TMPDIR"
 ruff check src/ tests/
 ruff format --check src/ tests/
 mypy src/abi/ --ignore-missing-imports
-python -m pytest tests/ src/abi/sciplot/tests/ -v --tb=short \
+python -m pytest tests/ -v --tb=short \
   --strict-markers -m "not requires_tools" --capture=no \
   --cov=src/abi --cov-branch --cov-report=term-missing:skip-covered \
   --cov-report=xml --cov-report=json:coverage.json --cov-fail-under=75

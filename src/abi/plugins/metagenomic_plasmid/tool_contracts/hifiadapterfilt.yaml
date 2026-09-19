@@ -24,7 +24,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_hifiadapterfilt
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_hifiadapterfilt
   tables:
   - qc_summary
 failure_handling:

@@ -196,7 +196,6 @@ category_dirs:
   qc: 01_qc
   report: report
   typing: 06_plasmid_typing
-  visualization: 13_visualization
 nodes:
   long_reads_provided:
     tool_id: internal
@@ -2631,6 +2630,9 @@ nodes:
     depends_on:
     - abundance_coverm
     inputs:
+      deseq2_script:
+        type: file
+        format: R
       abundance_table:
         type: file
         format: tsv
@@ -2887,107 +2889,6 @@ nodes:
       field: comparative_genomics.optional_tools
       operator: list_contains
       value: clinker
-  visualization_clinker_gene_maps:
-    tool_id: clinker
-    category: visualization
-    scope: cross_sample
-    name: clinker gene map visualization
-    platforms:
-    - illumina
-    - ont
-    - pacbio_hifi
-    - hybrid
-    - assembly
-    optional: true
-    depends_on:
-    - annotation_bakta
-    - comparative_clinker
-    inputs:
-      genbank_files:
-        type: directory
-        source: annotation_bakta.output_dir
-    outputs:
-      gene_maps:
-        type: file
-        format: html
-        contract:
-          file_exists: true
-          min_size: 1KB
-    enable_condition:
-      field: visualization.optional_tools
-      operator: list_contains
-      value: clinker
-  visualization_pycirclize:
-    tool_id: pycirclize
-    category: visualization
-    scope: cross_sample
-    name: pyCirclize plasmid circular map
-    platforms:
-    - illumina
-    - ont
-    - pacbio_hifi
-    - hybrid
-    - assembly
-    optional: true
-    depends_on:
-    - annotation_bakta
-    - typing_plasmidfinder
-    - typing_mob_typer
-    inputs:
-      annotations:
-        type: file
-        format: tsv
-        source: annotation_bakta.annotations
-      typing:
-        type: file
-        format: tsv
-        source: typing_plasmidfinder.typing_results
-    outputs:
-      circular_maps:
-        type: file
-        format: png
-        contract:
-          file_exists: true
-          min_size: 100B
-    enable_condition:
-      field: visualization.tools
-      operator: list_contains
-      value: pycirclize
-  visualization_network:
-    tool_id: pyvis
-    category: visualization
-    scope: cross_sample
-    name: pyvis host-plasmid interaction network
-    platforms:
-    - illumina
-    - ont
-    - pacbio_hifi
-    - hybrid
-    optional: true
-    depends_on:
-    - host_plasmid_link_coabundance
-    - host_plasmid_link_sequence
-    - multisample_network_fastspar
-    inputs:
-      host_plasmid_links:
-        type: file
-        format: tsv
-        source: host_plasmid_link_coabundance.coabundance_links
-      correlation_network:
-        type: file
-        format: tsv
-        source: multisample_network_fastspar.correlation
-    outputs:
-      network_html:
-        type: file
-        format: html
-        contract:
-          file_exists: true
-          min_size: 1KB
-    enable_condition:
-      field: network.run_network
-      operator: value
-      value: true
   assembly_hybridspades:
     tool_id: hybridspades
     category: assembly
@@ -3338,34 +3239,6 @@ nodes:
         type: directory
         contract:
           min_files: 1
-  visualization_dna_features:
-    tool_id: dna_features_viewer
-    category: visualization
-    scope: cross_sample
-    name: dna-features-viewer linear plasmid maps
-    platforms:
-    - illumina
-    - ont
-    - pacbio_hifi
-    - hybrid
-    - assembly
-    optional: true
-    depends_on:
-    - annotation_bakta
-    inputs:
-      plasmid_contigs:
-        type: file
-        format: fasta
-        source: plasmid_consensus.plasmid_contigs
-    outputs:
-      output_dir:
-        type: directory
-        contract:
-          min_files: 1
-    enable_condition:
-      field: visualization.tools
-      operator: list_contains
-      value: dna_features_viewer
   report_markdown:
     tool_id: report_markdown
     category: report
@@ -3407,9 +3280,6 @@ nodes:
     - comparative_blast
     - comparative_mummer
     - comparative_clinker
-    - visualization_clinker_gene_maps
-    - visualization_pycirclize
-    - visualization_network
     - assembly_qc_quast
     - contig_coverage_coverm
     inputs:

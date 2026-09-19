@@ -9,7 +9,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abi-agent"
-version = "1.6.0"
+version = "1.7.0"
 description = "Agent-Bioinformatics Interface: plugin-based abstraction for AI-driven bioinformatics analysis"
 readme = "README.md"
 license = { text = "MIT" }
@@ -33,9 +33,6 @@ dependencies = [
     "rich>=13.0",
     "pyyaml>=6.0",
     "pydantic>=2.0",
-    "pandas>=1.5",
-    "numpy>=1.21",
-    "scipy>=1.9",
     "tomlkit>=0.13",
 ]
 
@@ -47,7 +44,6 @@ Repository = "https://github.com/sleepinlava/BAI"
 mcp = [
     "mcp>=2.0,<3; python_version >= '3.10'",
 ]
-report = []
 plugins = [
     "abi-agent-plugin-amplicon-16s",
     "abi-agent-plugin-easymetagenome",
@@ -65,10 +61,12 @@ docs = [
     "roman>=4.1",
 ]
 dev = [
+    "numpy>=1.21",
+    "pandas>=1.5",
+    "scipy>=1.9",
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.4",
-    "black>=24.0",
     "mypy>=1.0",
     "types-PyYAML>=6.0",
     "build>=1.0",
@@ -100,18 +98,8 @@ exclude = [
 # path expected by abi.config.PLUGIN_ROOT.
 [tool.hatch.build.targets.wheel.force-include]
 "config" = "config"
-"data/examples" = "data/examples"
 "environments.yaml" = "abi/data/environments.yaml"
-"envs" = "envs"
-"examples" = "examples"
-"examples/wgs_bacannot/demo_R1.fastq" = "examples/wgs_bacannot/demo_R1.fastq"
-"examples/wgs_bacannot/demo_R2.fastq" = "examples/wgs_bacannot/demo_R2.fastq"
-"golden_traces" = "golden_traces"
 "integrations" = "abi/integrations"
-"scripts/download_databases.sh" = "scripts/download_databases.sh"
-"scripts/hifiasm_gfa_to_fasta.sh" = "scripts/hifiasm_gfa_to_fasta.sh"
-"scripts/normalize_hifiadapterfilt_output.sh" = "scripts/normalize_hifiadapterfilt_output.sh"
-"scripts/normalize_opera_ms_output.sh" = "scripts/normalize_opera_ms_output.sh"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -162,10 +150,6 @@ omit = [
 target-version = "py310"
 line-length = 100
 
-[tool.black]
-target-version = ["py310"]
-line-length = 100
-
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 exclude = ["*.R"]
@@ -177,4 +161,3 @@ warn_unused_configs = true
 ignore_missing_imports = true
 disable_error_code = ["import-untyped", "no-any-return"]
 exclude = ["/(?:opt|usr)/(?:hostedtoolcache/)?[^/]*/.*site-packages/"]
-

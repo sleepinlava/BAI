@@ -20,7 +20,7 @@ execution:
   network: false
   writes_output: true
 normalization:
-  parser: abi.autoplasm.parsers:parse_isescan
+  parser: abi.plugins.metagenomic_plasmid.lib.parsers:parse_isescan
   tables:
   - annotations
   - mge_elements

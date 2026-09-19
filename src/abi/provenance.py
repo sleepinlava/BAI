@@ -177,17 +177,46 @@ _RESETTABLE_ARTIFACTS = (
     "commands.tsv",
     "config.resolved.yaml",
     "environment.yml",
+    "hpc_jobs.json",
+    "methods.md",
+    "nextflow_trace.tsv",
     "progress.json",
     "progress.jsonl",
     "resolved_inputs.tsv",
     "resources.json",
     "resource_manifest.json",
+    "resume_identity.json",
     "run_summary.json",
     "tool_versions.tsv",
 )
 
+# Local runtime captures this declaration before the executor resets the
+# provenance view.  It must be archived with the prior run, but retaining the
+# freshly captured current snapshot is part of the existing runtime contract.
+_ARCHIVE_ONLY_ARTIFACTS = ("audit_snapshot.json",)
 
-def reset_run_provenance(provenance_dir: str | Path) -> dict[str, str | None]:
+# Everything in this tuple is copied into a historical provenance directory.
+# The archive-only entries intentionally remain in the current provenance view
+# after reset, while the resettable entries are removed below.
+_ARCHIVABLE_PROVENANCE_ARTIFACTS = _RESETTABLE_ARTIFACTS + _ARCHIVE_ONLY_ARTIFACTS
+
+# These ABI-owned result artifacts are small enough to archive as evidence and
+# are rewritten by a subsequent run.  Raw biological outputs remain in place:
+# history needs the facts that could be overwritten, not a second copy of all
+# potentially large tool outputs.
+_RESULT_ARTIFACTS = (
+    "execution_plan.json",
+    "execution_plan.resolved.json",
+    "tables",
+    "report",
+)
+
+
+def reset_run_provenance(
+    provenance_dir: str | Path,
+    *,
+    result_dir: str | Path | None = None,
+) -> dict[str, str | None]:
     """Archive prior run evidence, then remove artifacts a new run rewrites.
 
     History must never be overwritten by a retry, resume, or reset: before any
@@ -196,19 +225,28 @@ def reset_run_provenance(provenance_dir: str | Path) -> dict[str, str | None]:
     run links to that archive through ``previous_run_archive`` in its run
     summary (and ``resumes_run_id`` when resuming).
 
+    When *result_dir* is supplied, the archive also contains the ABI-owned
+    execution plan, tables, reports, and a nested ``provenance/`` directory.
+    That nested layout is a standalone historical result bundle.  The direct
+    provenance copies remain for the existing checksum/recovery lookup path.
+    Large analysis outputs outside ``tables/`` and ``report/`` are intentionally
+    not copied.
+
     Returns a lineage dict ``{"previous_run_id": ..., "previous_run_archive":
     ...}``; both values are ``None`` when no prior evidence existed. Runs that
     crashed before writing ``run_summary.json`` are archived under an
     ``unidentified-<timestamp>`` name instead of being silently discarded.
 
     历史不能被重试、恢复或重置覆盖：删除任何可变产物之前，先前运行的证据
-    会先复制到 provenance 目录内的 ``previous_runs/<prior_run_id>/``。新运行
-    通过 run_summary 中的 ``previous_run_archive``（恢复时还有
-    ``resumes_run_id``）关联该归档。返回血缘字典；无先前证据时两个值均为
-    ``None``。崩溃于写 run_summary 之前的运行以 ``unidentified-<时间戳>``
-    归档，不会被静默丢弃。
+    会先复制到 provenance 目录内的 ``previous_runs/<prior_run_id>/``。传入
+    result_dir 时还会保存可独立读取的完整 ABI 结果布局；大体积的原始生物
+    数据不重复复制。新运行通过 run_summary 中的
+    ``previous_run_archive``（恢复时还有 ``resumes_run_id``）关联该归档。
+    返回血缘字典；无先前证据时两个值均为 ``None``。崩溃于写 run_summary
+    之前的运行以 ``unidentified-<时间戳>`` 归档，不会被静默丢弃。
     """
     root = Path(provenance_dir)
+    result_root = Path(result_dir) if result_dir is not None else None
     lineage: dict[str, str | None] = {"previous_run_id": None, "previous_run_archive": None}
     prior_id: str | None = None
     summary_path = root / "run_summary.json"
@@ -219,28 +257,72 @@ def reset_run_provenance(provenance_dir: str | Path) -> dict[str, str | None]:
                 prior_id = str(prior.get("run_id") or "") or None
         except (OSError, json.JSONDecodeError):
             prior_id = None
-    has_evidence = prior_id is not None or any(
-        (root / name).exists() for name in _RESETTABLE_ARTIFACTS
+    has_evidence = (
+        prior_id is not None
+        or any((root / name).exists() for name in _ARCHIVABLE_PROVENANCE_ARTIFACTS)
+        or (root / "step_logs").exists()
     )
+    if result_root is not None:
+        has_evidence = has_evidence or any(
+            _archive_artifact_exists(result_root / name) for name in _RESULT_ARTIFACTS
+        )
     if has_evidence:
         if prior_id:
             archive_name = _safe_archive_name(prior_id)
         else:
             archive_name = f"unidentified-{datetime.now():%Y%m%dT%H%M%S%f}"
         archive_root = root / "previous_runs" / archive_name
+        suffix = 2
+        while archive_root.exists():
+            archive_root = root / "previous_runs" / f"{archive_name}-{suffix}"
+            suffix += 1
         archive_root.mkdir(parents=True, exist_ok=True)
-        for name in _RESETTABLE_ARTIFACTS:
-            source = root / name
-            if source.is_file():
-                shutil.copyfile(source, archive_root / name)
-        if (root / "step_logs").is_dir():
-            shutil.copytree(root / "step_logs", archive_root / "step_logs", dirs_exist_ok=True)
+        _copy_provenance_evidence(root, archive_root)
+
+        if result_root is not None:
+            # Keep the historical direct copies above for resume/checksum
+            # compatibility, while also creating a result-directory-shaped
+            # bundle that generic readers can inspect without special casing.
+            archived_provenance = archive_root / "provenance"
+            _copy_provenance_evidence(root, archived_provenance)
+            for name in _RESULT_ARTIFACTS:
+                source = result_root / name
+                if source.exists():
+                    _copy_archive_artifact(source, archive_root / name)
+
         lineage["previous_run_id"] = prior_id
         lineage["previous_run_archive"] = archive_root.relative_to(root).as_posix()
     for name in _RESETTABLE_ARTIFACTS:
         (root / name).unlink(missing_ok=True)
     shutil.rmtree(root / "step_logs", ignore_errors=True)
     return lineage
+
+
+def _copy_archive_artifact(source: Path, destination: Path) -> None:
+    """Copy one evidence artifact while preserving its relative layout."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if source.is_dir():
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+    else:
+        shutil.copyfile(source, destination)
+
+
+def _archive_artifact_exists(path: Path) -> bool:
+    """Return whether an artifact contains evidence worth archiving."""
+    if path.is_file() or path.is_symlink():
+        return True
+    return path.is_dir() and any(path.iterdir())
+
+
+def _copy_provenance_evidence(source_root: Path, destination_root: Path) -> None:
+    """Copy the complete provenance evidence set into an archive root."""
+    for name in _ARCHIVABLE_PROVENANCE_ARTIFACTS:
+        source = source_root / name
+        if source.is_file():
+            _copy_archive_artifact(source, destination_root / name)
+    step_logs = source_root / "step_logs"
+    if step_logs.is_dir():
+        _copy_archive_artifact(step_logs, destination_root / "step_logs")
 
 
 def _safe_archive_name(run_id: str) -> str:

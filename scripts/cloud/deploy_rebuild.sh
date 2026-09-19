@@ -142,7 +142,7 @@ if python3 -c "from abi.config import resolved_mamba_root; print(f'  resolved_ma
     log "[0.4] ABI 包正常"
 else
     log "[0.4] 安装 ABI 包..."
-    pip install -e "${ABI_PROJECT_ROOT}[dev,report,mcp]" -q 2>&1 | tail -3 || true
+    pip install -e "${ABI_PROJECT_ROOT}[dev,mcp]" -q 2>&1 | tail -3 || true
 fi
 
 # ============================================================================
@@ -276,8 +276,8 @@ log "ABI binary: ${ABI_BIN}"
 run_dbs() {
     local plugin="$1"; local label="$2"
     log ">>> [${plugin}] ${label} 开始..."
-    if ${ABI_BIN} setup-resources --type "${plugin}" --confirm --config "${CLOUD_CONFIG}" 2>&1; then
-        log "<<< [${plugin}] OK"
+    if ${ABI_BIN} check-resources --type "${plugin}" --config "${CLOUD_CONFIG}" 2>&1; then
+        log "<<< [${plugin}] readiness report complete"
         return 0
     else
         log "<<< [${plugin}] FAIL (非致命，继续)"
