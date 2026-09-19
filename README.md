@@ -144,10 +144,8 @@ ABI supports Python 3.10-3.13.
 pip install abi-agent
 abi --version
 
-# The core wheel ships no analysis plugins. Install the official plugin
-# distributions (same version, same repository) for the analyses you need:
-pip install "abi-agent[plugins]"   # all eight official plugins
-# or a single plugin, e.g. pip install abi-agent-plugin-metatranscriptomics
+# Plugins are downloaded on demand from abi-plugin GitHub Releases, not PyPI:
+pip install https://github.com/sleepinlava/abi-plugin/releases/download/v1.7.0/abi_agent_plugin_metatranscriptomics-1.7.0-py3-none-any.whl
 
 # Optional integrations
 pip install "abi-agent[mcp]"       # MCP server
@@ -167,7 +165,7 @@ different environments by multiple plugins.
 To run the bundled example and work with the source repository:
 
 ```bash
-git clone https://github.com/sleepinlava/BAI.git abi
+git clone --recurse-submodules https://github.com/sleepinlava/BAI.git abi
 cd abi
 python -m venv .venv
 . .venv/bin/activate

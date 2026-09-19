@@ -1,6 +1,7 @@
 # 发布指南
 
-本仓库发布 `abi-agent` 核心和八个可选分析插件分发包。发布从已验证的 `master` 提交产生，Git tag、
+本仓库仅向 PyPI 发布 `abi-agent` 核心。八个插件在独立的
+[abi-plugin](https://github.com/sleepinlava/abi-plugin) 仓库维护，仅通过 GitHub 分发。发布从已验证的 `master` 提交产生，Git tag、
 包版本、GitHub Release 和 PyPI 制品必须指向同一个发布身份。
 
 ## 发布前检查
@@ -137,7 +138,7 @@ container workflow 链接。
 
 ## 发行物清单
 
-核心 sdist/wheel 与八个官方插件 wheel 构成同版本发行集合。
+PyPI 发行集合仅包含核心 sdist 和 wheel；该清单拒绝任何插件 wheel。
 `verify_release_artifacts.py --dist-dir dist --tag v<VERSION> --write-manifest`
 验证精确集合并生成不可覆盖的 `release-artifacts.json` SHA-256 清单。
 下载 GitHub Release 资产后去掉 `--write-manifest` 重跑验证；缺包、多包、版本或依赖不匹配、
@@ -154,11 +155,13 @@ gh release edit v<VERSION> --draft=false
 （[GitHub 事件规则](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)）。
 不要重建下载的发行物，也不要把发布器改成可复用工作流。
 
-## 插件项目首次发布
+## 插件仅通过 GitHub 分发
 
-八个插件分发包在首次上传 PyPI 前，各自需要 Pending Trusted Publisher。
-在 <https://pypi.org/manage/account/publishing/> 配置 owner=`sleepinlava`、
-repository=`BAI`、workflow=`publish-pypi.yml`、environment=`pypi`。
-项目名必须与 `scripts/verify_install_forms.py` 的 `OFFICIAL_PLUGINS` 完全一致。
-现有 `abi-agent` 的发布授权不会自动授权创建插件项目；发布 Release 草稿前核对全部八项。
-GitHub 登录不能代替 PyPI 账户配置。参见 [PyPI 首次发布指南](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/)。
+开发与容器构建前运行 `git submodule update --init --recursive` 获取固定提交的插件源码。
+CI 构建插件并做集成、安装验收，但不会把插件复制到核心 Release 或上传 PyPI；核心 sdist
+不含插件源码，Docker 构建使用已检出的子模块。
+
+abi-plugin 独立运行构建矩阵和 GitHub Release 工作流。固定提交通过 CI 后，在插件仓库
+创建未使用的匹配版本 tag，使用 `SHA256SUMS.json` 核对八个 wheel；等匹配的核心版本
+在 PyPI 可用后发布插件 Release 草稿。用户按需安装 GitHub wheel URL。
+不再为插件创建任何 PyPI Pending Trusted Publisher。

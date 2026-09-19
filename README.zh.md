@@ -140,9 +140,8 @@ ABI 支持 Python 3.10-3.13。
 pip install abi-agent
 abi --version
 
-# 核心 wheel 不含分析插件。按需安装官方插件发行版（同仓库、同版本）：
-pip install "abi-agent[plugins]"   # 全部八个官方插件
-# 或单个插件，例如 pip install abi-agent-plugin-metatranscriptomics
+# 核心包来自 PyPI；插件仅从 abi-plugin 的 GitHub Release 按需下载：
+pip install https://github.com/sleepinlava/abi-plugin/releases/download/v1.7.0/abi_agent_plugin_metatranscriptomics-1.7.0-py3-none-any.whl
 
 # 可选集成
 pip install "abi-agent[mcp]"       # MCP 服务
@@ -160,7 +159,7 @@ abi env doctor --type rnaseq_expression --output-json
 如需运行仓库自带示例并使用源码开发：
 
 ```bash
-git clone https://github.com/sleepinlava/BAI.git abi
+git clone --recurse-submodules https://github.com/sleepinlava/BAI.git abi
 cd abi
 python -m venv .venv
 . .venv/bin/activate

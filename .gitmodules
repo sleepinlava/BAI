@@ -1,0 +1,3 @@
+[submodule "src/abi/plugins"]
+	path = src/abi/plugins
+	url = https://github.com/sleepinlava/abi-plugin.git

@@ -1,7 +1,0 @@
-# parsers.yaml — declarative output parsing rules for amplicon_16s.
-#
-# NOTE: diversity_metrics is NOT declarified — it returns TWO tables
-# (alpha_diversity + beta_diversity) and beta_diversity computes a compound
-# field (comparison = sample_a_vs_sample_b) that requires Python logic.
-
-parsers: {}

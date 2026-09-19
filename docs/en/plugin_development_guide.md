@@ -97,8 +97,9 @@ for the canonical example.
 The core `abi-agent` wheel ships no plugins. Every official plugin publishes
 as `abi-agent-plugin-<id>` (implementation package + co-located data + its own
 `abi.plugins` entry point), pinning `abi-agent==<version>`. Users install the
-full combo with `pip install "abi-agent[plugins]"` or single plugins
-individually. Core-only installs keep `list-types`, history inspection, and
+individual wheels from [abi-plugin GitHub Releases](https://github.com/sleepinlava/abi-plugin/releases);
+plugin packages are never published to PyPI. Initialize the pinned source with
+`git submodule update --init --recursive` before development. Core-only installs keep `list-types`, history inspection, and
 audit reports working; requesting a missing analysis type fails with an
 explainable error. Build the plugin wheels with:
 

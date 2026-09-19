@@ -1,2 +1,0 @@
-sample_id	platform	read1	read2
-sample_1	illumina	/path/to/sample_1_R1.fastq.gz	/path/to/sample_1_R2.fastq.gz
