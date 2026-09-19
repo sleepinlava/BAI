@@ -90,7 +90,7 @@ add_custom_target(check_resources
 )
 
 add_custom_target(run_assembly_smoke
-  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli run --type metagenomic_plasmid
+  COMMAND ${AUTOPLASM_ENV} ${AUTOPLASM_PYTHON} -m abi.cli run --type metagenomic_plasmid --confirm-execution
           --config ${AUTOPLASM_ASSEMBLY_CONFIG}
           --profile local
           --outdir ${CMAKE_SOURCE_DIR}/results/assembly_full_run

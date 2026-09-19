@@ -7,6 +7,9 @@ when_to_use:
 - at_least_two_groups
 - at_least_three_replicates_per_group
 inputs:
+  deseq2_script:
+    type: path
+    required: true
   abundance_table:
     type: path
     required: true
@@ -18,7 +21,7 @@ outputs:
     type: path
 execution:
   executable: Rscript
-  command_template: Rscript {project_root}/plugins/metagenomic_plasmid/scripts/deseq2_plasmid.R --abundance {abundance_table} --metadata {sample_metadata} --output {differential_plasmids}
+  command_template: Rscript {deseq2_script} --abundance {abundance_table} --metadata {sample_metadata} --output {differential_plasmids}
   network: false
   writes_output: true
 normalization:

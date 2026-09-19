@@ -2630,6 +2630,9 @@ nodes:
     depends_on:
     - abundance_coverm
     inputs:
+      deseq2_script:
+        type: file
+        format: R
       abundance_table:
         type: file
         format: tsv

@@ -153,6 +153,50 @@ def _listed_types(venv_dir: Path, *, cwd: Path) -> list[str]:
     return sorted(str(row["type"]) for row in rows)
 
 
+def _verify_bundled_scripts(venv_dir: Path, workdir: Path) -> None:
+    """Build enabled script-consuming plans outside the source checkout."""
+    samples = workdir / "script-samples.tsv"
+    samples.write_text(
+        "sample_id\tplatform\tread1\tread2\tgroup\tcondition\n"
+        + "".join(
+            f"S{i}\tillumina\t/data/S{i}_R1.fastq\t/data/S{i}_R2.fastq\t{group}\t{group}\n"
+            for i, group in enumerate(["A", "A", "A", "B", "B", "B"])
+        ),
+        encoding="utf-8",
+    )
+    _run(
+        [
+            str(venv_dir / "bin" / "python"),
+            "-c",
+            """
+from pathlib import Path
+from abi.plugin_registry import get_plugin
+for plugin_id, expected in {
+    'rnaseq_expression': {'build_count_matrix.py', 'run_deseq2.R', 'run_enrichment.py'},
+    'metagenomic_plasmid': {'deseq2_plasmid.R'},
+}.items():
+    plugin = get_plugin(plugin_id)
+    config = plugin.load_config(None, overrides={
+        'input': {'sample_sheet': str(Path('script-samples.tsv').resolve())},
+        'outdir': str(Path(plugin_id).resolve()),
+        'enrichment': {'enabled': True},
+        'resources': {key: str(Path(key).resolve()) for key in
+                      ('annotation_gtf', 'go_obo', 'go_gaf', 'reactome_gmt')},
+        'sample_analysis': {'run_differential_deseq2': True},
+    })
+    plan = plugin.build_plan(config, check_files=False)
+    paths = [Path(value) for step in plan.steps for key, value in step.inputs.items()
+             if key.endswith('_script') and value]
+    bundled = [path for path in paths if path.name in expected]
+    assert {path.name for path in bundled} == expected, (plugin_id, paths)
+    assert all(path.is_absolute() and path.is_file() for path in bundled), bundled
+    assert all(path.parent == plugin.root / 'scripts' for path in bundled), bundled
+""",
+        ],
+        cwd=workdir,
+    )
+
+
 def _dry_run(venv_dir: Path, plugin_id: str, workdir: Path) -> subprocess.CompletedProcess[str]:
     extra_arguments: list[str] = []
     if plugin_id == "metagenomic_plasmid":
@@ -573,7 +617,11 @@ def main() -> int:
                 raise InstallFormError(
                     f"full-combo dry-run of {plugin_id} failed:\n{result.stdout}\n{result.stderr}"
                 )
-        print("[3/3] core + full official combo: every plugin resolves and dry-runs")
+        _verify_bundled_scripts(combo, combo_probe_dir)
+        print(
+            "[3/3] core + full official combo: every plugin resolves and dry-runs; "
+            "bundled scripts exist"
+        )
 
     print("install-form acceptance passed")
     return 0

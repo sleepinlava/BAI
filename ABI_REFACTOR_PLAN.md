@@ -933,3 +933,10 @@ python scripts/verify_release_artifacts.py --dist-dir /tmp/abi-release-1.7.0/rel
 
 
 发行推进更新：GitHub 身份与 Git 提交身份现已配置，开始在 `refactor/abi-1.7.0-release` 分支提交本轮已验证修改；远端 CI 结果与发布状态以随后实际运行记录为准。前述认证阻塞记录保留为历史，不再是当前阻塞。
+
+
+### 15.9 PR 审查与远端验收（2026-09-19）
+
+PR #16 的首轮 CI（run `35197237306`，提交 `eeeb168`）已通过 Python 3.10–3.13、原生 Linux arm64 与 Migration Gate；PR 的 Pages 跳过符合预期。审查发现干净插件安装后的脚本路径问题：RNA-seq 三个脚本依赖源码相对路径，质粒 DESeq2 契约依赖已不存在的顶层插件目录。本轮改为使用各插件根目录解析脚本输入；新增非源码目录规划回归，并将脚本存在性检查加入全插件干净安装验收。CMake 实际执行目标补齐 `--confirm-execution`。
+
+发布说明同步明确草稿发布环节与八个新 PyPI 插件项目的 Pending Trusted Publisher 配置要求。当前尚未合并、打标签或正式发布；审查修复须通过新一轮 CI 后方可继续。

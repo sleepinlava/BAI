@@ -181,7 +181,9 @@ class RNASeqExpressionPlugin:
         context = self.build_sample_context(config, check_files=check_files)
         from abi.dag_planner import build_plan_from_dag
 
-        return build_plan_from_dag(self.root / "pipeline_dag.yaml", config, context)
+        return build_plan_from_dag(
+            self.root / "pipeline_dag.yaml", config, context, plugin_root=self.root
+        )
 
     def registry(self) -> ToolRegistry:
         return ToolRegistry.from_path(self.root / "tool_registry.yaml")

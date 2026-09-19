@@ -1045,6 +1045,7 @@ class TestGoldenTraceParity:
             plugin_data_root("rnaseq_expression") / "pipeline_dag.yaml",
             config,
             ctx,
+            plugin_root=plugin.root,
         )
         plugin_plan = plugin.build_plan(config, check_files=False)
 

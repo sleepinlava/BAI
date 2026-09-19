@@ -240,3 +240,13 @@ def test_docs_sources_use_current_version_and_pages_safe_links() -> None:
     assert 'href="/zh/' not in language_sources
     for plugin in ("metagenomic_plasmid", "easymetagenome", "viral_viwrap"):
         assert f"``{plugin}``" in english_index
+
+
+def test_cmake_real_execution_target_confirms_execution() -> None:
+    root = Path(__file__).resolve().parents[1]
+    cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
+    target = cmake.split("add_custom_target(run_assembly_smoke", 1)[1].split(
+        "add_custom_target(", 1
+    )[0]
+    assert "abi.cli run" in target
+    assert "--confirm-execution" in target
