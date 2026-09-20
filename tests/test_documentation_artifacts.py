@@ -119,7 +119,7 @@ def test_release_workflow_uses_full_gate_and_clean_wheel_smoke() -> None:
     assert "scripts/build_plugin_wheels.py --outdir dist-plugins --build" in release_workflow
     assert "scripts/verify_install_forms.py" in release_workflow
     assert "--plugin-dist-dir dist-plugins" in release_workflow
-    assert "cp dist-plugins/*.whl dist/" in release_workflow
+    assert "cp dist-plugins/*.whl dist/" not in release_workflow
     assert "/tmp/abi-wheel-smoke/bin/abi env discover" not in release_workflow
     assert "/tmp/abi-wheel-smoke/bin/autoplasm" not in release_workflow
     assert "files: dist/*" in release_workflow

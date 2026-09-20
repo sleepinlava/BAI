@@ -1,4 +1,0 @@
-tool_id: fastp
-execution: cli
-version: {command: fastp --version}
-supports: [version_check, command_build, dry_run, output_checks, failure_diagnosis]

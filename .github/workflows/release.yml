@@ -21,6 +21,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,9 +42,6 @@ jobs:
 
       - name: Build official plugin distributions
         run: python scripts/build_plugin_wheels.py --outdir dist-plugins --build
-
-      - name: Assemble release distributions
-        run: cp dist-plugins/*.whl dist/
 
       - name: Check distribution metadata
         run: python -m twine check dist/*

@@ -89,7 +89,8 @@ src/abi/plugins/my_analysis/
 
 核心 `abi-agent` wheel 不含插件。每个官方插件以 `abi-agent-plugin-<id>` 发布
 （实现包 + 同址数据 + 各自的 `abi.plugins` 入口点），并锁定 `abi-agent==<版本>`。
-用户可用 `pip install "abi-agent[plugins]"` 安装完整官方组合，或单独安装单个插件。
+用户从 [abi-plugin GitHub Releases](https://github.com/sleepinlava/abi-plugin/releases)
+按需下载单个 wheel；插件不发布到 PyPI。开发前运行 `git submodule update --init --recursive`。
 仅装核心时，`list-types`、历史查看与审计报告仍然可用；请求缺失的分析类型会给出可解释的错误。
 构建插件 wheel：
 

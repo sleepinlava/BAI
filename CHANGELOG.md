@@ -15,6 +15,9 @@
 
 ### Changed
 
+- Official plugins move to the separate `sleepinlava/abi-plugin` repository and
+  GitHub-only wheel releases. Core source development pins that repository as a
+  submodule; only `abi-agent` is published to PyPI.
 - Scientific Python dependencies now belong to the consuming analysis plugins.
   The core wheel excludes example datasets, golden traces and external Conda
   specifications. Plasmid normalization scripts ship with its plugin wheel.

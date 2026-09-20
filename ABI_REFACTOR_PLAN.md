@@ -1,6 +1,6 @@
 # ABI 精简重构计划
 
-状态：N1–N5 的代码与文档收口已实施；当前验证目标为 ABI 1.7.0，已通过本地全量产品测试与最终干净安装验收（第 15.8 节）。远端 CI、推送及正式发布尚未完成；真实生物工具与远端 HPC 认证单独记录。当前进度统一维护在第 15 节；第 7–14 节为历史记录。本地构建不代表远端已发布。当前计划版本：v0.29。
+状态：N1–N5 重构及审查修复已合并，主干 CI 全通过。用户随后调整分发方案：`abi-agent` 继续发布 PyPI，八个插件迁至独立 `abi-plugin` 仓库，仅从 GitHub 按需下载（第 15.10 节）。该迁移正在验收，尚未打正式版本标签或发布。当前计划版本：v0.30；本节后续决定取代旧的插件 PyPI 发布安排。
 
 历史代码基线：`17bdc5b043cec0ffb8fac182e0982c08e29a1875`，ABI `1.5.12`。
 本轮复核基线：`127a377`，ABI `1.6.0`；开始复核时工作树干净。
@@ -940,3 +940,36 @@ python scripts/verify_release_artifacts.py --dist-dir /tmp/abi-release-1.7.0/rel
 PR #16 的首轮 CI（run `35197237306`，提交 `eeeb168`）已通过 Python 3.10–3.13、原生 Linux arm64 与 Migration Gate；PR 的 Pages 跳过符合预期。审查发现干净插件安装后的脚本路径问题：RNA-seq 三个脚本依赖源码相对路径，质粒 DESeq2 契约依赖已不存在的顶层插件目录。本轮改为使用各插件根目录解析脚本输入；新增非源码目录规划回归，并将脚本存在性检查加入全插件干净安装验收。CMake 实际执行目标补齐 `--confirm-execution`。
 
 发布说明同步明确草稿发布环节与八个新 PyPI 插件项目的 Pending Trusted Publisher 配置要求。当前尚未合并、打标签或正式发布；审查修复须通过新一轮 CI 后方可继续。
+
+
+### 15.10 插件独立仓库与 GitHub-only 分发（2026-09-19）
+
+用户明确要求：保留 PyPI 核心包名 `abi-agent` 与命令名 `abi`；插件新建 `abi-plugin`
+仓库，不上传 PyPI，只通过 GitHub 按需下载。此决定取代 15.8–15.9 的九包 PyPI 集合及
+插件 Pending Trusted Publisher 要求；没有在 PyPI 新增插件权限。
+
+实现边界：
+
+- 插件源码及打包脚本迁到公开仓库 `https://github.com/sleepinlava/abi-plugin`；主仓库在
+  `src/abi/plugins` 固定子模块提交，源码开发、容器和完整 CI 通过递归 checkout 获取。
+- 主仓库只保留插件构建转发入口与共享核心 API。核心 wheel 仅提供插件命名空间兼容接口；
+  核心 sdist 排除插件源码，主仓库无第二份插件实现。
+- 移除会从 PyPI 查找插件的 `plugins` extra；双语安装说明使用具体 GitHub Release wheel URL。
+  每个 wheel 保留独立入口点、同址数据和精确的核心版本依赖。
+- 核心 Release 清单只允许一个核心 wheel 加一个 sdist，额外插件 wheel 会被拒绝。
+  CI 仍构建全部插件并验证核心独装、单插件、全插件安装，但不会把插件加入 PyPI 上传目录。
+- 插件仓库独立 CI 覆盖 Python 3.10–3.13，GitHub Release 只包含八个 wheel 与 SHA256SUMS.json；
+  无 PyPI workflow、token 或 Trusted Publisher。版本标签和发布产物保持不可变。
+
+当前证据：插件独立 CI `35428643515` 已通过；主仓库 50 项定向打包、发行及 Docker 回归通过；
+默认核心 sdist→wheel 构建通过，直接检查证实 wheel 仅有 `abi/plugins/__init__.py`，sdist
+不含插件源码；核心与插件各自的精确集合及哈希验证均通过。完整产品测试、干净组合安装和新一轮
+主仓库 CI 继续执行，完成前不标记分发迁移或正式发布完成。
+
+2026-09-20 更新：分仓 PR #17（`738fa54`）的 Python 3.10–3.13、原生 arm64 与
+Migration Gate 全部通过（run `35430962120`）；本地完整套件 2594 passed、8 skipped、
+11 deselected，分支覆盖率 82.26%，干净组合安装、双语文档及迁移检查通过。
+发布前进一步发现三个输出标准化脚本为空，补齐实现及固定样例行为测试，并修正
+HiFiAdapterFilt 的 prefix 调用方式，使用私有副本保护原始输入。实现归属插件仓库，
+主仓库仅保留兼容转发脚本；打包检查拒绝空脚本。此修复必须重新通过两个仓库的 CI，
+上述旧提交的通过结果不能替代新提交验收。尚未发布 1.7.0。

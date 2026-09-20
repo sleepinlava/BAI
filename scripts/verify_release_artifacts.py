@@ -18,7 +18,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.verify_install_forms import (  # noqa: E402
-    OFFICIAL_PLUGINS,
     InstallFormError,
     validate_distribution_metadata,
 )
@@ -28,7 +27,7 @@ MANIFEST = "release-artifacts.json"
 
 def distribution_manifest(directory: Path, version: str) -> dict[str, object]:
     """Validate identities before hashing; never extract untrusted archives."""
-    names = ["abi-agent", *OFFICIAL_PLUGINS.values()]
+    names = ["abi-agent"]
     wheels = {
         name: directory / f"{name.replace('-', '_')}-{version}-py3-none-any.whl" for name in names
     }

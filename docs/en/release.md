@@ -1,6 +1,7 @@
 # Release Guide
 
-This repository publishes the `abi-agent` core and eight optional analysis plugin distributions. A release is built from a verified
+This repository publishes only the `abi-agent` core to PyPI. Eight optional plugins live in
+[abi-plugin](https://github.com/sleepinlava/abi-plugin) and are distributed only on GitHub. A release is built from a verified
 `master` commit and keeps the Git tag, package version, GitHub Release, and PyPI artifacts tied to
 the same identity.
 
@@ -164,7 +165,7 @@ publish job, and container workflow in the release handoff.
 
 ## Distribution manifest
 
-The core sdist/wheel and eight official plugin wheels form one versioned release set.
+The core sdist and core wheel form the PyPI release set. Plugin wheels are rejected by this manifest.
 `verify_release_artifacts.py --dist-dir dist --tag v<VERSION> --write-manifest`
 validates the exact set and writes an immutable `release-artifacts.json` SHA-256 manifest.
 After downloading the Release assets, run the same command without `--write-manifest`;
@@ -183,13 +184,15 @@ A release created directly by the workflow's `GITHUB_TOKEN` would not trigger th
 workflow ([GitHub event rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)).
 Do not rebuild the downloaded artifacts or replace the publisher with a reusable workflow.
 
-## First publication of plugin projects
+## GitHub-only plugins
 
-Each of the eight plugin distributions needs its own Pending Trusted Publisher before
-its first PyPI upload. Configure these at <https://pypi.org/manage/account/publishing/>
-with owner `sleepinlava`, repository `BAI`, workflow `publish-pypi.yml`, and environment
-`pypi`. Use the exact project names in `OFFICIAL_PLUGINS` in
-`scripts/verify_install_forms.py`. The existing `abi-agent` publisher does not grant
-permission to create the plugin projects. Verify all eight pending publishers before
-publishing the Release draft; GitHub authentication does not configure a PyPI account.
-See [PyPI's new-project guide](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
+Initialize the pinned plugin source with `git submodule update --init --recursive`.
+CI builds those plugins for integration and installation checks but does not copy them
+into the core Release or upload them to PyPI. The core sdist excludes plugin source;
+Docker and source development use the checked-out submodule.
+
+The abi-plugin repository has its own build matrix and GitHub Release workflow.
+After its exact pinned commit passes CI, create an unused matching version tag there,
+verify all eight wheels against `SHA256SUMS.json`, and publish the plugin Release draft
+once the matching `abi-agent` version is available on PyPI. Users install only the
+GitHub wheel URLs they need. No plugin Pending Trusted Publisher is required.

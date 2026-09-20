@@ -27,7 +27,9 @@ def test_plasmid_distribution_stages_executable_normalization_assets(tmp_path):
     }
     root = Path(__file__).resolve().parents[2]
     for name in PLASMID_SCRIPTS:
-        assert (tmp_path / "scripts" / name).read_bytes() == (root / "scripts" / name).read_bytes()
+        assert (tmp_path / "scripts" / name).read_bytes() == (
+            root / "src/abi/plugins/scripts" / name
+        ).read_bytes()
 
 
 def test_bundled_script_inputs_resolve_from_plugin_packages(tmp_path, monkeypatch):

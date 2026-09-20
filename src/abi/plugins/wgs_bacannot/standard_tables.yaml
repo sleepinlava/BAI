@@ -1,9 +1,0 @@
-tables:
-  qc_summary: [sample_id, metric, value, unit, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  genome_assembly_stats: [sample_id, total_length, num_contigs, n50, max_contig_length, gc_content, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  genome_annotation: [sample_id, cds_count, rrna_count, trna_count, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  mlst_profile: [sample_id, scheme, sequence_type, allele_status, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  amr_profile: [sample_id, gene_symbol, target_class, method, identity_pct, coverage_pct, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  virulence_profile: [sample_id, gene_symbol, method, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  plasmid_profile: [sample_id, replicon, method, source_file, source_file_sha256, external_task_id, process_name, tool_id, tool_version, database_id, database_version, parser_version]
-  sample_status: [sample_id, contract_id, status, publishable, evidence_reference]
